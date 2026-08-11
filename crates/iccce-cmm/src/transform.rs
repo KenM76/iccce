@@ -26,11 +26,11 @@
 //! destination matrix/TRC model consumes PCSXYZ. The PCS white is the
 //! ICC 4-figure D50 everywhere (the mixing-precision rule).
 //!
-//! ## Scope of this stage
+//! ## Scope
 //!
-//! Source side: matrix/TRC or `lut16` A2B. Destination side:
-//! matrix/TRC only (a LUT destination needs B2A evaluation — the
-//! CLUT-inversion-free direction — which is stage 3). Intents:
+//! Source side: matrix/TRC, or `lut16`/`lut8` A2B. Destination side:
+//! matrix/TRC inverse, or `lut16`/`lut8` B2A evaluated forward
+//! (`mAB `/`mBA ` are the remaining absentees). Intents:
 //! media-relative fully; perceptual/saturation select their A2Bx per
 //! the fallback and are otherwise colorimetric (for LUT profiles the
 //! A2B0/A2B2 tables THEMSELVES carry the vendor's perceptual

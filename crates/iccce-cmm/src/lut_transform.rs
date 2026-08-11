@@ -1,13 +1,20 @@
-//! # lut16Type evaluation pipeline — Pass 4 assembly, stage 1
+//! # lut8/lut16 evaluation pipeline — Pass 4 assembly, stages 1+3
 //!
-//! Evaluates an `mft2` (lut16Type) tag as a device→PCS transform:
+//! Evaluates `mft2` (lut16Type) and `mft1` (lut8Type) tags in BOTH
+//! directions — A2B (device→PCS, decode at the end) and B2A
+//! (PCS→device, encode at the start; the stored pipeline IS that
+//! direction, evaluated forward — no inversion exists in the LUT
+//! path):
 //!
 //! ```text
-//!   device → input tables → [3×3 matrix] → CLUT → output tables → PCS decode
+//!   in → input tables → [3×3 matrix] → CLUT → output tables → out
 //! ```
 //!
-//! Pipeline order per ICC.1:2022 clause 10.10 via
-//! `ICC_Spec/icc/icc__type__lut8_lut16.md` (primary_spec, Table 40).
+//! Pipeline order per ICC.1:2022 clauses 10.10/10.11 via
+//! `ICC_Spec/icc/icc__type__lut8_lut16.md` (primary_spec, Tables
+//! 40/44). (The type name `Lut16Model` predates lut8 support and is
+//! kept for API continuity; the `PcsCodec` carries the per-depth
+//! difference.)
 //!
 //! ## The rules this module enacts, with sources
 //!
@@ -24,17 +31,20 @@
 //!   wrong).
 //! - **CLUT interpolation is n-linear** — the A16 named choice
 //!   (`clut.rs` module doc; tetrahedral deferred until sourced).
-//! - **Lab PCS values use the LEGACY 16-bit encoding** — always, for
-//!   this tag type (6.3.4.2 NOTE 3 primary spec + measured lcms2
-//!   behaviour M1; `pcs_encoding.rs`). XYZ PCS uses the u1Fixed15
-//!   form.
+//! - **Lab PCS encodings are per TAG TYPE** (the D1/D2 rule):
+//!   `lut16` uses the LEGACY 16-bit encoding (6.3.4.2 NOTE 3 primary
+//!   spec + measured lcms2 behaviour M1); `lut8` uses the 8-bit
+//!   Tables 12/13 encoding (A10 resolved) and is NOT in the legacy
+//!   set. XYZ PCS uses u1Fixed15 (16-bit); the 8-bit XYZ form is
+//!   unsourced and refused by name. See [`PcsCodec`]'s variants.
 //!
 //! ## Scope
 //!
-//! Device→PCS (the A2B direction) only, media-relative (the values as
-//! stored). The B2A direction, intent selection via the sourced
-//! 8.10.2 fallback, and the full source→destination chain are the
-//! next assembly stages.
+//! Media-relative (the values as stored); intent selection and the
+//! source→destination chain live in [`crate::transform`]. Still
+//! absent: `mAB `/`mBA ` evaluation (the v4 element pipelines — note
+//! they are NOT in the legacy set either and use the v4 16-bit
+//!   encodings when they arrive).
 
 use crate::clut::Clut;
 use iccce_color::{Lab, Xyz};
