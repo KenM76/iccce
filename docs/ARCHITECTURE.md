@@ -1883,3 +1883,180 @@ posture; or a **second** instance of the same shape appears, at which
 point the rule should be checked against both rather than generalised
 from one; or a v4 pair is introduced, where 9.2.36 makes the question
 moot.
+
+### DL-020 — a rule the corpus cannot supply at the tier the code needs is **REFUSED BY NAME, not guessed**; and the thing that discharges the refusal is an **independently authored fixture that can fail**, never a second reading. Filed with the arc that demonstrates all of it: **GP-001**, the `mBA ` curve counts, refused **an hour before** the bug the refusal predicted was found
+
+**Date:** 2026-08-11 (Pass 4, the evaluation surface) · **Refusal by:**
+`icc-engineer`, during the design of `lut_ab.rs` · **Finding by:**
+`icc-conformance`, on the fixture corpus's first run against the shipped
+binary · **Filed by:** `icc-librarian` · **Relates to** invariant **§3.2**
+(the parser reports, it does not repair), **DL-014** (the terms on which
+an ICC.1:2022 clause may be cited, and the evidence-tier discipline that
+makes "the corpus cannot supply this" a checkable statement), **DL-005**
+and **DL-016** (exact-value assertions, because a ΔE gate cannot see
+either failure), and **DL-012** (the other case where a guess about
+another party was replaced by a reading)
+
+#### The instance, in order, because the order is the argument
+
+1. **The doubt.** Writing the `mAB `/`mBA ` evaluator, the engineer could
+   not reconcile the corpus's rule for curve counts — **one blanket
+   sentence covering both tag types**, *"`A` curves = `inputChan`; `B`
+   and `M` curves = `outputChan`"*, sitting on byte tables marked
+   `icc_secondary_code` with **A23 open** — with the geometry of a tag
+   that runs PCS→device. **The evaluator shipped `mAB `-only and refused
+   `mBA ` by name.**
+2. **The fixture.** Independently, `tools/gen-profiles` authored
+   `v4-cmyk-mab-lab.icc` — a v4.4 CMYK Output profile whose `B2A0` is a
+   `mBA ` with `inputChan = 3` (Lab) and `outputChan = 4` (CMYK) — from
+   layouts transcribed out of the specification, by a crate that
+   **depends on nothing**, least of all on iccce.
+3. **The finding, within the hour.** The shipped binary refused that
+   tag: `curve chain broken at element 3 (byte 68)`. The parser had used
+   the `mAB ` convention **for both types**, so it expected four B curves
+   where the specification puts three, and walked into the matrix
+   element.
+4. **The adjudication, in the right order.** The clause text was read
+   **first**, from the PDF: **10.13.2/4/6** put `mBA `'s B and M at
+   `inputChan` and A at `outputChan`, the mirror of **10.12.2/4/6**.
+   lcms2's `Type_LUTB2A_Read` agrees — **recorded as corroboration, not
+   as the authority**. **The fixture was not changed to match the
+   parser**; the parser was fixed, and the fix carries both clause
+   triples in a comment at the site.
+5. **The vindication is on the record in the code**, not only in a log:
+   *"The refusal was vindicated within the hour — GP-001: the guessed
+   counts WOULD have been wrong."*
+
+**Why the defect had survived everything.** The two readings **coincide
+whenever `inputChan == outputChan`** — every square LUT — so 40 profiles,
+89 declared tests and a full differential run had passed over it. What it
+broke was **every real CMYK `B2A0`**: the tag a press profile uses to
+print.
+
+#### The decision — five clauses, and they are conjunctive
+
+**When a structural rule the code must obey cannot be established from
+the corpus at the tier the code needs:**
+
+1. **Refuse the case by name, in the type system where possible, and
+   record the doubt at the site.** Not a `TODO`, not a plausible default
+   — a refusal a caller cannot mistake for an answer. In this domain a
+   guess produces **colour**, and a wrong colour looks exactly like a
+   right one.
+2. **The refusal must name what could not be settled**, so that it is a
+   *question someone can answer* rather than a limitation someone must
+   rediscover. "Refused: curve counts contradictory for this direction"
+   is a work item; "unsupported" is a dead end.
+3. **A doubt is discharged by an artefact that can fail** — a fixture
+   whose bytes were authored **independently of the code under test**,
+   from the specification — and **not** by re-reading the same corpus
+   sentence, and not by a second opinion from another implementation.
+   Rule 3 in `CLAUDE.md` says an expectation taken from the code under
+   test detects change, not error; this is the same sentence applied to
+   the *sources* an expectation is built from.
+4. **When fixture and code disagree, provenance decides which is
+   presumed right, in this order: primary clause text, then the
+   independently authored fixture, then the code.** **The fixture is not
+   edited to make the suite pass.** `tools/gen-profiles/README.md` §5
+   states this at the finding: *"The fixture is correct and must not be
+   changed to match the parser."*
+5. **The corpus sentence that produced the defect is filed as a corpus
+   defect, with a named owner**, and stays open until it is transcribed
+   per type. A defect fixed only in code leaves the next reader of the
+   corpus to make the same mistake.
+
+#### ★ The generalisation this project should carry out of it: a blanket sentence over a mirrored pair is a **defect class**
+
+ICC.1 is full of mirrored pairs — `mAB `/`mBA `, `A2Bx`/`B2Ax`,
+device→PCS and PCS→device. **A single sentence that covers both members
+of such a pair is a hazard even when it is written carefully**, because
+it is **silently right in the symmetric case** and the symmetric case is
+what everyone tests with. The corpus rule that follows: **a mirrored pair
+gets per-type text with per-type clause numbers, or it gets marked
+UNVERIFIED — never one generalisation with two clause numbers appended.**
+
+**The population argument is the second half of it.** The Pass 2 clause-1
+record predicted its own blind spot **in writing** — the machine sweep is
+*"light or empty on the population Pass 4 depends on — large v4 CMYK
+press profiles with `mAB `/`mBA ` pipelines"* — and this fixture is
+exactly that population. So: **a coverage claim that names the population
+it lacks has, by that act, written the next fixture's specification.**
+That sentence was on the record for hours before anything acted on it,
+and acting on it took one file.
+
+#### Why this is ONE entry and not three
+
+The refusal discipline (clause 1–2), the fixture as the discharging
+artefact (clause 3–4), and the parser's report-don't-repair surface are
+**one causal chain**, and each is only checkable against the same
+instance. Filing three entries would triple the log's surface while
+leaving every one of them resting on GP-001 alone, and would obscure the
+thing that actually happened: **the doubt, the artefact and the
+disclosure had to hold simultaneously.** Break any one and the outcome
+changes — a guess instead of a refusal gives wrong CMYK; no fixture
+leaves the guess unfalsified; **a repairing parser resynchronises on the
+next plausible curve header and returns colour**, which is the failure
+this project is organised against.
+
+#### Candidates considered at this filing and deliberately NOT filed
+
+- **The grayTRC F.2 model.** It is **specification-following**, not a
+  decision: the connection scalar times the **full** PCS white triple is
+  what the clause says, and the trap it avoids (a green cast from using
+  the scalar as `X`/`Z`) is named in the corpus and asserted by a test.
+  Nothing here a reader could not recover from the code plus the clause.
+  **Its one genuine choice is registered where choices with unmeasured
+  costs belong** — `NUMERIC_CLAIMS.md` **NA-008**, the projection of
+  non-neutral PCS colour onto the achromatic channel.
+- **`LutAbModel`'s `Direction` field.** Same reasoning as DL-019's
+  closing note on `PcsCodec`: the *rule* is already logged (the tag type
+  carries the direction — Pass 2 batch 2's design note), and a field
+  fixed at build time that turns a wrong-direction call into a `None`
+  rather than a wrong number is **self-documenting in a way a log entry
+  cannot improve on**.
+- **The `Chain` wiring of gray and `mAB `/`mBA `.** Mechanical
+  application of the already-sourced 8.10.2 fallback. It is recorded as
+  delivered work in `ROADMAP.md`, and its evidential status — **wired,
+  and exercised by no test** — is recorded in `NUMERIC_CLAIMS.md`
+  §3.10.4.
+
+#### What this entry does NOT claim
+
+- **It does not claim the fixture corpus is a validator.** 38 files
+  authored by one person from one corpus reading **share whatever that
+  reading got wrong**; GP-001 is the case where the reading was right,
+  and the opposite case is available. The lcms2 column and the clause
+  citations in that README exist for exactly this reason.
+- **It does not claim iccce now parses `mBA ` correctly in general.**
+  What exists is: the clause text, one fixture, one cross-check point
+  (`NUMERIC_CLAIMS.md` **NC-057**), and **no differential in the B2A
+  direction at all**.
+- **It does not license "refuse it" as a general answer to difficulty.**
+  Clause 1 is scoped to a rule the corpus **cannot supply** — verified
+  against the corpus, at the tier DL-014 requires — not to a rule
+  somebody has not looked up yet.
+
+**Evidence.** `crates/iccce-profile/src/lut.rs` (`decode_lut_ab`'s
+per-type counts and the GP-001 comment carrying both clause triples);
+`crates/iccce-cmm/src/lut_ab.rs` (the `LutAbModel` HISTORY NOTE, and
+`mba_fixture_matches_transicc_recorded_value`, which asserts `K` within
+1×10⁻³ of `transicc`'s recorded 0.496117 with its tolerance justified in
+the test); `tools/gen-profiles/README.md` **§5** (the verbatim clause
+quotations, the lcms2 corroboration, and the named corpus gap) and **§6**
+(the verification matrix) — **all read in the live source by this
+librarian**, which is also how the two stale statements in that README
+(**§5's `Status: open`** and §6.1's `B2A0 REFUSED` row) were found and
+recorded as *reported, not repaired*. **This librarian has not opened
+`ICC.1-2022-05.pdf`**: every clause quotation above is
+`icc-conformance`'s direct read, carried with that attribution. Corpus
+`icc__type__lutAtoB_lutBtoA.md`'s blanket sentence **verified still
+present**. Commits **`7576cfa`** (corpus + finding) and **`2e98cfd`**
+(fix + evaluator) *(reported)*.
+
+**Revisit if:** the corpus gains per-type transcriptions of 10.12.x /
+10.13.x and closes **A23** — then clause 5 is discharged for this
+instance and the entry becomes history rather than a live debt; or a
+**second** doubt is refused and later settled by a fixture, at which
+point clauses 1–4 should be checked against both instances rather than
+generalised from one; or a fixture is ever edited to make a test pass, in
+which case clause 4 has been broken and the reason must be recorded here.

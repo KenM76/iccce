@@ -28,9 +28,9 @@
 //!
 //! ## Scope
 //!
-//! Source side: matrix/TRC, or `lut16`/`lut8` A2B. Destination side:
-//! matrix/TRC inverse, or `lut16`/`lut8` B2A evaluated forward
-//! (`mAB `/`mBA ` are the remaining absentees). Intents:
+//! Source side: matrix/TRC, grayTRC (F.2), or `lut16`/`lut8`/`mAB `
+//! A2B. Destination side: matrix/TRC inverse, grayTRC inverse, or
+//! `lut16`/`lut8`/`mBA ` B2A evaluated forward. Intents:
 //! media-relative fully; perceptual/saturation select their A2Bx per
 //! the fallback and are otherwise colorimetric (for LUT profiles the
 //! A2B0/A2B2 tables THEMSELVES carry the vendor's perceptual
@@ -480,6 +480,34 @@ mod tests {
         // M+Y = red-ish: red channel dominant.
         let red = chain.convert(&[0.0, 1.0, 1.0, 0.0]).unwrap();
         assert!(red[0] > red[1] && red[0] > red[2], "red {red:?}");
+    }
+
+    /// Gray THROUGH THE CHAIN (the librarian's audit found both gray
+    /// tests stopped at the model — no gray value had ever traversed
+    /// Chain). Real EIZO gray → system sRGB: neutrality of the full
+    /// path on measured output, and channel counts 1 → 3.
+    #[test]
+    fn gray_through_chain_stays_neutral() {
+        let gray = r"C:\Windows\System32\spool\drivers\color\ewgray22.icm";
+        let srgb = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+        let (Ok(g), Ok(d)) = (std::fs::read(gray), std::fs::read(srgb)) else {
+            eprintln!("skipped: system profiles absent");
+            return;
+        };
+        let src = Profile::parse(&g).unwrap();
+        let dst = Profile::parse(&d).unwrap();
+        let chain = Chain::new(&src, &dst, Intent::MediaRelative).unwrap();
+        assert_eq!(chain.input_channels(), 1);
+        assert_eq!(chain.output_channels(), 3);
+        for &v in &[0.0, 0.25, 0.5, 0.75, 1.0] {
+            let rgb = chain.convert(&[v]).unwrap();
+            // Neutral in, neutral out: max channel spread bounded at
+            // 2e-3 — the gray TRC and sRGB TRC quantisation floors
+            // (1024-entry tables ≈ 1e-3 each), not a perceptual claim.
+            let spread = rgb.iter().fold(0.0f64, |m, &c| m.max(c))
+                - rgb.iter().fold(1.0f64, |m, &c| m.min(c));
+            assert!(spread < 2e-3, "v={v} rgb={rgb:?} spread={spread}");
+        }
     }
 
     /// The perceptual chain on this pair selects A2B0 and the

@@ -1,76 +1,71 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-11 (Pass 4 IN PROGRESS) — first CLUT differential, NA-006 priced at 1.5741 dE00, an 11.217 dE00 absolute-intent divergence pending A4b, DL-019 filed, B2A has zero measurements
+description: iccce status snapshot 2026-08-11 (Pass 2 DONE, Pass 4 evaluation surface complete but B2A/mAB/gray unmeasured) — next free NC-062, DL-020 filed, GP-001 fixed
 metadata:
   type: project
 ---
 
-**Snapshot of 2026-08-11 (the Pass 4 *progress* filing — the eighth of
+**Snapshot of 2026-08-11 (the evaluation-surface filing — the ninth of
 one calendar day). Verify before relying on any of it** — read
-`docs/ROADMAP.md` (Pass 4 progress block), `docs/NUMERIC_CLAIMS.md`
-§3.9, `docs/NEXT_SESSION.md` and the newest `SESSION_LOG.md` entry.
+`docs/ROADMAP.md` (Pass 4 evaluation-surface block, Pass 2 DONE block),
+`docs/NUMERIC_CLAIMS.md` §3.10 + §7.6, `docs/NEXT_SESSION.md` and the
+newest `SESSION_LOG.md` entry.
 
-**Pass 0 done · Pass 1 core · Pass 2 one scope decision from done ·
-Pass 3 DONE · ★ Pass 4 IN PROGRESS, done-when NOT met.**
+**Pass 0 done · Pass 1 core · ★ Pass 2 DONE · Pass 3 DONE · Pass 4 IN
+PROGRESS, done-when NOT met.**
 
-**The Pass 4 differential** (SWOP → system sRGB, 341 CMYK points, all
-four A2B intents, both files v2.1.0, `pass=36 fail=0 skip=3`) produced
-**NC-044 … NC-056**; next free number **NC-057**. **Quote a Pass 4
-number only with WHICH GATE it came from** — they differ by four orders
-of magnitude:
-- **corners (exact CLUT nodes, no interpolation): 5.9131e-5 / 6.6558e-5
-  dE00** vs 1e-3 — the strongest cross-check evidence the project has;
-- **lcms2's geometry emulated: 4.5931e-3 / 4.8154e-3** vs 2e-2 — *this*
-  is the row that claims agreement;
-- **raw: 0.25294 (m-rel) / 1.6590 (perceptual)** vs 2.0 — **cannot claim
-  agreement**; its value IS the method envelope.
+**Pass 2 closed because the STRONGER reading of clause 2 was satisfied,
+not because the operator answered** (he never did): 38 whole `.icc`
+fixtures on disk + a standalone generator with `verify` + a generated
+MANIFEST, covering every tag type the plan names. Boundary: clause 1's
+40-profile sweep **predates the GP-001 fix** and was not re-run; `desc`
+has **no ICC.1:2022 clause at all**.
 
-**★ NA-006 is MEASURED at last: 1.5741 dE00** (perceptual table) /
-0.25423 (colorimetric) — the corpus's "~1 dE" was an **underestimate**
-on one table. Priced by an apparatus **in the harness**, not by shipping
-a second interpolator, and that apparatus was graded against
-`Lut16Model` at 1e-9 (**0.0 exactly**) before anything was concluded.
+**★ Pass 4's evaluation surface is COMPLETE in CODE only.** `lut_ab.rs`
+(mAB/mBA, both directions, v4 encodings, all 12 matrix terms) and
+`gray_trc.rs` (F.2 both directions) landed and are wired into `Chain` on
+both sides. **B2A has ONE number (NC-057), `mAB ` has no real file, gray
+has NO lcms2 comparison, and no test traverses `Chain` into either new
+model.** Pass 4 still has **no ground-truth row**.
 
-**★ 11.217 dE00 at the ICC-absolute intent — REPORTED, NOT GRADED.**
-lcms2's `cmsio1.c` substitutes **D50** for the `wtpt` of a **v2
-display-class** profile; iccce uses `wtpt` as stored (NA-007). The sRGB
-profile's `wtpt` is **D65** → 32 % error in Z. Modelling the one
-substitution collapses it **517×** (2.1677e-2, gated at 5e-2).
-**Corpus A4b decides who is wrong and is UNVERIFIED** (verified in the
-corpus at this filing; M4/M5 rows absent — only M1–M3 exist).
+**Ledger: NC-057 … NC-061 filed; next free NC-062.** NC-057 = the mBA
+fixture's B2A0, Lab(50,0,0) → K within 1e-3 of transicc's recorded
+0.496117 — the project's first claim through **bytes it authored
+itself**. **NA-008** new (grayTRC inverse projects onto the achromatic
+channel; cost UNMEASURED and it is a *gamut-mapping* cost, zero on the
+neutral axis where both gray tests sit). **No gate report accompanied
+that dispatch** — those five rows are asserted bounds with no outcome.
 
-**New: `ARCHITECTURE.md` DL-019** — mechanism identified + authority
-absent ⇒ report-not-grade the raw row, gate the **modelled** quantity,
-**write both rejected alternatives down**, state the blocking question
-to a named owner. Five conjunctive steps; an *unmodelled* disagreement
-still gets a failing gate. Also recorded there: the per-depth `PcsCodec`
-was **considered and deliberately NOT given an entry** (its rule is
-DL-011's, its mechanism is self-documenting in a closed enum).
+**★ GP-001 (fixed in `2e98cfd`):** `decode_lut_ab` used the mAB curve
+convention for BOTH types → every real CMYK B2A0 refused; invisible on
+square LUTs. Per type: mAB 10.12.2/4/6 (B/M = output, A = input); mBA
+10.13.2/4/6 (B/M = input, A = output). **The evaluator had refused mBA
+an hour earlier on that exact doubt.** → `ARCHITECTURE.md` **DL-020**.
+Still open elsewhere: the corpus's blanket sentence in
+`icc__type__lutAtoB_lutBtoA.md`, and `tools/gen-profiles/README.md` §5
+still saying `Status: open`.
 
-**Owed, and load-bearing:** **B2A has ZERO measurements** (code in
-`b3f4388`; sRGB has no `B2A*` tag, so this run's destination was
-matrix/TRC) — that also means **`lut8Type` evaluation and the `Lab8`
-codec are untested against anything**. **`mAB `/`mBA ` are DECODED
-(Pass 2 batch 2) and NOT EVALUATED** = stage 4. **Pass 4 has no
-ground-truth row at all.** NA-002's Bradford cost **still not due**
-(checked against code at three consecutive filings — `iccce-cmm` has no
-reference to `adapt`).
+**Corpus 6th pass:** M4/M5 landed. **lcms2 does NOT "ignore" v2 `wtpt`**
+— `_cmsReadCHAD` synthesises a Bradford chad from it under the same
+guard, so its v2-display model is coherent. **DemoIccMAX reads wtpt
+as-stored ⇒ the two ICC-adjacent implementations disagree and iccce
+matches ICC's own code.** M4 generalises to `EvalNInputs` (linear in
+first N−3, tetrahedral in last 3). **A4b still UNVERIFIED** (only
+ICC.1:2001-04 settles it; ICC errata unreachable by compliant means).
+**A4c NEW/SILENT**: no colorant↔wtpt self-consistency required; the stock
+sRGB profile's colorants sum to D50 while wtpt holds D65.
 
-**Things that changed under a carried claim:** `tools/gen-profiles`
-**now exists** (28 tests) and `fixtures/synthetic/` holds **39 .icc
-files** including `v4-cmyk-mab-lab.icc` — four filings said neither
-existed. Nothing reads them yet. And **NA-003's clause citation was
-WRONG** (6.4 governs the PCS, not device values) — corrected append-style
-in `TOLERANCES.md` §5.2, which **inverts** the NC-043 finding: a
-conforming F.8–F.16 evaluation **cannot** exceed 1.0.
+**Counts, verified:** 95 `#[test]` declarations across 16 files under
+`crates/` (was 89/14); 52 under `tools/`, 28 in gen-profiles. **38**
+`.icc` fixtures — my own prior filing said 39 and was wrong.
 
 **Commits, ALL reported — no agent in this project has ever run git:**
-`19a3b17`, `9aa1bca` (stage 1), `63874f9` (stage 2), `490191b` (CLI:
-N-channel + four intents), `b3f4388` (stage 3), `db60e92`, `d9e0b82`
-(the differential), `edcb60e` (untracked gen-profiles swept in by a
-cwd-relative pathspec — a process slip).
+`7576cfa` (gen-profiles + fixtures + GP-001 found), `2e98cfd` (GP-001
+fixed + mAB/mBA evaluation), `97ad9fa` (grayTRC F.2 + the previous
+filing + two code-doc closures).
 
-Related: [[iccce-verify-own-draft-too]],
+Related: [[iccce-refusal-discharged-by-fixture]],
+[[iccce-verify-own-draft-too]],
 [[iccce-tolerance-cannot-swallow-and-claim]],
 [[iccce-predicted-divergence-must-be-measured]],
 [[iccce-gate-must-not-reward-deletion]],

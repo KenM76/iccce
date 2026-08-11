@@ -1,7 +1,8 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — Pass 4 IN PROGRESS 2026-08-11: first CLUT differential, NA-006 priced at 1.5741 ΔE00, 11.217 ΔE00 absolute divergence, DL-019.
+- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-11: Pass 2 DONE, Pass 4's evaluation surface complete in code only; next free NC-062.
+- [Refuse, then let a fixture decide](project_refusal_discharged_by_fixture.md) — DL-020: refuse what the corpus can't supply; only an independently authored fixture discharges the doubt (GP-001).
 - [A tolerance can't swallow and claim](project_tolerance_cannot_swallow_and_claim.md) — DL-019: wide structural gate + tight gate with the difference switched off; report-not-grade what nobody can adjudicate.
 - [Verify your own draft too](feedback_verify_own_draft.md) — the live-source rule covers your own inferences, dispatched totals, and the tree's shape (a Glob is timestamped).
 - [A gate must not reward deletion](project_gate_must_not_reward_deletion.md) — DL-018: an upper bound on a deliberate cost needs a prediction pin plus a sensitivity control.

@@ -1647,3 +1647,194 @@ was run**, by an agent that has no shell.
   the profile-dependent ones still skip silently.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — ★ Pass 2 closes on a fixture corpus, Pass 4's evaluation surface completes, and a parser bug is found by a doubt that was refused an hour earlier
+
+**Ninth entry of the same calendar day, and a catch-up filing**: the
+previous filing was committed as `97ad9fa` and three landings had already
+overtaken it. Filed by `icc-librarian` against the working tree.
+
+**Commits, all reported** *(no agent in this project has ever run git)*:
+**`7576cfa`** — `tools/gen-profiles` + the 38-fixture synthetic corpus +
+**GP-001 found**; **`2e98cfd`** — **GP-001 fixed** + `mAB `/`mBA `
+evaluation + the transicc cross-check on the committed fixture;
+**`97ad9fa`** — the **grayTRC F.2** model + the previous filing +
+**two code-doc closures**.
+
+### ★★ GP-001 — the day's finding, and the order of events is the whole of it
+
+The `mAB `/`mBA ` evaluator shipped **`mAB `-only**, refusing `mBA ` **on
+a curve-count contradiction found during design**: the corpus's rule for
+curve counts is **one blanket sentence covering both tag types**, and the
+author could not reconcile it with the geometry of a tag that runs
+PCS→device, so he declined to guess. **An hour later the fixture corpus's
+first run against the shipped binary found the bug**, on exactly that
+doubt.
+
+`decode_lut_ab` had used the `mAB ` convention **for both types**, so on
+a CMYK `B2A0` (`inputChan = 3`, `outputChan = 4`) it expected **four** B
+curves where the specification puts **three**, walked into the matrix
+element, and reported `curve chain broken at element 3 (byte 68)`. The
+clause text settles it per type — **10.12.2/4/6** for `mAB `,
+**10.13.2/4/6** for `mBA `, i.e. **entry side counted by `inputChan`,
+exit side by `outputChan`**, which letter that is depending on the
+direction — with lcms2's `Type_LUTB2A_Read` as **corroboration, not
+authority**. *(The clause quotations are `icc-conformance`'s direct reads
+of the PDF, carried with that attribution; this librarian has not opened
+the PDF.)*
+
+Four things about it are worth more than the bug:
+
+- **It was invisible on every square LUT** (the two readings coincide
+  when `inputChan == outputChan`), and **it affected every real CMYK
+  `B2A0`** — the tag a press profile prints with.
+- **The machine-wide sweep could not have found it**, and the Pass 2
+  clause-1 record **said so in advance**: the sweep is *"light or empty
+  on the population Pass 4 depends on — large v4 CMYK press profiles
+  with `mAB `/`mBA ` pipelines."* The fixture **is** that population.
+- **The parser's disclosure surface is what made it a diagnosis.** The
+  symptom was a **named refusal at a byte position**, not a colour.
+  A repairing parser resynchronises on the next plausible curve header
+  and returns plausible CMYK.
+- **The corpus is the origin and is still wrong** — the blanket sentence
+  is **verified still present**, and closing it is
+  `icc-spec-librarian`'s, along with **A23** and **A25**.
+
+The fixture was **not** changed to match the parser; the parser was
+fixed, and the fixture's `B2A0` now carries a regression with a number:
+`K` within **1×10⁻³** of `transicc`'s recorded **0.496117**
+(**NC-057**) — the project's first claim made through **bytes it authored
+itself**. `ARCHITECTURE.md` gains **DL-020**, filed as **one** entry
+rather than three because the refusal, the fixture and the
+report-don't-repair surface are one causal chain and break together.
+
+### ★ Pass 2 is DONE, and the scope question dissolved rather than being answered
+
+The batch 2 block asked the operator which reading of *"a synthetic
+corpus covers each tag type"* was meant — files on disk, or in-test
+bytes. **No answer exists anywhere in these documents** *(verified)*, and
+none is needed: **the stronger reading is now satisfied** — 38 whole
+profiles on disk, a standalone generator with `verify` and a generated
+`MANIFEST.md`, and profile-level coverage of **every tag type the plan
+text names**. Clause 1 was met at `d40d601`; clause 2 is met now;
+**Pass 2's done-when is met.** The boundary is written out in the new
+ROADMAP block — most sharply that **clause 1's sweep predates the GP-001
+fix and has not been re-run**, and that `desc` has **no ICC.1:2022 clause
+at all**.
+
+### ★ Pass 4's evaluation surface is complete — and three holes have the same shape
+
+`lut_ab.rs` (stage 4, both directions, v4 encodings, all twelve matrix
+terms) and `gray_trc.rs` (F.2, both directions) landed, and both are
+wired into `Chain` on **both** sides. So every LUT tag type now
+evaluates, in both directions, plus monochrome.
+
+**What has no measurement:** **no B2A differential** (one cross-check
+*point*, on a synthetic, in a unit test); **no `mAB ` against any real
+file**; **no gray comparison against lcms2 at all**. And **nothing
+traverses `Chain`** in a test — its two tests are both SWOP→sRGB and
+neither reaches either new model.
+
+### ★ Three corrections made by reading rather than transcribing
+
+1. **The dispatch's *"neutrality through the chain measured"* is wrong
+   about where.** Neutrality is asserted **in the model** —
+   `GrayTrc::device_to_pcs(1.0)` on the real `ewgray22.icm` landing on
+   the **full D50 triple** within 1×10⁻³ in X, Y **and** Z, which is the
+   green-cast trap's regression. **No gray value has ever gone through
+   `Chain`** *(verified — both test modules read, whole crate grepped)*.
+2. **This librarian's own previous filing said `fixtures/synthetic/`
+   holds *39* `.icc` fixtures. The live count is 38** *(verified —
+   enumerated; 38 `.icc` + `MANIFEST.md` + `README.md`)*, which is what
+   the generator's README says twice. Most likely origin: counting
+   **directory entries**. Second wrong count from a directory listing in
+   two filings; the lesson is unchanged — **a listing is timestamped and
+   a count is not an inventory.**
+3. **This dispatch carried NO gate report** — no `cargo test` count, no
+   `fmt`/`clippy` line, where the previous four filings each carried
+   one. So **five new ledger rows exist with asserted bounds and no
+   reported outcome**, and this is recorded at the provenance rather
+   than inferred away. Checkable without a shell: **95 `#[test]`
+   declarations across 16 files** under `crates/` (89 across 14 last
+   filing; the six new are exactly `lut_ab.rs` 4 and `gray_trc.rs` 2),
+   plus 52 under `tools/`, 28 of them in `gen-profiles` — **unchanged**
+   *(verified — counted)*.
+
+### The engineer closed both items this librarian filed against his files
+
+`cmd_transform`'s doc comment now says four intents are accepted **and
+records that the earlier comment *"outlived the code by three
+commits"***; `iccce-cmm/src/lib.rs`'s §Status, stale for three filings,
+now enumerates the modules **and carries a standing instruction — *"if a
+module below contradicts it, trust the module."*** That is the better fix
+for a defect that recurred three times: it does not promise the line
+stays true, it tells the reader what to do when it is not.
+
+**And a new one appeared one commit later:** `transform.rs`'s own §Scope
+paragraph calls `mAB `/`mBA ` *"the remaining absentees"* in the file
+that wires them on both sides, and omits grayTRC entirely *(verified)*.
+**Reported, not repaired.** Also stale, and worse in its consequence:
+`tools/gen-profiles/README.md` §5 still reads **`Status: open`** for
+GP-001 — a reader of that file today concludes iccce cannot parse a real
+CMYK `B2A0`.
+
+### The corpus's sixth pass, and one framing this project had wrong
+
+**M4 and M5 landed** (owed and absent at the last filing), and M5
+**corrects a sentence carried in three documents**: lcms2 does **not**
+"ignore" the stored `wtpt` on v2 display profiles — `_cmsReadCHAD` uses
+it, under the **same guard**, to synthesise a Bradford `chad`. lcms2's v2
+model is therefore **coherent** (`wtpt` = unadapted white, `chad`
+synthesised, adapted white = D50), which removes the easy objection and
+leaves a genuine interpretive disagreement. Also: **DemoIccMAX reads
+`wtpt` as stored**, so the two ICC-adjacent implementations **disagree
+with each other** and **iccce matches ICC's own code**; **M4 generalises
+to `EvalNInputs`** — linear in the first `N−3` channels, tetrahedral in
+the last three, so hexachrome inherits the asymmetry; **A4b is still
+UNVERIFIED**, settled only by **ICC.1:2001-04**, with the ICC errata
+recorded as **unreachable by compliant means**; and **A4c is new and
+SILENT** — ICC.1 requires **no** colorant/`wtpt` self-consistency, found
+from the stock sRGB profile's own bytes (**colorants sum to D50 while
+`wtpt` holds D65**), and **A4c does not clear when A4b clears**.
+
+**And a divergence acquired a fixture:** `transicc` **accepts**
+`iccmax-version.icc` — **lcms2 does not refuse major version 5**, where
+iccce refuses iccMAX **by name**. True since Pass 0, pinned to an
+artefact today.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph; a **Pass 2 block** judging clause 2 **MET** and Pass 2 **DONE**, with its boundary, a correction of this librarian's own 39-vs-38 count, and three remaining owed items; a **Pass 4 evaluation-surface block** — what was built (verified), the **GP-001 arc**, the done-when re-answered clause by clause, the three unmeasured holes, the dispatch correction, two closures and two new reported-not-repaired defects, the gate position (**none reported**), and the corpus's sixth pass. **No plan text, no annotation and no earlier block rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§2.6** provenance (three commits, **no gate report**, what a self-authored fixture can and cannot do); **§3.10** — **NC-057 … NC-061** with a shared coverage box, plus **GP-001** and **two observations deliberately given no NC number**; **NA-008** (the grayTRC inverse's achromatic projection, cost **unmeasured** and *not* a rounding cost); **eight** new §6 dependency rows; **§7.6** re-checking every prior owed item and adding seven. |
+| `ARCHITECTURE.md` §5 | **DL-020** — refuse-don't-guess, discharged by an **independently authored fixture that can fail**, with the provenance order that forbids editing a fixture to match a parser, the **mirrored-pair corpus rule** it generalises to, why it is **one** entry and not three, and **three candidates considered and deliberately not filed**. DL-001…DL-019 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the post-evaluation-surface position. |
+
+**Not touched, by instruction and by ownership:** `TOLERANCES.md`,
+`tools/`, `fixtures/`, the corpus, `LEGAL.md`. **Nothing was
+committed** — instructed not to, and committing is the engineer's act.
+**No git command was run**, by an agent that has no shell.
+
+### Left for the next session to not assume
+
+- **That any of the three commits exists or contains what is recorded
+  here.** The files are verified; the repository is not.
+- **That "Pass 4's evaluation surface is complete" means anything is
+  measured.** B2A has **one point**, `mAB ` has no real file, gray has
+  **no cross-check at all**, and `Chain` is exercised by no test that
+  reaches either new model.
+- **That the new tests pass.** No run was reported. Five ledger rows
+  carry asserted bounds and no outcome.
+- **That GP-001 is closed everywhere.** The **code** is fixed; the
+  **corpus sentence that caused it** is still there, and
+  `gen-profiles/README.md` still says the finding is open.
+- **That Pass 2 being DONE means the sweep is current.** It was run
+  against a pre-GP-001 parser.
+- **That A4b moved.** It did not — only the stake and the
+  characterisation of lcms2's position did.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.

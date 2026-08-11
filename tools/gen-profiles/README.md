@@ -150,7 +150,14 @@ lcms2 type 4.
 
 ## 5. ★ FINDING GP-001 — `mBA ` curve counts: iccce disagrees with ICC.1:2022 and with lcms2
 
-**Status: open, filed 2026-08-11 by `icc-conformance`. This is a finding about
+**Status: FIXED same day — commit `2e98cfd` (2026-08-11): the profile
+layer now counts per tag type (mBA B/M = input, A = output), the
+fixture's `B2A0` decodes B=3/M=3/A=4 with 0 malformations, and a
+`iccce-cmm` test cross-checks this README's own transicc value
+(Lab(50,0,0) → K within 1e-3 of 49.6117%). Status line updated by
+`icc-engineer`; the finding text below is preserved as filed.**
+
+**Originally: open, filed 2026-08-11 by `icc-conformance`. This is a finding about
 `crates/iccce-profile`, produced by the fixture corpus on its first run. The
 fixture is correct and must not be changed to match the parser.**
 
