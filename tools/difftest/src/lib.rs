@@ -112,6 +112,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub mod pass3;
+pub mod pass4;
 
 // ===========================================================================
 // Locating the oracle
@@ -341,14 +342,36 @@ impl Oracle {
         req: &Request,
         components_per_row: usize,
     ) -> Result<Vec<Vec<f64>>, DiffError> {
-        assert!(components_per_row > 0, "components_per_row must be > 0");
-        if req.values.len() % components_per_row != 0 {
+        self.convert_batch_shaped(req, components_per_row, components_per_row)
+    }
+
+    /// ★ **Added 2026-08-11 for Pass 4.** As [`Oracle::convert_batch`], but for
+    /// a transform whose input and output arities **differ**.
+    ///
+    /// Pass 3 only ever converted RGB → RGB, so one width served for both and
+    /// [`Oracle::convert_batch`] took a single `components_per_row`. A CMYK
+    /// source into an RGB destination is 4 in and 3 out, and feeding that to
+    /// the single-width version reports *"1364 input values is not a whole
+    /// number of 3-component rows"* — which is the arity guard doing its job on
+    /// the wrong quantity. Splitting the two widths is the fix; the guard
+    /// stays, now applied to each side separately, because a short final row
+    /// on either side is a real disagreement about the shape of the answer and
+    /// must not be silently truncated.
+    pub fn convert_batch_shaped(
+        &self,
+        req: &Request,
+        in_components: usize,
+        out_components: usize,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
+        assert!(in_components > 0 && out_components > 0, "widths must be > 0");
+        let components_per_row = out_components;
+        if req.values.len() % in_components != 0 {
             return Err(DiffError::Internal(format!(
-                "{} input values is not a whole number of {components_per_row}-component rows",
+                "{} input values is not a whole number of {in_components}-component rows",
                 req.values.len()
             )));
         }
-        let rows_in = req.values.len() / components_per_row;
+        let rows_in = req.values.len() / in_components;
         let args = req.to_args();
 
         let mut child = Command::new(&self.exe)
@@ -645,6 +668,110 @@ impl Iccce {
             });
         }
         Ok(rows.into_iter().map(|r| [r[0], r[1], r[2]]).collect())
+    }
+
+    /// ★ **Added 2026-08-11 for Pass 4.** Run `iccce transform` over a grid of
+    /// **n-channel** source device values at a **named intent**, returning one
+    /// output triple per input row.
+    ///
+    /// [`Iccce::transform_grid`] above is the Pass 3 shape: three components
+    /// in, no intent, because the binary at commit `051707f` accepted neither.
+    /// Commit **`490191b`** ("cli: transform upgraded to the Chain — N-channel
+    /// input, four intents") changed both, so a CMYK source can now be pushed
+    /// through the **shipped surface** instead of through a library call. That
+    /// matters: it restores the symmetry this type's doc comment demands —
+    /// both sides of every Pass 4 device-space comparison now cross a process
+    /// boundary, are printed as text, and are parsed back.
+    ///
+    /// `rows` are source device values in **0..1**, `channels` wide (4 for
+    /// CMYK). The output is assumed to be three components; a destination with
+    /// a different channel count is an [`DiffError::Arity`], not a silent
+    /// reshape.
+    ///
+    /// The intent is passed by **name** (`media-relative`, `perceptual`,
+    /// `saturation`, `absolute`) because that is what the CLI accepts and
+    /// because it refuses an unknown name rather than substituting one.
+    ///
+    /// Stdin is written on a background thread for the deadlock reason given
+    /// on [`Oracle::convert_batch`].
+    pub fn transform_rows(
+        &self,
+        src: &Path,
+        dst: &Path,
+        intent: Intent,
+        rows: &[Vec<f64>],
+    ) -> Result<Vec<[f64; 3]>, DiffError> {
+        let intent_arg = match intent {
+            Intent::Perceptual => "perceptual",
+            Intent::RelativeColorimetric => "media-relative",
+            Intent::Saturation => "saturation",
+            Intent::AbsoluteColorimetric => "absolute",
+        };
+        let args = vec![
+            "transform".to_string(),
+            "--src".to_string(),
+            src.display().to_string(),
+            "--dst".to_string(),
+            dst.display().to_string(),
+            "--intent".to_string(),
+            intent_arg.to_string(),
+        ];
+
+        let mut child = Command::new(&self.exe)
+            .args(&args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+
+        let mut buf = String::with_capacity(rows.len() * 40);
+        for r in rows {
+            let line: Vec<String> = r.iter().map(|v| format!("{v}")).collect();
+            buf.push_str(&line.join(" "));
+            buf.push('\n');
+        }
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| DiffError::Internal("child stdin was not piped".into()))?;
+        let writer = std::thread::spawn(move || -> io::Result<()> {
+            stdin.write_all(buf.as_bytes())?;
+            stdin.flush()
+        });
+
+        let out = child
+            .wait_with_output()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+        match writer.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => return Err(DiffError::Pipe(e)),
+            Err(_) => return Err(DiffError::Internal("stdin writer thread panicked".into())),
+        }
+
+        let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+        if !out.status.success() {
+            return Err(DiffError::NonZeroExit {
+                args,
+                code: out.status.code(),
+                stdout,
+                stderr,
+            });
+        }
+        let parsed = parse_rows(&stdout, 3).ok_or_else(|| DiffError::Unparsable {
+            args: args.clone(),
+            stdout: stdout.clone(),
+            stderr: stderr.clone(),
+        })?;
+        if parsed.len() != rows.len() {
+            return Err(DiffError::Arity {
+                expected: rows.len(),
+                got: parsed.len(),
+                stdout,
+            });
+        }
+        Ok(parsed.into_iter().map(|r| [r[0], r[1], r[2]]).collect())
     }
 }
 

@@ -1,9 +1,37 @@
 ---
 name: project-oracle-and-tolerance-state
-description: iccce oracle/harness state — as of Pass 3 the harness drives BOTH transicc and the shipped iccce binary, computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md §3.1/§3.3/§5 are filled; what is still deliberately blank.
+description: iccce oracle/harness state — the harness drives transicc and the shipped iccce binary, computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md §3.1/§3.3/§3.4/§5 are filled through Pass 4; what is still deliberately blank.
 metadata:
   type: project
 ---
+
+**★ Updated 2026-08-11 (later, after Pass 4).** Everything below still holds;
+add:
+
+- **`pass4` exists** (`tools/difftest/src/pass4.rs`, `bin/pass4_report.rs`,
+  README **§14**): `USWebCoatedSWOP.icc` (`mft2` A2B, 4-ch, `Lab ` PCS) → the
+  system sRGB profile, **341 CMYK points, all four intents**, `-c0`. Both sides
+  are subprocesses again — commit **`490191b`** gave the CLI N-channel input
+  and `--intent`, so the in-process fallback that had been planned was not
+  needed. `Oracle::convert_batch_shaped(req, in, out)` was added because a
+  4-in/3-out transform breaks the single-width `convert_batch`.
+- **Pass 4's done-when numbers:** iccce vs lcms2 **max 1.6590 ΔE2000**
+  (perceptual/saturation, tol 2.0 — a *structural* gate, not an agreement
+  claim) and **0.252 94** (media-relative); with lcms2's own CLUT geometry
+  emulated, **4.8154×10⁻³** (tol 2×10⁻²); at the 16 CLUT-node corners
+  **6.6558×10⁻⁵** (tol 1×10⁻³). ICC-absolute is **reported, not graded** —
+  11.217 ΔE2000, mechanism established (see the Pass 4 findings memory).
+  Suite: `pass=36 fail=0 skip=3 error=0`.
+- **`TOLERANCES.md` §3.4 and §5.2 are now filled**, NA-006 is **measured**, and
+  NA-003's clause citation is **corrected** (6.4 is about the PCS; the device
+  clause is 6.5, doubly gated to `DToBx`/`BToDx`).
+- **Still blank and correctly so:** §3.2; any ground-truth row for Pass 3 *or*
+  Pass 4; the **B2A** direction (`b3f4388` landed the code, nothing measures
+  it); `lut8Type`/`mAB `; any v4 profile; any synthetic fixture
+  (`tools/gen-profiles` appeared in the tree mid-session but nothing in the
+  suite uses it yet).
+
+Original entry follows.
 
 **Supersedes the earlier 2026-08-11 entry that said "no comparison between
 iccce and lcms2 exists".** State as of **2026-08-11 (Pass 3, commit

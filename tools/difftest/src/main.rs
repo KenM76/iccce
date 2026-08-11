@@ -44,6 +44,31 @@
 //! string says so. A green line is not evidence; the `kind` and the tolerance
 //! on the same line are what tell a reader what it is worth.
 //!
+//! ### 28 — Pass 4, the LUT differential (added later on 2026-08-11)
+//!
+//! Built by [`iccce_difftest::pass4`] over a 341-point CMYK grid,
+//! `USWebCoatedSWOP.icc` → the system sRGB profile, at **all four intents**,
+//! `-c0`. Full record: README §14.
+//!
+//! | id (per intent unless noted) | kind | what it can catch |
+//! |---|---|---|
+//! | `pass4/apparatus/harness-nlinear-matches-iccce-cmm` *(once)* | self-consistency | **the apparatus**: the harness's own mft2 reimplementation drifting from `iccce-cmm`'s. Everything else in Pass 4 is void if this fails |
+//! | `pass4/swop/perceptual-equals-saturation` *(once)* | cross-check | an 8.10.2 tag-selection defect — graded at **exactly zero**, because `A2B0` and `A2B2` are one block of tag data |
+//! | `…/device-vs-lcms2`, `…/de2000-vs-lcms2` | cross-check | structural error, at a tolerance that is the **interpolation-method envelope** and therefore cannot claim agreement |
+//! | `…/device-mean`, `…/de2000-mean` | cross-check | **reported, not graded** (tolerance ∞) |
+//! | `…/pcs-lab-vs-lcms2` | cross-check | the same, isolated to the source CLUT |
+//! | **`…/pcs-lab-emulated-geometry`** | cross-check | **the record that claims agreement** — lcms2's own CLUT geometry substituted, gated 100× tighter |
+//! | **`…/pcs-lab-corners-interpolation-free`** | cross-check | the sensitivity control: 16 exact CLUT nodes, gated at 10× `transicc`'s print floor |
+//! | `icc-absolute/white-point-policy-emulated` | cross-check | the **mechanism** of the 11 ΔE00 absolute-intent divergence |
+//!
+//! **At `icc-absolute` the two raw comparisons are reported with an infinite
+//! tolerance**, because iccce and lcms2 read *different destination media
+//! whites* there and the specification question is unsourced (corpus A4b).
+//! The gate at that intent is the white-point-policy record. README §14.6 and
+//! `TOLERANCES.md` §3.4 state it in full; it is the one place in this suite
+//! where a known disagreement is deliberately not gated, and it is labelled
+//! rather than absorbed into a widened number.
+//!
 //! ## Everything here skips without the Windows colour directory
 //!
 //! Every check's input is a category (c) system profile (`LEGAL.md` §3), and
@@ -71,7 +96,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3,
+    pass3, pass4,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -164,6 +189,11 @@ fn main() {
             )) {
                 report.push_record(r);
             }
+            for r in pass4::unavailable_records(&pass4::Unavailable::Skip(
+                "oracle not built on this machine".into(),
+            )) {
+                report.push_record(r);
+            }
             finish(&report);
             return;
         }
@@ -186,6 +216,11 @@ fn main() {
                 );
             }
             for r in pass3::unavailable_records(&pass3::Unavailable::Error(format!(
+                "oracle version check failed: {e}"
+            ))) {
+                report.push_record(r);
+            }
+            for r in pass4::unavailable_records(&pass4::Unavailable::Error(format!(
                 "oracle version check failed: {e}"
             ))) {
                 report.push_record(r);
@@ -219,6 +254,29 @@ fn main() {
         ));
     }
     for r in records {
+        report.push_record(r);
+    }
+
+    // Pass 4 — the LUT differential. Same contract: it returns its own
+    // skip/error records rather than propagating, so a missing profile
+    // produces labelled SKIP lines instead of an absence.
+    //
+    // Its end-to-end side drives the same shipped binary Pass 3 does, via the
+    // N-channel `transform` of commit 490191b; only its PCS-side instrument is
+    // in-process, and every record says which it is.
+    let (p4, p4_records) = pass4::run(&oracle);
+    if let Some(a) = &p4 {
+        report.note(format!(
+            "pass4: grid={} points x 4 intents, iccce={} ({}), {} \
+             (run `cargo run --bin pass4_report` for the per-point record and the \
+             interpolation experiment)",
+            a.grid.len(),
+            a.iccce_exe.display(),
+            if a.iccce_is_debug { "DEBUG BUILD" } else { "release" },
+            a.structure
+        ));
+    }
+    for r in p4_records {
         report.push_record(r);
     }
 

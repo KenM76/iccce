@@ -8,3 +8,4 @@
 - [DERIVED values need a second pass](feedback_derived_values_need_a_second_pass.md) — a provenance label is not an arithmetic audit; the C2 D50-chromaticity erratum, caught by an iccce unit test
 - [Reading source is not observing behaviour](feedback_reading_source_is_not_observing_behaviour.md) — "lcms2 does X" needs a run, not a citation; the C3 retraction of a divergence that measurement found absent
 - [lcms2 measured quirks live in one file](reference_lcms2_measured_behaviour_file.md) — `M<n>` ids at pin 21c582a; check M2 (forced BPC on v4 perceptual/saturation) before blaming any transform
+- [ICC.1 conformance binds only *reading*](reference_icc_conformance_clause_binds_only_reading.md) — clause 5 never binds a CMM's computed output; verdicts say "diverges", not "non-conforming" (A39b); plus the clamp-the-input pattern and the 6.4-vs-6.5 device-range trap

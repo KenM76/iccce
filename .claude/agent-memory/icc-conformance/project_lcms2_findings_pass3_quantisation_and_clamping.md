@@ -33,10 +33,18 @@ gamma: `pow(1.000106, 1/γ)` is finite and nothing forces it back). In the
 reverse direction, where the destination TRC inverse is a **tabulated**
 reverse curve, it **does** saturate. So it tracks which inversion path
 lcms2 took, not a stated range policy. iccce clamps per Annex F.8–F.16.
-**Recorded as a FINDING; the spec question (clause 6.4's
-integer-vs-float32 clipping rule read together with F.8–F.16) is OWED to
-`icc-spec-librarian`** — the dispatch could not be made because no Agent
-tool was available in that session.
+~~**Recorded as a FINDING; the spec question is OWED to
+`icc-spec-librarian`.**~~ **★ SETTLED 2026-08-11 (later), and against the
+hypothesis:** clause **6.4 is about the PCS**, not device values — the device
+clause is **6.5**, whose float32 permission is doubly gated to `DToBx`/`BToDx`
+tags that a matrix/TRC profile may not contain. A conforming F.8–F.16
+evaluation **cannot** exceed 1,0, so lcms2's 1,000 120 means its *input* clamp
+was skipped, and iccce is not "stricter". Hedges: clause 5 binds a CMM only to
+**reading** profiles (**A39b**) so the word is *divergence*; the **v2** half is
+**unsourced** (**A39c**). **The size of the divergence under real
+out-of-gamut input is still unmeasured** — Pass 4 did not close it (0 of 1023
+excursions; that destination's TRC inverse is tabulated). Corrected in
+`TOLERANCES.md` §5.2 and `tools/difftest/README.md` §13.10 item 1.
 
 **Method lessons that paid off again:**
 - **Predict the confound quantitatively from the other implementation's
