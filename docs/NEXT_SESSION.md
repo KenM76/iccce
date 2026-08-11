@@ -1,191 +1,258 @@
 # NEXT SESSION — start here
 
-**Written 2026-08-11 by `icc-librarian`, at the close of Pass 1.**
-Replaces the Pass 0 edition entirely. Overwrite this file once acted on.
+**Written 2026-08-11 by `icc-librarian`, at the close of Pass 2 batch 2
+and the machine-wide sweep.** Replaces the batch-1 edition entirely.
+Overwrite this file once acted on.
 
-Read order: this file → `docs/ROADMAP.md` (Pass 1's completion record and
-Pass 2's plan, including the dated annotation under Pass 2) →
-`docs/NUMERIC_CLAIMS.md` (**new** — the ledger, and especially §1 evidence
-classes and §5 "what Pass 1 does not claim") → `docs/ARCHITECTURE.md` §5
-(**eleven** entries now; DL-010 and DL-011 are today's) →
-`docs/TOLERANCES.md` §1–§2 → `docs/SESSION_LOG.md` (three entries, all
-2026-08-11; the third is Pass 1).
+Read order: this file → `docs/ROADMAP.md` (the **Pass 2 batch 2 progress
+block**, then the **Pass 3 annotation**, then the dated annotations under
+**Pass 4** and **Pass 5**) → `docs/ARCHITECTURE.md` §5 (**fourteen**
+entries; **DL-014** is new and governs how every clause number in this
+project may be cited) → `docs/NUMERIC_CLAIMS.md` (§1 evidence classes →
+§2.2 and **§2.2.1**, the sweep and why it has no NC number → §7.2) →
+`docs/TOLERANCES.md` §1–§2, **§3.2** and **§6.1** →
+`tools/difftest/README.md` §12 → `docs/SESSION_LOG.md` (five entries, all
+2026-08-11; the fifth is this work).
 
 ---
 
 ## Where the project actually is
 
-**Pass 0 done. Pass 1's core complete and validated — both on
-2026-08-11.**
+**Pass 0 done. Pass 1 core complete and validated. Pass 2 is built —
+both batches — and one scope decision away from done. `iccce-cmm` is
+still a stub: there is no transform, and `iccce` has still never been
+compared to anything.** All on 2026-08-11.
 
-`iccce-color` exists and is real: XYZ/xyY, Lab/LCh, D50 + D65, the von
-Kries method with Bradford cones, ΔE76 and CIEDE2000. The project has its
-**first published-ground-truth measurement**: CIEDE2000 agrees with **all
-34 Sharma, Wu & Dalal (2005) pairs within 1×10⁻⁴** at k = 1:1:1
-(`NUMERIC_CLAIMS.md` **NC-001**).
+| | Commit *(all **reported** — no agent here has run git)* |
+|---|---|
+| Pass 0 | `f976a0e` |
+| Pass 1 | `7313c5b` |
+| Pass 2 batch 1 | `b35a12e` |
+| difftest harness + probe + `TOLERANCES.md` first filling | `bfd6b1e` |
+| Pass 2 batch 2 — the LUT family | **`d40d601`** |
 
-`docs/NUMERIC_CLAIMS.md` **now exists**, created with that claim as its
-first row.
+- `iccce-color` — XYZ/xyY, Lab/LCh, D50 + D65, von Kries method with
+  Bradford cones, ΔE76 and CIEDE2000. **One** published-ground-truth
+  claim in the whole project (NC-001, all 34 Sharma pairs within 1×10⁻⁴).
+- `iccce-profile` — header, tag table, **eight non-LUT tag types**
+  (`curv`, `para`, `text`, `mluc`, `desc`, `ncl2`, `XYZ `, `sf32`) and
+  **the four LUT types** (`mft1`, `mft2`, `mAB `, `mBA `). iccMAX is
+  identified and **refused by name** (since Pass 0). All wired into
+  `inspect`, which prints every `TagIssue` unconditionally.
+- `tools/difftest` — zero-dependency, out-of-workspace harness driving
+  `transicc`, plus `legacy_lab_probe`.
+- `iccce-cmm` — **still a stub.**
 
 ### What is easy to over-read, so read it here first
 
-- **"35 tests green" is not coverage.** 21 of them are in
-  `iccce-color`, and **exactly one** is a correctness claim against
-  published values. The rest are arithmetic identities, which detect
-  drift and structural error and **cannot detect a consistently wrong
-  constant** — a round trip through a wrong white point round-trips
-  perfectly.
-- **There is no cross-check against lcms2 anywhere.** Not one row of the
-  ledger is an `implementation-cross-check`, because there is still **no
-  Rust difftest harness** — nothing drives `transicc` programmatically
-  (`tools/difftest/README.md` §10).
-- **Chromatic adaptation has no ground-truth row at all.** No published
-  worked example of a complete adaptation was obtained. It rests on a
-  primary-sourced matrix plus identities. **Pass 1's largest evidential
-  hole.**
+- **"54 tests green" is not coverage.** Exactly **one** test in the
+  workspace is a correctness claim against published values. The rest
+  are arithmetic identities and parser fixtures.
+- **"40 of 40 profiles parse" is one machine, one day, one commit.** It
+  is not *"iccce parses real profiles"*. **No per-tag-type breakdown was
+  taken**, so it does not establish that the LUT decoders met real input
+  at all — and a Windows colour directory is the wrong shape for
+  `mAB `/`mBA `, which live in large v4 CMYK press profiles.
+- **`iccce` has still never been compared to anything.** Zero
+  `implementation-cross-check` rows in the ledger, correctly: such a row
+  needs iccce on one side, which needs a transform, which is **Pass 3**.
+- **The difftest harness still has exactly one registered check and it
+  compares lcms2 to lcms2** (NC-021). With no oracle on the machine every
+  check skips and the runner exits **3 ("nothing ran")** — never 0.
+- **Chromatic adaptation still has no ground-truth row.** Unchanged since
+  Pass 1, still the largest evidential hole — and **Pass 3 makes it
+  urgent** (below).
 - **Nothing has run on Linux, and no CI run has ever been observed.**
-- **Pass 1 is uncommitted.** Its numbers are anchored to a working tree,
-  not a hash. Whoever commits fills the hash into `ROADMAP.md`'s Pass 1
-  record and `NUMERIC_CLAIMS.md` §2.
-- **The corpus D50-chromaticity erratum was still present at filing** —
-  a fix was dispatched; verify before assuming.
 
 ---
 
-## Pass 2 — full tag-type parsing. **And a validator is now defensible.**
+## The immediate next step is a **decision**, not code
 
-`ROADMAP.md` Pass 2: header, tag table, and the tag types real profiles
-use — `XYZType`, `curveType`, `parametricCurveType`,
-`textType`/`multiLocalizedUnicode`, `lut8`/`lut16`/`lutAToB`/`lutBToA`,
-`namedColor2`, `s15Fixed16Array`. **Report malformations, repair
-nothing.** Identify iccMAX and refuse it by name.
+### ★ Pass 2 done-when clause 2: does an in-test synthetic satisfy it?
 
-**Done when**: every profile on the machine parses or is refused with a
-reason, and a synthetic corpus covers each tag type.
+Clause 1 (*"every profile on the machine parses or is refused with a
+reason"*) is **met on this machine's 40 profiles**. Clause 2 (*"a
+synthetic corpus covers each tag type"*) is **PARTIAL**, stated exactly:
 
-### The evidence position changed — this is the headline for Pass 2
+- **Every implemented tag type has hand-authored synthetic byte
+  fixtures** — inside the unit tests, hostile cases included (`255^255`
+  CLUT dimensions, `precision = 3`, a curve chain broken at a named
+  position). *(verified.)*
+- **`tools/gen-profiles/` does not exist.** `fixtures/synthetic/`
+  contains only a `README.md` that says so itself. `fixtures/reference/`
+  holds only `PROVENANCE.md`. *(verified — tree enumerated.)*
 
-Pass 0 filed DL-002's consequence in the librarian's own words: **"a
-parser is defensible on this evidence and a validator is not."** That was
-true of a corpus built from C headers, which encode signatures and
-offsets exactly and prose requirements not at all.
+**The two readings, neither recommended:**
 
-**The ICC.1:2022 ingest has landed** *(verified by this librarian —
-corpus files read on 2026-08-11)*. The corpus now carries
-`evidence: primary_spec`, real clause numbers, verbatim normative text,
-per-extractor agreement records, tag layouts and **the required/optional
-tag column**. **On that evidence a validator is defensible**, and Pass 2
-may plan for one — with the usual discipline: a conformance assertion
-cites the clause it enforces, and where ICC.1 is SILENT the register says
-so and iccce asserts nothing.
+| | For | Against |
+|---|---|---|
+| **In-test bytes suffice** | byte-authored (category (a), cannot inherit a bug from the code under test), versioned, executed on every `cargo test` — more than a directory of blobs guarantees | they are **tag-level, not whole profiles**: no header/tag-table/tag-data interaction, no cross-tag consistency, and unusable by a differential run, a fuzzer, or any external consumer |
+| **The generator is required** | `ARCHITECTURE.md` §1 listed both directories before the plan was written, which is evidence the author meant files on disk; `difftest/README.md` §10 says the four probe profiles should be **ported onto the generator when it exists** | it is real work for a benefit Pass 3 does not need |
 
-**Read the corpus's own frontmatter before citing any file.** The tiers
-are still not equal — `primary_spec`, `cross_verified_2src`,
-`impl_crosscheck` and `not_sourced` all coexist in there, sometimes
-within one file.
+**Decide it, record it in `ROADMAP.md`, and if the answer is "in-test
+suffices" that is a decision-log entry** — it narrows a done-when that
+was written to mean something else, and a quietly narrowed done-when is
+how a Pass gets called complete without being it.
 
-### Three traps the corpus already knows about — do not rediscover them
+---
 
-1. **★ The legacy Lab selector is the TAG TYPE, never the version.**
-   **DL-011**, filed today, before any code exists to get it wrong.
-   6.3.4.2 NOTE 3: the legacy encoding belongs to `lut16Type` and
-   `namedColor2Type` *"and only those tag types"*. **The corpus's own
-   first pass claimed the opposite and is retracted.** A
-   `version < 0x04000000` test is wrong **in both directions**, and the
-   common wrong case — an `mft2` Lab tag in a **v4** profile, i.e. most
-   production CMYK output profiles — is **sub-perceptual**
-   (ΔE 0.3–0.5, `L*` 0.39 % low). Thread the encoding choice with the tag
-   type at the point the tag is decoded. **DL-005 is untouched:** test it
-   with exact-value integer invariants, never with ΔE.
-2. **★ `parametricCurveType` Table 68 CHANGED between ICC.1:2010 (v4.3)
-   and ICC.1:2022 (v4.4)** — corpus divergence **D10**. Two conformant
-   CMMs reading different editions can evaluate **the same `'para'` tag
-   differently.** **What changed is NOT SOURCED — do not guess it**; see
-   the operator-download list below.
-3. **★ Clause cross-references inside ICC.1:2022 are stale.** The
-   document's own surviving references still use ICC.1:2010 numbering:
-   it says `lut16Type` is "10.8" when 10.8 is `dateTimeType` and
-   `lut16Type` is **10.10**. Corpus file
-   `icc__ref__spec_defects.md` §1 lists them. **Follow the tag-type
-   clause table, not the prose cross-references.**
+## Then: **Pass 3 — matrix/TRC transforms**
 
-### Bookkeeping that Pass 2 should not step around
+The analytic path: RGB→XYZ→RGB through matrices and tone curves, with
+adaptation. **Done when**: sRGB→AdobeRGB round-trips within a stated ΔE,
+and matches lcms2 within a stated tolerance, with both numbers written
+down.
 
-**DL-002's clause-citation prohibition has no filed successor.**
-`ARCHITECTURE.md` §5 ran to DL-009 before today; DL-006 said the
-prohibition lifts only when `icc-spec-librarian` files DL-002's successor
-entry, and **it has not.** Meanwhile `crates/iccce-color/src/adapt.rs`
-already cites "ICC.1:2022 Annex E.3" and today's DL-011 cites 6.3.4.2 and
-10.10. The *condition* is materially met; the *entry* is missing.
-**Dispatch `icc-spec-librarian` to file it** — it should say on what
-terms a clause number may be cited, and what a doc comment must state
-alongside one (which extractor, which corpus file, what tier).
+### ★ Four things Pass 3 inherits, all live from its first commit
+
+**1. It produces the ledger's first `implementation-cross-check` row.**
+*"Matches lcms2"* puts **iccce on one side of a comparison for the first
+time in the project's history.** `NUMERIC_CLAIMS.md` §5.1's sentence
+*"iccce has never been compared to anything"* stops being true that day.
+**Set and justify the tolerance before the run** (rule 5,
+`TOLERANCES.md` §0) — a tolerance chosen after seeing the residual is a
+number someone moved until the suite went green. The round-trip half is
+**`self-consistency`** and must be labelled so: it is the only way to
+*price* an approximation and it is worthless as correctness evidence.
+
+**2. NA-002's cost comes due.** `NUMERIC_CLAIMS.md` §4 registers
+**Bradford as a policy choice, not conformance** (corpus **A29** — ICC.1
+mandates no chromatic-adaptation transform, and a `chad` tag stores the
+*resulting matrix*, not the method), with its cost **UNMEASURED** —
+permitted *"only while the entry is new."* **sRGB→AdobeRGB adapts.**
+What would measure it: Bradford against at least one other CAT, over a
+stated sample set, in ΔE2000, on a stated illuminant pair. **Both
+alternatives are currently unsourceable** — the corpus's von Kries/HPE
+digits are a placeholder marked **DO NOT USE**, and CIE 159 (CAT02) is
+paywalled and not obtained. So either source one, or **write into NA-002
+that the cost cannot be measured yet and why**. Letting it lapse quietly
+is the one option that is not available.
+
+**3. The sRGB and D65 constants are single-source, and Pass 3 is built
+on them.** The corpus's sRGB file rests on **lcms2 alone** (IEC
+61966-2-1 paywalled, not obtained), and NC-018 records **D65 as the
+weakest constant in `iccce-color`** — chromaticity from `cmsvirt.c`
+alone, *not* cross-verified, unlike D50 and Bradford. **The candidate
+second source is ITU-R BT.709, recorded in the corpus as free from
+itu.int and NOT FETCHED.** *(verified — `ICC_Spec\index.md`.)* Two
+consequences: a Pass 3 sRGB result that agrees with lcms2 **may agree
+because both took their primaries from the same place** — the
+shared-misreading case `TOLERANCES.md` §1 names, and the weakest form of
+cross-check there is; and **fetching BT.709 is blocked on DL-007's
+determination**: ITU's terms must be read before any agent fetches,
+because *"it is a free download"* is not *"automated retrieval is
+permitted."* That is `icc-spec-librarian`'s call.
+
+**4. Curve work is now specification-following, not
+choose-something-reasonable.** The ICC.1:2022 ingest found **Annex F is
+NORMATIVE and fully specifies curve inversion**, and **10.6 mandates
+linear interpolation for `curveType`** — the corpus's A15/A17 were not
+merely unverified but **wrong**. Cite them under **DL-014**'s terms
+(below). Note the asymmetry the corpus itself flags: **A16, CLUT
+interpolation, is confirmed SILENT**, so Pass 4's interpolation stays a
+named, measured approximation while Pass 3's does not.
+
+---
+
+## ★ New this session: **DL-014** governs every clause citation you write
+
+DL-002's prohibition — *"no claim in this project may cite an ICC.1
+clause number"* — **is now lifted for ICC.1:2022 only, on terms**:
+
+1. **Name the corpus file** alongside the clause. The corpus is the
+   verification trail; a bare clause number is an assertion.
+2. **The tier is per-fact, not per-file.** `ICC_Spec\index.md` records
+   **15 of 20 files at `primary_spec` — 4 fully, 11 partly**. Read the
+   file's `evidence:` line **every time**. Worked example, and it is the
+   one batch 2 depends on: `icc__type__lutAtoB_lutBtoA.md` reads
+   `evidence: primary_spec (clause numbers + the CLUT/interpolation
+   rules) / icc_secondary_code (byte layouts — NOT re-transcribed this
+   pass)`. Its clause numbers are citable; **its byte tables are not**,
+   and A23/A24 stay open. `crates/iccce-profile/src/lut.rs` §Sourcing is
+   the shape to copy.
+3. **Still prohibited for every unread document** — ICC.1:2010,
+   ICC.1:2001-04, ISO 13655, CIE 142 / ISO-CIE 11664-6 / CIE 15 / ISO
+   11664-4 / CIE 159, IEC 61966-2-1, and **"Adobe's document"** (DL-013),
+   which is an attribution transcribed from a code comment, not a
+   citation anyone here can check.
+4. **DL-014 does NOT retroactively bless existing citations**, and **no
+   audit of them has been done by anyone.** Doc comments in
+   `iccce-color` and `iccce-profile` predate the terms.
+5. **DL-002's other half is untouched:** automated retrieval from
+   color.org / archive.color.org remains prohibited. ICC.1:2022 was
+   cleared by **human** retrieval, which created no route for agents.
+   **Do not re-attempt it.**
 
 ---
 
 ## Owed work, carried explicitly
 
-### 1. `icc-conformance` — the legacy-Lab-in-v4 behavioural difftest ★
+### 1. `icc-conformance`
 
-**The one owed item with a named owner and a defined method.** iccce
-follows the clause text (tag type); **lcms2 keys on the profile
-version**. On the letter of 6.3.4.2 NOTE 3 and 10.10 the version test is
-the wrong selector — but **whether lcms2 is behaviourally wrong on real
-files is NOT established**, and must not be asserted. The two selectors
-agree on the common `mft2`-in-v2 case; they diverge on `mft2`-in-v4 and
-on `ncl2`, and no lcms2 tree was read in the corpus pass that found this.
+- **`TOLERANCES.md` §3.2's four Pass 2 rows** — all still `—` in
+  Tolerance, Justification and Measured, with both batches built.
+  §3.2's own preamble says the numeric ones (`s15Fixed16Number` decode,
+  curve evaluation) are listed *"so that they are not forgotten"*.
+- **§6's coverage table still reads "2–8 | not started"** while Pass 2
+  is built and 40 profiles have been swept. *(verified — read
+  2026-08-11; not edited, by ownership.)*
+- **A behavioural test of `ncl2` and of B2A** legacy-Lab decoding.
+  NC-019's coverage still rests on a **source reading** for both, and
+  batch 2 has now shipped the B2A-side decoder, so the fixture half is
+  cheaper than it was.
+- **The Pass 4/5 decision on whether iccce copies lcms2's forced BPC**
+  (DL-013) — still undecided, and until it is made no
+  perceptual/saturation tolerance against a v4 profile can be justified.
 
-**The test:** build a synthetic v4 profile containing an `mft2` Lab
-`A2B0`, push a known `L*` through `transicc`, and see whether lcms2 used
-**652.8** or **655.35**. Project rule 7 — disagreement with lcms2 is a
-finding, not a failure. Whichever way it lands, write it down. Until it
-is run, iccce follows the specification **and logs the divergence at
-runtime** rather than silently differing from the field's dominant CMM.
+### 2. `icc-spec-librarian`
 
-### 2. Pass 1's remainder — all blocked on sourcing, none on engineering
+- **Both items previously owed here are DISCHARGED** — verified, not
+  assumed: DL-002's successor is filed (as **DL-014**, by
+  `icc-librarian` on dispatch), and **the corpus retraction landed**
+  (`icc__ref__v2_v4_divergence.md` C3, `index.md`, and the new
+  `icc__ref__lcms2_measured_behaviour.md` M1/M2).
+- **New:** the **ITU terms determination** before any BT.709 fetch
+  (above, and DL-007). And the standing operator-download list below.
 
-Land each **when, and only when, a citable source arrives.** Implementing
-any of them today produces a claim that must be labelled weaker than it
-looks, which is worse than an honest absence.
+### 3. `icc-librarian` / whoever files next
 
-| Item | Blocked on | If done anyway |
-|---|---|---|
-| **ΔE94**, **ΔE CMC(l:c)** | formulas not transcribed from a citable source; **no published worked examples obtained** (the ingest session ran out of budget) | lcms2-cross-check only — strictly weaker than ground truth, and rule 3 requires labelling it so in the test, the doc comment **and** the ledger |
-| **von Kries (HPE) cone matrix** | corpus digits are a placeholder marked **DO NOT USE**; "von Kries" is ambiguous between the general method (implemented) and this matrix (absent) | a nine-digit act of faith |
-| **CAT02** | CIE 159 paywalled | — (not needed for ICC.1) |
-| **Observer CMF tables** | **not blocked — not needed.** No Pass plans spectral input. | listed only so "standard illuminants and observers" is not read as delivered in full |
+- **A per-tag-type breakdown of the sweep** — it would turn a robustness
+  observation into a coverage statement, and would show whether this
+  machine contains *any* profile exercising batch 2's code.
+- **An audit of existing ICC.1:2022 citations** against DL-014's terms.
+- **Observed residuals for Pass 1's rows** (§1.1) — NC-001 and every
+  identity still carry only the bound asserted; a residual that grew from
+  10⁻¹² to 9×10⁻⁵ would still pass its gate and nothing would show it.
+- **A ground-truth row for chromatic adaptation** — still the largest
+  evidential hole in the project.
+- **A Linux run of anything at all.**
 
-### 3. Ledger hygiene (`NUMERIC_CLAIMS.md` §7)
+### 4. Pass 1's remainder — all blocked on sourcing, none on engineering
 
-A commit hash for §2; **observed residuals rather than only asserted
-bounds** (a residual that grew from 10⁻¹² to 9×10⁻⁵ still passes a 10⁻⁴
-gate and nothing would show it); `TOLERANCES.md` §3.1 and §5 rows, which
-are **`icc-conformance`'s** and are still blank; a ground-truth row for
-adaptation; the corpus erratum; a Linux run.
+Unchanged. Land each **when, and only when, a citable source arrives**:
+**ΔE94** and **ΔE CMC(l:c)** (formulas not transcribed from a citable
+source, no published worked examples); the **von Kries (HPE) cone
+matrix** (corpus digits are a placeholder marked **DO NOT USE**);
+**CAT02** (CIE 159 paywalled, and not needed for ICC.1). **Observer CMF
+tables are not blocked — they are not needed**; no Pass plans spectral
+input.
 
 ---
 
 ## Optional operator unblocks — cheap, and each settles something named
 
-Listed by `icc-spec-librarian` in the corpus (`LEGAL_NOTE.md` §1c,
-`index.md`). **All three are browser downloads by Ken, not agent
-retrievals.** color.org's ToS prohibition on automated access is
-**unchanged and still standing** — the ICC.1:2022 file was cleared by
-*human* retrieval, which is outside the robot clause; that did not create
-a route for agents. **Do not re-attempt automated retrieval of any
-color.org / archive.color.org document.**
+**All are browser downloads by Ken, not agent retrievals.**
 
-**None of these blocks Pass 2.** Each removes a specific unknown:
+| Document | What it settles |
+|---|---|
+| **`ICC.1:2010-12` (v4.3)** | **A31 / D10** — *what* changed in `parametricCurveType` **Table 68** between editions. Two conformant CMMs on different editions can evaluate the same `'para'` tag differently, and **what changed is NOT SOURCED — do not guess it.** Directly Pass 3 material |
+| **`ICC.1:2001-04` (v2)** | **A1b, A2, A34** — and it is the **only normative home of `textDescriptionType`**, which `desc` is decoded from a **code-derived** layout |
+| **ICC's published D65→D50 `chad` values** (Annex E.4.2) | the one place Pass 1's biggest hole — no ground-truth row for adaptation — could be partly filled from published values. **Directly relevant to Pass 3** |
+| **ITU-R BT.709** | a **second source for sRGB primaries and D65**, both currently lcms2-only. **Free from itu.int** — but see DL-007: the terms must be read before an *agent* fetches. A human download is outside that question entirely |
 
-| Document | What it settles | Why it matters, concretely |
-|---|---|---|
-| **`ICC.1:2010-12` (v4.3)** | **A31 / D10** — *what* changed in `parametricCurveType` **Table 68** between v4.3 and v4.4 | Directly Pass 2 and Pass 3 material. Two CMMs on different editions can evaluate **the same `'para'` tag differently**; right now the corpus knows *that* it changed and explicitly **does not know what** changed, and says do not guess |
-| **`ICC.1:2001-04` (v2)** | **A1b, A2, A34** — whether v2 scoped the legacy encoding the same way; **what occupies header bytes 84–99 in v2** (ICC.1:2022 has exactly one, version-agnostic header table, so "reserved in v2" is currently an *inference*); whether clause 8's requirements apply to v2 at all. It is also **the only normative home of `textDescriptionType`** | Pass 2 parses v2 profiles constantly. Note the current standing rule: **parse v2 profiles; do not declare them non-conformant against clause 8** |
-| **ICC's published D65→D50 `chad` values** (cited by Annex E.4.2) | writing D65-referenced profiles without ambiguity | Pass 10 (profile creation) territory, and a second check on the adaptation path — the one place Pass 1's biggest hole could be partly filled from published values |
-
-**Every one of those is a claim about what a document contains**, made by
-the agent that read the corpus — not something anyone here has read.
-Treat "it would settle A2" as a prediction until the document is open.
+**Each row is a claim about what a document contains**, made by the agent
+that read the corpus. Treat *"it would settle A2"* as a prediction until
+the document is open.
 
 ---
 
@@ -193,67 +260,83 @@ Treat "it would settle A2" as a prediction until the document is open.
 
 - **MIT**, dependencies permissive, **publishing is the operator's act**
   (rule 9). DL-009 records an *intent* to publish; **intent is not
-  authorisation**, and no document here may be read as a go-ahead.
-- **`iccce-color` depends on nothing** and contains no ICC. Still true
-  after Pass 1 — check it stays true.
-- **The parser reports, it does not repair.**
-- **No iccMAX execution, no display calibration.** (The
-  *profile-creation* refusal was **reversed by the operator** on
-  2026-08-11 → Pass 10, DL-008, with the validation-hardware problem
-  carried forward as its precondition.)
+  authorisation.**
+- **`iccce-color` depends on nothing** and contains no ICC. Check it
+  stays true.
+- **The parser reports, it does not repair.** Both batches enforce this
+  in the type design; the sweep exercised it on real malformed files.
+- **No iccMAX execution, no display calibration.** (Profile *creation*
+  was **reversed by the operator** 2026-08-11 → Pass 10, DL-008, with the
+  validation-hardware problem carried forward as its precondition.)
 - **lcms2 is the oracle, never a dependency** — subprocess only, pinned
-  by **commit hash** (DL-001; the tag is lightweight and therefore
-  mutable). Moving the pin is a **licence event**.
+  by **commit hash** (DL-001). No crate under `crates/` may acquire an
+  lcms2 dependency, not even a dev-dependency. `tools/difftest` is
+  **deliberately not a workspace member**; a future "tidy-up" that folds
+  it in would silently undo both the licence insulation and the
+  publication guard.
 - **The `pdfce` bridge is built in `pdfce`.** `iccce` must not know what
   a PDF is.
 - **DL-003** — duplicate tag signatures: keep both, consumers take the
   first, report the duplicate.
 - **DL-004** — the 1.0 ΔE2000 anchor is a conservative **design choice**,
-  ⚠ provisional; anything derived from it inherits the ⚠. Note that
-  **no Pass 1 row is graded against it** — the Sharma tolerance is
-  arithmetic agreement, not perceptibility.
+  ⚠ provisional; anything derived from it inherits the ⚠.
 - **DL-005** — v2 legacy Lab tested by **exact-value invariants, not
-  ΔE**: the error is ≈0.3–0.5 ΔE, *below* the anchor, so a ΔE-graded test
-  passes while the encoding is wrong.
+  ΔE**. The error is ≈0.3–0.5 ΔE, *below* the anchor, so a ΔE-graded test
+  **passes while the encoding is wrong**.
 - **DL-007** — HDR in scope (Pass 9), transfer functions and primaries
-  only; blocked on ITU-R documents, and on `icc-spec-librarian` first
-  establishing that `itu.int`'s terms permit retrieval. *"It is a free
-  download"* is not *"automated retrieval is permitted."*
-- **DL-010** *(new)* — the Lab `f(t)` breakpoint uses the **exact
-  rational** form: iccce's **first stated deviation from normative spec
-  text**, cost **bounded analytically** at ~10⁻⁵ in `L*` and **never to
-  be restated as measured**.
-- **DL-011** *(new)* — legacy Lab encoding keys off the **tag type**;
-  the lcms2 disagreement and the owed difftest above.
+  only; blocked on ITU-R documents *and* on establishing that `itu.int`'s
+  terms permit retrieval.
+- **DL-010** — the Lab `f(t)` breakpoint uses the **exact rational**
+  form; cost **bounded analytically** at ~10⁻⁵ in `L*` and **never to be
+  restated as measured**.
+- **DL-011** — legacy Lab keys off the **tag type**. **DL-012** — the
+  disagreement that rule predicted is **measured absent** at the pin; the
+  runtime warning does not get written. Both are now restated in
+  `lut.rs`'s module doc, as two separate objects.
+- **DL-013** — lcms2 forces BPC on v4 perceptual/saturation. The standing
+  caveat for every perceptual-intent comparison; **any** differential
+  measurement there is measuring a transform with BPC in it.
+- **DL-014** *(new)* — the terms for citing ICC.1:2022 clause numbers.
+
+### Everything measured against lcms2 is scoped to commit `21c582a`
+
+Moving the pin was already a **licence** event (DL-001). DL-012 and
+DL-013 make it a **behavioural** one: **NC-019, NC-020 and NC-021 must be
+re-run, not re-read**, if the pin ever moves.
 
 ---
 
 ## Method reminders that stay load-bearing
 
-1. **A wrong colour looks exactly like a right one.** The
-   `mft2`-in-v4 case above is the live example: 0.39 % on `L*`,
-   sub-perceptual, on most production CMYK profiles.
+1. **A wrong colour looks exactly like a right one.** Batch 2's live
+   examples: the `mft1`/`mft2` 4-byte shift, and the `mAB ` 3×4 matrix
+   read as 36 bytes — which drops the three offset terms and produces
+   *"a uniform colour cast that looks like a white-point problem."* Both
+   are now unrepresentable in the type system rather than merely tested.
 2. **Never write colour maths from memory.** Dispatch
-   `icc-spec-librarian`; cite the corpus file, and now the clause where
-   one genuinely exists.
-3. **Expected values come from the literature.** A test whose expectation
-   came from the code under test detects change, not error. Where only
-   lcms2 is available, label it a **cross-check** — the ledger has a
-   class for exactly that, and currently **zero rows in it**.
-4. **Every approximation is named and measured** — `NUMERIC_CLAIMS.md`
-   §4, and a cost of "unmeasured" is permitted only while the entry is
-   new. **NA-002** (Bradford as policy) is on that clock: its cost
-   becomes owed the moment a Pass 3 transform adapts anything.
-5. **Tolerances are justified, not tuned.** When a test fails, the first
-   question is whether the code is wrong. Pass 1's D50-chromaticity
-   failure is the worked example: the code was right, the arithmetic was
-   checked, and **the corpus was wrong**.
-6. **Coverage is part of every claim.** "Verified on the 34 Sharma pairs"
-   never becomes "verified".
-7. **Do not assert unmeasured facts about the environment.** This
-   project's documents distinguish *verified* / *reported* /
-   *unverified* on purpose, and the distinction has already caught
-   real errors.
+   `icc-spec-librarian`; cite under DL-014's terms.
+3. **Expected values come from the literature.** lcms2-only makes it a
+   **cross-check**. Where **neither side is iccce**, it is
+   `oracle-behaviour-at-pin` and proves nothing about iccce.
+4. **Every approximation is named and measured.** **NA-002 is on the
+   clock** — Pass 3 adapts.
+5. **Tolerances are justified, not tuned.** Three worked examples now:
+   Pass 1's D50-chromaticity failure (**the corpus was wrong**); the
+   probe's intent-0 result matching neither hypothesis (**refusing to
+   round it produced DL-013**); and this session's drafted claim that
+   iccMAX refusal was undelivered (**the live source refuted the
+   librarian's own draft**).
+6. **Coverage is part of every claim.** *"40 of 40 profiles parse"* is
+   one machine, one day, one commit, with no per-tag-type breakdown. **A
+   count is not an inventory.**
+7. **Do not assert unmeasured facts about the environment.** *verified* /
+   *reported* / *unverified* are distinguished on purpose. **No agent
+   here has run a git command**; every commit hash in these documents is
+   reported.
+8. **Check the live source, do not trust the last filing's status.** Two
+   consecutive filings have now found an item carried as outstanding was
+   in fact done — the corpus D50 erratum, then the corpus retraction and
+   the probe doc-comment fix.
 
 ---
 
@@ -261,10 +344,10 @@ Treat "it would settle A2" as a prediction until the document is open.
 
 - **`icc-engineer`** — lead. Be this agent if orchestrating.
 - **`icc-spec-librarian`** — the standards corpus. Dispatch for *every*
-  sourcing question. **Owes DL-002's successor entry** and the D50
-  chromaticity erratum fix.
+  sourcing question. **Owes** the ITU terms determination.
 - **`icc-conformance`** — the oracle, the fixtures, the tolerance budget.
-  **Owes the legacy-Lab-in-v4 difftest**, and `TOLERANCES.md` §3.1/§5.
+  **Owes** `TOLERANCES.md` §3.2 and §6, the `ncl2`/B2A behavioural tests,
+  and the forced-BPC decision.
 - **`icc-librarian`** — ROADMAP, decision log, session log, and
   `NUMERIC_CLAIMS.md`. **No shell** — a dispatch to it must carry its
   evidence.

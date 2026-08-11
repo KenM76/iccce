@@ -932,3 +932,374 @@ encoding contradicts the tag-type rule (which would make the clause a
 poor description of the wild, and is a new entry, not an edit); or a
 later ICC edition adds the version condition the 2022 text does not
 contain.
+
+---
+
+### DL-012 — **the disagreement DL-011 predicted does not exist**: lcms2 at pin `21c582a` keys legacy PCSLAB off the **tag type**, measured. DL-011's *rule* stands; its *"live disagreement with lcms2"* clause and the runtime-logging consequence that followed from it are **superseded**
+
+**Date:** 2026-08-11 (later the same day than DL-011; Pass 2 / difftest
+session) · **Measured by:** `icc-conformance` · **Filed by:**
+`icc-librarian` · **Supersedes** the starred *"★ The live disagreement
+with lcms2"* section of **DL-011** and its **Consequence** paragraph.
+**DL-011 is not rewritten and is not reversed** — its selector rule is
+unchanged and is now also what the oracle does.
+
+**What DL-011 left open, in its own words.** It recorded the corpus's
+claim that *"lcms2 keys this decision on the profile version"*, marked
+that claim **unverified** (*"no lcms2 tree was read in that corpus
+pass"*), and named what would settle it: *"a behavioural difftest. Build
+a synthetic v4 profile containing an `mft2` Lab `A2B0`, push a known
+`L*` through `transicc`, and see which of `652.8` / `655.35` lcms2
+used."*
+
+**That difftest has now been run, and the corpus's claim about lcms2 is
+wrong.** At the pinned commit, lcms2 keys the legacy PCSLAB encoding off
+the **tag type**, agreeing with ICC.1:2022 **6.3.4.2 NOTE 3** and
+**10.10** — the same rule DL-011 adopted from the specification text.
+
+**The instrument, because the result is only as good as it.**
+`tools/difftest/src/bin/legacy_lab_probe.rs` authors **four synthetic
+profiles byte by byte** (category (a), `LEGAL.md` §3 — the only kind that
+cannot inherit a bug from the code under test): `scnr` class, RGB device
+space, **Lab PCS**, whose only transform tag is an `A2B0` of type
+**`mft2` (`lut16Type`)** holding a 2×2×2 CLUT with chosen corner values.
+`probe_v2_1.icc` (`0x02100000`), `probe_v4_3.icc` (`0x04300000`) and
+`probe_v4_4.icc` (`0x04400000`) are **byte-identical except for the
+version word**, and the program **asserts that at run time** — a byte
+diff expected to be exactly offsets `[8, 9]` — before believing any
+result. `probe_v4_3_mluc.icc` is a v4.3 with proper
+`multiLocalizedUnicodeType` metadata, existing solely to close the
+objection that the other three carry v2-era `desc`/`text` metadata in a
+v4 profile. **Probes land exactly on CLUT corners**, so nothing is
+interpolated, and `-c0` stops lcms2 flattening the pipeline into a
+resampling of itself. *(verified — the probe source, its four specs, its
+byte-diff control and its two decode predicates read by this librarian,
+2026-08-11.)*
+
+**The control is half the experiment.** The v2.1 profile is the case
+where *both* candidate rules predict legacy. It reads legacy — so the
+apparatus demonstrably can detect the effect it is looking for. An
+experiment whose apparatus was never shown able to detect its own effect
+is not an experiment.
+
+**The result.** At **media-relative colorimetric**, every profile —
+v2.1, v4.3, v4.4 and the fully-v4 `mluc` variant — decodes **LEGACY**.
+Worst deviation from the legacy prediction across all probes and all four
+profiles: **2×10⁻⁵**, which is `transicc`'s printing precision. The
+attribution bound was **0.01**, justified rather than picked: about 7×
+the 16-bit PCS quantisation floor (`100/65535 ≈ 0,0015`) and about 20×
+below the smallest separation between the two hypotheses (≥0,196 in `L*`,
+≈1,09 in `a*` at the probes used), with an observation matching neither
+hypothesis reported as **inconclusive** rather than rounded to the
+nearer. *(reported — the run is `icc-conformance`'s; the predicates, the
+bound and its justification were read in the source here.)*
+
+**Corroborated by reading the pinned source**, which is where the
+mechanism is visible rather than inferred. `src/cmsio1.c`,
+`_cmsReadInputLUT`, tests `_cmsGetTagTrueType(...)` against
+`cmsSigLut16Type` and `cmsGetPCS(...)` against `cmsSigLabData` before
+inserting `_cmsStageAllocLabV2ToV4` — **no version test anywhere in the
+path**. The same tag-type test appears in `_cmsReadOutputLUT` and
+`_cmsReadDevicelinkLUT`, and the `namedColor2Type` paths insert the stage
+unconditionally. The scale factor is `65535.0/65280.0` — the same
+`1.00390625` DL-005 names. *(reported by `icc-conformance` from the
+cloned tree at the pin; transcribed in `tools/difftest/README.md` §12.2.
+No lcms2 source was read by this librarian, and `vendor/` is git-ignored,
+so it is not in this repository to read.)*
+
+**What is superseded, stated exactly.** DL-011 concluded: *"Until the
+difftest is run, iccce follows the specification text and must log the
+divergence at runtime rather than silently differing from the field's
+dominant CMM."* The difftest has been run and **there is no divergence to
+log** for `mft2`-in-v4 on this pin. **Pass 4 still implements the
+tag-type selector** — but for the reason DL-011 gave (the clause text),
+never because lcms2 agrees; agreement with an implementation is
+`implementation-cross-check` evidence and cannot be the ground for a
+conformance choice (rule 3). The runtime warning should be
+**reconsidered, not written**, on the strength of a divergence now
+measured absent.
+
+**Coverage is part of this claim and must travel with it.** One tag
+(`A2B0`), one tag type (`mft2`), one direction (device→PCS), one PCS
+(Lab), **one intent for the verdict** (media-relative colorimetric —
+intent 0 is confounded, see **DL-013**), four synthetic profiles, one
+platform (Windows 11 Pro 10.0.26200 / MSVC), one lcms2 build at one
+commit. **`ncl2` (`namedColor2Type`) was NOT tested behaviourally** — the
+source reading says it always gets the legacy stage, which is agreement,
+but source reading is not measurement. **B2A (`_cmsReadOutputLUT`) was
+not tested behaviourally either.** "lcms2 keys off the tag type" is
+therefore established for the case measured and read for the rest, and
+the two must not be merged into one sentence.
+
+**What this does NOT establish, and it is the important half.** It says
+nothing about whether lcms2 is *right* — DL-011's rule rests on the
+clause text and would stand unchanged if lcms2 had disagreed (rule 7).
+It also does not repair **DL-005**: the arithmetic that decision protects
+is untouched, and legacy-Lab correctness is still to be asserted by
+**exact-value integer invariants, never by ΔE**.
+
+**Evidence.** `tools/difftest/README.md` §12.1–§12.3 *(read)*;
+`tools/difftest/src/bin/legacy_lab_probe.rs` module doc, `PROBES`,
+`decode_legacy` / `decode_general`, `ATTRIBUTION`, and the byte-diff
+control *(read)*; `docs/NUMERIC_CLAIMS.md` **NC-019**. Commit **`bfd6b1e`**
+*(reported by the dispatching engineer; no git command was run by this
+librarian, which has no shell)*.
+
+**Consequence for the corpus, owed and not discharged here.** The corpus
+named `cmsLabEncoded2FloatV2` and `_cmsReadInputLUT` as *"inserting V2→V4
+Lab stages based on `cmsGetEncodedICCversion`"*. At this pin
+`cmsLabEncoded2FloatV2` is called from `cmspack.c` only — a **pixel
+formatter** for callers who explicitly ask for a v2-encoded Lab buffer —
+and never from profile reading. **That claim needs retracting in
+`ICC_Spec`.** A dispatch to `icc-spec-librarian` is **reported** to be in
+flight in parallel with this filing; **whether it lands is unverified
+here**, and a later session must check rather than assume.
+
+**Revisit if:** the pin moves — which DL-001 already makes a *licence*
+event and which this entry makes a **behavioural** event too, because
+every sentence above is scoped to `21c582a`; or `ncl2` / B2A are tested
+behaviourally and come out differently from the source reading; or a real
+(non-synthetic) v4 profile with an `mft2` Lab tag shows something these
+four synthetics cannot.
+
+---
+
+### DL-013 — **lcms2 forces black point compensation on for v4 profiles at perceptual and saturation**, on the authority of an Adobe document rather than ICC.1. Measured at ≈3.15 `L*` at black, and it changes what Pass 4's and Pass 5's cross-checks are measuring
+
+**Date:** 2026-08-11 (Pass 2 / difftest session) · **Measured by:**
+`icc-conformance`, as an unplanned finding of the DL-012 experiment ·
+**Filed by:** `icc-librarian`
+
+**How it was found, which is worth keeping.** The first run of the
+legacy-Lab probe used **both** intent 0 (perceptual) and intent 1
+(media-relative colorimetric). At intent 1 every profile gave a clean
+answer. At intent 0 the **v4** profiles matched **neither** hypothesis —
+black came back at `L* = −3.1482` instead of 0 — while the
+**byte-identical** v2 profile was unaffected. A result matching neither
+candidate is exactly the case an attribution bound exists to refuse to
+round away; refusing to round it turned a confound into a second finding.
+
+**The mechanism, read at the pin.** `src/cmscnvrt.c`, `_cmsLinkProfiles`,
+with upstream's own comment:
+
+```c
+// Check if black point is really needed or allowed. Note that
+// following Adobe's document:
+// BPC does not apply to devicelink profiles, nor to abs colorimetric,
+// and applies always on V4 perceptual and saturation.
+if (TheIntents[i] == INTENT_PERCEPTUAL || TheIntents[i] == INTENT_SATURATION) {
+    // Force BPC for V4 profiles in perceptual and saturation
+    if (cmsGetEncodedICCversion(hProfiles[i]) >= 0x4000000)
+        BPC[i] = TRUE;
+}
+```
+
+with the black point itself taken from a fixed constant in that case
+(`src/cmssamp.c`: *"v4 + perceptual & saturation intents does have its
+own black point… Black point tag is deprecated in V4"*,
+`cmsPERCEPTUAL_BLACK_X/Y/Z` = 0.003 36 / 0.003 473 1 / 0.002 87).
+*(reported by `icc-conformance` from the cloned tree at the pin;
+transcribed in `tools/difftest/README.md` §12.4 and in the probe's module
+doc, both read here.)*
+
+**So lcms2 silently enables BPC for v4 profiles at perceptual and
+saturation, whether or not `-b` was passed, on the authority of an Adobe
+document rather than ICC.1.** Note precisely what is and is not sourced:
+the *behaviour* is measured, the *code comment* is transcribed, and **the
+Adobe document itself has been obtained by nobody here.** "Following
+Adobe's document" is upstream's attribution, not a citation this project
+can check, and it must not be restated as though the document had been
+read.
+
+**Confirmed quantitatively rather than assumed** — and this is the part
+that turns a hypothesis into a mechanism. Transcribing lcms2's own
+`ComputeBlackPointCompensation` (`a = (bp_out − D50)/(bp_in − D50)`,
+`b = −D50·(bp_out − bp_in)/(bp_in − D50)`, per channel) and running the
+legacy-decoded `L*` through it predicts the observation on all four
+probes: `100.0000 → 100.0000`; **`0.0000 → −3.1482`**;
+`50.1961 → 49.8574`; `100.0000 → 100.0000`. **Predicted matches observed
+to 3×10⁻⁵**, against an asserted bound of `0.005` (justified as ~3× the
+16-bit `L*` quantisation step, with the effect being explained ≈630×
+larger). Only the `Y`/`L*` channel is predicted, deliberately: one
+channel predicted to four decimals is better evidence than three
+predicted loosely. *(reported — the run; the transcription
+`predict_bpc_lstar`, the constants and `BPC_PREDICTION_TOL` were read in
+the source here.)*
+
+**The arm that did NOT decide is kept, and that is deliberate.** An
+earlier attempt re-ran the byte-identical **v2** profile at intent 0 with
+`-b`, expecting it to reproduce the v4 numbers. It did not: `-b` is a
+no-op on that fixture because `cmsDetectBlackPoint` reaches the fixed
+perceptual constant only through the same `>= 0x4000000` guard, and with
+source and destination black points equal lcms2 skips the stage. **Two
+arms that differ in more than the variable cannot settle anything** — so
+the null result is reported as inconclusive rather than as a refutation,
+because a reader repeating it would otherwise read it as one.
+
+**Consequences — larger than the finding that prompted them, and they
+land on two planned Passes:**
+
+1. **Pass 4's done-when is now underspecified as written.** It reads
+   *"CMYK→RGB through a real press profile matches lcms2 within tolerance
+   at every intent."* Against a **v4** profile, "every intent" includes
+   two intents at which lcms2 is running a transform with BPC in it that
+   iccce has no ICC.1 obligation to run. **Pass 4 must either (a) run
+   perceptual and saturation with the forced BPC explicitly accounted for
+   — reproducing it, or subtracting it, and saying which — or (b) take
+   the cross-check at the colorimetric intents only and state that the
+   other two are excluded and why.** Silently comparing at all four and
+   tuning a tolerance until it passes would be `TOLERANCES.md` §0's
+   failure mode exactly: a tolerance set on the wrong quantity. The
+   disagreement it would absorb is **≈3.15 `L*` at black** — three orders
+   of magnitude above the sub-perceptual errors this project worries
+   about, and not the kind of thing a tolerance should be quietly wide
+   enough to swallow.
+2. **Pass 5's comparison target has a measured shape before Pass 5
+   begins.** Its done-when is *"BPC on and off differ in the documented
+   direction, and match lcms2's BPC within tolerance."* On v4 profiles at
+   perceptual/saturation, **lcms2's "BPC off" is not BPC off** — so the
+   `-b`-on/`-b`-off pair that looks like the natural experiment does not
+   isolate the variable there. Pass 5 gets lcms2's exact BPC arithmetic
+   transcribed and pre-validated to 3×10⁻⁵ (above) as a starting point,
+   which is a real head start — provided it is used as an
+   `implementation-cross-check` and never as ground truth for what BPC
+   *should* do.
+3. **If iccce does not copy the behaviour, disagreement at those intents
+   is expected and is a finding under rule 7, not a failure.** Whether to
+   copy it is a Pass 4/5 decision that this entry does **not** make: it
+   is a choice between matching the field's dominant CMM and doing only
+   what ICC.1 requires, and it deserves its own entry when it is made.
+4. **It is a plausible origin for the corpus's retracted belief** that
+   lcms2 keys Lab decoding on the profile version (DL-012). lcms2 **does**
+   key a decision on the profile version — at perceptual and saturation
+   intent. Just not that one.
+
+**Evidence class, stated so the entry cannot be over-read.** This is an
+`implementation-cross-check`-class observation of **one build of one
+implementation at one pin** — `NUMERIC_CLAIMS.md` **NC-020**. It is
+**not** ground truth about colour and **not** a statement that lcms2 is
+wrong; ICC.1 does not require the behaviour, and "not required" is not
+"prohibited". What it establishes is **what iccce will be compared
+against**, which is precisely what an oracle is for.
+
+**Evidence.** `tools/difftest/README.md` §12.4 *(read)*;
+`tools/difftest/src/bin/legacy_lab_probe.rs` module doc §"The confound",
+`predict_bpc_lstar`, `LCMS2_PERCEPTUAL_BLACK`, `BPC_PREDICTION_TOL`
+*(read)*; `docs/TOLERANCES.md` §6.1 item 2 *(read — filed independently
+by `icc-conformance`, and it says the same thing)*;
+`docs/NUMERIC_CLAIMS.md` **NC-020**. Commit **`bfd6b1e`** *(reported)*.
+
+**Revisit if:** the pin moves (every number here is scoped to
+`21c582a`); or ICC.1 or a later edition is found to require the
+behaviour after all, which would change it from an implementation quirk
+into a conformance question; or the Adobe document upstream cites is
+obtained, which would let this project read the authority rather than the
+attribution; or Pass 4/5 decides whether iccce copies it, which is a new
+entry.
+
+---
+
+### DL-014 — **DL-002's successor**: ICC.1:2022 clause numbers may now be cited, on stated terms. The prohibition lifts **only** for that document, **only** where the corpus carries the clause at `primary_spec` tier, and **only** with the corpus file named alongside it
+
+**Date:** 2026-08-11 (Pass 2 batch 2 session, later the same day than
+DL-013) · **Successor to** **DL-002**, whose revisit condition fired at
+**DL-006** · **Filed by:** `icc-librarian`
+
+**Why this entry is overdue, and by whom it was owed.** DL-006 said the
+successor was `icc-spec-librarian`'s to file, and three consecutive
+filings have recorded it as still unwritten while `ARCHITECTURE.md` §5
+ran to DL-013 and **DL-010, DL-011, DL-012 and several `iccce-profile`
+and `iccce-color` doc comments cited ICC.1:2022 clause numbers.** That
+is a live contradiction between the decision log and the code: every one
+of those citations was, on the letter of DL-002, prohibited. It is filed
+here by `icc-librarian` on the engineer's dispatch — which is a
+**reassignment of the filing, not of the sourcing judgement**. The
+substance below rests on what the corpus itself records, read in the
+live corpus by this librarian; §5 is this librarian's document, and
+leaving a known contradiction in it across three filings was the worse
+of the two errors available.
+
+**The condition DL-002 set, in its own words:** *"Until then, no
+ICC-hosted document is a source for this corpus, and no claim in this
+project may cite an ICC.1 clause number."* — where *"then"* was
+`ICC.1-2022-05.pdf` reaching `ICC_Spec\_sources\` by human retrieval.
+**That happened** (DL-006, the file enumerated on disk by this
+librarian), **and the ingest has since landed and been verified**:
+`ICC_Spec\index.md` records **15 of 20 corpus files now carrying a
+`primary_spec` tier — 4 fully and 11 partly** — against **0** before the
+ingest, with 19 of 35 ambiguity rows resolved and the required/optional
+tag column populated from clause 8 and Annex G. *(verified —
+`ICC_Spec\index.md` read by this librarian, 2026-08-11.)*
+
+**Decision — what is now permitted.**
+
+1. **A clause number from ICC.1:2022 may be cited** in a doc comment, a
+   test, a decision-log entry, `NUMERIC_CLAIMS.md`, or any other project
+   document.
+2. **The citation must name the corpus file that carries it.** The
+   corpus is the verification trail, and it is the only thing a later
+   reader can check without re-opening a PDF nobody may fetch
+   automatically. *"ICC.1:2022 clause 10.10"* alone is an assertion;
+   *"ICC.1:2022 clause 10.10, `icc__type__lut8_lut16.md`"* is a
+   citation. `crates/iccce-profile/src/lut.rs`'s §Sourcing block is the
+   shape intended. *(verified — read.)*
+3. **The tier is per-fact, not per-file, and this is the part most
+   likely to be got wrong.** Eleven of the fifteen files are **partly**
+   `primary_spec`: their frontmatter splits the `evidence:` line
+   explicitly. `icc__type__lutAtoB_lutBtoA.md` reads
+   `evidence: primary_spec (clause numbers + the CLUT/interpolation
+   rules) / icc_secondary_code (byte layouts — NOT re-transcribed this
+   pass)`. *(verified — frontmatter read.)* So citing that file's
+   **clause number** is permitted and citing its **byte table** as
+   specification-sourced is not — the byte table is still code-derived,
+   A23/A24 are still open, and `lut.rs`'s module doc says so at the site.
+   **Read the `evidence:` line before citing, every time.**
+
+**What remains prohibited, and it is most of the corpus's citable
+surface.** No clause, table, page or requirement may be cited from a
+document nobody in this project has read. Named, because each has
+already been reached for at least once:
+
+| Document | Standing |
+|---|---|
+| **ICC.1:2010-12** (v4.3) | not obtained. `parametricCurveType` **Table 68 changed** between it and ICC.1:2022 (divergence **D10**) and **what changed is NOT SOURCED.** Do not guess it and do not cite ICC.1:2010 clause numbers. |
+| **ICC.1:2001-04** (v2) | not obtained. The **only normative home of `textDescriptionType`**, which batch 1 decodes from a **code-derived** layout that says so. |
+| **ISO 13655** | paywalled, not obtained — and it is the **actual authority** ICC.1:2022 6.4 *delegates* `f(t)` to (DL-010). |
+| **CIE 142-2001 / ISO/CIE 11664-6, CIE 15 / ISO 11664-4, CIE 159** | paywalled, not obtained (DL-004, NA-001, `NUMERIC_CLAIMS.md` §5). |
+| **IEC 61966-2-1** | paywalled, not obtained — which is why the corpus's sRGB file and the D65 chromaticity are **single-source** (NC-018). |
+| **"Adobe's document"** (lcms2's BPC authority, DL-013) | obtained by nobody here. It is an **attribution transcribed from a code comment**, and DL-013 already forbids restating it as a citation. |
+
+**Two things this entry deliberately does not do.**
+
+- **It does not retroactively bless the citations already in the tree.**
+  Each pre-existing ICC.1:2022 citation is permitted **if** it satisfies
+  clauses 1–3 above, and any that does not is a defect to be fixed at
+  the site — reported, not papered over. No sweep of existing citations
+  has been performed by anyone; that is owed work, recorded in
+  `NUMERIC_CLAIMS.md` §7.2.
+- **It does not touch DL-002's other half.** *"No ICC-hosted document is
+  a source for this corpus"* by **automated retrieval** is unchanged and
+  standing: color.org's robot clause is unaltered, ICC.1:2022 was
+  cleared by **human** retrieval, and that created no route for agents.
+  **Do not re-attempt automated retrieval of any color.org /
+  archive.color.org document.** The same test applies before any ITU-R
+  fetch (DL-007).
+
+**Evidence.** `ICC_Spec\index.md` (the 0→15 `primary_spec` count, the
+ambiguity-row and requirements-column changes); `ICC_Spec\icc\
+icc__type__lutAtoB_lutBtoA.md` frontmatter (the split tier, quoted
+above); `crates/iccce-profile/src/lut.rs` §Sourcing (the citation shape
+this entry endorses). **All read in the live sources by `icc-librarian`,
+2026-08-11.** No PDF was opened and no page count, hash or size of
+`ICC.1-2022-05.pdf` has been verified by this librarian at any point —
+that the ingest reflects the document it names is
+`icc-spec-librarian`'s establishment, reported and relied on, not
+re-derived here.
+
+**Revisit if:** a corpus file's tier is **downgraded** (a re-check that
+finds a transcription wrong would invalidate every citation resting on
+it, and the corpus's own C1/C2/C3 errata show that happens); or a
+further ICC-hosted document is obtained by human retrieval, which
+extends the permission to that document by a **new** entry and never by
+analogy to this one; or an agent is ever granted written consent for
+automated access, which is a different decision about a different act.

@@ -49,6 +49,16 @@ blank and §5 (named approximations) still reads "none registered yet".**
 fill; this ledger does not fill them and does not pretend they are
 filled.
 
+> **Dated correction, 2026-08-11 (Pass 2 / difftest filing).** The
+> paragraph above is left as written, being the record of what was true
+> at the Pass 1 filing. **Both sections have since been filled** by
+> `icc-conformance`: `TOLERANCES.md` §3.1 carries Pass 1's tolerances
+> (each mirroring a row here), §5 carries NA-001…NA-003, and §4 records
+> both as *"first filling, not a change"*. §6.1 there additionally
+> records the two findings behind §3.6 below. *(verified — read this
+> session.)* **`TOLERANCES.md` §3.2 (Pass 2) and §3.3–§3.6 are still
+> blank**, which is correct: those comparisons have not been run.
+
 ---
 
 ## 1. Evidence classes — every row states exactly one
@@ -64,6 +74,7 @@ right"* and *"this has not changed."* Ordered strongest to weakest as
 | **transcription-guard** | An assertion that a constant matches a *published check on that constant* (e.g. a row-sum stated by the source). | Catches a typo or a transposition between source and code. Says nothing about whether the value is the right value to use. |
 | **corpus-derived-bound** | An analytic bound computed in the standards corpus (or here) from sourced values — **not run against code**. | Bounds an error. **Is not a measurement of iccce**, and must never be written as though iccce measured it. |
 | **implementation-cross-check** | Agreement with lcms2 or another independent implementation. | Evidence that two implementations read a clause the same way. Two implementations can share a misreading (`TOLERANCES.md` §1). **Weaker than ground truth and must be labelled so.** |
+| **oracle-behaviour-at-pin** *(class added 2026-08-11, Pass 2 filing — see §3.6)* | A measurement of **what the oracle does**, at a named commit, with **iccce not in the loop at all**. Either side of the comparison is lcms2 or a hand-transcription of lcms2's own arithmetic. | Establishes what iccce **will be compared against**, and nothing else. It is **not** evidence that iccce is correct (iccce did not participate) and **not** evidence that lcms2 is correct (the specification is the authority, not the implementation — rule 7). Every such row is scoped to one pin, and **the pin moving invalidates it**. |
 | **arithmetic-identity** | A property that must hold by construction — round trips, inverses, symmetry, degenerate-input handling. Tolerance is `f64` noise, not a perceptual budget. | Detects **change and drift**, and catches whole classes of structural bug (transposition, wrong operation order). **Does not detect a consistently wrong constant** — a round trip through a wrong white point round-trips perfectly. |
 | **self-consistency** | Round-trip / compiled-vs-reference / interpolation error where the two sides are both iccce. | The only way to *price* an approximation. Worthless as correctness evidence. |
 
@@ -111,6 +122,89 @@ residual that has silently grown from 10⁻¹² to 9×10⁻⁵ still passes a
 | **Commit** | `7313c5b` (2026-08-11) — filled in by `icc-engineer` immediately after committing, per this row's own request. Every row below is anchored to that commit. |
 | **Platform** | Windows 11 Pro 10.0.26200, MSVC toolchain. **No Linux run of these tests has been observed by anyone** — CI exists and its execution history has never been checked (`SESSION_LOG.md`, Pass 0). |
 | **Precision** | Every computation in `iccce-color` is `f64` throughout (`mat3.rs` module doc: `C̄'⁷` alone overflows `f32`). No row below is an `f32` claim. |
+
+### 2.1 Provenance of the §3.6 rows — added 2026-08-11 (Pass 2 / difftest)
+
+A **second** provenance block rather than an edit to the first, because
+these rows come from different work, a different agent and a different
+commit, and merging them would make one date do the work of two.
+
+| | |
+|---|---|
+| **Pass** | 2 (batch 1, `iccce-profile` tag types) and the out-of-tree difftest harness. **The §3.6 rows are all from the harness; Pass 2 batch 1 produced no numeric claim at all** — parsing is exact or it is wrong, and its correctness is asserted by fixtures and issue reports, not by a tolerance. |
+| **Date** | 2026-08-11 |
+| **Commits** | **`b35a12e`** (Pass 2 batch 1 — the eight non-LUT tag types, wired into `inspect`) and **`bfd6b1e`** (the difftest harness, the legacy-Lab probe, and `TOLERANCES.md`'s first filling), both by `icc-engineer` / `icc-conformance`. *(**reported** by the dispatching engineer. `icc-librarian` has no shell, ran no git command, and has verified neither hash nor that either commit exists. Every §3.6 row is anchored to `bfd6b1e` on that report.)* |
+| **Platform** | Windows 11 Pro 10.0.26200, MSVC. `transicc.exe` built from lcms2 at **commit `21c582a594fe5279f90c0b93437c398f93bf62b0`** (DL-001). **Still no Linux run of anything, by anyone.** |
+| **★ Scope of every §3.6 row** | These are **`oracle-behaviour-at-pin`** rows (§1). **`iccce` is not in the loop in any of them** — it has no transform to compare (Pass 3). Nothing in §3.6 is evidence about iccce's accuracy, and no number in it may be transplanted into an `iccce-color` or `iccce-cmm` test as an expected value. |
+
+### 2.2 Pass 2 batch 2 — added 2026-08-11. **A provenance block with no rows under it, deliberately**
+
+| | |
+|---|---|
+| **Pass** | 2, batch 2 — the LUT family (`mft1`, `mft2`, `mAB `, `mBA `) in `crates/iccce-profile/src/lut.rs` |
+| **Date** | 2026-08-11 |
+| **Commit** | **`d40d601`** *(**reported** by the dispatching engineer. `icc-librarian` has no shell, ran no git command, and has verified neither that this commit exists nor that it contains what the dispatch says. Every "verified" statement in this section is about **files read in the working tree**, never about the repository.)* |
+| **Platform** | Windows 11 Pro 10.0.26200, MSVC. **Still no Linux run of anything, by anyone, ever.** |
+| **Numeric claims produced** | **None, and that is correct, not an oversight.** Parsing is exact or it is wrong: a tag decodes to the bytes the file contains or it does not, and there is no tolerance at which that could be "close enough". Batch 2's correctness is asserted by hand-authored byte fixtures and by refusals, not by a bound. `TOLERANCES.md` §3.2 (Pass 2) is correspondingly still blank, and should stay blank until a Pass 2 comparison exists that *has* a tolerance. |
+| **Gate reported** | `cargo test --workspace` **54 green**, `cargo fmt` and `cargo clippy` clean *(reported by `icc-engineer`)*. Checkable without a shell: **54 `#[test]` declarations exist** — `tag_types.rs` **19**, `iccce-profile/src/lib.rs` 8, `num.rs` 6, `iccce-color` 21 (`mat3` 3, `xyz` 4, `lab` 5, `adapt` 5, `delta_e` 4). *(verified — counted across 8 files.)* **A count of tests declared is not a count of coverage and not a pass result** — the ratio that matters is unchanged: of 54 declared tests, **exactly one** (NC-001) is a correctness claim against published values. |
+
+#### 2.2.1 ★ The machine-wide sweep — recorded here, and **deliberately not given an NC number**
+
+A release build of `iccce-cli` was run over every `*.icc` / `*.icm` in
+`C:\Windows\System32\spool\drivers\color\` on 2026-08-11: **40 profiles,
+40 parse OK, 0 refused, 0 unexpected exits, 0 table-level
+malformations**; four EIZO v2 profiles (`ewgray18.icm`, `ewgray22.icm`,
+`ewrgb18.icm`, `ewsrgb.icm`) each reported one issue, *"desc: Macintosh
+ScriptCode block short or missing"* — the structure the corpus flags as
+the most frequently malformed in real v2 profiles. Decoding continued,
+the issue was reported, nothing was repaired.
+
+***(reported* — `icc-engineer`'s shell run; the loop counted exit codes
+and grepped the CLI's own output lines, and the command is in the
+session transcript. **`icc-librarian` has no shell, ran no profile, read
+no output, and verified none of these numbers.**)*
+
+**Why it gets no NC row.** This ledger's charter is *every tolerance and
+every measured error*. The sweep has **neither**: nothing was compared
+to a reference, no tolerance was applied, and no error was measured. A
+row here would give a parse-robustness observation the same shape as
+NC-001 on the same page, and shape is how a reader estimates weight. The
+full record lives in **`ROADMAP.md`'s Pass 2 batch 2 progress block** and
+in the session log; this subsection exists so that a reader who comes
+looking for it *in the ledger* finds the pointer instead of concluding
+it was never filed.
+
+**Why it is mentioned at all, rather than left entirely to the ROADMAP.**
+Because it is a **count**, and counts are the failure mode this ledger's
+coverage discipline exists for. *"40 of 40 parse"* will be quoted. Its
+boundary must travel with it, so it is stated here in the same terms
+every §3 row's coverage line is stated:
+
+- **One machine, one day, one commit.** Installing a profile changes the
+  count. It is *"every profile on **this** machine on 2026-08-11 at
+  `d40d601`"*, never *"iccce parses real profiles"*.
+- **The corpus is systematically biased**, not a sample. A Windows
+  install's colour directory is heavy on Microsoft-shipped sRGB/scRGB
+  variants and vendor display profiles, and **light or empty on the
+  population Pass 4 depends on** — large v4 CMYK press profiles with
+  `mAB `/`mBA ` pipelines, i.e. exactly the tag types batch 2 added.
+- **Which of the four LUT types the sweep actually exercised is not on
+  record.** The dispatch carried totals, not a per-tag-type breakdown.
+  *"The LUT decoders survived 40 real profiles"* is therefore **not**
+  established; what is established is that 40 profiles parsed, with the
+  LUT decoders present in the binary.
+- **A count is not an inventory.** Zero table-level malformations across
+  40 files is a statement about those 40 files. It is not a statement
+  that the malformation detectors work — the four `desc` findings are
+  the only positive evidence in the run that the disclosure surface
+  fires at all, and they are all one issue type.
+
+**What it *is* good evidence for, and this is not nothing:** the parser
+does not crash, hang or panic on real-world input it did not choose, and
+its report-don't-repair contract survived contact with genuinely
+malformed data (invariant §3.2) rather than only with fixtures the
+project authored. That is the property Pass 2's done-when clause 1 was
+written to demonstrate, and on this machine it is demonstrated.
 
 ---
 
@@ -210,6 +304,64 @@ iccce does not. *(verified — guards read in source.)*
 | **Where** | `xyz.rs::tests::d65_xyz_matches_corpus_derivation`. |
 | **Consequence for other rows** | **NC-006 and NC-007 use this D65.** Their arithmetic is exact; their *illuminant* rests on one source. Any future correction to D65 invalidates neither identity but does change the matrices they exercise. |
 
+### 3.6 Measurements **of the oracle** — added 2026-08-11 (difftest, commit `bfd6b1e`)
+
+**Read §2.1 before quoting anything here.** All three rows are
+**`oracle-behaviour-at-pin`**: they measure what lcms2 2.19.1 at commit
+`21c582a` does. **`iccce` is not in the loop in any of them.** They are
+in this ledger because DL-012 and DL-013 rest on them and because the
+pin moving invalidates them — which is exactly the "is that still true?"
+question §0 exists to make cheap.
+
+#### ★ NC-019 — lcms2 keys the legacy 16-bit PCSLAB encoding off the **tag type**, not the profile version
+
+| Field | Value |
+|---|---|
+| **What was compared** | `transicc` output (device→PCS through an `mft2` `A2B0`, Lab PCS, `-c0`, media-relative colorimetric) against **two hand-computed hypotheses**: legacy (ICC.1:2022 Tables 42/43 — `L* = v/652.80`, `a*,b* = v/256 − 128`) and general (6.3.4.2 Tables 12/13 — `L* = v·100/65535`, `a*,b* = v·255/65535 − 128`). |
+| **Corpus** | **Four synthetic profiles authored byte by byte** by the probe itself (category (a), `LEGAL.md` §3): `probe_v2_1.icc` (`0x02100000`), `probe_v4_3.icc` (`0x04300000`), `probe_v4_4.icc` (`0x04400000`) — **byte-identical except the version word, asserted at run time as a byte diff at exactly offsets [8, 9]** — plus `probe_v4_3_mluc.icc`, a v4.3 with proper `mluc` metadata to close the "v2-era metadata in a v4 profile" objection. **4 probes each**, all on exact CLUT corners so nothing is interpolated. |
+| **Coverage — part of the claim** | 4 profiles × 4 probes, **verdict taken at media-relative colorimetric only** (intent 0 is confounded — NC-020). **One tag (`A2B0`), one tag type (`mft2`), one direction (device→PCS), one PCS (Lab), one platform, one lcms2 build at one commit.** **`ncl2` was NOT tested behaviourally and neither was B2A** — for those, the claim is a *source reading*, which is a different and weaker object than a measurement and must not be merged into the same sentence. |
+| **Tolerance** | **0.01**, as an *attribution* bound: how far an observation may sit from a hypothesis and still be attributed to it. |
+| **Why that tolerance** | Justified from both ends, not picked. It is ~7× the 16-bit PCS quantisation floor (`100/65535 ≈ 0,0015`) plus `transicc`'s 4-decimal print, and ~20× **below** the smallest separation between the two hypotheses (≥0,196 in `L*`; ≈1,09 in `a*` at P4). No plausible rounding can move an observation from one hypothesis to the other, and an observation matching **neither** is reported as `INCONCLUSIVE` rather than snapped to the nearer. *(verified — `ATTRIBUTION` and its doc comment read in the probe source.)* |
+| **Result** | **LEGACY, on all four profiles including v4.3, v4.4 and the `mluc` variant.** **Worst deviation from the legacy prediction across all probes and all four profiles: 2×10⁻⁵** — `transicc`'s printing precision. Note this is an **observed maximum**, not merely the asserted bound; §1.1's caveat does not apply to it, and it is the first row in this ledger that carries one. The **v2.1 control reads legacy**, so the instrument can detect the effect it is looking for. *(reported — the run is `icc-conformance`'s.)* |
+| **Corroboration** | `src/cmsio1.c` `_cmsReadInputLUT` at the pin tests `_cmsGetTagTrueType` against `cmsSigLut16Type` and `cmsGetPCS` against `cmsSigLabData` and inserts `_cmsStageAllocLabV2ToV4` — **no version test**; same in `_cmsReadOutputLUT` / `_cmsReadDevicelinkLUT`; scale `65535/65280`. *(reported — transcribed in `tools/difftest/README.md` §12.2. No lcms2 source was read by this librarian; `vendor/` is git-ignored and not in this repository.)* |
+| **Evidence class** | **oracle-behaviour-at-pin.** It does **not** establish that the tag-type rule is correct — that comes from ICC.1:2022 6.3.4.2 NOTE 3 and 10.10 (DL-011) and would stand unchanged had lcms2 disagreed (rule 7). |
+| **★ A discrepancy found while filing, reported not repaired** | The probe's **module-doc** prediction table (`legacy_lab_probe.rs`, the "two predictions" table) and the same table in `tools/difftest/README.md` §12.1 disagree in two cells, both on the **rejected** hypothesis: for P3 the module doc prints general `L* = 50.0004` and for P4 general `a* = 125.9078`. Recomputing from the code's own `decode_general`: `32768·100/65535 = 50.000763 → 50.0008` and `65280·255/65535 − 128 = 126.007782 → 126.0078` — i.e. **the README's cells are right and the module doc's two cells are wrong.** *(Arithmetic done independently here; `decode_general` read in the source.)* **The verdict is unaffected**: the predictions are computed at run time by `decode_general`, not read from the prose, and both erroneous cells remain far outside the 0.01 attribution bound from the legacy values. It is a prose defect in a doc comment, it belongs to `icc-conformance`, and this librarian **did not edit that file** — reported here so it is findable. |
+| **Where** | `tools/difftest/src/bin/legacy_lab_probe.rs`; `tools/difftest/README.md` §12.1–§12.3. |
+| **Decision record** | `ARCHITECTURE.md` **DL-012** (which supersedes DL-011's *"live disagreement with lcms2"* clause; DL-011's rule itself stands). |
+| **Invalidated by** | **The pin moving** (every number is scoped to `21c582a` — under DL-001 that is already a licence event; DL-012 makes it a behavioural one too). Also by any behavioural test of `ncl2` or B2A that disagrees with the source reading. |
+
+#### ★ NC-020 — lcms2 forces BPC on for v4 profiles at perceptual and saturation: the mechanism, predicted and confirmed
+
+| Field | Value |
+|---|---|
+| **What was compared** | `transicc` output at **intent 0 (perceptual)** through the same four probe profiles, against a **hand transcription of lcms2's own `ComputeBlackPointCompensation`** (`a = (bp_out − D50)/(bp_in − D50)`, `b = −D50·(bp_out − bp_in)/(bp_in − D50)`, per channel) applied to the legacy-decoded `L*`, with `bp_in` = lcms2's fixed perceptual reference black (`cmsPERCEPTUAL_BLACK_X/Y/Z` = 0.003 36 / 0.003 473 1 / 0.002 87) and `bp_out` = 0. |
+| **Corpus / coverage** | The same 4 probes on the v4 profiles. **`L*` only** — deliberately: the probe pins down one channel to four decimals rather than three loosely. **One intent (0), one platform, one pin.** Saturation (intent 2) was **not** measured; that it is affected comes from the *source* (`_cmsLinkProfiles` tests both intents), which is a reading, not a measurement. |
+| **Tolerance** | **0.005** asserted (`BPC_PREDICTION_TOL`). |
+| **Why that tolerance** | ~3× the 16-bit `L*` quantisation step (`100/65535 ≈ 0,00153`) plus `transicc`'s 4-decimal print — tight enough that only the right formula passes, loose enough not to fail on the encoding grid. The effect being explained is ≈3,15 in `L*`, some 630× larger. *(verified — read in the probe source.)* |
+| **Result** | Predicted matches observed on all four probes: `100.0000 → 100.0000` (Δ 0); **`0.0000 → −3.1482`** (Δ **3×10⁻⁵**); `50.1961 → 49.8574` (Δ 3×10⁻⁵); `100.0000 → 100.0000` (Δ 0). **Observed maximum 3×10⁻⁵**, against the 0.005 bound. *(reported.)* |
+| **What it establishes** | That the ≈3.15 `L*` shift at black on v4 profiles at perceptual is **black point compensation**, forced on by lcms2 itself — not a Lab-encoding effect, not an interpolation artefact, and not something the user asked for (`-b` was not passed). |
+| **The arm that did not decide, kept on the record** | Re-running the byte-identical **v2** profile at intent 0 **with `-b`** does *not* reproduce the v4 numbers: `-b` is a no-op there, because `cmsDetectBlackPoint` reaches the fixed perceptual constant only behind the same `>= 0x4000000` guard, and equal source/destination black points make lcms2 skip the stage. **Two arms differing in more than the variable settle nothing**, so it is recorded as inconclusive rather than as a refutation. |
+| **Evidence class** | **oracle-behaviour-at-pin.** Not ground truth about colour, and **not** a finding that lcms2 is wrong: ICC.1 does not require the behaviour, and "not required" is not "prohibited". Note also that upstream's stated authority is *"Adobe's document"* — **which nobody in this project has obtained or read.** That is upstream's attribution, transcribed; it is not a citation this project can check. |
+| **Where** | `tools/difftest/src/bin/legacy_lab_probe.rs` (`predict_bpc_lstar`, `LCMS2_PERCEPTUAL_BLACK`, `BPC_PREDICTION_TOL`); `tools/difftest/README.md` §12.4; `docs/TOLERANCES.md` §6.1 item 2. |
+| **Decision record** | `ARCHITECTURE.md` **DL-013**. |
+| **Consequences for future rows — this is why it is in the ledger** | Any future cross-check row at **perceptual or saturation against a v4 profile** is measuring a transform **with BPC in it**, whether or not `-b` was passed. **Pass 4** must either account for that explicitly or restrict its cross-check to the colorimetric intents and say so; **Pass 5**'s `-b`-on/`-b`-off pairing does **not** isolate the variable on v4 profiles at those intents. A tolerance set without knowing this is a tolerance set on the wrong quantity. |
+| **Invalidated by** | The pin moving; any lcms2 change to `_cmsLinkProfiles` or to the perceptual black constants. |
+
+#### NC-021 — the registered smoke check: the oracle still answers the same
+
+| Field | Value |
+|---|---|
+| **What was compared** | **lcms2 against lcms2.** `smoke/srgb-white-to-lab`: system sRGB profile → `*Lab4`, media-relative colorimetric, `-c0`, input `255 255 255`, compared to `99.9988 0.0188 −0.0173` — a value recorded from **this same pinned oracle** in `tools/difftest/README.md` §8.2 on 2026-08-11. |
+| **Kind, as the harness itself labels it** | **`oracle-reproducibility`** — the harness's own `Kind` enum carries this variant precisely so "both sides are lcms2" cannot be written down as anything stronger. *(verified — `Kind::OracleReproducibility` read in `tools/difftest/src/lib.rs` and in the registered check in `src/main.rs`.)* |
+| **Metric / tolerance** | `abs-max-component` / **1×10⁻⁴**. |
+| **Why that tolerance** | `transicc -n` prints four decimals and the recorded expectation is itself a four-decimal print, so agreement cannot be asserted more tightly than the reference is printed. **Arithmetic-agreement, not perceptual** — the 1.0 ΔE2000 anchor (DL-004) is irrelevant and must not be cited for it. *(verified — the `Tolerance` value carries its `why` string in the source; the type cannot be constructed from a bare number.)* |
+| **Result** | **PASS, observed deviation `0.000000e0`** (exact agreement). *(reported.)* |
+| **Coverage — and it is small** | **One profile, one direction, one input triplet, one intent, one precalc mode, one platform.** Exactly **one** check is registered in the whole harness. The profile is category (c) under `LEGAL.md` §3 (read locally, never committed), so the check **skips** where it is absent and the runner exits **3 (nothing ran)** — never 0. |
+| **★ What it proves, in the harness's own words** | Harness-and-pin stability, **and nothing about colour**. It says nothing about whether lcms2 is right and nothing about `iccce`, which is not in the loop. These numbers **must never be transplanted into an `iccce-color` or `iccce-cmm` unit test as expected values** — at that moment the claim would silently change from "the oracle still answers the same" to "iccce is correct" (rule 3). |
+| **Evidence class** | **oracle-behaviour-at-pin.** |
+| **Where** | `tools/difftest/src/main.rs` (`checks()`, `PRINTED_PRECISION`); `tools/difftest/README.md` §11.3. |
+| **Invalidated by** | The pin moving; a rebuild on a different toolchain; the system profile changing (it is not ours and is not committed). |
+
 ---
 
 ## 4. Named approximations and deviations
@@ -297,6 +449,35 @@ is that its existence is read as coverage.
 - **No claim that these tests pass on Linux.** They have been reported
   passing on Windows/MSVC on one machine.
 
+### 5.1 Dated correction to §5, 2026-08-11 (Pass 2 / difftest filing)
+
+**The bullets above are left exactly as written** — they were true of
+Pass 1 and this document does not edit a claim to make an old statement
+look like a new one. Two clauses in the lcms2 bullet are now **partly
+superseded**, and precisely which halves matter:
+
+- *"There is still **no Rust difftest harness**"* — **superseded.** One
+  exists (`tools/difftest/`, commit `bfd6b1e` *(reported)*): a standalone
+  crate deliberately outside the workspace, zero dependencies, whose
+  `Tolerance` type cannot be built without a `why` string and whose
+  `Intent` enum admits only the four ICC intents so no result from it can
+  be described as conformance to something ICC.1 does not define.
+  *(verified — read in `tools/difftest/src/lib.rs` and `src/main.rs`.)*
+- *"There is not one `implementation-cross-check` row in this ledger"* —
+  **still true, and deliberately so.** §3.6's three rows are
+  **`oracle-behaviour-at-pin`**, a class added today: they measure the
+  oracle, with iccce absent. An `implementation-cross-check` row requires
+  iccce on one side of the comparison, which requires a transform, which
+  is **Pass 3**. **`iccce` has still never been compared to anything.**
+- *"No cross-check against lcms2 exists anywhere in `iccce-color`"* —
+  **still true**, unchanged.
+
+**Also still true and worth restating** now that a harness exists: the
+harness has **exactly one registered check** and it compares lcms2 to
+lcms2 (NC-021). A green run of it is not coverage of anything, and its
+runner deliberately exits **3 ("nothing ran")** rather than 0 when every
+check skips.
+
 ---
 
 ## 6. Dependency notes — what future work invalidates what
@@ -314,6 +495,10 @@ are the rows to re-run or retire.
 | `Mat3::inverse` (e.g. a different algorithm, or an epsilon singularity test) | NC-005, NC-016, and indirectly every adaptation row |
 | A Pass 3/4 transform that adapts | **NA-002's cost becomes owed** |
 | The 1.0 ΔE2000 anchor (DL-004 revisited) | **Nothing in this ledger.** No Pass 1 row is graded perceptually — which is itself worth knowing. |
+| **The lcms2 pin moving off `21c582a`** *(added 2026-08-11)* | **NC-019, NC-020, NC-021 — all three, without exception.** Every §3.6 row is a statement about one build of one implementation at one commit. DL-001 already makes moving the pin a **licence** event; DL-012 and DL-013 make it a **behavioural** one, and these three rows must be **re-run, not re-read**. |
+| A behavioural test of `ncl2` or B2A legacy-Lab decoding *(added 2026-08-11)* | **NC-019's coverage line** — it currently rests on a *source reading* for those two cases, and a measurement would either promote them or contradict them |
+| lcms2 changing `_cmsLinkProfiles` or `cmsPERCEPTUAL_BLACK_*` *(added 2026-08-11)* | **NC-020**, and with it every Pass 4 / Pass 5 tolerance derived from it |
+| **Pass 3 landing a transform** *(added 2026-08-11)* | Nothing here is invalidated — but it is the moment the ledger can gain its **first `implementation-cross-check` row**, and §5.1's "iccce has never been compared to anything" stops being true |
 
 ---
 
@@ -332,6 +517,88 @@ are the rows to re-run or retire.
    filing.
 6. **A Linux run of these tests.**
 
+### 7.1 Status of §7, re-checked 2026-08-11 at the Pass 2 / difftest filing
+
+The list above is **not edited**; this is its dated status.
+
+| Item | Status now |
+|---|---|
+| 1 — a commit hash for §2 | **Discharged.** §2 carries `7313c5b` for Pass 1, and §2.1 carries `b35a12e` / `bfd6b1e` for today's rows. All three hashes are **reported by the engineer, not verified** — this librarian has no shell and ran no git command. |
+| 2 — observed residuals, not only asserted bounds | **Partly discharged, and only for the new rows.** NC-019 (2×10⁻⁵) and NC-020 (3×10⁻⁵) and NC-021 (`0.000000e0`) each carry an **observed** figure. **NC-001 and every Pass 1 identity still carry only the bound asserted** — a residual that grew from 10⁻¹² to 9×10⁻⁵ would still pass its gate and nothing would show it. Unchanged as owed work for Pass 1. |
+| 3 — `TOLERANCES.md` §3.1 and §5 rows | **Discharged by `icc-conformance`.** Both are filled, dated 2026-08-11, with §4 carrying two "first filling, not a change" rows. *(verified — read this session. This librarian did not edit that file; it is not this agent's.)* Note §3.2 (Pass 2), §3.3–§3.6 remain blank, correctly. |
+| 4 — a ground-truth row for chromatic adaptation | **Still owed. Still the largest evidential hole in Pass 1**, and nothing filed today touches it. |
+| 5 — the corpus D50-chromaticity erratum | **Fixed.** `cie__ref__colorimetry_core.md` now derives **0.345703 / 0.358539** for the ICC 4-figure triple and carries an `errata:` line **C2** naming the change, with a post-mortem pointer. *(verified — grepped this session. §3.4's "still present at filing" line is left standing as the record of what was true then.)* |
+| 6 — a Linux run | **Still owed, and nothing has changed.** No Linux build of lcms2, no Linux `cargo test`, no observed CI run — by anyone, ever, in this project. |
+
+**Newly owed as of this filing:**
+
+1. **`icc-conformance`** — two wrong cells in `legacy_lab_probe.rs`'s
+   module-doc prediction table (NC-019's starred note). Prose only; the
+   run is unaffected; not repaired here because the file is not this
+   librarian's.
+2. **`icc-conformance`** — a **behavioural** test of `ncl2` and of B2A
+   legacy-Lab decoding, so those two cases stop resting on a source
+   reading (NC-019 coverage).
+3. **Pass 4 / Pass 5** — the decision, and its own decision-log entry, on
+   whether iccce **copies** lcms2's forced-BPC behaviour (DL-013). Until
+   it is made, no perceptual/saturation tolerance against a v4 profile
+   can be justified.
+4. **`icc-spec-librarian`** — retract the corpus's claim that lcms2 keys
+   Lab decoding on `cmsGetEncodedICCversion` (DL-012). A dispatch is
+   **reported** in flight; **unverified whether it lands.**
+5. **`icc-spec-librarian`** — **DL-002's successor entry is still
+   unfiled.** §5 now runs to **DL-013** and several entries and doc
+   comments cite ICC.1:2022 clause numbers. *(verified — `ARCHITECTURE.md`
+   §5 read in full this session.)* The condition has been materially met
+   since the ingest; the entry has not been written.
+
+### 7.2 Status of §7 and §7.1, re-checked 2026-08-11 at the Pass 2 batch 2 filing
+
+Neither list above is edited. This is their dated status, plus what
+batch 2 newly owes.
+
+| Item | Status now |
+|---|---|
+| §7.1 item 4 — a ground-truth row for chromatic adaptation | **Still owed, and now on a clock.** Unchanged in substance, but Pass 3 is next and it adapts, so **NA-002's unmeasured cost stops being permitted** the moment a transform lands (§4's own wording: unmeasured *"only while the entry is new"*). See `ROADMAP.md`'s Pass 3 annotation. |
+| §7.1 item 6 — a Linux run | **Still owed. Nothing has changed.** No Linux build, no Linux `cargo test`, no observed CI run — by anyone, ever, in this project. |
+| §7 item 2 / §7.1 item 2 — observed residuals for Pass 1's rows | **Still owed, unchanged.** NC-001 and every Pass 1 identity still carry only the bound asserted. |
+| **§7.1 newly-owed 1** — the two wrong cells in `legacy_lab_probe.rs`'s module-doc prediction table | **DISCHARGED by `icc-conformance`.** The table now prints P3 general `L* = 50.0008` and P4 general `a* = 126.0078`, matching this librarian's recomputation and `difftest/README.md` §12.1, and the file carries a dated correction note naming what was wrong, who found it and why no verdict moved: *"the wrong cells sat on the REJECTED hypothesis and run-time predictions are computed, not read from this table."* *(**verified** — `tools/difftest/src/bin/legacy_lab_probe.rs` lines 66–78 read this session.)* NC-019's starred note is left standing as the record of what was true when it was written. |
+| **§7.1 newly-owed 4** — the corpus retraction of the lcms2 version-keying claim | **LANDED — and verified rather than assumed.** `icc__ref__v2_v4_divergence.md` now carries *"★ RETRACTED 2026-08-11 (C3) — there is NO divergence from lcms2 here. Do not cite this row as one"*, with a four-row table separating what was claimed from what was measured, and it records that at the pin `cmsLabEncoded2FloatV2` *"is not called anywhere inside lcms2"*. `ICC_Spec\index.md` carries the same retraction at the top level and files it as the corpus's **third self-defect, C3**, with a new evidence file `icc__ref__lcms2_measured_behaviour.md` (M1 the selector, M2 the BPC finding). *(**verified** — both files read this session.)* **This is the second time checking beat assuming**: the D50 erratum was recorded as outstanding across two filings and had in fact been fixed. |
+| **§7.1 newly-owed 5** — DL-002's successor entry | **FILED, as `ARCHITECTURE.md` DL-014**, after being owed across three filings. ICC.1:2022 clause numbers may now be cited **where the corpus file carrying the clause is `primary_spec` for that specific fact**, and the citation **must name the corpus file**. The tier is **per-fact, not per-file** — eleven of the fifteen `primary_spec` files are only *partly* so, with split `evidence:` lines. The prohibition is unchanged for every unread document (ICC.1:2010, ICC.1:2001-04, ISO 13655, CIE 142 / 11664-6 / 15 / 159, IEC 61966-2-1, and "Adobe's document"). Filed by `icc-librarian` rather than `icc-spec-librarian` as DL-006 anticipated — a reassignment of the filing, not of the sourcing judgement, and DL-014 says so. |
+| **§7.1 newly-owed 2** — behavioural tests of `ncl2` and B2A | **Still owed to `icc-conformance`, and cheaper now.** Batch 2 shipped the B2A-side decoder (`mBA `, and `mft2` in the output direction), so the fixture half of that test no longer needs writing from nothing. NC-019's coverage line still rests on a **source reading** for both cases. |
+| **§7.1 newly-owed 3** — the Pass 4/5 decision on whether iccce copies lcms2's forced BPC | **Still owed and still undecided.** Nothing in batch 2 touches it. |
+
+**Newly owed as of this filing:**
+
+1. **A decision on Pass 2's done-when clause 2**, and it is a scope call,
+   not a coding task: *do the in-test byte-authored fixtures satisfy "a
+   synthetic corpus covers each tag type", or does the clause require
+   `tools/gen-profiles/` and files in `fixtures/synthetic/`?* Stated
+   exactly: **every implemented tag type has hand-authored synthetic
+   byte fixtures inside the unit tests**, including hostile cases; and
+   **`tools/gen-profiles/` does not exist** while `fixtures/synthetic/`
+   holds only a `README.md` that says *"Nothing here yet: the generator
+   does not exist."* *(verified — tree enumerated and README read.)* The
+   in-test fixtures are **tag-level, not whole profiles**, so they
+   cannot cover header/tag-table/tag-data interaction and cannot be used
+   by a differential run, a fuzzer, or an external consumer. **This
+   ledger does not decide it**; `ROADMAP.md`'s batch 2 block states both
+   readings without recommending one.
+2. **A per-tag-type breakdown of the sweep** (§2.2.1). Forty profiles
+   parsed, but which of `mft1`/`mft2`/`mAB `/`mBA ` were actually present
+   is unrecorded, so *"the LUT decoders survived real profiles"* is not
+   established by it. A re-run that counts tag types would turn a
+   robustness observation into a coverage statement — and it would also
+   show whether this machine contains **any** profile exercising batch
+   2's code at all.
+3. **An audit of existing ICC.1:2022 citations against DL-014's terms.**
+   DL-014 does not retroactively bless them: each is permitted only if
+   it names its corpus file and the fact is `primary_spec` **in that
+   file's split `evidence:` line**. `lut.rs` §Sourcing is the shape
+   intended and satisfies it; **no sweep of the other citations has been
+   done by anyone**, and doc comments in `iccce-color` and
+   `iccce-profile` predate the terms.
+
 ---
 
 ## 8. Related
@@ -340,8 +607,19 @@ are the rows to re-run or retire.
 - `docs/ARCHITECTURE.md` §5 — the decision log; **DL-004** (the
   perceptual anchor), **DL-005** (v2 legacy Lab tested by exact
   invariants), **DL-010** (NA-001), **DL-011** (legacy Lab keys off tag
-  type).
-- `docs/SESSION_LOG.md` — 2026-08-11, Pass 1.
+  type), **DL-012** (the predicted lcms2 disagreement measured **absent**
+  — NC-019), **DL-013** (lcms2 forces BPC on v4 perceptual/saturation —
+  NC-020), **DL-014** *(added 2026-08-11)* — **the terms on which an
+  ICC.1:2022 clause number may be cited**, which now govern every
+  citation in this ledger too: name the corpus file, and check that the
+  file's `evidence:` line is `primary_spec` **for the specific fact**,
+  not merely somewhere in the file.
+- `tools/difftest/README.md` — the oracle, its pin and its licence (§2–§3),
+  the smoke record (§8), the harness and its one registered check (§11),
+  and **§12, the legacy-Lab experiment and the BPC finding** — the
+  evidence behind every §3.6 row.
+- `docs/SESSION_LOG.md` — 2026-08-11, Pass 1; and 2026-08-11 (Pass 2
+  batch 1 + difftest).
 - `D:\Dev\Rag-Specialized\ICC_Spec\` — the standards corpus. Read a
   file's frontmatter `evidence:` line before citing it; the tiers are not
   equal.

@@ -67,8 +67,15 @@
 //! |---|---|---|---|---|
 //! | P1 | 255,255,255 | `FF00 8000 8000` | 100.0000, 0.0, 0.0 | 99.6109, −0.4980, −0.4980 |
 //! | P2 | 0,0,0 | `0000 8000 8000` | 0.0, 0.0, 0.0 | 0.0, −0.4980, −0.4980 |
-//! | P3 | 255,0,0 | `8000 8000 8000` | 50.1961, 0.0, 0.0 | 50.0004, −0.4980, −0.4980 |
-//! | P4 | 0,255,0 | `FF00 FF00 0000` | 100.0000, 127.0, −128.0 | 99.6109, 125.9078, −128.0 |
+//! | P3 | 255,0,0 | `8000 8000 8000` | 50.1961, 0.0, 0.0 | 50.0008, −0.4980, −0.4980 |
+//! | P4 | 0,255,0 | `FF00 FF00 0000` | 100.0000, 127.0, −128.0 | 99.6109, 126.0078, −128.0 |
+//!
+//! (P3/P4 "general" cells corrected 2026-08-11 by `icc-engineer` after
+//! `icc-librarian` recomputed them from this file's own `decode_general`:
+//! `32768·100/65535 = 50.000763 → 50.0008`; `65280·255/65535 − 128 =
+//! 126.007782 → 126.0078`. README §12.1 was already right; the wrong
+//! cells sat on the REJECTED hypothesis and run-time predictions are
+//! computed, not read from this table, so no verdict was affected.)
 //!
 //! `0xFF00` is chosen because it is the legacy full-scale point: it is the
 //! value at which the two rules are furthest apart and the one whose

@@ -557,3 +557,450 @@ read out of files in the working tree.
   DL-011's closing section.
 - **That anything ran on Linux.** Nothing has, and no CI run has ever
   been observed by anyone in this project.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — Pass 2 batch 1, the difftest harness, and a prediction that turned out to be wrong
+
+**Fourth entry of the same calendar day and the same session.** Two
+commits arrived since the Pass 1 filing, from two different agents, and
+they are filed together because the second changes what the first's next
+step has to do.
+
+| Commit | What, per the dispatch |
+|---|---|
+| **`b35a12e`** | Pass 2 batch 1 — the non-LUT tag types decoded and wired into `inspect`; 47 workspace tests |
+| **`bfd6b1e`** | the difftest harness, the legacy-Lab probe, and `TOLERANCES.md`'s first filling — by `icc-conformance` |
+
+**Both hashes are *reported*.** `icc-librarian` has no shell, ran no git
+command, and has verified neither that these commits exist nor that they
+contain what the dispatch says. Everything below labelled **verified**
+was read in the working tree by this librarian this session; the
+dispatch's account of what changed is a claim like any other and was
+checked against the live source rather than transcribed.
+
+### What was built — Pass 2 batch 1
+
+`crates/iccce-profile/src/tag_types.rs`: **eight non-LUT tag types**
+decode — `curv`, `para`, `text`, `mluc`, `desc`, `ncl2`, `XYZ `, `sf32`.
+The module doc names itself *"Pass 2, batch 1 (the non-LUT types)"* and
+states that *"the LUT family (`mft1`/`mft2`/`mAB `/`mBA `) is batch 2"*.
+*(verified — module doc, the eight `sig::` constants, the eight arms of
+`decode()`.)* The CLI decodes each tag, prints a summary where the type
+has one, and prints **every `TagIssue` unconditionally**, the parser's
+disclosure surface. *(verified — `iccce-cli/src/main.rs`.)*
+
+**The invariant is enforced by the type design, not by discipline**: a
+violation that leaves the layout decodable becomes a `TagIssue`
+*alongside* the decoded value; one that makes the layout unknowable is an
+`Err` — *"there is no partial result to be tempted by."* Counts are
+bounded against the actual byte length **before** allocation.
+*(verified.)*
+
+**Gates.** `cargo test --workspace` **47 green**, verified live on the
+system sRGB profile *(reported by `icc-engineer`)*. Checkable without a
+shell: **47 `#[test]` declarations exist** — `tag_types.rs` 12, `lib.rs`
+8, `num.rs` 6, `iccce-color` 21. *(verified — counted across 8 files.)*
+**A count of tests declared is not a count of coverage and not a pass
+result.**
+
+**Pass 2's done-when is not met and is not claimed to be:** no sweep of
+the machine's profiles, and **no synthetic corpus** —
+`tools/gen-profiles/` and `fixtures/synthetic/` still do not exist. The
+only synthetic profiles this project has ever authored are the four
+written inside the difftest probe.
+
+### ★ The measurement that closed DL-011's open question — and it came out the other way
+
+DL-011 was filed in Pass 1 **before** any code, recording that the legacy
+16-bit PCSLAB encoding keys off the **tag type**, and that lcms2 was
+**believed** to key it off the profile version — a belief the entry
+explicitly marked unverified, owing `icc-conformance` a behavioural
+difftest. **That difftest has been run, and the belief was wrong.**
+
+Four synthetic profiles, authored byte by byte inside the probe, `mft2`
+`A2B0`, Lab PCS, 2×2×2 CLUT; three of them **byte-identical except the
+version word**, asserted at run time as a byte diff at exactly offsets
+`[8, 9]` before any result is believed; a fourth with proper v4 `mluc`
+metadata to close the metadata objection; probes on exact CLUT corners so
+nothing is interpolated; `-c0` so lcms2 does not flatten the pipeline.
+**Every profile — v2.1, v4.3, v4.4, `mluc` — decodes LEGACY**, worst
+deviation from the legacy prediction **2×10⁻⁵**, against an attribution
+bound of 0.01 justified as ~7× the quantisation floor and ~20× below the
+smallest hypothesis separation. The **v2.1 control reads legacy**, so the
+instrument can detect the effect it is looking for. *(reported — the run;
+verified — the probe's specs, byte-diff control, decode predicates and
+tolerance justifications were read in the source.)* Corroborated by
+reading `cmsio1.c` at the pin, where `_cmsReadInputLUT` tests the tag
+type and the PCS and **contains no version test** *(reported —
+transcribed in `difftest/README.md` §12.2; no lcms2 source was read here,
+and `vendor/` is git-ignored so it is not in this repository to read)*.
+
+**What that changes, precisely.** DL-011's **rule stands** — it came from
+ICC.1:2022 6.3.4.2 NOTE 3 and 10.10 and never depended on lcms2. What is
+superseded is its *"live disagreement with lcms2"* clause and the
+consequence that followed: **there is no divergence to log**, so Pass 4
+implements the tag-type selector on the authority of the clause and
+**does not** write the runtime warning. Filed as **DL-012**, which
+references DL-011 and does not rewrite it.
+
+**Coverage travels with the claim, and it is narrow:** one tag, one tag
+type, one direction, one PCS, **one intent for the verdict**, four
+synthetic profiles, one platform, one lcms2 build at one commit.
+**`ncl2` and B2A were not tested behaviourally** — for those the claim is
+a source reading, which is a weaker object and is not merged into the
+same sentence.
+
+### ★ The second finding, which is larger than the one that was asked for
+
+The probe's first run used intent 0 as well as intent 1. At intent 0 the
+**v4** profiles matched **neither** hypothesis — black came back at
+`L* = −3.1482` instead of 0 — while the byte-identical v2 profile was
+unaffected. **Refusing to round an observation that matches neither
+candidate is what turned a confound into a finding.**
+
+The mechanism, read at the pin in `cmscnvrt.c` `_cmsLinkProfiles`:
+**lcms2 forces black point compensation ON for v4 profiles at perceptual
+and saturation**, whether or not `-b` was passed, with upstream's own
+comment attributing it to *"Adobe's document"* — **not to ICC.1, and not
+to a document anybody here has read.** Confirmed **quantitatively**, not
+assumed: transcribing lcms2's own `ComputeBlackPointCompensation` with
+its fixed perceptual black predicts the observation to **3×10⁻⁵** across
+all four probes, including the `0 → −3.1482` shift. The arm that did
+**not** decide is kept and labelled — re-running the v2 profile with `-b`
+is a no-op on that fixture, so the two arms differ in more than the
+variable and settle nothing; a reader repeating it would otherwise read
+the null result as a refutation. Filed as **DL-013**.
+
+**Why it matters more than the question it interrupted.** It changes what
+two later Passes' cross-checks are *measuring*:
+
+- **Pass 4's done-when** says *"matches lcms2 within tolerance at every
+  intent."* On a v4 profile, two of those intents compare against a
+  transform with BPC in it. Pass 4 must either account for the forced BPC
+  explicitly or compare at the colorimetric intents only **and say
+  which** — the disagreement otherwise absorbed is **≈3.15 `L*` at
+  black**, which is not a tolerance question.
+- **Pass 5's** natural `-b`-on/`-b`-off experiment **does not isolate the
+  variable** on v4 profiles at those intents. It also inherits a real
+  head start: lcms2's BPC arithmetic transcribed and pre-validated to
+  3×10⁻⁵ — usable as a cross-check, never as ground truth for what BPC
+  *should* do.
+
+It is also a plausible origin for the corpus's retracted belief: **lcms2
+does key a decision on the profile version — at perceptual intent. Just
+not that one.**
+
+### A discrepancy found while filing, reported and not repaired
+
+The probe's **module-doc** prediction table and the same table in
+`tools/difftest/README.md` §12.1 disagree in two cells, both on the
+**rejected** hypothesis: the module doc prints P3 general `L* = 50.0004`
+and P4 general `a* = 125.9078`. Recomputing from the code's own
+`decode_general`: `32768·100/65535 = 50.000763 → 50.0008` and
+`65280·255/65535 − 128 = 126.007782 → 126.0078` — **the README is right
+in both cells and the module doc is wrong in both.** *(Arithmetic done
+independently here; `decode_general` read in the source.)* **The verdict
+is unaffected** — the predictions are computed at run time, not read from
+the prose, and both wrong cells are still far outside the attribution
+bound from the legacy values. It is a doc-comment defect in
+`icc-conformance`'s file; **this librarian did not edit it** and filed it
+as owed work in `NUMERIC_CLAIMS.md` §7.1. Same shape as the project's own
+parser rule: report, do not repair.
+
+### Two things that were owed and have landed — verified, not assumed
+
+- **`TOLERANCES.md` §3.1 and §5 are filled**, dated 2026-08-11 by
+  `icc-conformance`, with §4 recording both as *"first filling, not a
+  change"* and §6.1 recording the two findings above. *(verified — read
+  this session.)* Pass 1's filing said both were blank; that is now
+  stale, and `NUMERIC_CLAIMS.md` §0 carries a dated correction rather
+  than an edit.
+- **The corpus D50-chromaticity erratum is fixed.**
+  `cie__ref__colorimetry_core.md` now derives **0.345703 / 0.358539** for
+  the ICC 4-figure triple and carries an `errata:` line **C2** naming the
+  change with a post-mortem pointer. *(verified — grepped this session.)*
+  Two consecutive filings recorded it as still present; it is worth
+  noting that the fix was found by **checking, not by assuming the
+  dispatch landed**.
+
+**One small staleness left alone, by ownership:** `TOLERANCES.md` §6's
+coverage table still reads *"2–8 not started"* while Pass 2 batch 1 is
+built. That file is `icc-conformance`'s and this librarian does not edit
+it; flagged here so it is findable.
+
+### Still open, and unchanged by today
+
+**DL-002's successor entry is still unfiled.** §5 now runs to **DL-013**;
+several entries and doc comments cite ICC.1:2022 clause numbers; the
+*condition* has been materially met since the ingest and the *entry* has
+not been written. *(verified — `ARCHITECTURE.md` §5 read in full this
+session.)* It is `icc-spec-librarian`'s, per DL-006.
+
+**A corpus retraction is owed and is not verified as landed:** the corpus
+named `cmsLabEncoded2FloatV2` and `cmsGetEncodedICCversion` as lcms2's
+Lab-decoding mechanism; at this pin `cmsLabEncoded2FloatV2` is a **pixel
+formatter** called from `cmspack.c` only and never from profile reading.
+A dispatch is **reported** in flight in parallel with this filing.
+**Whether it lands is unverified**, exactly as with the D50 erratum —
+which took two filings to be checked.
+
+### Filed this session (continuation)
+
+| Where | What |
+|---|---|
+| `ARCHITECTURE.md` §5 | **DL-012** (the DL-011 disagreement measured **absent**; supersedes DL-011's disagreement clause and its runtime-logging consequence, referencing it rather than rewriting it) and **DL-013** (lcms2 forces BPC on v4 perceptual/saturation; its consequences for Pass 4's done-when and Pass 5). DL-001…DL-011 untouched. |
+| `docs/NUMERIC_CLAIMS.md` | A new evidence class **`oracle-behaviour-at-pin`** (§1); a second provenance block **§2.1**; **§3.6** with **NC-019** (legacy selector, worst deviation 2×10⁻⁵ across four profiles), **NC-020** (BPC prediction agreement 3×10⁻⁵), **NC-021** (the oracle-reproducibility smoke check, observed `0.000000e0`); **§5.1** correcting exactly which halves of Pass 1's "no cross-check" bullet are superseded; four new **§6** invalidation rows led by *the pin moving*; **§7.1** re-checking every owed item and adding five new ones; §0 and §8 dated updates. |
+| `ROADMAP.md` | A **Pass 2 progress block** (batch 1 at `b35a12e`, the eight types, the done-when explicitly **not** met, batch 2 unblocked by DL-012 with its four rules); dated annotations under **Pass 4** and **Pass 5** carrying the BPC finding; the header status line updated. **No plan text rewritten.** |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for Pass 2 batch 2. |
+
+Not touched, by instruction and by ownership: `LEGAL.md`,
+`TOLERANCES.md` and `tools/difftest/README.md` (`icc-conformance`), and
+the corpus (`icc-spec-librarian`, with a parallel dispatch reported in
+flight).
+
+**Nothing was committed** — instructed not to, and committing is the
+engineer's act. **No git command was run**, by an agent that has no
+shell.
+
+### Left for the next session to not assume
+
+- **That `b35a12e` and `bfd6b1e` exist or contain what is recorded
+  here.** Both are the dispatch's report. Everything about the *files* is
+  verified; everything about the *repository* is not.
+- **That NC-019…NC-021 survive a pin change.** They are statements about
+  one build of one implementation at commit `21c582a`. Moving the pin is
+  already a licence event (DL-001); it is now a behavioural one too, and
+  those rows must be **re-run, not re-read**.
+- **That "lcms2 keys off the tag type" covers `ncl2` or B2A.** It does
+  not: those rest on a source reading, and the measurement covers `A2B0`
+  / `mft2` / device→PCS / Lab / intent 1 only.
+- **That iccce will copy lcms2's forced BPC.** No such decision has been
+  made. It is Pass 4/5's, and it gets its own entry.
+- **That the corpus retraction landed**, or that anything else dispatched
+  in parallel did.
+- **That Pass 2 is nearly done because batch 1 is.** Batch 2 is the LUT
+  family — the interpolation tables, the PCS-side encoding selector, and
+  the largest tag types in the format — and neither half of the Pass's
+  done-when has been attempted.
+- **That anything ran on Linux.** Still nothing, still no CI run observed
+  by anyone.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — Pass 2 batch 2, the machine-wide sweep, and a decision that had been owed for three filings
+
+**Fifth entry of the same calendar day and the same session.** One commit
+arrived, plus one shell run that is not a commit, plus the closure of two
+items that had been carried as outstanding.
+
+| | |
+|---|---|
+| Commit | **`d40d601`** — Pass 2 batch 2, the LUT family, per the dispatch |
+| Not a commit | a machine-wide sweep of `C:\Windows\System32\spool\drivers\color\` |
+
+**The hash is *reported*.** `icc-librarian` has no shell, ran no git
+command, and has verified neither that this commit exists nor that it
+contains what the dispatch says. Everything below marked **verified** was
+read in the working tree this session; **the dispatch's account of what
+changed was checked against the live source rather than transcribed**,
+and doing so caught one error in this librarian's own draft (below).
+
+### What was built — the LUT family
+
+`crates/iccce-profile/src/lut.rs`, dispatched from `tag_types.rs` and
+summarised by the CLI. *(verified — the module doc, the four `decode_*`
+functions, the four `decode()` arms, and the four CLI summary arms
+read.)* **7 new tests, all in `tag_types.rs`** (12 → **19**); **54
+`#[test]` declarations workspace-wide** *(verified — counted across 8
+files)*, against a reported `cargo test --workspace` 54 green with
+`fmt`/`clippy` clean *(reported)*.
+
+**The interesting property is that batch 2 makes three known misreads
+unrepresentable rather than merely tested against** — the format's most
+error-prone structures, closed at the type level:
+
+- **`Lut8` and `Lut16` are separate structs.** `lut8Type` has no
+  `inputEnt`/`outputEnt` fields, so reading the `mft2` layout onto an
+  `mft1` **shifts everything by four bytes and still parses**. Two types
+  make that impossible to write.
+- **The `mAB `/`mBA ` matrix is a fixed `[S15Fixed16; 12]`** — 3×4: nine
+  coefficients **then three offset terms**, 48 bytes. Reading 36 and
+  stopping loses the offsets, which the corpus describes as *"a uniform
+  colour cast that looks like a white-point problem"*: the canonical
+  wrong-colour-looks-right shape. The test loads distinct values into
+  `m[9]` and `m[11]` and asserts they arrive, with the comment *"the
+  36-byte misread would have lost them."*
+- **One `LutAB` struct serves both `mAB ` and `mBA `** — same storage,
+  reverse traversal, **direction carried by the tag's type signature**
+  through two distinct `TagData` variants rather than by a boolean the
+  caller could pass wrongly.
+
+**Curve chains fail *positionally*.** There is **no count field**: each
+element must be parsed to find the next, so one malformed element makes
+everything after it **unreachable, not merely wrong**.
+`CurveChainBroken { element, position }` says which and where, rather
+than reporting a generic short read. **Every size is computed in `u128`
+and refused before allocation** (`255^255` must refuse, not wrap), and a
+CLUT `precision` outside {1, 2} is refused because the sample width is
+otherwise unknowable. *(all verified — read, and each has a test.)*
+
+**The legacy-Lab rule is stated in the module doc as the TAG TYPE rule
+with both citations kept separate** — ICC.1:2022 6.3.4.2 NOTE 3
+(`primary_spec`) *and* "MEASURED in lcms2 at the pin, 2026-08-11" — i.e.
+DL-011's rule and DL-012's measurement, not merged into one sentence.
+It also notes that `lut8Type` is **not** in the legacy set, and ends
+*"the consumer decodes; this module only repeats the rule so the
+consumer cannot miss it"*, which keeps invariant §3.1 intact. **Sourcing
+honesty is at the site**: the `mAB `/`mBA ` **byte tables remain
+code-derived** and the module doc says so, matching the corpus file's
+own split `evidence:` line. *(verified — both read.)*
+
+### ★ The sweep — done-when clause 1, met on this machine
+
+**40 profiles, 40 parse OK, 0 refused, 0 unexpected exits, 0
+table-level malformations.** Four EIZO v2 profiles each report one
+issue — *"desc: Macintosh ScriptCode block short or missing"* — which is
+**exactly the structure the corpus flags as the most frequently
+malformed in real v2 profiles**. Decoding continued, the issue was
+reported, nothing was repaired: invariant §3.2 exercised on files the
+project did not author. *(**reported** — `icc-engineer`'s shell run; the
+loop counted exit codes and grepped the CLI's own output. **No number in
+this paragraph was verified here** — this librarian has no shell.)*
+
+**What it claims and what it does not.** *"Every profile on **this**
+machine, on 2026-08-11, at `d40d601`: 40 of 40"* — never *"iccce parses
+real profiles"*. The corpus is one Windows install: heavy on
+Microsoft-shipped sRGB variants and vendor display profiles, **light or
+empty on large v4 CMYK press profiles with `mAB `/`mBA ` pipelines**,
+which are precisely what batch 2 added. **Which LUT types the sweep
+actually exercised is not on record**, so it does not establish that the
+new decoders met real input at all. And zero malformations across 40
+files says nothing about whether the detectors fire — the four `desc`
+findings are the run's only positive evidence of that, and they are all
+one issue type. **A count is not an inventory.**
+
+### Done-when clause 2 — PARTIAL, and stated as a question rather than answered
+
+*"A synthetic corpus covers each tag type."* **Every implemented tag
+type has hand-authored synthetic byte fixtures — inside the unit
+tests**, hostile cases included. **`tools/gen-profiles/` does not exist**
+and `fixtures/synthetic/` holds only a `README.md` saying *"Nothing here
+yet: the generator does not exist."* *(verified — tree enumerated, README
+read.)*
+
+**Whether in-test synthetics satisfy the clause is a real question and
+this filing does not decide it.** For the strict reading:
+`ARCHITECTURE.md` §1 already listed both directories when the plan was
+written, which is evidence the author meant files on disk; and in-test
+fixtures are **tag-level, not whole profiles**, so they cannot cover
+header/tag-table/tag-data interaction and are unusable by a differential
+run, a fuzzer, or an external consumer. For the loose reading: they are
+byte-authored, versioned, and executed on every `cargo test`, which a
+directory of blobs does not guarantee. Both readings are recorded in
+`ROADMAP.md`; **neither is recommended**, because it is a scope call and
+scope calls are not this librarian's to make quietly.
+
+### ★ DL-014 — filed, after being owed across three filings
+
+DL-002 prohibited citing ICC.1 clause numbers until the primary source
+was read. **DL-006 recorded that its condition had fired, and named
+`icc-spec-librarian` as the agent owing the successor.** Three
+consecutive filings then recorded the entry as still unwritten **while
+DL-010, DL-011, DL-012 and several doc comments cited ICC.1:2022 clause
+numbers** — a live contradiction inside `ARCHITECTURE.md` §5, which is
+this librarian's own document. It is filed now, by `icc-librarian` on
+the engineer's dispatch: **a reassignment of the filing, not of the
+sourcing judgement**, and DL-014 says so in its own text.
+
+**The terms.** Clause numbers from **ICC.1:2022** may be cited; the
+citation **must name the corpus file** carrying it, because the corpus
+is the verification trail; and **the tier is per-fact, not per-file** —
+`ICC_Spec\index.md` records **15 of 20 files at `primary_spec`, 4 fully
+and 11 partly**, and a partly-`primary_spec` file has a split
+`evidence:` line. The worked example is the one batch 2 depends on:
+`icc__type__lutAtoB_lutBtoA.md` reads `evidence: primary_spec (clause
+numbers + the CLUT/interpolation rules) / icc_secondary_code (byte
+layouts — NOT re-transcribed this pass)`, so its clause numbers are
+citable and its byte tables are not. `lut.rs` already writes it that
+way. *(verified — index, frontmatter, and `lut.rs` §Sourcing read.)*
+**The prohibition is unchanged for every document nobody has read** —
+ICC.1:2010, ICC.1:2001-04, ISO 13655, the CIE and IEC documents, and
+"Adobe's document", which remains an attribution transcribed from a code
+comment. And DL-002's **other** half is untouched: automated retrieval
+from color.org is still prohibited; ICC.1:2022 was cleared by *human*
+retrieval, which created no route for agents.
+
+### Two owed items closed — both by checking, not by assuming
+
+- **The `legacy_lab_probe.rs` module-doc arithmetic is fixed.** P3
+  general `L*` now reads **50.0008** and P4 general `a*` **126.0078**,
+  matching this librarian's recomputation and README §12.1, with a dated
+  correction note in the file naming what was wrong and why no verdict
+  moved. *(verified — read.)*
+- **The corpus retraction landed.** `icc__ref__v2_v4_divergence.md`
+  carries *"★ RETRACTED 2026-08-11 (C3) — there is NO divergence from
+  lcms2 here"*; `index.md` files it as the corpus's **third self-defect**
+  with the generalising lesson attached — *"Reading a codebase's types is
+  not observing its behaviour"* — and a new evidence file
+  `icc__ref__lcms2_measured_behaviour.md` (M1 the selector, M2 the BPC
+  finding). *(verified — read.)* **This is the second consecutive filing
+  where an item carried as outstanding turned out to be done.** The rule
+  that keeps paying: check the live source, do not trust the last
+  filing's status.
+
+### A wrong claim this librarian caught in its own draft
+
+The ROADMAP's batch 2 block was drafted with *"iccMAX identification and
+refusal by name — not delivered by either batch"* in its owed list.
+**That is false, and the live source refutes it**: `Profile::parse`
+refuses major version ≥ 5 with `ParseError::IccMaxRefused`, whose
+`Display` names iccMAX, and `iccmax_is_refused_by_name` asserts the
+message **contains the string `"iccMAX"`** with the comment *"'refuse it
+by name' is the requirement."* It was delivered in **Pass 0**.
+*(verified — `lib.rs:94–99, 215–222`, `diag.rs:41–71`.)* The block now
+records the correction rather than deleting the item, because **"nobody
+checked this" and "this is done" look identical in a to-do list** — and
+because the same rule that governs dispatches governs drafts: an
+unverified statement about the tree is a claim, whoever wrote it.
+
+### Filed this session (continuation)
+
+| Where | What |
+|---|---|
+| `ARCHITECTURE.md` §5 | **DL-014** — DL-002's successor. Terms for citing ICC.1:2022 clause numbers; per-fact tier; the unread-document list; what it deliberately does **not** do (no retroactive blessing, no change to the automated-retrieval prohibition). DL-001…DL-013 untouched. |
+| `ROADMAP.md` | A **Pass 2 batch 2 progress block** (commit, the four design choices, the hostile-input guards, the sweep with its boundary, clause 2 stated as PARTIAL with both readings, and what Pass 2 still owes); a dated **Pass 3 annotation** (the first `implementation-cross-check` row, NA-002's cost coming due, the sRGB/D65 single-source gap and the BT.709 retrieval question, and Annex F/10.6 making curve work specification-following); header status line updated. **No plan text rewritten.** |
+| `docs/NUMERIC_CLAIMS.md` | **§2.2**, a provenance block for `d40d601` with **no rows under it**, stating why Pass 2 produces no numeric claim; **§2.2.1**, the sweep recorded as a coverage observation **deliberately given no NC number**, with its boundary in the same terms as any §3 coverage line; **§7.2**, re-checking every owed item, closing two, and adding three; §8 updated for DL-014. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the Pass 2 remainder decision and Pass 3. |
+
+Not touched, by instruction and by ownership: the corpus
+(`icc-spec-librarian`), `LEGAL.md` and `TOLERANCES.md`
+(`icc-conformance`). **Nothing was committed** — instructed not to, and
+committing is the engineer's act. **No git command was run**, by an agent
+that has no shell.
+
+### Left for the next session to not assume
+
+- **That `d40d601` exists or contains what is recorded here.** The files
+  are verified; the repository is not.
+- **That the sweep's 40/40 means the LUT decoders were exercised.** It
+  does not — no per-tag-type breakdown was taken, and this machine's
+  profile population is the wrong shape for `mAB `/`mBA `.
+- **That Pass 2 is done.** Clause 1 is met on one machine; clause 2 is
+  partial and blocked on a scope decision, not on code.
+- **That DL-014 blesses the ICC.1 citations already in the tree.** It
+  does not, explicitly. No audit of them has been performed by anyone.
+- **That `TOLERANCES.md` has caught up with Pass 2.** It has not. §3.2's
+  four Pass 2 rows all still carry **`—` in Tolerance, Justification and
+  Measured**, and §6's coverage table still reads **"2–8 | not
+  started"** while both batches are built and 40 profiles have been
+  swept. *(verified — grepped and read this session, and **not edited**:
+  that file is `icc-conformance`'s.)* Two of those four rows —
+  `s15Fixed16Number` decode and curve evaluation — are the ones §3.2's
+  own preamble says exist *"so that the ones which are numeric are not
+  forgotten"*, and they are the natural first Pass 2 rows in this ledger
+  if anyone fills them.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.
