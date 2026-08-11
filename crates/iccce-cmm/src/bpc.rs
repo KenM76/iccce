@@ -171,21 +171,30 @@ mod tests {
         assert!((dark_out.y - dark.y) / dark.y > (mid_out.y - mid.y) / mid.y);
     }
 
-    /// The corpus's cross-checked magnitude anchor: with source black
-    /// 0 and the perceptual black as destination, L* of black lands
-    /// at ≈ 3.148 (the difftest's predict_bpc_lstar confirmed lcms2's
-    /// observed −3.1482 to 3e-5; corpus precision audit gives exact
-    /// 3.148172). implementation-cross-check class: the expectation
-    /// is lcms2's arithmetic, published via Maria 2013's constraints.
+    /// The corpus's cross-checked magnitude anchor — in the CORRECT
+    /// direction: source black = the perceptual black, destination
+    /// black = 0 (the probe's scenario: lcms2's forced v4-perceptual
+    /// source into an ideal destination). Black maps BELOW zero and
+    /// L* lands at exactly −3.148172 (corpus precision audit; the
+    /// difftest confirmed lcms2's observed −3.1482 to 3e-5).
+    /// implementation-cross-check class.
+    ///
+    /// The FIRST version of this test built the opposite direction
+    /// (bs=0 → bd=perceptual, which legitimately gives +3.1371 — a
+    /// different number) and failed; worse, the engineer's shell
+    /// pipeline greped for 'test result' in a way that matched FAILED
+    /// lines with exit 0, and a commit went through with the failure.
+    /// Both the scenario and the pipeline are fixed; the incident is
+    /// recorded here and in the session log.
     #[test]
     fn magnitude_anchor_matches_corpus_audit() {
         let scale = BpcScale::new(
+            PERCEPTUAL_BLACK,
             Xyz {
                 x: 0.0,
                 y: 0.0,
                 z: 0.0,
             },
-            PERCEPTUAL_BLACK,
         )
         .unwrap();
         let black_out = scale.apply(Xyz {
@@ -193,7 +202,9 @@ mod tests {
             y: 0.0,
             z: 0.0,
         });
+        // Below-black maps negative; the Lab linear segment extends
+        // (deliberately unclamped in iccce-color — the A9 layering).
         let lab = iccce_color::Lab::from_xyz(black_out, D50);
-        assert!((lab.l - 3.148172).abs() < 1e-5, "L* = {}", lab.l);
+        assert!((lab.l - (-3.148172)).abs() < 1e-5, "L* = {}", lab.l);
     }
 }
