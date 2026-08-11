@@ -116,7 +116,11 @@ pub enum Malformation {
     /// Same tag signature appears more than once in the directory.
     /// Legality NOT SOURCED; iccce's recorded choice (ambiguity A13) is
     /// that *consumers* take the first — the table itself keeps both.
-    DuplicateTagSignature { first_index: usize, dup_index: usize, sig: Signature },
+    DuplicateTagSignature {
+        first_index: usize,
+        dup_index: usize,
+        sig: Signature,
+    },
 }
 
 impl std::fmt::Display for Malformation {
@@ -132,24 +136,43 @@ impl std::fmt::Display for Malformation {
                 actual - *declared as usize
             ),
             Self::UnknownRenderingIntent { value } => {
-                write!(f, "rendering intent 0x{value:08X} is outside the defined 0..=3")
+                write!(
+                    f,
+                    "rendering intent 0x{value:08X} is outside the defined 0..=3"
+                )
             }
             Self::TagOverrun { index, sig } => {
-                write!(f, "tag[{index}] {sig}: data extends past declared profile size")
+                write!(
+                    f,
+                    "tag[{index}] {sig}: data extends past declared profile size"
+                )
             }
             Self::TagOverlapsTable { index, sig } => {
-                write!(f, "tag[{index}] {sig}: data offset lies inside the tag table")
+                write!(
+                    f,
+                    "tag[{index}] {sig}: data offset lies inside the tag table"
+                )
             }
             Self::TagMisaligned { index, sig } => {
                 write!(f, "tag[{index}] {sig}: offset not 4-byte aligned")
             }
             Self::TagTooSmall { index, sig } => {
-                write!(f, "tag[{index}] {sig}: size < 8, too small for a type signature")
+                write!(
+                    f,
+                    "tag[{index}] {sig}: size < 8, too small for a type signature"
+                )
             }
             Self::TagBaseReservedNonZero { index, sig } => {
-                write!(f, "tag[{index}] {sig}: reserved bytes after type signature non-zero")
+                write!(
+                    f,
+                    "tag[{index}] {sig}: reserved bytes after type signature non-zero"
+                )
             }
-            Self::DuplicateTagSignature { first_index, dup_index, sig } => write!(
+            Self::DuplicateTagSignature {
+                first_index,
+                dup_index,
+                sig,
+            } => write!(
                 f,
                 "tag[{dup_index}] {sig}: duplicate of tag[{first_index}] \
                  (consumers take the first; recorded choice A13)"

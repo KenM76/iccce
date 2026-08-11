@@ -233,11 +233,13 @@ mod tests {
         let mut b = minimal_profile();
         b.extend_from_slice(&[0u8; 3]); // container padding
         let p = Profile::parse(&b).unwrap();
-        assert!(
-            p.malformations
-                .iter()
-                .any(|m| matches!(m, Malformation::TrailingBytes { declared: 164, actual: 167 }))
-        );
+        assert!(p.malformations.iter().any(|m| matches!(
+            m,
+            Malformation::TrailingBytes {
+                declared: 164,
+                actual: 167
+            }
+        )));
         // ...and the header still says what the FILE says.
         assert_eq!(p.header.size, 164);
     }

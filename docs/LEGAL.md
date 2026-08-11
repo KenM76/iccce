@@ -14,9 +14,10 @@ available" is not "freely redistributable"** — before any bulk
 extraction into the RAG, read the actual terms on the ICC's site and
 record here what they permit, with the date checked.
 
-Until that is done, treat the corpus rule as: summarise and cite,
-transcribe only what is needed to implement, and keep the corpus private
-and uncommitted.
+That has been done (§2.1). The standing corpus rule is: **summarise and
+cite, transcribe only what is needed to implement, and keep the corpus
+private and uncommitted.** This rule is **unchanged** by the operator
+retrieval recorded in §2.4 — acquisition is not a reproduction licence.
 
 ### 2.1 Terms as actually checked — 2026-08-11
 
@@ -78,7 +79,13 @@ Operative corpus rule, therefore:
   must stay on local disk. **Do not place it on `R:\` (Dropbox-synced)
   or any network share**, and never in a git remote.
 
-### 2.2 ★ BLOCKER — automated retrieval is prohibited by the ToS (OPERATOR DECISION)
+### 2.2 ★ BLOCKER (CLEARED 2026-08-11 by operator retrieval — see §2.4) — automated retrieval is prohibited by the ToS (OPERATOR DECISION)
+
+**Status: the blocker described below was resolved on 2026-08-11 by
+option (1), the operator's own browser download. §2.2 is retained
+unedited as the dated record of why no agent fetched the document, and
+the prohibition on *agent* retrieval from `color.org` remains in force
+permanently.**
 
 **This is a hard gate and it was not worked around.** The ToS
 **USE OF SERVICES** section prohibits, verbatim:
@@ -144,6 +151,62 @@ out-of-range value, the rendering-intent semantics, the interpolation
 rule between LUT grid points — **is not recoverable from this route**
 and is recorded as an open gap, not guessed. This is why §2.2 item (1)
 is worth Ken's two minutes.
+
+### 2.4 ★ Option (1) exercised — operator retrieval, 2026-08-11
+
+**Ken retrieved `ICC.1-2022-05.pdf` himself, in a browser, on
+2026-08-11**, and placed it at
+`D:\Dev\Rag-Specialized\ICC_Spec\_sources\ICC.1-2022-05.pdf`
+(905 961 bytes; file mtime 2026-08-11 11:12). PDF metadata, read
+locally: `/Title` "ICC.1-2202-05.pdf" *(sic — the ICC's own metadata
+transposes 2022 to 2202)*, `/Author` "International Color Consortium",
+`/CreationDate` 2022-04-25, 126 pages. The document identifies itself
+as **ICC.1:2022**, profile version **4.4.0.0**.
+
+**Why this is outside §2.2's prohibition:** the ToS clause bars "any
+robot, spider, or other automated device" from accessing the Services.
+A person clicking a download link in a browser is none of those. **No
+agent fetched this file, and none may** — §2.2's rule against agent
+retrieval from `color.org` / `archive.color.org` stands unchanged and
+permanently.
+
+**What this changes:** the corpus may now cite ICC.1:2022 as
+**`primary_spec`**, with real clause, table and equation numbers. The
+`icc-spec-librarian` corpus was upgraded against it on 2026-08-11.
+
+**What this does NOT change — read before quoting anything outward:**
+
+1. **§2.1 governs reproduction, and §2.1 is unchanged.** The ToS grants
+   no reproduction right; possessing a copy is not a licence to
+   redistribute one. **Summarise-and-cite still applies to every piece
+   of text that leaves the corpus** — including into source comments,
+   `docs/`, commit messages, issues, or any published artifact. Short
+   verbatim quotation with a clause citation is normal technical
+   practice and is permitted; bulk verbatim clause text is not.
+2. **The corpus stays private and uncommitted**, on local `D:\` only.
+   Not `R:\` (Dropbox-synced), not any share, not any git remote — the
+   ToS bars reproduction "on any other web site or networked computer
+   environment".
+3. **The `_sources\` PDF itself is never committed** and never copied
+   out of `D:\Dev\Rag-Specialized\ICC_Spec\_sources\`.
+4. **Facts are still facts.** Field offsets, encodings, constants and
+   equations are not copyrightable expression (§5) and may be
+   transcribed into iccce freely, with a clause citation. The prose
+   around them may not.
+
+**Tool limitation encountered and reported rather than worked around:**
+the agent's PDF *page-image* reader requires `pdftoppm` (poppler), which
+is not installed for it, so no page was read as an image. Text
+extraction was performed locally with **three independent engines** —
+`pypdf` 6.7.0, poppler `pdftotext -layout`, and `pdfminer.six` — and
+every load-bearing passage was extracted by at least two of them and
+compared. **One systematic extraction hazard was found and is recorded
+in the corpus:** ICC.1:2022 sets mathematical signs in the Symbol font,
+which all three engines render into the Unicode private-use area
+(`U+F02D` minus, `U+F02B` plus). Naïve extraction therefore **silently
+drops the minus sign**, turning "−128,0" into "128,0". Any future
+extraction from this PDF must map the private-use range before reading
+numbers out of it.
 
 ## 3. Profiles as test fixtures
 

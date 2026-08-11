@@ -66,13 +66,38 @@ weight:
 
 **Out of scope, deliberately** — say no now rather than drifting:
 
-- **Profile *creation*** from measurement data. That is a profiler, a
-  different product, and it needs measurement hardware to validate.
 - **iccMAX (ICC.2) execution.** Parse and identify it so a file carrying
   one is not mistaken for corrupt; do not implement its calculator
   element. Revisit only if something real needs it.
 - **Display calibration** — talking to hardware, loading video LUTs.
 - **A colour picker, a UI, or anything user-facing.** This is a library.
+
+**Moved out of "out of scope" — profile *creation***
+
+This list previously read *"**Profile creation** from measurement data.
+That is a profiler, a different product, and it needs measurement
+hardware to validate."* **That firm no was reversed by the operator on
+2026-08-11.** Profile creation is now **future scope**: planned as Pass
+10 in `docs/ROADMAP.md`, positioned after the `pdfce` bridge, to be sized
+when reached. Decision record, including the wording it reverses:
+`docs/ARCHITECTURE.md` **DL-008**.
+
+Recorded this way — as a change, with the date — rather than quietly
+deleted, because a scope statement that silently contradicts an earlier
+one is worse than either version of it.
+
+**The rationale did not go away with the no.** "It needs measurement
+hardware to validate" was an engineering fact, and it survives as the
+open problem Pass 10 must solve first: a profiler's output is a claim
+about a physical device, and neither self-consistency nor agreement with
+lcms2 can tell you whether the profile describes the printer. Building
+one before that is answered would produce exactly the plausible-looking
+wrong result this project is organised against.
+
+**Also added to scope on 2026-08-11:** HDR — the BT.2100 PQ/HLG transfer
+functions and BT.2020/2100 primaries — as Pass 9 (`DL-007`); and
+publication to crates.io as the intended end state (`DL-009`), which
+authorises no push, tag or release on its own.
 
 ---
 

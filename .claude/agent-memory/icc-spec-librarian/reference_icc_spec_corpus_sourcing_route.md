@@ -7,7 +7,9 @@ metadata:
 
 **Corpus location:** `D:\Dev\Rag-Specialized\ICC_Spec\` (start at `index.md`, then `LEGAL_NOTE.md`).
 
-**The working sourcing route, when the ICC.1 PDF is unavailable** (see [[icc-tos-automated-access-blocker]]) — two independent, permissively-licensed sources, fetched from `raw.githubusercontent.com`, which is **not** "the Services" under ICC's ToS:
+**★ Since 2026-08-11 the PRIMARY source is available** — `_sources\ICC.1-2022-05.pdf`, human-downloaded by Ken (see [[icc-tos-automated-access-blocker]]). **Cite ICC.1:2022 clauses first.** The two-codebase route below is now a **cross-check**, not the primary route — but keep using it: it is what makes a disagreement with lcms2 detectable, and per project rule 7 such a disagreement is a finding. It also remains the only source for `textDescriptionType` ('desc'), which has no clause in ICC.1:2022.
+
+**The two-codebase route** — two independent, permissively-licensed sources, fetched from `raw.githubusercontent.com`, which is **not** "the Services" under ICC's ToS:
 
 | Source | Repo | Files that carry the facts | Licence |
 |---|---|---|---|

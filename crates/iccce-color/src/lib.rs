@@ -20,10 +20,36 @@
 //!   crate's own output. A test whose expected value was produced by the
 //!   function under test detects change, not error.
 //!
-//! ## Status
+//! ## Status — Pass 1
 //!
-//! Pass 0 scaffold. The colorimetry itself is Pass 1, which begins only
-//! once the `ICC_Spec` corpus provides sourced reference values
-//! (`docs/ROADMAP.md` Pass 1).
+//! Implemented: XYZ/xyY ([`xyz`]), Lab/LCh ([`lab`]), standard
+//! illuminants ([`illuminant`]), von Kries-method chromatic adaptation
+//! with the Bradford cone matrix ([`adapt`]), ΔE76 and CIEDE2000
+//! ([`delta_e`]) — the latter validated against all 34 Sharma et al.
+//! (2005) ground-truth pairs.
+//!
+//! Deliberately absent, as recorded gaps (not oversights):
+//!
+//! - **ΔE94 / ΔE CMC** — formulas not yet transcribed from a citable
+//!   source; an implementation now could only be lcms2-cross-checked,
+//!   a weaker claim rule 3 requires labelling
+//!   (`cie__ref__delta_e.md`).
+//! - **von Kries (HPE) cone matrix** — corpus digits are a placeholder
+//!   marked DO NOT USE. The general *method* is implemented; the
+//!   specific matrix lands when sourced.
+//! - **CAT02** — CIE 159 paywalled; not needed for ICC.1.
+//! - **Observer CMF tables** — not needed until spectral input exists.
 
-// Pass 1 will populate: xyz, lab, lch, illuminant, adapt, delta_e.
+pub mod adapt;
+pub mod delta_e;
+pub mod illuminant;
+pub mod lab;
+pub mod mat3;
+pub mod xyz;
+
+pub use adapt::{BRADFORD, adaptation_matrix};
+pub use delta_e::{delta_e_76, delta_e_2000, delta_e_2000_k};
+pub use illuminant::{D50, D65_XY};
+pub use lab::{Lab, Lch};
+pub use mat3::Mat3;
+pub use xyz::{XyY, Xyz};
