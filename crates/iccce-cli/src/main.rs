@@ -30,6 +30,13 @@ iccce — ICC colour management engine
 
 USAGE:
   iccce inspect <profile>   Print the profile header and tag table.
+  iccce transform --src <profile> --dst <profile>
+                            Convert device values, source -> destination,
+                            media-relative colorimetric (the only intent
+                            implemented; others are refused by name).
+                            Reads one triple per line from stdin, floats
+                            in 0..1 whitespace-separated; writes one
+                            converted triple per line, 6 decimals.
 
 Profiles are read as raw bytes; any file (or stream dump) containing an
 ICC profile is accepted. Malformations are reported, never repaired.
@@ -46,6 +53,7 @@ fn main() -> ExitCode {
             };
             cmd_inspect(path)
         }
+        Some("transform") => cmd_transform(&args[1..]),
         Some(other) => {
             eprintln!("iccce: unknown subcommand `{other}`\n\n{USAGE}");
             ExitCode::from(2)
@@ -158,6 +166,107 @@ fn cmd_inspect(path: &str) -> ExitCode {
     println!("malformations: {}", profile.malformations.len());
     for m in &profile.malformations {
         println!("malformation: {m}");
+    }
+    ExitCode::SUCCESS
+}
+
+/// `iccce transform --src <p> --dst <p>` — Pass 3's scriptable surface.
+///
+/// WHY stdin/stdout triples: this is the interface `tools/difftest`
+/// diffs against transicc, so the contract is the harness's, not a
+/// human's — one triple per line, floats 0..1, output at 6 decimals
+/// (one decimal more than transicc's 4, so the comparison is never
+/// limited by iccce's print precision), no banner on stdout.
+///
+/// Only media-relative colorimetric exists (Pass 3 scope); an --intent
+/// flag naming anything else is refused by name rather than silently
+/// substituted — a substituted intent produces plausible wrong colour.
+fn cmd_transform(args: &[String]) -> ExitCode {
+    let mut src_path: Option<&String> = None;
+    let mut dst_path: Option<&String> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--src" if i + 1 < args.len() => {
+                src_path = Some(&args[i + 1]);
+                i += 2;
+            }
+            "--dst" if i + 1 < args.len() => {
+                dst_path = Some(&args[i + 1]);
+                i += 2;
+            }
+            "--intent" if i + 1 < args.len() => {
+                let intent = &args[i + 1];
+                if intent != "media-relative" {
+                    eprintln!(
+                        "iccce transform: intent `{intent}` not implemented \
+                         (Pass 3 implements media-relative only); refusing \
+                         rather than substituting"
+                    );
+                    return ExitCode::from(1);
+                }
+                i += 2;
+            }
+            other => {
+                eprintln!("iccce transform: unknown argument `{other}`\n\n{USAGE}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let (Some(src_path), Some(dst_path)) = (src_path, dst_path) else {
+        eprintln!("iccce transform: --src and --dst are required\n\n{USAGE}");
+        return ExitCode::from(2);
+    };
+
+    let load = |path: &String| -> Result<iccce_profile::Profile, String> {
+        let bytes = std::fs::read(path).map_err(|e| format!("cannot read `{path}`: {e}"))?;
+        iccce_profile::Profile::parse(&bytes).map_err(|e| format!("`{path}` refused: {e}"))
+    };
+    let (src, dst) = match (load(src_path), load(dst_path)) {
+        (Ok(s), Ok(d)) => (s, d),
+        (Err(e), _) | (_, Err(e)) => {
+            eprintln!("iccce transform: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let transform = match iccce_cmm::MatrixTrcTransform::new(&src, &dst) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("iccce transform: cannot build transform: {e}");
+            return ExitCode::from(1);
+        }
+    };
+
+    let stdin = std::io::stdin();
+    for (lineno, line) in std::io::BufRead::lines(stdin.lock()).enumerate() {
+        let line = match line {
+            Ok(l) => l,
+            Err(e) => {
+                eprintln!("iccce transform: stdin read error: {e}");
+                return ExitCode::from(1);
+            }
+        };
+        if line.trim().is_empty() {
+            continue;
+        }
+        let vals: Result<Vec<f64>, _> = line.split_whitespace().map(str::parse::<f64>).collect();
+        let rgb: [f64; 3] = match vals {
+            Ok(v) if v.len() == 3 => [v[0], v[1], v[2]],
+            _ => {
+                eprintln!(
+                    "iccce transform: line {}: expected three floats, got `{line}`",
+                    lineno + 1
+                );
+                return ExitCode::from(1);
+            }
+        };
+        match transform.convert(rgb) {
+            Ok(out) => println!("{:.6} {:.6} {:.6}", out[0], out[1], out[2]),
+            Err(e) => {
+                eprintln!("iccce transform: line {}: {e}", lineno + 1);
+                return ExitCode::from(1);
+            }
+        }
     }
     ExitCode::SUCCESS
 }
