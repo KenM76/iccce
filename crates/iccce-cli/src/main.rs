@@ -30,14 +30,17 @@ iccce — ICC colour management engine
 
 USAGE:
   iccce inspect <profile>   Print the profile header and tag table.
-  iccce transform --src <profile> --dst <profile> [--intent <i>]
+  iccce transform --src <profile> --dst <profile> [--intent <i>] [--bpc]
                             Convert device values, source -> destination.
                             <i>: media-relative (default), perceptual,
-                            saturation, absolute. Reads one set of source
-                            device values per line from stdin (floats in
-                            0..1, whitespace-separated; count = source
-                            channel count, e.g. 4 for CMYK); writes one
-                            converted RGB triple per line, 6 decimals.
+                            saturation, absolute. --bpc opts in to black
+                            point compensation (never forced; refused by
+                            name at absolute or outside the estimation
+                            subset). Reads one set of source device
+                            values per line from stdin (floats in 0..1,
+                            whitespace-separated; count = source channel
+                            count); writes one converted set per line,
+                            6 decimals.
 
 Profiles are read as raw bytes; any file (or stream dump) containing an
 ICC profile is accepted. Malformations are reported, never repaired.
@@ -189,6 +192,7 @@ fn cmd_transform(args: &[String]) -> ExitCode {
     let mut src_path: Option<&String> = None;
     let mut dst_path: Option<&String> = None;
     let mut intent = iccce_cmm::matrix_trc::Intent::MediaRelative;
+    let mut bpc = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -215,6 +219,10 @@ fn cmd_transform(args: &[String]) -> ExitCode {
                     }
                 };
                 i += 2;
+            }
+            "--bpc" => {
+                bpc = true;
+                i += 1;
             }
             other => {
                 eprintln!("iccce transform: unknown argument `{other}`\n\n{USAGE}");
@@ -247,6 +255,19 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             eprintln!("iccce transform: cannot build transform: {e}");
             return ExitCode::from(1);
         }
+    };
+    let chain = if bpc {
+        match chain.with_bpc() {
+            Ok(c) => c,
+            Err(e) => {
+                // A refusal (absolute intent; estimation outside the
+                // named subset) is the deliverable, not a crash.
+                eprintln!("iccce transform: --bpc refused: {e}");
+                return ExitCode::from(1);
+            }
+        }
+    } else {
+        chain
     };
     let channels = chain.input_channels();
 
