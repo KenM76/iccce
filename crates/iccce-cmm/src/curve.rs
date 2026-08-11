@@ -75,14 +75,10 @@ pub enum CurveError {
     /// F.2/F.3: non-monotonic (but non-constant) — inverse is
     /// UNDEFINED. iccce refuses and reports instead of choosing.
     NonMonotonicInverseUndefined,
-    /// Analytic inverse not implemented for this parametric type
-    /// (types 1, 2, 4 — Pass 3 remainder, recorded in the ROADMAP;
-    /// refusing beats silently sampling an approximation nobody
-    /// measured).
-    InverseUnsupported { func_type: u16 },
     /// Degenerate parametric parameters (a ≤ 0, c ≤ 0, or g ≤ 0 where
-    /// the inverse needs them positive): the analytic inverse does not
-    /// exist. Reported, not guessed.
+    /// the inverse needs them positive for monotonicity): the analytic
+    /// inverse does not exist. Reported, not guessed — the same
+    /// posture as a non-monotonic table.
     DegenerateParams { func_type: u16 },
 }
 
@@ -99,10 +95,6 @@ impl std::fmt::Display for CurveError {
             Self::NonMonotonicInverseUndefined => write!(
                 f,
                 "non-monotonic curve: inverse undefined (Annex F); refused rather than chosen"
-            ),
-            Self::InverseUnsupported { func_type } => write!(
-                f,
-                "analytic inverse for parametric funcType {func_type} not implemented (Pass 3 remainder)"
             ),
             Self::DegenerateParams { func_type } => {
                 write!(
@@ -362,11 +354,25 @@ fn invert_table(t: &[u16], y: f64) -> Result<f64, CurveError> {
     Ok(if increasing { x } else { 1.0 - x })
 }
 
-/// Analytic parametric inverses for the types Pass 3 needs (0 and 3 —
-/// the shapes real display profiles carry: pure gamma, and the
-/// sRGB-style linear-toe curve). Types 1, 2, 4 are refused with a
-/// named error until implemented (a silently sampled approximation
-/// would be an unmeasured approximation, which rule 4 forbids).
+/// Analytic parametric inverses for all five function types.
+///
+/// Each is the algebraic inversion of its sourced forward formula
+/// (Table 68 via `icc__type__curve_parametric.md`), assuming the
+/// parameter signs that make the forward curve monotone increasing
+/// (`a > 0`, `g > 0`, and `c > 0` where a linear branch exists);
+/// anything else is refused as [`CurveError::DegenerateParams`] —
+/// refused, not guessed, because a non-monotone parametric has an
+/// UNDEFINED inverse exactly as a non-monotone table does.
+///
+/// Where a curve has a flat low region (types 1/2: every `x` below
+/// `−b/a` maps to the same floor value), the inverse of the floor
+/// follows **F.1(a)**: the plateau ends before the domain end, so the
+/// HIGHEST x of the plateau (`−b/a`) is returned.
+///
+/// Branch selection at type 3/4's breakpoint compares against the
+/// LINEAR side's top value — continuity at `X = d` is not guaranteed
+/// (corpus A18: the spec imposes none), so nothing assumes the two
+/// branches meet.
 fn invert_parametric(func_type: u16, p: &[f64], y: f64) -> Result<f64, CurveError> {
     let y = y.clamp(0.0, 1.0);
     match func_type {
@@ -376,6 +382,34 @@ fn invert_parametric(func_type: u16, p: &[f64], y: f64) -> Result<f64, CurveErro
                 return Err(CurveError::ConstantNotInvertible);
             }
             Ok(y.powf(1.0 / g))
+        }
+        1 => {
+            // Forward: Y = (aX+b)^g for X ≥ −b/a; Y = 0 otherwise.
+            let (g, a, b) = (p[0], p[1], p[2]);
+            if a <= 0.0 || g <= 0.0 {
+                return Err(CurveError::DegenerateParams { func_type });
+            }
+            let x0 = (-b / a).clamp(0.0, 1.0); // plateau end (may be 0)
+            if y <= 0.0 {
+                // F.1(a): plateau [0, x0] → 0; ends before x_n → highest.
+                Ok(x0)
+            } else {
+                Ok(((y.powf(1.0 / g) - b) / a).clamp(0.0, 1.0))
+            }
+        }
+        2 => {
+            // Forward: Y = (aX+b)^g + c for X ≥ −b/a; Y = c otherwise.
+            let (g, a, b, c) = (p[0], p[1], p[2], p[3]);
+            if a <= 0.0 || g <= 0.0 {
+                return Err(CurveError::DegenerateParams { func_type });
+            }
+            let x0 = (-b / a).clamp(0.0, 1.0);
+            let t = y - c;
+            if t <= 0.0 {
+                Ok(x0) // floor value c: F.1(a) highest x of the plateau
+            } else {
+                Ok(((t.powf(1.0 / g) - b) / a).clamp(0.0, 1.0))
+            }
         }
         3 => {
             // Forward: Y = (aX+b)^g for X ≥ d; Y = cX otherwise.
@@ -401,7 +435,27 @@ fn invert_parametric(func_type: u16, p: &[f64], y: f64) -> Result<f64, CurveErro
                 Ok(((base - b) / a).clamp(0.0, 1.0))
             }
         }
-        1 | 2 | 4 => Err(CurveError::InverseUnsupported { func_type }),
+        4 => {
+            // Forward: Y = (aX+b)^g + e for X ≥ d; Y = cX + f below.
+            let (g, a, b, c, d, e, f) = (p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
+            if a <= 0.0 || g <= 0.0 || c <= 0.0 || d < 0.0 {
+                return Err(CurveError::DegenerateParams { func_type });
+            }
+            let y_lin_top = c * d + f;
+            if y < y_lin_top {
+                Ok(((y - f) / c).clamp(0.0, 1.0))
+            } else {
+                let t = y - e;
+                if t < 0.0 {
+                    // Power branch cannot produce this y; it belongs to
+                    // no branch (the A18 gap between discontinuous
+                    // branches). Nearest attainable is the boundary —
+                    // the F.1(b) posture applied to the gap.
+                    return Ok(d.clamp(0.0, 1.0));
+                }
+                Ok(((t.powf(1.0 / g) - b) / a).clamp(0.0, 1.0))
+            }
+        }
         _ => Err(CurveError::ParametricUnevaluable { func_type }),
     }
 }
@@ -521,16 +575,83 @@ mod tests {
         }
     }
 
-    /// Unsupported inverses refuse by name instead of approximating.
+    /// Types 1, 2, 4 round-trip on both branches — arithmetic
+    /// identities on the sourced forward formulas. Parameters are
+    /// chosen so the forward curve stays WITHIN [0,1] on the domain:
+    /// this test's first version used curves exceeding 1.0, and the
+    /// normative range clip (10.18) turns the excess into a top
+    /// plateau whose information is destroyed — the "failure" was the
+    /// inverse correctly giving F.1's lowest-x-of-an-end-plateau
+    /// answer for a y the clipped curve reaches early. The code was
+    /// right; the expectation ignored the clip.
     #[test]
-    fn unsupported_parametric_inverse_refused() {
+    fn parametric_types_1_2_4_round_trip() {
+        let cases = [
+            // a + b = 1.0 → max exactly 1.0, no top clip.
+            (1u16, vec![2.0, 1.1, -0.1]),
+            // (a+b)^g + c = 0.974² + 0.05 ≈ 0.9987 < 1.
+            (2u16, vec![2.0, 1.1, -0.126, 0.05]),
+            // sRGB-shaped split; e = 0 so the top lands exactly at 1.
+            (
+                4u16,
+                vec![
+                    2.4,
+                    1.0 / 1.055,
+                    0.055 / 1.055,
+                    1.0 / 12.92,
+                    0.04045,
+                    0.0,
+                    0.0005,
+                ],
+            ),
+        ];
+        for (func_type, params) in cases {
+            let trc = Trc::Parametric {
+                func_type,
+                params: params.clone(),
+            };
+            // Probe strictly above the flat/low region (x = 0.15 on)
+            // for exact round trips…
+            for &x in &[0.15, 0.3, 0.7, 1.0] {
+                let back = trc.eval_inverse(trc.eval(x)).unwrap();
+                assert!(
+                    (back - x).abs() < 1e-9,
+                    "type {func_type}: x={x} back={back}"
+                );
+            }
+        }
+    }
+
+    /// The floor of types 1/2 inverts to the HIGHEST x of the plateau
+    /// (F.1(a): the flat region [0, −b/a] ends before the domain end).
+    /// Expectation from the verbatim F.1 rule.
+    #[test]
+    fn parametric_floor_inverts_to_plateau_end() {
+        // −b/a = 0.125/1.25 = 0.1.
+        let t1 = Trc::Parametric {
+            func_type: 1,
+            params: vec![2.0, 1.25, -0.125],
+        };
+        assert!((t1.eval_inverse(0.0).unwrap() - 0.1).abs() < 1e-12);
+        let t2 = Trc::Parametric {
+            func_type: 2,
+            params: vec![2.0, 1.25, -0.125, 0.05],
+        };
+        // Floor value is c = 0.05.
+        assert!((t2.eval_inverse(0.05).unwrap() - 0.1).abs() < 1e-12);
+    }
+
+    /// Degenerate parameters refuse by name instead of inventing a
+    /// non-monotone inverse.
+    #[test]
+    fn degenerate_parametric_inverse_refused() {
         let trc = Trc::Parametric {
-            func_type: 4,
-            params: vec![2.2, 1.0, 0.0, 0.1, 0.1, 0.0, 0.0],
+            func_type: 1,
+            params: vec![2.0, -1.0, 0.5], // a < 0: not monotone increasing
         };
         assert_eq!(
             trc.eval_inverse(0.5),
-            Err(CurveError::InverseUnsupported { func_type: 4 })
+            Err(CurveError::DegenerateParams { func_type: 1 })
         );
     }
 }
