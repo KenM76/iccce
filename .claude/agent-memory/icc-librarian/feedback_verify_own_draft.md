@@ -57,6 +57,23 @@ looking like evidence.**
    appears that no dispatch claimed, **record its existence and its
    unknown commit status** rather than absorbing it into the narrative.
 
+5. **Three more, all at the Pass 4 filing (2026-08-11), and one of them
+   was in the dispatch itself.** (a) The dispatch described
+   `mAB `/`mBA ` as *"undecoded-unevaluated"*; they have been **decoded
+   since Pass 2 batch 2** (`tag_types.rs` → `lut::decode_lut_ab`), and
+   only the *evaluator* is missing. Filing it as written would have
+   understated what Pass 2 shipped and mis-sized what Pass 4 has left.
+   (b) `tools/difftest/README.md` §14.7's record decomposition —
+   *"8 Pass 3, 1 smoke, 27 Pass 4"* — is **wrong in both terms while its
+   total (36) is right**; counting the emitters in the source gives
+   7 + 1 + 28. **A sum that comes out right is not evidence that its
+   terms are right.** (c) A sentence this librarian had carried through
+   **four** filings — *"`tools/gen-profiles/` does not exist and
+   `fixtures/synthetic/` holds only its README"* — had become **false**:
+   the crate exists with 28 tests and the directory holds **39 `.icc`
+   fixtures**. A negative claim about the tree decays exactly as fast as
+   a positive one.
+
 **How to apply.**
 
 - **Re-verify every carried-forward prediction on the Pass that was

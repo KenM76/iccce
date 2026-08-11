@@ -50,4 +50,27 @@ planned one.
   behavioural one, and the affected ledger rows must be **re-run, not
   re-read**.
 
-Related: [[iccce-pass-status]], [[iccce-verification-loop-runs-both-ways]].
+**★ Second instance, 2026-08-11 (Pass 4) — and this time the prediction
+was about the oracle's ALGORITHM, not its disagreement.** Three
+documents (NA-006, `NEXT_SESSION.md`, `ROADMAP.md`) carried *"iccce
+interpolates n-linear, **lcms2 tetrahedral**"*, and the Pass 4 blocker
+was filed as *"source lcms2's tetrahedral cube decomposition."*
+`icc-conformance` **read `cmsintrp.c` at the pin** instead of recalling
+it: for **four** inputs lcms2 runs a **hybrid** — linear in C, Sakamoto
+tetrahedral in M/Y/K. Consequences none of which "tetrahedral" implies:
+lcms2's scheme is **not symmetric in the four inks** (iccce's
+quadrilinear is); it is **not pure tetrahedral**, so **NA-006's ~1 ΔE
+bound — transcribed from the trilinear-vs-tetrahedral literature — was
+not the bound that applied**; and its float path quantises to `u16` at
+the CLUT boundary. Filed as **NC-056** with NA-006's dated status note.
+
+**The generalisation, which is the reusable part:** *never write a claim
+about an IMPLEMENTATION from memory either.* Project rule 2 says never
+write colour maths from memory; the same day, a clause number written
+from recollection (NA-003's "6.4") was found wrong and had already been
+**relied on** by a differential finding. **Recollection about a spec, an
+implementation, or a clause number are the same failure**, and the cost
+of reading the source once is a single lookup.
+
+Related: [[iccce-pass-status]], [[iccce-verification-loop-runs-both-ways]],
+[[iccce-tolerance-cannot-swallow-and-claim]], [[iccce-verify-own-draft-too]].

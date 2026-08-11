@@ -1,6 +1,6 @@
 ---
 name: lcms2-measured-behaviour-file
-description: Where measured (executed, not read) lcms2 behaviour lives in the ICC_Spec corpus — the M-id namespace, the pin, and the forced-BPC quirk that contaminates every v4 perceptual cross-check
+description: Where measured (executed, not read) lcms2 behaviour lives in the ICC_Spec corpus — the M-id namespace, the pin, and the five oracle quirks (forced BPC, the 4-input CLUT hybrid, the v2-display wtpt substitution) that must be known before any reading means anything
 metadata:
   type: reference
 ---
@@ -9,9 +9,14 @@ metadata:
 
 **Everything in it is pinned to lcms2 `21c582a594fe5279f90c0b93437c398f93bf62b0` (tag `lcms2.19.1`, 2.19), Windows/MSVC, 2026-08-11. Moving the pin invalidates every row until re-measured** — the tag is a mutable lightweight pointer, so the hash is the identity. Harness: `D:\Dev\iccce\tools\difftest` (README §12 is the run record; commit `bfd6b1e`); the pinned tree is on disk at `tools\difftest\vendor\lcms2` and can be re-grepped directly.
 
-Rows as of 2026-08-11:
+Rows as of 2026-08-11 (five, added over passes 3–6):
 
 - **M1** — legacy Lab keys off **tag type** in lcms2 too. Spec and lcms2 **agree**; the corpus's predicted divergence is measured **absent**. `ncl2` and B2A were *not* measured (source-read only) — that residue is a gap row in the corpus index.
 - **M2 ★** — **lcms2 forces BPC ON for v4 profiles at perceptual and saturation regardless of `-b`**, per "Adobe's document" not ICC.1, using a fixed `cmsPERCEPTUAL_BLACK` constant. **≈3.15 L\* at black.** **Consequence: any v4 perceptual/saturation comparison against lcms2 is partly measuring BPC** — check this before diagnosing a transform. Also the likely origin of the C1/C3 inference: lcms2 *does* key a decision on the profile version, just not the Lab one.
+- **M3** — lcms2's float **device** output exceeds 1,0 (max 1.000120) on the analytic-`TRC⁻¹` path and not on the tabulated one. A path artefact; settled from the spec **against** lcms2 (A39), but the verdict is "diverges", see [[icc-conformance-clause-binds-only-reading]].
+- **M4 ★★** — **"lcms2 uses tetrahedral interpolation" is true only of the 3-input case.** At **4 inputs** it runs a **hybrid**: linear along channel 0, tetrahedral in the other three — **asymmetric in the inks**, and **`CMS_LERP_FLAGS_TRILINEAR` is tested only in the 3-input branch**, so the method cannot be switched. `EVAL_FNS` extends the pattern to 15 inks. **An `mft2`'s "float" path quantises to u16 and calls the fixed-point twin.** Cost vs iccce's quadrilinear: **1.571 ΔE2000 at perceptual, 0.255 at media-relative — 6× between two tables in the same file**, so never derive a CLUT tolerance from the colorimetric table alone.
+- **M5 ★★★** — **lcms2 substitutes D50 for the `wtpt` of any v2 DISPLAY-class profile. 11.2 ΔE2000 at ICC-absolute** vs iccce's as-stored reading; modelling it collapses the residual 517×. **It is not a discard: `_cmsReadCHAD` under the identical guard synthesises Bradford(`wtpt`→D50) for the missing tag** — a coherent two-tag translation of the "v2 wtpt is unadapted" consensus. **Who is right is UNVERIFIED (A4b)** — ICC's own DemoIccMAX reads the tag as stored.
+
+**Cross-check before assuming a difference is iccce's fault:** M2 (v4 perceptual/saturation), M4 (any CLUT with ≥4 inputs), M5 (ICC-absolute with a v2 display profile on either end). Those three account for every large divergence measured so far.
 
 **Related corpus state:** BPC is RAG_PLAN Tier 2 and **not built** — neither Adobe's BPC document nor ICC's white paper has been obtained (needs an operator browser download), and ICC.1:2022 does not define BPC at all (**A28**). M2 records what the oracle does; it is not the algorithm's source.

@@ -31,18 +31,20 @@
 //!
 //! ## Status
 //!
-//! Pass 3 DONE (2026-08-11, both done-when numbers in
-//! `docs/NUMERIC_CLAIMS.md` §3.8): the Annex F.3 matrix/TRC model
-//! ([`matrix_trc`]) with curve evaluation/inversion per Annex F.1
-//! ([`curve`]), all four intents — absolute per the sourced D.6/D.7
-//! formula. Pass 4 in assembly: n-linear CLUT ([`clut`]), 16-bit PCS
-//! encodings ([`pcs_encoding`]), the lut16 device→PCS pipeline
-//! ([`lut_transform`]), and the source→destination [`transform::Chain`]
-//! (CMYK→RGB live; B2A/lut8/mAB stages pending). Still to come: BPC
-//! (Pass 5), compilation (Pass 6) (`docs/ROADMAP.md`).
+//! Pass 3 DONE; Pass 4's evaluation surface COMPLETE as of 2026-08-11
+//! (`docs/ROADMAP.md` has the records; this block has been stale twice
+//! before — if a module below contradicts it, trust the module):
+//! [`curve`] (F.1), [`matrix_trc`] (F.3, four intents),
+//! [`gray_trc`] (F.2), [`clut`] (n-linear, A16), [`pcs_encoding`]
+//! (both 16-bit Lab encodings + XYZ), [`lut_transform`] (mft1/mft2,
+//! both directions, per-type Lab codecs), [`lut_ab`] (mAB/mBA, GP-001
+//! counts), and [`transform::Chain`] (the 8.10.2 fallback, N↔M
+//! channel chains). Still to come: BPC (Pass 5), compiled transforms
+//! (Pass 6), named colour (Pass 7).
 
 pub mod clut;
 pub mod curve;
+pub mod gray_trc;
 pub mod lut_ab;
 pub mod lut_transform;
 pub mod matrix_trc;

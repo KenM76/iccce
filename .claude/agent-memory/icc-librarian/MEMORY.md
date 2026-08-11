@@ -1,7 +1,8 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — Pass 3 CLOSED 2026-08-11: first lcms2 cross-check (3.4762e-3 ΔE00), round trip 1.8788e-2, DL-017/DL-018.
+- [iccce Pass status](project_iccce_pass_status.md) — Pass 4 IN PROGRESS 2026-08-11: first CLUT differential, NA-006 priced at 1.5741 ΔE00, 11.217 ΔE00 absolute divergence, DL-019.
+- [A tolerance can't swallow and claim](project_tolerance_cannot_swallow_and_claim.md) — DL-019: wide structural gate + tight gate with the difference switched off; report-not-grade what nobody can adjudicate.
 - [Verify your own draft too](feedback_verify_own_draft.md) — the live-source rule covers your own inferences, dispatched totals, and the tree's shape (a Glob is timestamped).
 - [A gate must not reward deletion](project_gate_must_not_reward_deletion.md) — DL-018: an upper bound on a deliberate cost needs a prediction pin plus a sensitivity control.
 - [A bound can't catch its own magnitude](project_bound_cannot_catch_its_own_magnitude.md) — a spacing-derived tolerance is blind to an off-by-one-sample error; only exact-value endpoint tests catch it (DL-016).

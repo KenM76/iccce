@@ -1383,3 +1383,267 @@ later reader does not "helpfully" merge them.
   without the Windows colour directory.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — ★ Pass 4 in progress: the first CLUT differential, a named approximation finally priced, a prediction about lcms2 falsified by reading it, and an 11 ΔE divergence nobody can adjudicate yet
+
+**Eighth entry of the same calendar day and the same session.** Eight
+commits *(reported)*, thirteen new ledger rows, one new decision-log
+entry, three dated corrections to entries this ledger already carried —
+and, for the first time, **numbers that come out of a CLUT, a
+four-channel device space, a `Lab ` PCS and all four rendering intents.**
+
+| | Commit *(all **reported**; no agent in this project has ever run git)* |
+|---|---|
+| the Pass 3 closure filing committed + two engineer doc fixes | **`19a3b17`** |
+| `lut16` device→PCS pipeline — assembly **stage 1** | **`9aa1bca`** |
+| `transform::Chain` — **stage 2**; CMYK→RGB live, with the perceptual≡saturation shared-tag regression test | **`63874f9`** |
+| the CLI: **N-channel input and four intents** | **`490191b`** |
+| **B2A evaluation — stage 3**, bidirectional, both tag depths | **`b3f4388`** |
+| documentation catch-up | **`db60e92`** |
+| the Pass 4 A2B differential | **`d9e0b82`** |
+| untracked in-progress `tools/gen-profiles`, swept in by the above | **`edcb60e`** |
+
+**The hashes are reported.** This librarian has no shell and verified
+none of them. Everything marked *verified* below was read in the
+**working tree** or the **live corpus**, and — again — checking the
+dispatch against the source produced corrections, including one to the
+dispatch itself.
+
+### ★ What the differential measured, and the shape that makes it readable
+
+`USWebCoatedSWOP.icc` → the Windows system sRGB profile, **341
+deterministic CMYK points**, **all four A2B intents**, `-c0`, lcms2
+2.19.1 at pin `21c582a`; `summary pass=36 fail=0 skip=3 error=0`
+*(reported)*. Ledger **§3.9**, rows **NC-044 … NC-056**.
+
+**Pass 4 has a problem Pass 3 did not**, and the whole filing turns on
+it. Pass 3's disagreement with lcms2 was the oracle's 16-bit rounding —
+a *defect of precision*, so one tight tolerance was derivable and
+meaningful. **Pass 4's dominant term is an interpolation-method
+difference between two schemes ICC.1 does not choose between.** It is not
+an error in either implementation, it is ~1.6 ΔE2000, and it will not go
+away. NA-006 named the trap in advance: *"a tolerance wide enough to
+swallow ~1 ΔE cannot also demonstrate agreement."*
+
+**So the suite uses two kinds of gate and says which is which** — a
+**wide, structural** one whose value *is* the method envelope (2.0
+ΔE2000; catches a wrong index order, a wrong Lab decode, a swapped ink;
+**explicitly cannot claim agreement**), and **tight, arithmetic** ones
+with the method difference switched off:
+
+- **The interpolation-free corners** — the 16 hypercube corners are
+  **exact CLUT nodes** (each `mft2` input table starts `0x0000`, ends
+  `0xFFFF`), where the two schemes must agree identically and lcms2's
+  quantisation terms **vanish rather than accumulate**. Gate 1×10⁻³,
+  observed **5.9131×10⁻⁵** and **6.6558×10⁻⁵** — `transicc`'s own print
+  floor, **70× below the same comparison between nodes**. **This is the
+  strongest cross-check evidence this project has produced**, and it is
+  what makes the 2.0 gate defensible: without a node-only control, a wide
+  structural gate could hide a genuine 1.9 ΔE error.
+- **lcms2's own geometry substituted** — gate 2×10⁻², observed
+  **4.5931×10⁻³** / **4.8154×10⁻³**, a **55× / 326×** shrink. *This is
+  the record that claims agreement*, and the record says so on its own
+  face.
+
+**And the apparatus was graded before anything was concluded from it:**
+the harness's n-linear arm against `iccce_cmm::lut_transform::Lut16Model`
+on every point at every intent, tolerance 10⁻⁹, **observed 0.0 exactly**.
+An apparatus not shown to reproduce the thing it stands in for is not an
+apparatus.
+
+### ★ NA-006 is measured — and running all four intents was not a formality
+
+**The A16 n-linear choice has a price at last**: **1.5741 ΔE2000 max on
+SWOP's `A2B0` table**, **0.254 23 on `A2B1`** — computed from the CLUT
+and the two algorithms alone, with no lcms2 output in it. The corpus's
+*"up to ~1 ΔE"* was the right order and **an underestimate on one of the
+two tables**.
+
+**The factor of six is the argument.** The perceptual table's worst cell
+is deep shadow at near-full black, where the CLUT turns sharply; the
+colorimetric table is six times smoother. **A Pass 4 tolerance derived
+from the colorimetric intent alone would have been wrong by 6× for
+exactly the intents Pass 3 never exercised.** Nothing about a smooth
+colorimetric result predicts a rough perceptual one.
+
+**Two things this closes.** `clut.rs`'s *"per rule 4 (named and
+measured)"* — reported as an undischarged claim last filing — **is now
+true**, closed by fact rather than by prose. And NA-006's *"cannot yet be
+measured, because tetrahedral is deliberately absent"* was **wrong about
+its own difficulty**: pricing the choice needed a comparison arm **in the
+harness**, not a second interpolator in the shipped crate.
+
+### ★★ A prediction carried in three documents, falsified by reading the oracle
+
+**NA-006, `NEXT_SESSION.md` and `ROADMAP.md` all said *"iccce
+interpolates n-linear, lcms2 tetrahedral"***, and the Pass 4 blocker was
+recorded as *"source lcms2's tetrahedral cube decomposition."* Rather
+than recall it, `icc-conformance` **read `cmsintrp.c` at the pin**: for
+**four** inputs lcms2 runs a **hybrid** — *linear* in C, **Sakamoto
+tetrahedral** in M/Y/K, blended by the first channel's fraction. So
+lcms2's scheme **is not symmetric in the four inks** (iccce's
+quadrilinear is), **is not pure tetrahedral** — hence **a bound from the
+trilinear-vs-tetrahedral literature, which is exactly what NA-006's
+~1 ΔE was, is not the bound that applies** — and **its float path does
+not use the float interpolator**, an `mft2` tag being read into a 16-bit
+CLUT stage that quantises the input to `u16` and calls the fixed-point
+twin.
+
+**This is the second time a predicted disagreement with lcms2 was
+settled by measuring rather than assuming, and the second time the
+prediction was wrong in a way that mattered** — the first being
+DL-011/DL-012, where a *predicted* disagreement over the legacy-Lab
+selector was measured **absent**. The prediction is **left standing
+wherever it was written**; NC-056 and NA-006's dated note are the
+correction. **The failure mode is a prediction quietly becoming a
+citation**, and *"lcms2 uses tetrahedral"* was three documents away from
+being one.
+
+### ★★ A finding at the absolute intent: 11.217 ΔE2000, mechanism known, authority absent
+
+At `-t3` the two implementations differ by **max 11.217 ΔE2000, mean
+4.670** — two orders of magnitude more than at any other intent, worst
+at the **lightest** points. Read at the pin: `cmsio1.c`'s
+`_cmsReadMediaWhitePoint` **substitutes D50 for the stored `wtpt`** when
+a profile is **v2 and display-class**, and the destination sRGB
+profile's `wtpt` holds **D65** while its colorants are D50-adapted.
+**Both implementations build the same D.6/D.7 diagonal; they read
+different destination whites.** The ratio is a **32 % error in `Z`**, and
+modelling that single substitution collapses the disagreement **517×**.
+
+**Which one is right is not settled and cannot be settled here**: corpus
+**A4b** — the meaning of a v2 `wtpt` — is **UNVERIFIED**, ICC.1:2022 is
+silent on version 2's convention, and ICC.1:2001-04 has not been
+obtained. **lcms2's substitution is justified in its source by a comment,
+not by a clause.**
+
+**What the suite does about it is the reusable part**, and it is filed as
+**DL-019**: the raw comparisons are **REPORTED, NOT GRADED**, the gate at
+that intent becomes the **modelled** comparison (5×10⁻² against
+2.1677×10⁻² observed), and **both rejected alternatives are written down
+at the record** — widening to ~15 ΔE00 (*"a number chosen because it
+passed; 15 ΔE00 is a different colour"*, and it would silently absorb any
+future arithmetic error in the absolute path) and letting it fail
+permanently (*"a red line that never changes stops being read"*, and it
+would report the disagreement as unexplained when it is not). **This is
+the only place in the suite where a known disagreement is deliberately
+not gated**, and the scarcity is part of the rule.
+
+**NA-007 predicted this exact bite.** It was registered a filing ago
+saying *"where the assumption actually bites: v2 profiles, where the
+meaning of a non-D50 `wtpt` is A4b — UNVERIFIED… implementation consensus
+is not a specification reading, and this row exists so that sentence
+cannot quietly become one."* **The register worked**: an 11 ΔE divergence
+arrived pre-explained instead of as a mystery.
+
+### ★ Five things this filing corrected by reading rather than transcribing
+
+1. **The dispatch says `mAB `/`mBA ` are *"undecoded-unevaluated"*. Half
+   of that is wrong.** They have been **decoded since Pass 2 batch 2** —
+   `tag_types.rs` dispatches `sig::MAB`/`sig::MBA` to
+   `lut::decode_lut_ab`, producing `TagData::LutAToB`/`LutBToA`
+   *(verified — read)*. What is absent is an **evaluator** in
+   `iccce-cmm`, which `lut_transform.rs`'s scope note and
+   `ChainError::SourceTagUnsupported` both name. **That is stage 4**, and
+   describing it as undecoded would have understated what Pass 2 shipped
+   and mis-sized what Pass 4 has left.
+2. **`iccce-cmm/src/lib.rs`'s §Status is stale again — third consecutive
+   filing.** It now reads *"B2A/lut8/mAB stages pending"* on a crate
+   where `b3f4388` landed **B2A and lut8**; only `mAB `/`mBA ` is
+   pending. **Reported, not repaired.**
+3. **`cmd_transform`'s doc comment contradicts its own code**: *"Only
+   media-relative colorimetric exists (Pass 3 scope); an `--intent` flag
+   naming anything else is refused by name"*, sitting directly above a
+   `match` that accepts `perceptual`, `saturation` and `absolute`
+   *(verified — read)*. Worse than a stale status line: a reader who
+   trusts it concludes **no differential can reach the absolute
+   intent** — true this morning, and the reason the 11 ΔE finding was
+   impossible until `490191b`.
+4. **`tools/difftest/README.md` §14.7's record decomposition is wrong in
+   both terms while its total is right.** It says *"8 Pass 3 records, 1
+   smoke, 27 graded Pass 4"* and *"adds 30 Pass 4 records"*; counting the
+   emitters in the source gives **7**, 1, **28** and **31** — and
+   1 + 7 + 28 = **36**, the reported total, with **3** skips. **A sum
+   that comes out right is not evidence that its terms are right.**
+   **Reported, not repaired** — §14 is `icc-conformance`'s. As a
+   by-product this **confirms §2.4's structural hypothesis** about the
+   old `pass=8` line: `pass3.rs` emits seven records, so eight is seven
+   plus the smoke check. Ledger §3.9.8.
+5. **A carried claim about the tree is now false, and it was this
+   librarian's.** Four filings said *"`tools/gen-profiles/` does not
+   exist and `fixtures/synthetic/` holds only its README."*
+   **`gen-profiles` is a working crate with 28 tests, and
+   `fixtures/synthetic/` holds 39 `.icc` files** *(verified —
+   enumerated and the module doc read)*, including
+   `v4-cmyk-mab-lab.icc`, `v2-cmyk-mft1-lab.icc` and `v4-rgb-mft2-lab.icc`
+   — precisely the population Pass 4's remaining work needs and this
+   machine's colour directory lacks. **What that does not establish:**
+   nobody has run `gen-profiles verify` here, **no differential record
+   reads any of them**, and **Pass 2's clause-2 scope decision is not
+   thereby answered** — the operator was asked a question about intent,
+   and a generator appearing does not answer it.
+
+### The process slip, recorded rather than smoothed over
+
+**`edcb60e` exists because `d9e0b82` was committed with a cwd-relative
+pathspec that swept in an untracked, in-progress `tools/gen-profiles`
+working state** *(reported by the dispatching engineer; no agent here ran
+git)*. Nothing measured is affected. It is logged because **the tree
+moving underneath a filing is now a repeat phenomenon in this project** —
+the Pass 3 closure entry recorded `lut_transform.rs` appearing mid-filing
+from a `Glob` that had not shown it — and because a commit that contains
+more than its message says is a hazard to every later reader who uses
+`git log` as the record of what changed when. **A pathspec relative to
+the cwd is not a statement about what is being committed.**
+
+### The three-document boundary, again, because this filing tested it
+
+`TOLERANCES.md` §5.2 carries **`icc-spec-librarian`'s correction of
+NA-003's clause citation** — 6.4 governs the **PCS**, not device values;
+6.5's float32 permission is unreachable from a matrix/TRC model;
+**a conforming F.8–F.16 evaluation cannot exceed 1,0**, which **inverts**
+the direction of the NC-043 finding. That file is `icc-conformance`'s and
+**was not edited here.** What this librarian filed instead is a **second
+dated note under NA-003** recording the effect on *this ledger's* rows —
+because the wrong sentence was written **in `NUMERIC_CLAIMS.md`**, from
+recollection of a clause number, and was then **relied on by a
+differential finding**. **Rule 2 — never write colour maths from
+memory — extends to clause numbers**, and DL-014's requirement to name
+the corpus file at the citation is what would have caught it.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph, and the **Pass 4 progress block**: the eight commits, what stages 1–3 actually built (verified in source), the three kinds of number with their classes, NA-006's measurement and the falsified prediction, the absolute-intent finding, **the done-when answered clause by clause with B2A recorded as zero-measurement**, the v2/v4 coverage stated exactly, three reported prose defects, the gates, the gen-profiles appearance, and six owed items. **No plan text, no annotation and no earlier progress block rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§2.5** provenance (eight commits, the proved-unreachable BPC confound, **two harness traps**); **§3.9**, thirteen rows **NC-044 … NC-056** with a shared coverage box, the two-kinds-of-gate preamble, the falsified-prediction record and **§3.9.8's run-count reconciliation**; a **second dated note under NA-003** (the clause correction and its effect on NC-043); **dated status on NA-006** (measured; mechanism prediction wrong) and on **NA-007** (cost measured, cause exactly where it was predicted); eight new §6 dependency rows; **§7.5** with seven newly-owed items. |
+| `ARCHITECTURE.md` §5 | **DL-019** — reported-not-graded plus a gate on the modelled quantity, with the live A4b-gated instance, why it is not DL-018 in different clothes, what it does not decide, and **one candidate considered and deliberately not filed** (the per-depth `PcsCodec`, whose rule is already DL-011's and whose mechanism is self-documenting in code). DL-001…DL-018 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the Pass 4 remainder. |
+
+**Not touched, by instruction and by ownership:** `TOLERANCES.md`,
+`tools/`, the corpus, and `LEGAL.md`. **Nothing was committed** —
+instructed not to, and committing is the engineer's act. **No git command
+was run**, by an agent that has no shell.
+
+### Left for the next session to not assume
+
+- **That any of the eight commits exists or contains what is recorded
+  here.** The files are verified; the repository is not.
+- **That "Pass 4 matches lcms2" is a thing anyone may say.** It matches
+  **at the corners and with lcms2's geometry substituted**; the raw
+  comparison carries a 1.66 ΔE method difference that **cannot claim
+  agreement**, and the absolute intent is **not graded at all**.
+- **That the B2A direction works.** Code, yes. Measurements, **zero**.
+  Same for `lut8Type` evaluation and the `Lab8` codec.
+- **That A4b was answered because a dispatch went out.** As of this
+  filing the corpus still lists it **UNVERIFIED** and carries **M1–M3
+  only** *(verified)*.
+- **That `gen-profiles`' fixtures are in use.** They exist; nothing
+  reads them; every differential row still skips off this machine.
+- **That "89 tests" means coverage.** It is a count of declarations, and
+  the profile-dependent ones still skip silently.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.

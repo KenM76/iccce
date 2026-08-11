@@ -1,81 +1,78 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-11 (Pass 3 CLOSED) — first-ever lcms2 cross-check landed (3.4762e-3 dE2000), round trip 1.8788e-2, DL-017/DL-018 filed, Pass 2 still open, Pass 4 groundwork already in tree
+description: iccce status snapshot 2026-08-11 (Pass 4 IN PROGRESS) — first CLUT differential, NA-006 priced at 1.5741 dE00, an 11.217 dE00 absolute-intent divergence pending A4b, DL-019 filed, B2A has zero measurements
 metadata:
   type: project
 ---
 
-**Snapshot of 2026-08-11 (Pass 3 CLOSURE — the seventh filing of one
-calendar day). Verify before relying on any of it** — read
-`docs/ROADMAP.md` (Pass 3 completion record), `docs/NUMERIC_CLAIMS.md`
-§3.8, `docs/NEXT_SESSION.md` and the newest `SESSION_LOG.md` entry.
+**Snapshot of 2026-08-11 (the Pass 4 *progress* filing — the eighth of
+one calendar day). Verify before relying on any of it** — read
+`docs/ROADMAP.md` (Pass 4 progress block), `docs/NUMERIC_CLAIMS.md`
+§3.9, `docs/NEXT_SESSION.md` and the newest `SESSION_LOG.md` entry.
 
-**★ THE HEADLINE FLIPPED. `iccce` has now been compared to another
-implementation.** For four filings the headline was a negative — *"zero
-`implementation-cross-check` rows"*. `NUMERIC_CLAIMS.md` **§5.3** retires
-that sentence, **dated**, and states exactly what replaced it.
+**Pass 0 done · Pass 1 core · Pass 2 one scope decision from done ·
+Pass 3 DONE · ★ Pass 4 IN PROGRESS, done-when NOT met.**
 
-**The two done-when numbers** (quote them WITH scope, never bare):
-**iccce vs lcms2, sRGB→AdobeRGB: max 3.4762e-3 ΔE2000** (mean 5.1145e-4),
-tol 2e-2, class `implementation-cross-check`; **round trip
-sRGB→AdobeRGB→sRGB: max 1.8788e-2 ΔE2000**, tol 2.5e-2, class
-`self-consistency`. **Scope: one profile pair, both v2.1, one intent,
-one direction, 133 points, one platform, lcms2 pin `21c582a`.** Ledger
-rows **NC-034 … NC-043**; next free number **NC-044**.
+**The Pass 4 differential** (SWOP → system sRGB, 341 CMYK points, all
+four A2B intents, both files v2.1.0, `pass=36 fail=0 skip=3`) produced
+**NC-044 … NC-056**; next free number **NC-057**. **Quote a Pass 4
+number only with WHICH GATE it came from** — they differ by four orders
+of magnitude:
+- **corners (exact CLUT nodes, no interpolation): 5.9131e-5 / 6.6558e-5
+  dE00** vs 1e-3 — the strongest cross-check evidence the project has;
+- **lcms2's geometry emulated: 4.5931e-3 / 4.8154e-3** vs 2e-2 — *this*
+  is the row that claims agreement;
+- **raw: 0.25294 (m-rel) / 1.6590 (perceptual)** vs 2.0 — **cannot claim
+  agreement**; its value IS the method envelope.
 
-**Two things that make those numbers unusually strong, and both are
-patterns worth reusing:** the cross-check tolerance was **tested by
-emulating lcms2's own 16-bit tone-curve quantisation** — residual
-collapses ~290× to 2.31e-7, below transicc's print floor; and the
-round-trip tolerance **failed at 1e-2 and its DERIVATION was corrected**
-(not widened) after the closed-form white-corner prediction matched
-observation to **0.03 %**. The driver is a fact about *files*, not
-spaces: the two encoded media whites differ by **5/2/12 s15Fixed16
-lsb**, and 25/133 grid points clip.
+**★ NA-006 is MEASURED at last: 1.5741 dE00** (perceptual table) /
+0.25423 (colorimetric) — the corpus's "~1 dE" was an **underestimate**
+on one table. Priced by an apparatus **in the harness**, not by shipping
+a second interpolator, and that apparatus was graded against
+`Lut16Model` at 1e-9 (**0.0 exactly**) before anything was concluded.
+
+**★ 11.217 dE00 at the ICC-absolute intent — REPORTED, NOT GRADED.**
+lcms2's `cmsio1.c` substitutes **D50** for the `wtpt` of a **v2
+display-class** profile; iccce uses `wtpt` as stored (NA-007). The sRGB
+profile's `wtpt` is **D65** → 32 % error in Z. Modelling the one
+substitution collapses it **517×** (2.1677e-2, gated at 5e-2).
+**Corpus A4b decides who is wrong and is UNVERIFIED** (verified in the
+corpus at this filing; M4/M5 rows absent — only M1–M3 exist).
+
+**New: `ARCHITECTURE.md` DL-019** — mechanism identified + authority
+absent ⇒ report-not-grade the raw row, gate the **modelled** quantity,
+**write both rejected alternatives down**, state the blocking question
+to a named owner. Five conjunctive steps; an *unmodelled* disagreement
+still gets a failing gate. Also recorded there: the per-depth `PcsCodec`
+was **considered and deliberately NOT given an entry** (its rule is
+DL-011's, its mechanism is self-documenting in a closed enum).
+
+**Owed, and load-bearing:** **B2A has ZERO measurements** (code in
+`b3f4388`; sRGB has no `B2A*` tag, so this run's destination was
+matrix/TRC) — that also means **`lut8Type` evaluation and the `Lab8`
+codec are untested against anything**. **`mAB `/`mBA ` are DECODED
+(Pass 2 batch 2) and NOT EVALUATED** = stage 4. **Pass 4 has no
+ground-truth row at all.** NA-002's Bradford cost **still not due**
+(checked against code at three consecutive filings — `iccce-cmm` has no
+reference to `adapt`).
+
+**Things that changed under a carried claim:** `tools/gen-profiles`
+**now exists** (28 tests) and `fixtures/synthetic/` holds **39 .icc
+files** including `v4-cmyk-mab-lab.icc` — four filings said neither
+existed. Nothing reads them yet. And **NA-003's clause citation was
+WRONG** (6.4 governs the PCS, not device values) — corrected append-style
+in `TOLERANCES.md` §5.2, which **inverts** the NC-043 finding: a
+conforming F.8–F.16 evaluation **cannot** exceed 1.0.
 
 **Commits, ALL reported — no agent in this project has ever run git:**
-Pass 0 `f976a0e`, Pass 1 `7313c5b`, Pass 2 b1 `b35a12e`, difftest
-`bfd6b1e`, Pass 2 b2 `d40d601`, Pass 3 core `c4038eb`, `transform`
-`051707f`, audits `55772c6`, prior filing `a9618fe`, CLUT `fc5ff58`,
-PCS encodings `0843094`, absolute intent `6873df1`, differential +
-LEGAL §1 `986dae6`.
-
-**New decision-log entries: DL-017** (`tools/difftest` may **path-depend
-on iccce's crates** — harness→subject, four conditions, the
-no-crate-reaches-lcms2 invariant untouched) and **DL-018** (**an
-upper-bound gate on a deliberate cost must be paired with a prediction
-pin** + sensitivity control, or deleting the requirement makes the gate
-greener; **its scope limit is part of the entry** — the pin does NOT
-make the F.8–F.16 clamp *ordering* falsifiable, because iccce clamps at
-three sites).
-
-**Three-document boundary, stated so nobody merges them:**
-`TOLERANCES.md` §4 owns a tolerance's *number history*;
-`NUMERIC_CLAIMS.md` owns the *measured values*; `ARCHITECTURE.md` §5 owns
-the *method rule*. One event, three jobs.
-
-**Still open / still true:** **Pass 2 is IN PROGRESS** (clause-2 scope
-decision) and it now blocks something concrete — without
-`tools/gen-profiles`, every differential row skips off this machine, CI
-included. **Absolute intent is implemented but unreachable through the
-CLI**, so it has ZERO cross-check evidence (NA-007). **NA-006** — the
-A16 n-linear CLUT choice — is **named and NOT measured** (~1 ΔE
-corpus-derived bound; tetrahedral deliberately absent until sourced, and
-that sourcing is Pass 4's blocker). **Pass 3 does NOT adapt and absolute
-intent did not change that** — D.6/D.7 is a diagonal scale, `chad` is
-not un-applied, `iccce_color::adapt` is called by no transform, so
-NA-002's Bradford cost is STILL not due (checked against code at two
-consecutive filings). **Nothing has run on Linux; no CI run observed,
-ever.**
-
-**One unresolved discrepancy, recorded as such:** difftest README §13.9
-shows `pass=8` over eight check lines; the engineer's re-run reports
-`pass=7` with no per-line output. Structurally 1 registered check + 7
-pass3 records = 8. *Consistent with* the smoke check not counting — a
-hypothesis, not a finding.
+`19a3b17`, `9aa1bca` (stage 1), `63874f9` (stage 2), `490191b` (CLI:
+N-channel + four intents), `b3f4388` (stage 3), `db60e92`, `d9e0b82`
+(the differential), `edcb60e` (untracked gen-profiles swept in by a
+cwd-relative pathspec — a process slip).
 
 Related: [[iccce-verify-own-draft-too]],
-[[iccce-bound-cannot-catch-its-own-magnitude]],
+[[iccce-tolerance-cannot-swallow-and-claim]],
 [[iccce-predicted-divergence-must-be-measured]],
-[[iccce-verification-loop-runs-both-ways]], [[icc1-pdf-operator-blocker]],
-[[ken-terse-scope-decisions]].
+[[iccce-gate-must-not-reward-deletion]],
+[[iccce-bound-cannot-catch-its-own-magnitude]],
+[[iccce-verification-loop-runs-both-ways]], [[ken-terse-scope-decisions]].

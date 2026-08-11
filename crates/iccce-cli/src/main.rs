@@ -179,9 +179,12 @@ fn cmd_inspect(path: &str) -> ExitCode {
 /// (one decimal more than transicc's 4, so the comparison is never
 /// limited by iccce's print precision), no banner on stdout.
 ///
-/// Only media-relative colorimetric exists (Pass 3 scope); an --intent
-/// flag naming anything else is refused by name rather than silently
-/// substituted — a substituted intent produces plausible wrong colour.
+/// All four intents are accepted (Pass 4); an --intent naming
+/// anything ELSE is refused by name rather than silently substituted —
+/// a substituted intent produces plausible wrong colour. (An earlier
+/// version of this comment said media-relative only and outlived the
+/// code by three commits — caught by icc-librarian's live-source
+/// audit, 2026-08-11.)
 fn cmd_transform(args: &[String]) -> ExitCode {
     let mut src_path: Option<&String> = None;
     let mut dst_path: Option<&String> = None;

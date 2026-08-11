@@ -264,6 +264,23 @@ document's history whose evidence class is **`implementation-cross-check`**.
 | **★ Run-count discrepancy, recorded unresolved** | `tools/difftest/README.md` §13.9's transcript ends `summary pass=8 fail=0 skip=0 error=0` over **eight** `check` lines. The engineer's verification re-run is **reported** as `pass=7 fail=0`, **with no per-line output and no skip/error counts carried**. Structurally, `main.rs::checks()` registers **exactly one** `Check` (`smoke/srgb-white-to-lab`) and `pass3.rs` emits **seven** records — 1 + 7 = 8 *(verified — both read)*. `pass=7` is therefore **consistent with** the smoke check not passing-and-counting on the re-run, **and that is a hypothesis, not a finding.** Consequence for these rows: the per-record values stand (three consistent transcriptions), and **the re-run may not be quoted as an independent re-verification of all eight lines**, because nobody recorded which eight it ran. |
 | **Precision** | ΔE is computed by `iccce_color::delta_e_2000` **in the harness** — a coupling taken as a documented decision (`ARCHITECTURE.md` **DL-017**). The colours being compared come from **subprocesses on both sides** (`iccce transform`, `transicc`), except record 7 which says on its own face that it is an in-process instrument check. |
 
+### 2.5 ★ Pass 4 — assembly stages 1–3 and the A2B LUT differential. Added 2026-08-11
+
+A **fifth** provenance block. The rows it covers (**§3.9**) are the first
+in this document's history that exercise a **CLUT**, a **four-channel
+device space**, a **`Lab ` PCS**, and **all four rendering intents**.
+
+| | |
+|---|---|
+| **Pass** | 4 — LUT transforms and rendering intents. Assembly stages 1–3 (`crates/iccce-cmm/src/{lut_transform,transform}.rs`, the CLI's N-channel/four-intent surface) plus the differential (`tools/difftest/src/pass4.rs`, `src/bin/pass4_report.rs`) |
+| **Date** | 2026-08-11 |
+| **Commits** | **`19a3b17`** (the Pass 3 closure filing + two engineer doc fixes), **`9aa1bca`** (stage 1 — the `lut16` device→PCS pipeline), **`63874f9`** (stage 2 — `transform::Chain`, CMYK→RGB live, with the perceptual≡saturation shared-tag regression test), **`490191b`** (the CLI: N-channel input and four intents), **`b3f4388`** (stage 3 — B2A evaluation, bidirectional, both tag depths), **`db60e92`** (doc catch-up), **`d9e0b82`** (the differential), **`edcb60e`** (untracked in-progress `tools/gen-profiles` swept in by `d9e0b82`'s cwd-relative pathspec — a process slip, recorded in `SESSION_LOG.md`). *(**all eight reported** by the dispatching engineer. `icc-librarian` has no shell, ran no git command, and has verified neither hash, nor that any of these commits exists, nor that any contains what the dispatch says. Every §3.9 row is anchored to that commit set **on that report**; everything marked *verified* was read in the **working tree**.)* |
+| **Who measured** | `icc-conformance` ran the differential; the engineer reports `summary pass=36 fail=0 skip=3 error=0` for the whole suite (8 Pass 3 records, 1 smoke, 27 graded Pass 4 records, 3 absolute-intent PCS skips). **`icc-librarian` ran nothing.** The observed values below were read in `tools/difftest/README.md` §14 *(verified)*; `TOLERANCES.md` §3.4 carries the twin rows and **was not edited here** — it is `icc-conformance`'s. |
+| **Platform** | Windows 11 Pro 10.0.26200 x86-64, MSVC. lcms2 2.19.1 at pin **`21c582a`**, MSVC Release, static. `iccce` built `--release -p iccce-cli` at commit **`b3f4388`** *(reported)*. **Still no Linux run of anything, by anyone, ever.** |
+| **★ The confound that was proved unreachable rather than assumed away** | DL-013's forced BPC applies only when `cmsGetEncodedICCversion(profile) >= 0x4000000`. **Both profiles carry header version `0x02100000`**, and `pass4::analyse` reads **both version words from the parsed headers and prints them on every record** *(verified — the `version_words` field, its population from `header.version.raw`, and the `version_note` string read)*. Pass 3 escaped this trap by accident and said so; here the escape is **a printed quantity**, so a future substitution of a v4 profile cannot silently reintroduce it. |
+| **★ Two harness traps recorded at the site** | (1) **`transicc` reads CMYK as 0..100 percentages** — and *not* for the reason §9 of that README implies: its own `InputRange` for `cmsSigCmykData` is 1, and the 0..100 convention comes from `cmspack.c`'s `IsInkSpace(fmt) ? 100.0 : 1.0`. A harness feeding 0..1 would compare full-ink against 1 %-ink colours and produce **~100 ΔE that looks like a catastrophic colour bug**. (2) **The two implementations' top-of-axis index conventions differ**: lcms2 takes `k0 = floor(pk)` **unclamped** (`points − 1` at input 1.0, `rest = 0`) and collapses the upper node separately; iccce clamps the cell index to `points − 2` and lets the fraction reach 1.0. **Both are correct with their own upper-node rule and catastrophically wrong when mixed** — the first draft of the emulation mixed them and returned node 0 for input 1.0, caught by a unit test written for exactly that case. |
+| **Precision** | ΔE is computed by `iccce_color::delta_e_2000` **in the harness** (DL-017). Device and PCS values on the iccce side cross a **subprocess** boundary through `iccce transform`'s 6-decimal print, except the envelope, emulation and apparatus quantities, which are in-process by construction and say so on their own records. |
+
 ---
 
 ## 3. The claims
@@ -822,6 +839,245 @@ indistinguishable.
 - **Not that the run was independently reproduced.** See §2.4's
   `pass=8` / `pass=7` discrepancy.
 
+### 3.9 ★★ Pass 4 — the LUT differential. CMYK → RGB, a `Lab ` PCS, four intents, and the first row that PRICES a named approximation
+
+**Read §2.5 before quoting anything here**, and read the shared coverage
+box below before quoting any single row. Thirteen rows, **NC-044 …
+NC-056**.
+
+> **★ SHARED COVERAGE — part of every claim in this section, and it must
+> travel with any row that is quoted.**
+> **One profile pair**: `USWebCoatedSWOP.icc` (v2.1.0, `prtr`, CMYK →
+> **`Lab `**, `A2B*` all `mft2`, 4-in/3-out, **9 CLUT points per axis**,
+> 256-entry input tables, identity output tables and identity 3×3) → the
+> Windows system `sRGB Color Space Profile.icm` (v2.1.0, `mntr`, RGB →
+> XYZ). Both **category (c)** under `LEGAL.md` §3 — read locally, never
+> committed, so **every row here skips** on a machine without the Windows
+> colour directory. **341 deterministic CMYK points** (16 hypercube
+> corners, a 9-step K ramp, a 9-step CMY composite neutral, a 9-step rich
+> neutral, a 256-point 4-D lattice on {0, ⅓, ⅔, 1}, 64 fixed-seed
+> pseudo-random interior points; no `rand`, no clock, count asserted by a
+> unit test). **All four A2B intents.** **One platform**, **one lcms2
+> build at one pin**.
+> **NOT covered, stated because "verified" without scope is the failure
+> this document exists to prevent:** **the B2A direction is not exercised
+> at all** — SWOP's `B2A*` are `mft1` and this run's *destination* is
+> matrix/TRC, sRGB having **no `B2A*` tag** — so **`lut8Type` evaluation
+> and the `Lab8` codec have never been compared to anything**;
+> **`mAB `/`mBA ` are decoded but not evaluated**; **no v4 profile
+> anywhere**; no synthetic fixture; no BPC, no soft-proofing; **no
+> ground-truth row of any kind — Pass 4 has none**. And two limits of the
+> grid itself: it reaches **400 % total ink** where real SWOP separations
+> rarely exceed ~300 %, so **the mean over this grid is not the mean over
+> printable colour**; and nothing below 1/8 in a single channel except
+> through the random block.
+> **★ And one that is easy to miss:** SWOP's **`A2B0` and `A2B2` are one
+> block of tag data** (both offset 432, size 41478 — the Pass 0 finding).
+> Perceptual and saturation are therefore **the same bytes through the
+> same code**. *"All four intents"* is honest about what ran; **the
+> number of distinct A2B tables exercised is three, not four.**
+
+#### 3.9.0 The design that makes this section readable — two kinds of gate, and only one of them may claim agreement
+
+Pass 3's whole disagreement with lcms2 was the oracle's 16-bit rounding —
+a *defect of precision*, so one tight tolerance was both derivable and
+meaningful. **Pass 4's dominant term is an interpolation-method
+difference between two schemes ICC.1 does not choose between.** It is not
+an error in either implementation, it is ~1.6 ΔE2000, and it will not go
+away. NA-006 named the trap in advance: *"a tolerance wide enough to
+swallow ~1 ΔE cannot also demonstrate agreement."*
+
+A single number cannot both admit the method difference and show that the
+two `lut16` pipelines agree, so **this section carries two kinds of row
+and labels which is which**:
+
+| | Rows | What it is for |
+|---|---|---|
+| **Structural, wide** — the gate's value *is* the method envelope | NC-048, NC-049 | Catches a wrong index order, a wrong Lab decode, a swapped ink. **Cannot claim agreement**, and its own record text says so |
+| **Arithmetic, tight** — the method difference switched off | **NC-044, NC-045** (interpolation-free corners), **NC-046, NC-047** (lcms2's geometry emulated) | **This is where the agreement claim lives.** 55–2000× tighter |
+
+**Anyone quoting a Pass 4 number must say which of the two they are
+quoting.** The 2.0 gate is not evidence of agreement and the 1×10⁻³ gate
+is not evidence about interpolated colour.
+
+#### 3.9.1 The thirteen rows, at a glance
+
+| ID | Record | Class | Metric | Tolerance | **Observed** |
+|---|---|---|---|---|---|
+| **★ NC-044** | `pass4/swop-to-srgb/media-relative/pcs-lab-corners-interpolation-free` | **implementation-cross-check** | ΔE2000 max, 16 CLUT-node corners | **1×10⁻³** | **5.9131×10⁻⁵** |
+| **★ NC-045** | `pass4/swop-to-srgb/perceptual/pcs-lab-corners-interpolation-free` | **implementation-cross-check** | ΔE2000 max, same 16 corners | **1×10⁻³** | **6.6558×10⁻⁵** |
+| **★ NC-046** | `pass4/swop-to-srgb/media-relative/pcs-lab-emulated-geometry` | **implementation-cross-check** | ΔE2000 max, PCS Lab | **2×10⁻²** | **4.5931×10⁻³** |
+| **★ NC-047** | `pass4/swop-to-srgb/perceptual/pcs-lab-emulated-geometry` | **implementation-cross-check** | ΔE2000 max, PCS Lab | **2×10⁻²** | **4.8154×10⁻³** |
+| NC-048 | `pass4/swop-to-srgb/media-relative/{de2000,pcs-lab,device}-vs-lcms2` | implementation-cross-check (**structural**) | ΔE2000 max / ΔE2000 max / device abs-max | **2.0** / **2.0** / **2×10⁻²** | **0.252 94** / 0.254 65 / **3.0045×10⁻³** |
+| NC-049 | `pass4/swop-to-srgb/perceptual/{de2000,pcs-lab,device}-vs-lcms2` | implementation-cross-check (**structural**) | same | **2.0** / **2.0** / **2×10⁻²** | **1.6590** / 1.5715 / **1.0816×10⁻²** |
+| **★★ NC-050** | the interpolation-method envelope (`pass4_report` §§ envelope) | **self-consistency** (**NA-006's price**) | ΔE2000 max/mean, two algorithms on one CLUT | **not gated** — it *is* the budget the gates are built from | **1.5741** / 0.043 86 (`A2B0`) · **0.254 23** / 0.038 54 (`A2B1`) |
+| NC-051 | `pass4/apparatus/harness-nlinear-matches-iccce-cmm` | self-consistency (**apparatus check**) | max abs in `L*`/`a*`/`b*` units | **1×10⁻⁹** | **0.0 exactly** |
+| NC-052 | `pass4/swop/perceptual-equals-saturation` | **implementation-cross-check** (an **identity**, graded **on both sides**) | max abs device-output difference between the two intents | **0.0 exact** | **0.0** |
+| **★★ NC-053** | `pass4/swop-to-srgb/icc-absolute/{de2000,device}-vs-lcms2` | **oracle-behaviour-at-pin** (**a FINDING**) | ΔE2000 max / mean | **∞ — REPORTED, NOT GRADED** | **11.217** / 4.670 (device 0.157 96 / 0.0485) |
+| **★ NC-054** | `pass4/swop-to-srgb/icc-absolute/white-point-policy-emulated` | **implementation-cross-check** | ΔE2000 max, lcms2's `wtpt` policy modelled | **5×10⁻²** | **2.1677×10⁻²** (**517× collapse**) |
+| NC-055 | `…/<intent>/device-mean`, `…/de2000-mean` | implementation-cross-check | means | **∞ — reported, NOT graded** | ΔE00 4.3126×10⁻² (perc/sat) · 4.0107×10⁻² (m-rel); device 4.6257×10⁻⁴ · 4.1870×10⁻⁴ |
+| **★ NC-056** | lcms2's 4-D CLUT interpolation, **read at the pin** | **oracle-behaviour-at-pin** | — (a mechanism, with the attribution that measures it) | — | linear-in-C × **Sakamoto tetrahedral** in MYK; **the advance prediction was "tetrahedral" and was WRONG** |
+
+**The `∞` rows pass because there is nothing for them to fail**, exactly
+as in §3.8 — but **NC-053's `∞` is a different object from NC-055's**.
+NC-055's means are ungraded because *a mean over a grid hides the outlier
+a colour engine gets wrong*. **NC-053's is ungraded because the project
+does not yet know which implementation is right**, and that distinction
+is the entire content of §3.9.5 and of **DL-019**.
+
+#### 3.9.2 ★★ NC-044 / NC-045 — the interpolation-free corners. **The strongest cross-check evidence this project has produced**
+
+| Field | Value |
+|---|---|
+| **What was compared** | The shipped `iccce transform` binary against `transicc -o*Lab4`, restricted to the **16 hypercube corners** of the CMYK grid — paper, 100 % K, the four single inks, process red, 400 % total ink |
+| **★ Why those 16 points are categorically different** | Each `mft2` input table starts at `0x0000` and ends at `0xFFFF`, so device 0 and 1 map to **node 0 and node 8 exactly**. There, **both implementations evaluate the CLUT at an exact node**: n-linear and lcms2's hybrid geometry return the *same stored value*, identically — the harness prints the method envelope restricted to the corners and it is **0.0 exactly, as it must be**. And lcms2's quantisation terms **vanish rather than accumulate**: the CLUT input is an exact `u16`, the interpolated value *is* the stored `u16`, the output tables are the identity |
+| **Tolerance** | **1×10⁻³ ΔE2000 max — ten times the ≈1×10⁻⁴ ΔE00 floor** imposed by `transicc`'s 4-decimal Lab print, which is all that is left at a node. **The tightest gate in Pass 4** |
+| **Result** | **5.9131×10⁻⁵** (media-relative, mean 2.8954×10⁻⁵) and **6.6558×10⁻⁵** (perceptual/saturation, mean 2.8820×10⁻⁵) — **observed maxima, exactly the print floor, and 70× below the same comparison taken between nodes** |
+| **★ Why this is the strongest row in the project** | Every previous cross-check compared two implementations **through** an approximation neither is obliged to share. This one removes the approximation by construction rather than by modelling it: **at a CLUT node there is nothing left to disagree about except the arithmetic of the surrounding pipeline** — input tables, the tag-type Lab decode, the node indexing, the channel order. It is the row that makes the 2.0 structural gates defensible: **without a node-only control, a wide structural gate could hide a genuine 1.9 ΔE error.** It would catch the v2/v4 Lab encoding confusion (≈0.39 `L*` at white, far worse in `a*`/`b*`), a swapped ink, or an off-by-one in the node index — **all ≥1000× this bound** |
+| **Class** | **`implementation-cross-check`.** Per §1 and rule 7 this remains evidence that two implementations read 10.10 and 6.3.4.2 NOTE 3 the same way — **not ground truth.** Pass 4 has no ground-truth row at all |
+| **Where** | `tools/difftest/README.md` §14.5.4, §14.7; `tools/difftest/src/pass4.rs` (`DE_PCS_CORNERS` and its `why`); `TOLERANCES.md` §3.4 |
+| **Invalidated by** | The lcms2 pin moving (**re-run, do not re-read**); either profile changing on this machine; any change to `lut_transform.rs`, `clut.rs`, `pcs_encoding.rs` or the CLI's print precision; **any change to the grid's corner block**, which is asserted by `corner_indices_really_are_corners` |
+
+#### 3.9.3 ★ NC-046 / NC-047 — lcms2's own geometry substituted. **Where the agreement claim actually lives**
+
+| Field | Value |
+|---|---|
+| **What was compared** | lcms2's **actual measured PCS output** against **iccce's `mft2` pipeline re-run with lcms2's `Eval4Inputs` geometry** in place of n-linear — the whole rest of the pipeline (input tables, output tables, legacy Lab decode) held identical. The Pass 3 discipline exactly: *predict the confound from the other implementation's own arithmetic, then measure what is left* |
+| **Tolerance** | **2×10⁻² ΔE2000 max**, built from the oracle's residual quantisation: tabulated input curves rounded to 1/65535 in and out, the CLUT **stage input rounded to `u16`**, `Eval4Inputs` evaluated in **s15.16 fixed point**, and `transicc`'s 4-decimal Lab print. **One 16-bit lsb of CLUT output is 1.53×10⁻³ in `L*` and 3.9×10⁻³ in `a*`/`b*`** under the legacy decode this tag type mandates (652.8 and 256 codes per unit) — **the `a*`/`b*` scale means a single lsb is not negligible there**, which is the sort of thing that is obvious only after somebody computes it |
+| **Result** | **4.5931×10⁻³** media-relative (mean 1.2988×10⁻³) and **4.8154×10⁻³** perceptual/saturation (mean 1.1091×10⁻³) — a **55× / 326× shrink** on the maxima against the raw comparison |
+| **★ The single point that shows what was substituted** | At the worst method-envelope point at media-relative, CMYK (0.949 78, 0.693 67, 0.950 21, 0.947 48): iccce's n-linear gives Lab (14.2965, −3.2319, 1.6226); the emulated lcms2 geometry gives (14.3933, −3.4322, 1.6197); **`transicc` itself gives (14.3934, −3.4297, 1.6211)**. The emulation lands on the oracle to 1×10⁻⁴ in `L*` while the shipped n-linear sits **0.2 away in `a*`. The disagreement IS the geometry** |
+| **Class** | **`implementation-cross-check`, on a deliberately modified iccce model** — the same qualification NC-041 carries. It is evidence about **where the disagreement comes from** and about the **rest** of the pipeline's arithmetic; **it may never be quoted as "iccce agrees with lcms2 to 4.8×10⁻³"** without the words *"with lcms2's own interpolation geometry substituted"* |
+| **Where** | `tools/difftest/README.md` §14.5.3, §14.7; `pass4.rs` `DE_PCS_EMULATED` |
+
+#### 3.9.4 NC-048 / NC-049 / NC-050 — the raw comparison, and the envelope that explains it
+
+| Field | Value |
+|---|---|
+| **NC-048 / NC-049 — what they are** | The **raw** end-to-end and PCS comparisons against `transicc`, ungated in any meaningful sense: **the tolerance's value is the method envelope plus 20–27 % headroom** (2.0 ΔE2000 for the ΔE gates, 2×10⁻² device from the larger propagated envelope +86 %). Observed: media-relative **0.252 94** end to end, 0.254 65 in PCS, 3.0045×10⁻³ device; perceptual/saturation **1.6590**, 1.5715, 1.0816×10⁻² |
+| **★ What they explicitly cannot claim** | **Agreement.** The record's own `why` string says the tolerance is *above* the provisional 1.0 ΔE00 perceptibility anchor (DL-004) and therefore cannot be read as a perceptual guarantee. They are **structural** gates: they catch a wrong index order, a wrong Lab decode, a swapped ink — defects that would move these numbers by ≥1000× |
+| **★★ NC-050 — the envelope itself, and it is the number NA-006 has been owed since it was filed** | `SourcePipeline` reimplements the entire `mft2` A2B path **twice**, differing in **exactly one component**: iccce's n-linear CLUT, or lcms2's `Eval4Inputs` geometry transcribed from `cmsintrp.c`. **No lcms2 output enters this quantity** — it is computed from the CLUT and the two algorithms alone. **`A2B0` (perceptual/saturation): max 1.5741, mean 0.043 86. `A2B1` (media-relative): max 0.254 23, mean 0.038 54.** Propagated end to end: **1.6639 ΔE00** and 1.0751×10⁻² device (`A2B0`), 0.254 23 and 2.9012×10⁻³ (`A2B1`) |
+| **★ The factor of six, and why it is an argument about method rather than a curiosity** | The perceptual table's worst cell is CMYK (0.541, 0.442, 0.744, 0.972) — **deep shadow at near-full black, where the CLUT turns sharply and the two schemes take different routes across the same cell.** The colorimetric table is six times smoother. **A Pass 4 tolerance derived from `A2B1` alone would have been wrong by 6× for precisely the intents Pass 3 never exercised.** Nothing about a smooth colorimetric result predicts a rough perceptual one, and the only way to know was to run all four |
+| **NC-050's class** | **`self-consistency`** — it *prices* an approximation, which §1 names as the only thing self-consistency is good for, and neither arm is an oracle output. **But it carries one `oracle-behaviour-at-pin` liability**: the second arm is a **transcription of lcms2's geometry at commit `21c582a`**, so **the pin moving invalidates it too**, and a transcription is a source reading until something measures it. Here something does: NC-046/NC-047's 326× collapse is that measurement |
+| **NC-051 — the apparatus, graded before anything was concluded from it** | The n-linear arm is held against `iccce_cmm::lut_transform::Lut16Model` on **every grid point at every intent**, tolerance 10⁻⁹ in `L*`/`a*`/`b*`: **observed 0.0 exactly — bit-identical.** Without this row the whole substitution experiment would rest on an *assertion* that the reimplementation is faithful to the code it is standing in for. **An apparatus that has not been shown to reproduce the thing it replaces is not an apparatus** |
+| **NC-052 — the shared-tag identity** | `A2B0` and `A2B2` are one block of tag data in this file, so perceptual and saturation are the same bytes through the same code. **Tolerance `0.0` exact; observed `0.0` on both sides.** A small epsilon here would admit exactly the class of bug — an 8.10.2 tag-selection defect — that the record exists to catch, and there is no arithmetic that could produce a *small* one. A unit test in `transform.rs` makes the same assertion on the real files with `assert_eq!` *(verified — read)* |
+| **Where** | `tools/difftest/README.md` §14.5.2, §14.5.4, §14.5.5, §14.7 |
+
+#### 3.9.5 ★★ NC-053 / NC-054 — at the ICC-absolute intent the two implementations read **different destination media whites**, and it costs 11 ΔE2000
+
+| Field | Value |
+|---|---|
+| **What was observed** | At `-t3`: **max 11.217 ΔE2000, mean 4.670** (device max 0.157 96, mean 0.0485) — **two orders of magnitude more than at any other intent**, and far beyond anything the interpolation envelope for `A2B1` (0.2542, the table absolute uses) could account for. **The worst points are the lightest**: paper (0,0,0,0) at 10.6, 33 % C at 11.2 |
+| **★ The mechanism, read at the pin and then measured** | `cmsio1.c`'s `_cmsReadMediaWhitePoint` **substitutes D50 for the stored `wtpt`** when a profile is **v2 AND display-class** (`cmsGetEncodedICCversion < 0x4000000 && deviceClass == cmsSigDisplayClass`). The destination sRGB profile's `wtpt` as stored is **(0.950 455, 1.000 000, 1.089 050) — D65**, while its colorants are D50-adapted: a common v2-era encoding. **Both implementations build the same D.6/D.7 diagonal; they differ in what they read for `WhitePointOut`** — iccce takes `wtpt` **as stored** (**NA-007**), lcms2 takes **D50**. The ratio is D65/D50 = (0.9858, 1.0, 1.3202): **a 32 % error in `Z`, applied to every colour.** That is the 11 ΔE |
+| **The measurement that confirms the attribution** | Re-predicting lcms2's output with **that one substitution** (plus the CLUT geometry, so both known differences are modelled) gives **max 2.1677×10⁻², mean 3.4034×10⁻³ — a 517× / 1372× collapse.** That is **NC-054**, and it is graded at **5×10⁻²** |
+| **★ Which implementation is right — NOT settled, and that is the finding** | ICC.1:2022 specifies v4 profiles. **What a v2 profile's `wtpt` means is corpus ambiguity A4b, and A4b is UNVERIFIED** — ICC.1:2022 is *silent about version 2's convention*, confirmed there by full-text search, and **ICC.1:2001-04 has not been obtained** *(verified — `icc__ref__ambiguity_register.md`, `icc__s__rendering_intents.md` §A4b and `icc__ref__v2_v4_divergence.md` read 2026-08-11)*. **lcms2's substitution is justified in its source by a comment, not by a clause.** Per rule 7 this is **a recorded difference, not a verdict in either direction** |
+| **★★ How the numbers handle it, and why this pattern is filed as DL-019** | The **two raw comparisons are REPORTED, NOT GRADED** (tolerance ∞) and the **gate at that intent is NC-054**, the modelled quantity. **Both rejected alternatives are written down** rather than one being chosen silently: *widen to ~15 ΔE00 so it passes* — a number chosen because it passed, 15 ΔE00 being a different colour, and it would **silently absorb any future arithmetic error in the absolute path**; *let it fail permanently* — **a red line that never changes stops being read**, and it reports the disagreement as unexplained when it is not. **This is the only place in the suite where a known disagreement is deliberately not gated**, and it is labelled rather than absorbed |
+| **The dispatch status, stated precisely** | `tools/difftest/README.md` §14.9 item 1 records the A4b dispatch as **owed**; the dispatch that produced this filing reports it **sent in parallel**, together with corpus rows **M4/M5**. **Whether it has landed is `unverified` here**, and what *is* checkable says not yet: as of this filing `icc__ref__lcms2_measured_behaviour.md` carries **M1, M2, M3 and no M4 or M5**, and A4b is still listed **UNVERIFIED** *(verified — enumerated)*. **Do not close this row on the strength of the dispatch having been sent** |
+| **Classes** | **NC-053: `oracle-behaviour-at-pin`** — its content is what lcms2 2.19.1 at `21c582a` does with a v2 display-class `wtpt`. **NC-054: `implementation-cross-check`, on a deliberately modified model**, like NC-046/NC-047 |
+| **What settling A4b would do** | **One of the two implementations acquires a defect**, and this becomes a graded row again. If `wtpt` in a v2 display profile means the *adapted* PCS white, lcms2 is correcting a widely-mis-authored field and **iccce is wrong**; if it means the *measured, unadapted* device white, lcms2 is substituting its own guess for the file's data and **iccce is right**. Nothing in this ledger prefers either outcome |
+| **Where** | `tools/difftest/README.md` §14.6, §14.7, §14.9; `pass4.rs`'s absolute-intent constants and their `why` strings |
+
+#### 3.9.6 ★ NC-056 — lcms2's four-input CLUT interpolation, read at the pin. **And a prediction, filed in three documents, that reading it falsified**
+
+| Field | Value |
+|---|---|
+| **What was read** | `cmsintrp.c`'s `DefaultInterpolatorsFactory`: for **3** inputs lcms2 selects tetrahedral; for **4** inputs it selects `Eval4Inputs` / `Eval4InputsFloat`, whose own verbatim comment reads *"For more that 3 inputs (i.e., CMYK) evaluate two 3-dimensional interpolations and then linearly interpolate between them."* So the four-input scheme is a **hybrid**: **linear along input channel 0 (C), Sakamoto tetrahedral in M, Y, K**, the two 3-D results blended by the first channel's fraction |
+| **★★ The prediction it falsified** | **NA-006, `NEXT_SESSION.md` and `ROADMAP.md` all carried *"iccce interpolates n-linear, lcms2 tetrahedral"***, and the Pass 4 blocker was recorded as *"source lcms2's tetrahedral cube decomposition"*. **For four inputs that is not what lcms2 does.** Three consequences, none of which *"tetrahedral"* would have implied: (1) **lcms2's scheme is not symmetric in the four inks** — reordering the channels changes its answer, while iccce's quadrilinear **is** symmetric; (2) **it is not pure tetrahedral**, so **a bound transcribed from the trilinear-vs-tetrahedral literature is not the bound that applies** — and NA-006's ~1 ΔE was exactly such a bound; (3) **the float path does not use the float interpolator** — an `mft2` tag is read into a **16-bit** CLUT stage whose float evaluator quantises the stage input to `u16` and calls the fixed-point twin, so lcms2's CMYK pipeline in `transicc`'s default float mode carries 16-bit quantisation **at the CLUT boundary as well as** inside the tone curves |
+| **How it was settled** | **By reading the oracle's source at the pin, not by recalling it** (rule 2 applied to a claim *about an implementation*, which is the case people forget rule 2 covers). And then by **measuring**: the emulation built from that reading collapses the residual **326×** (NC-046/NC-047), which is what makes the reading a finding rather than a paraphrase |
+| **Class** | **`oracle-behaviour-at-pin`** — it establishes what iccce is compared against and nothing else. **It is not evidence that iccce is correct** (iccce did not participate) **and not evidence that lcms2 is correct** (ICC.1 says nothing about CLUT interpolation — ambiguity **A16**, SILENT, which is why iccce's n-linear is a *named choice* and a disagreement here is a **difference**, not an error on either side) |
+| **Corpus status** | **Owed as corpus row M4** and **not present as of this filing** *(verified — `icc__ref__lcms2_measured_behaviour.md` carries M1, M2, M3 only)*. Until it is, this row is the project's only record of the reading |
+| **Invalidated by** | **The pin moving.** `cmsintrp.c`'s factory is exactly the kind of thing a minor release changes |
+
+**★ Where this project puts a falsified prediction, stated once so the
+next one lands in the same place.** A prediction that is contradicted by
+evidence is **left standing where it was written** and corrected by a
+**dated note that names the evidence** — never edited away. This is the
+project's **second** instance and the treatment is identical to the
+first: DL-011 predicted a live disagreement with lcms2 over the
+legacy-Lab selector, DL-012 measured it **absent**, and DL-011's text was
+superseded rather than rewritten. Here: NA-006's *"tetrahedral"* wording
+is corrected by the dated note in §4 and by this row; `NEXT_SESSION.md`
+was rewritten (it is the one document in this set that is *not*
+append-only, by its own header); and the ROADMAP's Pass 4 progress block
+records the correction next to what was expected. **The failure mode
+being guarded against is a prediction quietly becoming a citation** —
+which is what *"lcms2 uses tetrahedral"* was three documents away from
+being.
+
+#### 3.9.7 What §3.9 does **not** claim
+
+- **Not that iccce is correct.** Every row is a cross-check, a
+  self-consistency check, or a measurement of the oracle. **Pass 4 has no
+  ground-truth row at all**, and the most tractable candidate — a
+  synthetic `mft2` whose CLUT stores an **affine** function, where every
+  interpolation scheme must agree exactly and the expectation is
+  therefore arithmetic rather than an oracle's opinion — is now
+  buildable, because `tools/gen-profiles` exists.
+- **Not that the B2A direction works.** `b3f4388` landed it; **nothing
+  has measured it.** `lut8Type` evaluation and the `Lab8` codec have
+  never been compared to anything.
+- **Not anything about `mAB `/`mBA `.** Decoded since Pass 2 batch 2
+  *(verified — `tag_types.rs` dispatches `sig::MAB`/`sig::MBA` to
+  `lut::decode_lut_ab`)*, **evaluated by nothing**.
+- **Not anything about v4 profiles.** DL-013's forced BPC was **proved
+  unreachable** for this pair from the parsed version words, which is
+  stronger than Pass 3's accidental escape — but proving a confound
+  absent is not exercising the case it would have confounded.
+- **Not that 1.659 ΔE2000 is iccce's error.** It is the **difference
+  between two schemes ICC.1 does not choose between**, priced by NC-050
+  and attributed by NC-046/NC-047. Neither implementation is wrong there
+  on any evidence this project holds.
+- **Not that the absolute intent is verified in any direction.** See
+  NC-053.
+
+#### 3.9.8 ★ The run count, reconciled against the code — and a NEW off-by-one, in the prose rather than in the arithmetic
+
+§2.4 recorded the Pass 3 `pass=8` / `pass=7` discrepancy **unresolved**,
+with the structural reading *"1 registered check + 7 `pass3` records"* as
+a hypothesis. Pass 4's suite total lets that be checked, and this filing
+counted the record emitters in the live source rather than trusting
+either README *(verified — `pass3.rs`'s **seven** distinct `"pass3/…"`
+ids, pinned by a unit test that asserts the same seven; `pass4.rs`'s
+emitter loop read in full)*.
+
+**What the code emits, per intent** (`pass4::records`): four records
+always — `device-vs-lcms2`, `device-mean`, `de2000-vs-lcms2`,
+`de2000-mean` — then a branch. When `lcms2_pcs` is `Some` (the three
+non-absolute intents) three more: `pcs-lab-vs-lcms2`,
+`pcs-lab-emulated-geometry`, `pcs-lab-corners-interpolation-free`. At
+**`icc-absolute`** those three are pushed as **`Record::skipped`** with
+the reason *"not comparable at this intent"*, and
+`white-point-policy-emulated` is pushed **in their place**. Plus two
+whole-run records (`apparatus/harness-nlinear-matches-iccce-cmm`,
+`swop/perceptual-equals-saturation`).
+
+| | records emitted | of which graded | of which skipped |
+|---|---|---|---|
+| smoke (`main.rs::checks()`) | 1 | 1 | 0 |
+| Pass 3 (`pass3.rs`) | **7** | 7 | 0 |
+| Pass 4 (`pass4.rs`) | 2 + 4×4 + 3×3 + (1 + 3) = **31** | **28** | **3** |
+| **total** | **39** | **36** | **3** |
+
+**36 and 3 are exactly the reported summary** *(`pass=36 fail=0 skip=3
+error=0`, reported)*, which is the first time this project's record
+counts have been reconciled to the emitters at all. **Two consequences,
+and they point in opposite directions:**
+
+1. **§2.4's hypothesis is confirmed structurally.** `pass3.rs` emits
+   **seven**, so §13.9's `pass=8` is 7 + the smoke check. The engineer's
+   re-run reporting `pass=7` remains unexplained and is **still not an
+   independent re-verification of eight lines**, because no per-line
+   output was ever recorded. **A count is not an inventory**, and this is
+   the second filing to say so about the same summary line.
+2. **★ `tools/difftest/README.md` §14.7's prose decomposition is wrong,
+   in both terms, while its total is right.** It reads *"8 Pass 3
+   records, 1 smoke, 27 graded Pass 4 records + 3 … skips"* and *"adds 30
+   Pass 4 records"*. The code says **7**, 1, **28** and **31**. The two
+   errors cancel in the total, which is exactly why nobody would notice:
+   **a sum that comes out right is not evidence that its terms are
+   right.** **Reported, not repaired** — §14 is `icc-conformance`'s file
+   and this ledger does not edit it. Nothing measured moves; what moves
+   is whether the sentence can be quoted for *which* checks ran.
+
 ---
 
 ## 4. Named approximations and deviations
@@ -883,6 +1139,71 @@ layers, not this crate** — but a future reader must not conclude from
 > the CMM does, at the point the normative text specifies. *(verified —
 > read.)*
 
+> **★★ Second dated note, 2026-08-11 (Pass 4 filing) — NA-003's CLAUSE
+> CITATION WAS WRONG, and the correction inverts a finding that was built
+> on it. This entry is not edited; this note is the correction.**
+>
+> The paragraph above cites **clause 6.4** for the proposition that
+> out-of-range colours *"shall be clipped on a per-component basis"* on
+> integer conversion while **no clipping** is performed for float32
+> encodings, and says that rule *"binds the CMM/profile layers"*. **It
+> was written from recollection**, and `icc-spec-librarian` has since
+> read the primary text. `TOLERANCES.md` **§5.2** carries the full
+> correction append-style and **is `icc-conformance`'s file — it is not
+> duplicated here.** What this ledger must carry is the effect on its own
+> rows *(verified — `TOLERANCES.md` §5.2 read 2026-08-11; the corpus
+> file it rests on is `icc__s__computational_models.md` §4, ambiguity
+> **A39** resolved)*:
+>
+> 1. **Clause 6.4 is titled *"Converting between PCSXYZ and PCSLAB
+>    encodings"* and every quantity in it is a PCS value.** The words
+>    NA-003 recalled are real; **the subject is not.** They are about the
+>    PCS, not about device values.
+> 2. **The clause that governs device encoding is 6.5**, and its float32
+>    permission is **doubly gated** — it applies *"when encoding using
+>    float32Number values in **DToBx and BToDx** tags"*, and 8.3.3/8.4.3
+>    do not list those tags among the ones a three-component matrix-based
+>    profile may contain. **The escape hatch is structurally unreachable
+>    from a matrix/TRC model.**
+> 3. **Therefore a conforming F.8–F.16 evaluation cannot emit a device
+>    value above 1,0** — by entailment, not by a separate output-clamp
+>    rule.
+>
+> **★ What that does to NC-043, which is the row that relied on it.**
+> NC-043's *"Which implementation the specification supports"* field
+> raises exactly this hypothesis — *"clause 6.4 … may make lcms2's float
+> excursion conforming and iccce's clamp merely stricter"* — and **that
+> hypothesis is now refuted. The direction inverts**: lcms2's measured
+> 1,000 120 is **arithmetically unreachable from the mandated model**, so
+> it is evidence that the **input** clamp (F.10/F.13/F.16) was not applied
+> at all. **iccce is not "stricter" — there is no stricter available.**
+> NC-043's row is **left exactly as written**, per this document's
+> append-only rule; this note supersedes its third field.
+> **Two hedges must survive every restatement**, and they are the reason
+> this is still not a conformance verdict: **(A39b)** clause 5's entire
+> conformance requirement on a consumer is *"shall have the ability to
+> **read** the profiles as they are defined"*, and the computational-model
+> `shall`s are phrased about the **profile**, so the word is
+> **divergence**, not non-conformance (rule 7); **(A39c)** both profiles
+> in that measurement are **v2.1.0** and **the v2 half is UNSOURCED** —
+> Annex F's text is version-neutral and the corpus treats it as applying
+> to both, **an assumption labelled as one**.
+> **And what remains unmeasured is not small:** every excursion observed
+> was **1-lsb boundary residue at white**, because sRGB ⊂ Adobe RGB makes
+> real clipping impossible in that direction. Pass 4 did **not** close
+> this either — on SWOP → sRGB, which *does* clip genuinely, `transicc`
+> returned **0 of 1023 components** outside `[0,1]` at every intent,
+> because that destination's TRC inverse is a **tabulated** reverse curve,
+> which is lcms2's saturating path (corpus **M3**). **So the observed cost
+> of this divergence remains ≤1.2×10⁻⁴ device units at white, and that
+> number must never be restated as a bound on the divergence in general.**
+> **The lesson, which is this project's own rule turned on itself:** the
+> sentence was written from recollection of a clause number, in a document
+> whose charter is that claims carry provenance, and it was then **relied
+> on by a differential finding**. Rule 2 — *never write colour maths from
+> memory* — extends to **clause numbers**, and DL-014's requirement to
+> name the corpus file at the citation is what would have caught it.
+
 ### NA-004 — the `pow(negative, fractional)` guard. **A choice inside a stated non-requirement — NOT a deviation from normative text, and the register now distinguishes the two**
 
 | Field | Value |
@@ -943,6 +1264,52 @@ approximation entered the tree, not the day a transform uses it.)*
 | **Where** | `crates/iccce-cmm/src/clut.rs` — module doc §"The A16 silence, and iccce's named choice", `Clut::eval`. |
 | **Revisit if** | lcms2's tetrahedral decomposition is sourced (then the cost becomes **measurable**, and measuring it is owed); or a later ICC edition specifies an interpolation (which would end the silence and make this conformance rather than choice). |
 
+> **★★ Dated status, 2026-08-11 (Pass 4 filing) — NA-006's cost is
+> MEASURED, and the mechanism this entry predicted was WRONG. The entry
+> above is not edited; this note is the correction.**
+>
+> **1. The cost is no longer a corpus-derived bound.** `NC-050` prices
+> the n-linear choice directly, from the CLUT and the two algorithms
+> alone with **no lcms2 output in it**: **1.5741 ΔE2000 max (mean
+> 0.043 86) on SWOP's `A2B0` perceptual table** and **0.254 23 (mean
+> 0.038 54) on `A2B1`**, propagating to **1.6639 ΔE00** end to end
+> through the sRGB destination. The corpus's *"up to ~1 ΔE"* was **the
+> right order of magnitude and an underestimate on one of the two
+> tables.** The entry's *"nobody may restate this as measured at ~1 ΔE"*
+> is superseded by: **measured at 1.5741 on one table of one profile at
+> one pin** — and the coverage words are part of the claim.
+> **Consequence at the site:** `clut.rs`'s module doc says *"per rule 4
+> (named and measured)"*, which the last filing reported as asserting an
+> undischarged obligation. **It is now true.** The item is closed by fact.
+>
+> **2. The entry says the cost "cannot yet" be measured because
+> tetrahedral is deliberately absent. That reasoning was wrong on both
+> halves.** It was not necessary to *implement* tetrahedral in
+> `iccce-cmm` to price the choice — reimplementing the comparison arm
+> **inside the harness**, and grading that arm against `Lut16Model` at
+> 10⁻⁹ (**NC-051**, observed **0.0 exactly**), was enough. **A named
+> approximation can be priced by an apparatus that is not shipped**, and
+> that is now the pattern to reach for.
+>
+> **3. ★ And "lcms2 tetrahedral" was a prediction, not a fact.** For
+> **four** inputs lcms2 runs a **hybrid** — linear in C, Sakamoto
+> tetrahedral in M/Y/K — **read at the pin** (**NC-056**). So the ~1 ΔE
+> bound this entry transcribed, which comes from the
+> trilinear-vs-tetrahedral literature, **is not the bound that applies to
+> this comparison at all**, and the Pass 4 blocker recorded in three
+> documents as *"source lcms2's tetrahedral cube decomposition"* was
+> aimed at the wrong object. **The prediction is left standing** in the
+> entry above, in `ROADMAP.md`, and wherever else it was carried; this
+> note and NC-056 are how it is corrected.
+>
+> **4. What has NOT changed.** iccce's CLUT interpolation is still
+> **n-linear**, still a choice inside an **ICC.1 silence** (A16), and
+> still not a conformance question. Tetrahedral is still **not
+> implemented and still not sourced** for iccce's own use — and the case
+> for implementing it is now weaker than it looked, because matching
+> lcms2 would mean matching a **channel-order-asymmetric** scheme. That
+> is a design decision nobody has taken and this note does not take it.
+
 ### NA-007 — the absolute intent uses `wtpt` **as stored**, and does not un-apply `chad`
 
 *(added 2026-08-11 at the Pass 3 closure filing; code in `6873df1`
@@ -959,6 +1326,46 @@ posture for the colorant tags.)*
 | **Refusal, not default** | A missing or degenerate (`≤ 0` component) `wtpt` yields **`AbsoluteNeedsWtpt`**, refused by name. Substituting `Xi` would silently make absolute ≡ relative **for a profile where that may be false** — the substitution being indistinguishable from a correct answer, which is invariant §3.2 at the CMM layer. |
 | **Where** | `crates/iccce-cmm/src/matrix_trc.rs` — the `Intent` enum doc, `convert_with_intent`, `ModelError::AbsoluteNeedsWtpt`. |
 | **Revisit if** | A4b is resolved by a sourcing dispatch (v2 `wtpt` semantics); the CLI exposes the intent, at which point a differential becomes possible **and the cost becomes owed**; or any path is added that consults `chad` — which is also **NA-002's** revisit condition. |
+
+> **★★ Dated status, 2026-08-11 (Pass 4 filing) — NA-007's cost is
+> MEASURED, it is enormous, and the sentence this entry was written to
+> protect is exactly the sentence that came due.**
+>
+> This entry recorded the assumption as *"unmeasured, and currently
+> unmeasurable through the shipped surface"*, because the CLI refused
+> every intent but media-relative. **`490191b` exposed all four**, and
+> the first differential to reach the absolute intent found **11.217
+> ΔE2000 max, mean 4.670** against lcms2 (**NC-053**) — two orders of
+> magnitude more than at any other intent.
+>
+> **The cause is precisely where this entry said the assumption would
+> bite.** The entry's own words: *"Where the assumption actually bites —
+> **v2 profiles**, where the meaning of a non-D50 `wtpt` is corpus
+> ambiguity **A4b — UNVERIFIED**… implementation consensus is not a
+> specification reading, and this row exists so that sentence cannot
+> quietly become one."* **The destination sRGB profile is v2 and
+> display-class with a D65 `wtpt`; lcms2 substitutes D50 by its own v2
+> rule; iccce uses the stored value.** The ratio is a **32 % error in
+> `Z`**, and modelling lcms2's substitution collapses the disagreement
+> **517×** (**NC-054**). **The register worked**: an assumption that was
+> named a Pass early was found, by measurement, to be the whole of an
+> 11 ΔE divergence, and nobody had to discover it as a mystery.
+>
+> **What is NOT decided.** Whether iccce's reading or lcms2's is right —
+> **A4b is still UNVERIFIED** *(verified — corpus read this filing)*, and
+> per rule 7 the ledger records the difference without a verdict. **The
+> raw comparison is deliberately REPORTED, NOT GRADED**; the graded row
+> at that intent is the modelled one. Decision record
+> `ARCHITECTURE.md` **DL-019**.
+>
+> **What is still unmeasured here.** `chad` remains **not un-applied**,
+> and nothing in Pass 4 exercised a profile carrying one, so that half of
+> the entry is untouched. And **`iccce_color::adapt` is STILL called by
+> no transform in this project** — checked against the live source at a
+> **third** consecutive filing rather than carried: `transform.rs`
+> imports `Xyz` and `D50` from `iccce-color` and nothing from `adapt`
+> *(verified — the `use` block read)*. **NA-002's Bradford cost is still
+> not due.**
 
 ---
 
@@ -1139,6 +1546,14 @@ are the rows to re-run or retire.
 | **`clut.rs`'s interpolation, or tetrahedral being sourced and added** *(added 2026-08-11, closure)* | **NA-006** — sourcing tetrahedral makes its ~1 ΔE corpus bound **measurable**, at which point rule 4 requires it to be measured rather than cited |
 | **`iccce_color::delta_e_2000`, or `SHARMA_34`** *(added 2026-08-11, closure)* | **NC-001 directly — and now, indirectly, every ΔE row in §3.8**, because the harness grades with it (DL-017 condition 2). A change to the ruler re-scales NC-036, NC-038, NC-039, NC-040 and NC-041 at once, and **NC-040 is the only row that would notice** |
 | **Clause 6.4's float32 clipping rule being read against Annex F.8–F.16** *(added 2026-08-11, closure)* | **NC-043** — it is the pending verdict; and if lcms2's excursion turns out to be conforming, **NA-003/NA-004's framing of iccce's clamp as conformance narrows to "conforming and stricter"** |
+| *(status of the row above, 2026-08-11 Pass 4 filing)* | **ANSWERED, and against the hypothesis.** 6.4 governs the **PCS**, not device values; 6.5's float32 permission is gated on `DToBx`/`BToDx` tags a matrix/TRC profile may not carry; **a conforming F.8–F.16 evaluation cannot exceed 1,0.** See the second dated note under **NA-003** and `TOLERANCES.md` §5.2. **NC-043's third field is superseded**; two hedges survive (**A39b** divergence-not-non-conformance, **A39c** the v2 half unsourced) |
+| **Corpus ambiguity A4b being resolved** (v2 `wtpt` semantics) *(added 2026-08-11, Pass 4)* | **NC-053 and NC-054, and NA-007's whole framing.** One of the two implementations acquires a defect and the absolute-intent row becomes **graded** again. **DL-019** is the decision record for the interim posture |
+| **`clut.rs`'s interpolation changing, or tetrahedral being added** *(restated 2026-08-11, Pass 4)* | **NA-006 and NC-050 — and NC-046/NC-047, whose emulation arm exists only to switch the current scheme off.** The earlier row above predicted that sourcing tetrahedral would make the cost measurable; **the cost was measured without it** (NC-050), and the comparison arm that matters is lcms2's **four-input hybrid**, not tetrahedral |
+| **The lcms2 pin moving off `21c582a`** *(extended again 2026-08-11, Pass 4)* | Now additionally **NC-044 … NC-050 and NC-053 … NC-056.** **NC-050 and NC-056 are the sharp ones**: NC-056's whole content is a reading of `cmsintrp.c`, and NC-050's second arm is a **transcription** of it — a minor release that retunes the interpolator factory invalidates both **silently**, because the transcription would keep reproducing the *old* lcms2 perfectly. **Re-run, not re-read** |
+| **Either Pass 4 profile changing on this machine, or being absent** *(added 2026-08-11, Pass 4)* | **NC-044 … NC-055 — all twelve.** Neither file is ours or committed; **every row skips** without the Windows colour directory. **NC-053/NC-054 in particular are facts about one destination profile's `wtpt`**, and NC-050 about one source profile's two CLUTs |
+| **The 341-point grid changing** *(added 2026-08-11, Pass 4)* | **NC-044 … NC-051 and NC-055.** A silently changed grid silently changes the **scope** of each. **NC-044/NC-045 are the most fragile**: their whole content is that those 16 points are **exact CLUT nodes**, a property of the corner block that `corner_indices_really_are_corners` pins |
+| **A `B2A` or `mAB `/`mBA ` differential being run** *(added 2026-08-11, Pass 4)* | **Nothing here is invalidated** — but §3.9's coverage box narrows, and the **`Lab8` codec and `lut8Type` evaluation acquire their first evidence of any kind.** Until then they are implemented and unmeasured |
+| **`tools/gen-profiles` fixtures being used by a differential** *(added 2026-08-11, Pass 4)* | Nothing is invalidated; **the "every row skips off this machine" clause on §3.8 and §3.9 becomes removable**, and Pass 4's missing **ground-truth** row becomes buildable (an affine-CLUT `mft2`, where every interpolation scheme must agree exactly) |
 
 ---
 
@@ -1343,6 +1758,68 @@ caught **four** quietly-done items and **one** false carried prediction.
 7. **A DL-014 audit of the new Pass 3-closure / Pass 4-groundwork
    code** — see the table row above. It is a larger citation surface
    than Pass 3's core added, and nobody has swept it.
+
+### 7.5 Status of §7 … §7.4, re-checked 2026-08-11 at the **Pass 4** filing
+
+No list above is edited. **Every line below was re-checked against the
+live tree or the live corpus this session**, not carried forward — the
+rule that has now closed **six** quietly-done items and caught **two**
+false carried claims, one of them in this filing's own dispatch.
+
+| Item | Status now |
+|---|---|
+| §7.4 newly-owed 1 — **`iccce-cmm/src/lib.rs`'s §Status** | **★ STILL OWED, and stale in a NEW place for the THIRD consecutive filing.** The absolute-intent sentence was fixed and `pcs_encoding`/`lut_transform` were added; the replacement now reads *"(CMYK→RGB live; **B2A/lut8/mAB stages pending**)"* on a crate where `b3f4388` landed **B2A and lut8** — `lut_transform.rs`'s own module doc is headed *"stages 1+3"* and evaluates **both depths in both directions**. Only `mAB `/`mBA ` is pending *(verified — both files read)*. Three filings running is no longer a fact about one file: **a status line in a doc comment goes stale at exactly the rate the crate moves.** |
+| §7.4 newly-owed 2 — **`clut.rs`'s *"named and measured"*** | **★ DISCHARGED — by the measurement arriving, not by the prose changing.** NA-006's cost is now measured (**NC-050**), so the sentence that asserted an undischarged obligation is true. Recorded as closed **by fact**, because "fixed" and "overtaken by events" are different histories. |
+| §7.4 newly-owed 3 — **resolve `pass=8` vs `pass=7` with per-line output** | **PARTIALLY DISCHARGED, structurally, and this filing did the counting.** §3.9.8 reconciles the emitters to the reported `pass=36 skip=3`: 1 smoke + **7** Pass 3 + **28** Pass 4 graded, 3 skipped. §2.4's hypothesis is confirmed. **Still owed: an actual run recorded with per-line output** — the summary line still cannot say *which* checks ran, and the `pass=7` re-run is still unexplained. |
+| §7.4 newly-owed 4 — **the NC-043 clamping question** | **★ DISCHARGED, and it went AGAINST the hypothesis it was asked to test.** `icc-spec-librarian` read 6.4 / 6.5 / 8.3.3 / 8.4.3 and **A39 is resolved**: 6.4 governs the PCS, 6.5's float32 permission is unreachable from a matrix/TRC model, and **a conforming F.8–F.16 evaluation cannot exceed 1,0.** The full correction is `TOLERANCES.md` §5.2 (`icc-conformance`'s, not edited here); its effect on this ledger is the second dated note under **NA-003**. **The hypothesis was built on a clause number written from memory in this very document.** |
+| §7.4 newly-owed 5 — **`tools/difftest/README.md` §13.10's four items** | **Two moved, two did not.** *A synthetic pair*: **`tools/gen-profiles/` now exists** and `fixtures/synthetic/` holds **39 `.icc` files** *(verified — enumerated)*, but **no differential record reads any of them**, so §13 and §14 still skip off this machine. *A v4 pair*: **still owed** — Pass 4 proved DL-013's confound **unreachable** for its v2 pair rather than exercising the v4 case. *The reverse direction* and *a clamp-before/clamp-after fixture*: **unchanged, both still owed.** |
+| §7.4 newly-owed 6 — **a ground-truth row for the matrix/TRC path** | **Still owed, and the hole is now bigger, not smaller.** **Pass 4 has no ground-truth row either** — every §3.9 record is a cross-check, a self-consistency check or a measurement of the oracle. The most tractable Pass 4 candidate is a **synthetic `mft2` whose CLUT stores an affine function**, where every interpolation scheme must agree exactly, and `gen-profiles` now makes it authorable. The dispatch to `icc-spec-librarian` for **IEC 61966-2-1** has still **not been made by anyone**. |
+| §7.4 newly-owed 7 — **a DL-014 citation audit of the new code** | **Still owed, and the surface has grown again.** `transform.rs` and `lut_transform.rs` add citations to **10.10/10.11, 10.6, 6.3.4.2 NOTE 3, 8.10.2 a)–d), Tables 40/44, Tables 12/13**, and ambiguities **A10, A16, A21, A22, A27**. Spot-reading again suggests they follow the shape — each names its corpus file — and **suggesting is still not auditing.** Nobody has swept `iccce-color` or `iccce-profile` either. |
+| §7.2 newly-owed 1 — **the Pass 2 clause-2 scope decision** | **★ The BLOCKER dissolved; the DECISION is still not recorded as taken.** A generator and 39 whole-profile fixtures exist *(verified)*, so *"in-test synthetics or files on disk?"* is no longer a question that gates anything. **But the operator was asked which reading the plan meant, and nothing in these documents records an answer** — and until a differential actually reads a fixture, the concrete consequence (every §3.8/§3.9 row skipping off this machine) is unchanged. |
+| §7.1 newly-owed 2 — **behavioural tests of `ncl2` and B2A legacy-Lab decoding** | **Still owed, and the B2A half is now conspicuous**: `b3f4388` shipped a **B2A evaluator** and Pass 4 measured **nothing** in that direction. NC-019's coverage still rests on a **source reading** for both cases. |
+| §7.1 newly-owed 3 — **the Pass 4/5 forced-BPC decision** | **Still owed and still undecided — but for the first time it is a decision about a *future* run rather than a live confound.** Pass 4 **proved** the gate unreachable for its pair from the **parsed version words, printed on every record**, so the two options DL-013 posed remain open for whenever a **v4** pair is introduced. |
+| §7.3 newly-owed 4 — **an observed residual for NC-032** | **Still owed.** §3.9 carries observed values on every row, so the ledger now has three sections of measured rows sitting beside Pass 1's and Pass 3-core's asserted bounds. |
+| §7 item 2 / §7.1 item 2 — **observed residuals for Pass 1's rows** | **Still owed, unchanged.** |
+| §7.1 item 4 — **a ground-truth row for chromatic adaptation** | **Still owed. Still NOT on a clock**, re-tested against the code for the **third** consecutive filing rather than carried: `iccce-cmm` contains **no reference to `adapt` of any kind** *(verified — the whole crate grepped case-insensitively; the only hits are two prose comments)*. Pass 4 adapts nothing either; **NA-002's Bradford cost is still not due.** |
+| §7.1 item 6 — **a Linux run** | **Still owed. Nothing has changed, by anyone, ever.** And it is worse than a gap: **every Pass 3 and Pass 4 record reads a category (c) system profile**, so CI could not run them even if CI ran, and no CI run has ever been observed. |
+
+**Newly owed as of this filing:**
+
+1. **★ `icc-spec-librarian` — corpus ambiguity A4b**, the v2 `wtpt`
+   question. It now has **11.217 ΔE2000 of consequence attached to it**
+   (NC-053) and it decides which of the two implementations acquires a
+   defect. **Verified still UNVERIFIED in the corpus this session.**
+2. **★ `icc-spec-librarian` — corpus rows M4 and M5**: lcms2's four-input
+   CLUT hybrid, and its v2-display-class `wtpt` substitution.
+   `icc__ref__lcms2_measured_behaviour.md` carries **M1, M2, M3 and no
+   more** *(verified — enumerated)*. Until they land, **NC-056 and
+   NC-053 are this project's only record of two readings of the oracle's
+   source**, and a reading that lives in one place is a reading that can
+   quietly become a paraphrase.
+3. **★ `icc-conformance` — measure the B2A direction.** The evaluator
+   exists; nothing has compared it to anything. It is where *"at every
+   intent"* is actually completed, and it is the first thing that would
+   exercise **`lut8Type` evaluation** and the **`Lab8` codec**.
+4. **`icc-conformance` — an instrument check for the sRGB destination
+   model.** Pass 3's record 7 bounds iccce's ΔE ruler on **Adobe RGB**;
+   **Pass 4 inherited that bound rather than re-measuring it on the
+   profile it actually used.** Every Pass 4 ΔE row is graded with a
+   ruler validated on a different profile.
+5. **`icc-engineer` — `cmd_transform`'s doc comment contradicts its own
+   code**: *"Only media-relative colorimetric exists (Pass 3 scope); an
+   `--intent` flag naming anything else is refused by name"*, directly
+   above a `match` accepting `perceptual`, `saturation` and `absolute`
+   *(verified — read)*. **Reported, not repaired.** A reader who trusts
+   it concludes no differential can reach the absolute intent — which is
+   how the 11 ΔE finding was, until this morning, impossible.
+6. **`icc-conformance` — `tools/difftest/README.md` §14.7's record
+   decomposition** (§3.9.8): 7/1/28/31, not 8/1/27/30. The total is
+   right and both terms are wrong.
+7. **A decision nobody has taken: whether iccce should implement
+   lcms2's four-input geometry at all.** NC-056 makes it a real
+   question rather than a default — matching lcms2 would mean adopting a
+   scheme that is **not symmetric in the four inks**, which is a
+   property, not a bug, and choosing it needs a stated reason.
 
 ---
 

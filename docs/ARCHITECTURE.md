@@ -1726,3 +1726,160 @@ Commit **`986dae6`** *(reported)*.
 sites (the scope limit above narrows, and the pin's coverage genuinely
 widens); or a Pass 5 BPC gate is written — at which point this entry is
 the checklist, not a precedent to be re-derived.
+
+### DL-019 — when a disagreement's **mechanism is identified but its authority does not exist**, the raw comparison is **REPORTED, NOT GRADED** and the gate moves to the **modelled** quantity. Filed with the live instance: iccce reads a v2 `wtpt` **as stored**, lcms2 substitutes **D50**, and it costs **11.217 ΔE2000** pending corpus **A4b**
+
+**Date:** 2026-08-11 (Pass 4, the A2B differential) · **Found by:**
+`icc-conformance` while running all four intents for the first time ·
+**Filed by:** `icc-librarian` · **Relates to** **DL-013** (a measured
+lcms2 behaviour that changes what a cross-check measures), **DL-018**
+(what to do when a gate's metric is dominated by something other than
+error), and **NA-007** (the assumption this divergence lands on, named a
+Pass before it bit)
+
+#### The instance, stated first, because the rule is only checkable against one
+
+At the **ICC-absolute** intent, `USWebCoatedSWOP.icc` → the Windows
+system sRGB profile, iccce and lcms2 differ by **max 11.217 ΔE2000, mean
+4.670** (device max 0.1580) — **two orders of magnitude more than at any
+other intent**, and far beyond anything the CLUT interpolation envelope
+for the table absolute uses (0.2542) could account for. **The worst
+points are the lightest**: paper at 10.6, 33 % C at 11.2.
+
+**The mechanism was read at the pin and then measured.** Both
+implementations build the same **D.6/D.7** diagonal; **they differ in
+what they read for the destination media white**:
+
+| | source white | destination white |
+|---|---|---|
+| **iccce** (**NA-007**: `wtpt` **as stored**) | SWOP's `wtpt` | the sRGB profile's `wtpt` = **D65** (0.950 455, 1.0, 1.089 050) |
+| **lcms2** | SWOP's `wtpt` (a `prtr`, so the tag is used) | **D50** (0.9642, 1.0, 0.8249), substituted by `cmsio1.c`'s `_cmsReadMediaWhitePoint` because the profile is **v2 AND display-class** |
+
+The ratio is D65/D50 = (0.9858, 1.0, 1.3202) — **a 32 % error in `Z`,
+applied to every colour.** Re-predicting lcms2's output with **that one
+substitution** (plus the CLUT geometry, so both known differences are
+modelled) collapses the disagreement **517×, to 2.1677×10⁻²**.
+
+**Which implementation is right is NOT settled, and settling it is not
+available to this project today.** ICC.1:2022 specifies v4; **what a v2
+profile's `wtpt` means is corpus ambiguity A4b, UNVERIFIED** —
+ICC.1:2022 is *silent* on version 2's convention (confirmed there by
+full-text search) and **ICC.1:2001-04 has not been obtained**, being one
+of the operator-download items. **lcms2's substitution is justified in
+its source by a comment, not by a clause.** Per rule 7 this is a
+**finding**, not a failure, and not a verdict in either direction.
+
+#### The problem that forces a decision
+
+A differential has to do *something* with a 11 ΔE disagreement, and the
+two obvious things are both wrong:
+
+| Option | Why it was rejected — **in writing, at the record** |
+|---|---|
+| **Widen the tolerance to ~15 ΔE00 so it passes** | A number chosen **because it passed** — `TOLERANCES.md` §0 and rule 5 exist to forbid exactly that. 15 ΔE00 is **a different colour**, not a tolerance. And it would **silently absorb any future arithmetic error in the absolute path**: the one place the suite would then be blind is the path with the least evidence behind it |
+| **Let it fail permanently** | **A red line that never changes stops being read.** It also **misreports the state of knowledge**: the disagreement is not unexplained — its mechanism is known to a factor of 517 — so a failing gate would assert an ignorance the project does not have |
+
+#### The decision
+
+**When a cross-check disagreement has (a) an identified mechanism that
+can be modelled, and (b) no available authority to say which side is
+right, then:**
+
+1. **The raw comparison is emitted with an INFINITE tolerance and the
+   words *REPORTED, NOT GRADED*** — it stays on the record, at full
+   size, where it will be seen.
+2. **The gate at that point becomes the MODELLED comparison** — the same
+   run with the other implementation's policy substituted and **nothing
+   else changed** — with a tolerance derived from the residual
+   measurement chain, not from the divergence.
+3. **Both rejected alternatives are written down** at the record, not
+   just the chosen one. A reader must be able to tell *"considered and
+   rejected"* from *"never thought of"*.
+4. **The blocking question is stated as a question, in full, addressed to
+   a named owner** — here `icc-spec-librarian`, and the question is
+   whether the v2 specification defines `mediaWhitePointTag` for a
+   display-class profile as the *adapted* PCS white (making lcms2's
+   substitution a correction of a widely mis-authored field) or as the
+   *measured, unadapted* device white (making it the CMM substituting its
+   own guess for the file's data).
+5. **The row's ungraded status is temporary by construction.** The moment
+   A4b is answered, **one of the two implementations acquires a defect**
+   and the raw comparison becomes gradeable again.
+
+**This is the only place in the suite where a known disagreement is
+deliberately not gated**, and that scarcity is part of the rule: the
+posture is available **only** when the mechanism is modelled and the
+model is *itself* gated. Without step 2 this would be "we decided not to
+check", which is the thing it must never become.
+
+#### Why it is not DL-018 in different clothes
+
+DL-018 concerns a metric dominated by a **deliberate, required cost** —
+the answer there is to add a **prediction pin** so the gate stops
+rewarding deletion of the requirement. Here the metric is dominated by a
+**policy difference whose correctness is unknown**, and there is nothing
+to pin a prediction *to*: neither side is established as the right
+answer. The shared ancestor of both entries is the same instinct —
+**when a number is not error, do not grade it as though it were** — and
+the two differ in what replaces the grade: a pin against a computed
+prediction (DL-018), or a gate on the modelled substitution plus a
+stated open question (this entry).
+
+#### What this entry does NOT decide
+
+- **It does not decide A4b**, and nothing in it prefers iccce's reading.
+  **NA-007 remains a named assumption resting on implementation
+  consensus**, which the entry that registered it already said *"is not a
+  specification reading"*.
+- **It does not license reporting-not-grading as a general escape.**
+  Steps 1–5 are conjunctive. A disagreement whose mechanism is *not*
+  modelled is an **unexplained** disagreement, and the correct response
+  to one of those is a failing gate.
+- **It does not extend to v4 profiles.** In a **conforming v4** profile
+  `wtpt` **shall** already be D50-adapted (9.2.36), from which the
+  sourced consequence follows that absolute ≡ media-relative for a
+  conforming v4 display profile. **The entire divergence is a v2
+  phenomenon**, on files the specification in hand does not govern.
+
+#### ★ One candidate considered at this filing and deliberately NOT filed
+
+**The per-depth `PcsCodec` generalisation** — `lut_transform.rs`
+carrying `Lab16Legacy` / `Lab8` / `Xyz16` as the closed (tag type × PCS
+kind) product, with the fourth cell (**`lut8` + XYZ PCS**) **refused by
+name** as `Lut8XyzPcsUnsourced` because the 8-bit XYZ encoding has no
+verified corpus row — **is a good decision and does not need an entry
+here.** The reasoning, recorded so the omission is a judgement rather
+than an oversight: the rule it enacts is **already in the decision log**
+(DL-011: the encoding keys off the **tag type**) and **already sourced**
+(A10 resolved for the 8-bit Lab tables); what `b3f4388` added is the
+*mechanism* that makes the rule unrepresentable-to-get-wrong, and **a
+closed enum with a named refusal variant is self-documenting in a way a
+log entry cannot improve on**. The decision log is for choices a reader
+could not recover from the code; this one is legible **because** of the
+code. `NUMERIC_CLAIMS.md` §2.5 and the ROADMAP's Pass 4 block record it
+as delivered work.
+
+**Evidence.** `tools/difftest/README.md` §14.6, §14.7, §14.9;
+`tools/difftest/src/pass4.rs` (`ABSOLUTE_REPORTED` and
+`WP_POLICY_EMULATED` and their `why` strings — **both read in the live
+source by this librarian**, including the record text that names the
+`cmsio1.c` mechanism and states A4b as unsourced);
+`crates/iccce-cmm/src/matrix_trc.rs` (`Intent::Absolute`, and the
+comment *"one is captured as stored (A4b: no adaptation
+second-guessed)"*); `docs/NUMERIC_CLAIMS.md` **NC-053**, **NC-054**,
+**NA-007**'s dated status; corpus `icc__s__rendering_intents.md` §A4b
+and `icc__ref__v2_v4_divergence.md` *(both read this session — **A4b is
+UNVERIFIED as of this filing**, and `icc__ref__lcms2_measured_behaviour.md`
+carries **M1–M3 only**, so the M5 row this behaviour belongs in does not
+exist yet)*. **The run itself is `icc-conformance`'s and is reported;
+this librarian ran nothing.** Commits **`490191b`** (the CLI exposing the
+intent, without which none of this was reachable) and **`d9e0b82`** (the
+differential) *(reported)*.
+
+**Revisit if:** **A4b is answered** — then step 5 fires, the raw rows
+become gradeable, one implementation acquires a defect, and this entry
+becomes the record of how the question was held open rather than a live
+posture; or a **second** instance of the same shape appears, at which
+point the rule should be checked against both rather than generalised
+from one; or a v4 pair is introduced, where 9.2.36 makes the question
+moot.

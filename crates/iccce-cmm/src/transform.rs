@@ -61,9 +61,10 @@ mod tag {
 pub enum SourceModel {
     MatrixTrc(Box<MatrixTrc>),
     Lut16(Box<Lut16Model>),
-    /// A v4 `mAB ` A2B pipeline (device→PCS only; the mBA/B2A twin is
-    /// blocked on a sourcing question — `lut_ab` module doc).
+    /// A v4 `mAB ` A2B pipeline.
     LutAb(Box<crate::lut_ab::LutAbModel>),
+    /// A monochrome profile's F.2 grayTRC model (1 channel).
+    Gray(Box<crate::gray_trc::GrayTrc>),
 }
 
 /// A destination profile's PCS→device model, chosen per the same
@@ -76,6 +77,10 @@ pub enum DestModel {
     Lut16B2a(Box<Lut16Model>),
     /// A v4 `mBA ` pipeline (counts per 10.13.2/4/6 — GP-001).
     LutAb(Box<crate::lut_ab::LutAbModel>),
+    /// A monochrome destination (F.2 inverse; chromatic content of
+    /// the PCS is discarded by the achromatic-channel rule — stated
+    /// in `gray_trc`, not hidden).
+    Gray(Box<crate::gray_trc::GrayTrc>),
 }
 
 /// Chain build/run errors.
@@ -193,7 +198,16 @@ impl Chain {
         }
         let dst_model = match dst_model {
             Some(m) => m,
-            None => DestModel::MatrixTrc(Box::new(MatrixTrc::from_profile(dst)?)),
+            // 8.10.2 step 4 has two shapes: three-component
+            // matrix/TRC (F.3) or grayTRC (F.2) — clause 8's
+            // per-class requirements decide which tags exist.
+            None => match MatrixTrc::from_profile(dst) {
+                Ok(m) => DestModel::MatrixTrc(Box::new(m)),
+                Err(matrix_err) => match crate::gray_trc::GrayTrc::from_profile(dst) {
+                    Ok(g) => DestModel::Gray(Box::new(g)),
+                    Err(_) => return Err(ChainError::Model(matrix_err)),
+                },
+            },
         };
 
         // 8.10.2 step 2: the intent's own A2Bx; step 3: A2B0.
@@ -263,18 +277,22 @@ impl Chain {
             }
         }
 
-        // 8.10.2 step 4: TRC + colorant matrix.
+        // 8.10.2 step 4: TRC + colorant matrix (F.3), or grayTRC (F.2)
+        // for monochrome profiles.
         let source = match source {
             Some(s) => s,
             None => match MatrixTrc::from_profile(src) {
                 Ok(m) => SourceModel::MatrixTrc(Box::new(m)),
-                Err(e) => {
-                    // Prefer the more specific "tag exists but is
-                    // stage-3 material" report when we saw one.
-                    return Err(unsupported.unwrap_or(ChainError::NoSourcePath {
-                        matrix_trc_said: e.to_string(),
-                    }));
-                }
+                Err(matrix_err) => match crate::gray_trc::GrayTrc::from_profile(src) {
+                    Ok(g) => SourceModel::Gray(Box::new(g)),
+                    Err(_) => {
+                        // Prefer the more specific "tag exists but is
+                        // unsupported" report when we saw one.
+                        return Err(unsupported.unwrap_or(ChainError::NoSourcePath {
+                            matrix_trc_said: matrix_err.to_string(),
+                        }));
+                    }
+                },
             },
         };
 
@@ -296,6 +314,7 @@ impl Chain {
             DestModel::MatrixTrc(_) => 3,
             DestModel::Lut16B2a(l) => l.output_channels(),
             DestModel::LutAb(l) => l.device_channels(),
+            DestModel::Gray(_) => 1,
         }
     }
 
@@ -305,6 +324,7 @@ impl Chain {
             SourceModel::MatrixTrc(_) => 3,
             SourceModel::Lut16(l) => l.input_channels(),
             SourceModel::LutAb(l) => l.device_channels(),
+            SourceModel::Gray(_) => 1,
         }
     }
 
@@ -344,6 +364,7 @@ impl Chain {
                     });
                 }
             },
+            SourceModel::Gray(g) => g.device_to_pcs(device[0]),
         };
 
         // Absolute: the D.6/D.7 composite on unified XYZ (same rule
@@ -397,6 +418,11 @@ impl Chain {
                         actual: 3,
                     })
             }
+            DestModel::Gray(g) => Ok(vec![g.pcs_to_device(xyz).map_err(|e| {
+                ChainError::NoSourcePath {
+                    matrix_trc_said: e.to_string(),
+                }
+            })?]),
         }
     }
 }
