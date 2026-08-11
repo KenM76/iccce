@@ -70,10 +70,13 @@ built without a `why`; `Intent` still has only the four ICC intents;
 whole grid to one number fit without contorting `Check`; the `why` and
 `source` strings are emitted on **every** line including skips.
 
-**Still open:** POSIX build and Linux CI; `tools/gen-profiles` (so Pass 3
-has no synthetic fixture and skips entirely off this machine); any
-ground-truth row for Pass 3; the reverse direction; any v4 profile; LUTs
-and the other three intents.
+**Still open:** POSIX build and Linux CI; any ground-truth row for Pass 3;
+the reverse direction; the other three intents.
+**No longer open (2026-08-11):** `tools/gen-profiles` and
+`fixtures/synthetic/` now exist — 38 committed profiles including v4, LUT
+and CMYK shapes, so a Pass 3/4 comparison need no longer depend on this
+machine's installed profiles. See
+[[project-synthetic-fixture-corpus-and-gp001]].
 
 **How to apply:** before adding a tolerance, check the comparison was
 actually *run*, and state the scope in the same breath as the number.
