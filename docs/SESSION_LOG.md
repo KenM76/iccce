@@ -1838,3 +1838,260 @@ committed** — instructed not to, and committing is the engineer's act.
   characterisation of lcms2's position did.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — ★★ Pass 4b: the three directions Pass 4 left unmeasured are measured, a closed form derived from clause text beats every LUT row in the ledger, and three lcms2 "rules" turn out to be half-rules about one direction
+
+**Tenth entry of the same calendar day.** Filed by `icc-librarian`
+against the working tree and the live corpus.
+
+**Commits, all reported** *(no agent in this project has ever run git)*:
+**`9e2e29e`** — the previous filing committed, a **gray-through-`Chain`**
+test, and a GP-001 status banner in `tools/gen-profiles/README.md`;
+**`a0310c7`** — three changes driven by the corpus's **seventh** pass
+(the **normative `mAB `/`mBA ` matrix-output clamp**, the `offsetB == 0`
+malformation now that **A23 is closed**, and the `mluc` `recordSize`
+refusal reworded per the corpus's spec-defect §17); **`3d0c183`** — the
+Pass 4b measurements (`tools/difftest/src/pass4b.rs`, `pass4b_report`,
+README **§15**, `TOLERANCES.md` §3.4.4 and four rows in its §4).
+**All three commits' contents were checked against the live source and
+all three matched** — the first dispatch in several filings where that is
+true of every item.
+
+### ★★ What was measured — 28 records, `pass=28 fail=0`
+
+*(reported; the summary line `summary pass=64 fail=0 skip=3 error=0` is
+transcribed in README §15.5 and was read here, and the engineer
+separately reports **re-verifying `pass=28 fail=0` within the hour** —
+**without per-line output**. `icc-librarian` ran nothing.)*
+
+- **§A — the B2A direction.** sRGB → `USWebCoatedSWOP.icc` through
+  `mft1`/`lut8Type`, 213 RGB points end to end + 258 Lab points
+  PCS-side, perceptual and media-relative. **1,330×10⁻⁴ device against a
+  5×10⁻⁴ gate** — and the gate is an **envelope computed from lcms2's
+  own roundings with no lcms2 output in it**, which the observation
+  matches to **0,02 %**. Modelling those roundings leaves
+  **3,10×10⁻⁵ = 2,03 lsb of 1/65535**, *three times independently*.
+  **`lut8Type` evaluation and the `Lab8` codec had no evidence of any
+  kind before today.**
+- **§B — the v4 element pipeline.** One synthetic fixture, because a
+  sweep of all **40** profiles in this machine's colour directory found
+  **zero `mAB `/`mBA ` tags**. Its CLUTs are **affine**, so every
+  geometry reproduces them exactly, and the output is a **closed form**
+  derived from 10.12/10.13 and Tables 12/13. **iccce reproduces it to
+  2,842×10⁻¹⁴ in `L*` and 2,220×10⁻¹⁶ in device.**
+- **§C — the gray axis.** `ewgray22.icm` → sRGB, 69 points.
+  **9,686×10⁻⁵ device / 2,169×10⁻² ΔE2000**, and modelling lcms2's
+  `cmsReverseToneCurveEx(4096)` collapses it **457×** to
+  **2,121×10⁻⁷ — below `transicc`'s print floor.** Worst point
+  `g = 2/255`: iccce `0,000300`, lcms2 `0,000397`, **model `0,000397`.**
+
+### ★★ A new evidence class, and the honest ceiling on it
+
+§B introduces **`derived-expectation`** — an expectation computed by
+arithmetic from the specification's stated element order and encoding
+plus the bytes of a fixture this project authored, **with no
+implementation's output in it**. It is **stronger than a cross-check**
+(a cross-check dies when two implementations share a misreading; this
+dies only when *the derivation* does) and it is **not ground truth**
+(nobody at the CIE or the ICC printed the number). Its weakness is
+stated wherever it appears: **the fixture and the derivation come out of
+the same corpus**, so a wrong transcription makes them wrong *together*
+and they agree perfectly — which is exactly why every derived row is
+paired with an lcms2 row over the same points, **the third reading**.
+The class was defined by `icc-conformance` in `TOLERANCES.md` §3.4.4.1;
+this librarian's judgement was that a pointer was **not** enough and the
+class belongs in `NUMERIC_CLAIMS.md` §1's table, because §1's own rule
+is that **a row without a class is not finished** and four rows carry it.
+
+**Pass 4 still has no ground-truth row**, and this does not become one.
+
+### ★★ Three findings, and the third is why there is a new decision-log entry
+
+1. **lcms2 does NOT use tetrahedral interpolation in the B2A
+   direction.** `_cmsReadOutputLUT` calls
+   `ChangeInterpolationToTrilinear` for **every** Lab-PCS LUT — its own
+   comment calls it *"controversial stuff"* — and **trilinear over three
+   inputs is iccce's n-linear**. So **NA-006's measured 1,5741 ΔE2000 is
+   an A2B fact, and the B2A envelope is exactly zero.** A zero method
+   difference makes the comparison **weaker**, which is why the
+   counterfactual row exists: the same table evaluated tetrahedrally
+   differs by **99–139×** the observed disagreement, so the apparatus is
+   *shown* able to see a geometry difference (DL-018's discipline,
+   applied to a method).
+2. **Forced BPC is decided by the DESTINATION profile's version.**
+   Measured in both directions on one pair, both sides lcms2: v4 as
+   *source* into a v2 destination is **bit-identical**; v2 into a v4
+   *destination* moves `K` at black **99,6094 % → 96,4721 %**.
+   **DL-013 and corpus M2 as written are half a rule** — anyone using
+   them to decide whether a comparison is confounded needs the
+   direction.
+3. **The encoded PCS overflows, and it costs 0,6117 ΔE2000 on 10 of 128
+   points.** The 3×4 matrix adds `+1/256` to a full-scale `L*` node;
+   iccce clamps, lcms2 does not (`100,390 625`, measured through
+   `transicc`). Handled per **DL-019**: **reported, not graded**, and
+   the ten points **excluded** from the graded rows that would otherwise
+   contain them.
+
+**The meta-finding, and it is the entry:** three lcms2 behaviours, all
+in the same file, **all previously written down in this project as
+unqualified rules**, each turning out to be a statement about **one
+direction or one tag type**. (The third: the legacy-Lab encoding, which
+lcms2 applies for `lut16Type` and **not** for `lut8Type` — where iccce's
+`Lab8` codec agrees exactly, and where the mistake would have cost
+**0,39 % in `L*` ≈ 0,2 ΔE2000**, *below* the perceptibility anchor and
+invisible to any ΔE-graded suite.) Filed as **`ARCHITECTURE.md`
+DL-021**: *a measured implementation behaviour is a fact about the
+direction and the path it was measured in, until it is measured in the
+others.* **The defect is in this project's transcription, not in
+lcms2** — each behaviour has a rationale in its own place.
+
+### ★ A clause question that the corpus answered between the run and this filing
+
+README §15.3.3 records the overflow as unsettled and owes a dispatch
+asking **two** questions. **The first is already answered.** The
+corpus's seventh pass transcribed **10.12.5/10.13.3 VERBATIM** — *"The
+resultant values Y1, Y2 and Y3 **shall be clipped to the range 0,0 to
+1,0**"*, used as inputs to the `B` curves — and glosses it: *"clipping
+here is normative and is one of the few places ICC.1 says where clipping
+happens."* **The fixture's overflow is exactly a matrix output**, so
+**iccce's `L* = 100` is what the clause requires**, and iccce's live
+code now clamps there **citing that clause** (`a0310c7`, verified).
+**What remains open is the second question** — whether the *final* `B`
+output must be clipped to the encodable PCS range — so the queued
+dispatch is **narrowed, not cancelled**; and per **A39b** the available
+word for lcms2's behaviour is **divergence**, not non-conformance.
+**Re-grading the row is `icc-conformance`'s call on its own file.**
+
+*This is the librarian rule that keeps paying: **verify against the live
+source rather than the dispatch.** The dispatch carried the question as
+open; the corpus had closed half of it, and the engineer had already
+acted on the closure in code.*
+
+### ★ Three tolerances failed first and were RE-DERIVED, not widened
+
+`TOLERANCES.md` §4 logs four Pass 4b rows *(read; not edited — the file
+is `icc-conformance`'s)*. **C1**: an envelope written into a doc comment
+**before it was computed** (3,45×10⁻⁵ guessed, 9,680×10⁻⁵ computed).
+**C3**: **a derivation taken at the wrong end of the axis** — near
+black, CIELAB's *chromatic* sensitivity dominates by ~3×, which
+**inverts** a note this project carried from Pass 3. **B6**: **a missing
+term** — B5 ends at a CLUT, B6 ends at sRGB's inverse tone curves; **the
+fix is a second constant, not a bigger one**, and B5 keeps its number
+and still passes. **B0**: ★ **real arithmetic mistaken for floating
+point** — *"every geometry reproduces an affine function exactly"* is
+true **in ℝ**, and the two algorithms reach it by different sequences of
+`f64` operations; 0,0 → 1×10⁻¹⁴, failed at 1,110×10⁻¹⁶. **In every case
+the code was cleared first**, per §0's procedure.
+
+### ★ Two things in the tree that the dispatch did not mention — the fifth consecutive filing
+
+**`crates/iccce-cmm/src/bpc.rs` (Pass 5) and `named_color.rs` (Pass 7)
+both exist**, are declared in the crate's `lib.rs`, and carry 4 and 2
+tests *(verified — read and counted)*. The corpus carries a matching
+**`icc__ref__bpc.md`**, whose headline is that **the BPC scaling map is
+in ICC.1:2022 after all**, at clause **6.3.4.3** under another name. So
+**the dispatch's *"Pass 5 pending sourcing"* is wrong on live
+evidence**: the sourcing landed **and Pass 5's code half is largely
+done** — `Chain::with_bpc()` applies it and **`iccce transform --bpc`**
+reaches it through the shipped binary, refusing by name at the absolute
+intent and outside the estimation subset. **iccce NEVER forces BPC**,
+deliberately, and the field doc calls that *"a recorded policy
+difference from the oracle"*; **NC-078 has already priced one direction
+of it**. **What Pass 5 is missing is measurement**: `TOLERANCES.md`
+§3.5's blank rows are now a **gap**, not a correct absence. Two register
+entries were owed the moment that code existed and are filed with this
+session — **NA-009** (the black-point *estimation* subset, corpus A42)
+and **NA-010** (the perceptual-black constant, corpus A41: iccce follows
+lcms2 **and ICC's own iccDEV** against ICC.1 Table 16's printed
+decimals, at a corpus-derived **0,037 ΔE76** that is **exactly zero on
+any 16-bit PCS path**) — and **because the path is reachable, both costs
+are OWED rather than merely registered.** **`NamedColors`, by contrast,
+really is reachable from nothing** *(verified — the whole tree grepped
+with no result limit)*.
+
+**★ And this filing's own error, recorded rather than fixed silently:**
+the first draft of that paragraph said **both** modules were wired into
+nothing. It came from a **head-limited grep** — the first N matches, not
+the file's whole story — and the `--bpc` flag was in the truncated tail.
+**A truncated search is not an inventory**, which is the same rule as
+*a count is not an inventory* wearing a different hat, and it is the
+second time in three filings that this librarian's own draft has carried
+a wrong statement about the tree. **The rule that caught it both times
+is the same: check the live source, including your own sentences.**
+
+**Also reported, not repaired:** `iccce-cmm/src/lib.rs`'s §Status is
+stale for the **fourth** time — *"Still to come: **BPC (Pass 5)**"*, in
+a crate that wires BPC into `Chain` — **but its own standing
+instruction** (*"if a module below contradicts it, trust the module"*)
+means a reader following it is not misled. **That is the strongest
+argument yet for that style of fix.**
+
+### ★ A prediction of this project's own, falsified by the direction a run took
+
+Three documents predicted that a gray differential would give **NA-008**
+its first measurement. **It ran, and it did not** — §C runs gray as the
+**source**, and NA-008 is a property of the gray **destination** path.
+*"A gray differential"* named a comparison, not a direction. **That is
+DL-021's shape appearing in this project's own writing rather than in
+lcms2's behaviour**, and it is recorded as a dated note under NA-008
+rather than by editing the prediction.
+
+### A discrepancy recorded unresolved, and a process slip recorded rather than smoothed over
+
+- **The build commit.** README §15.5 says the binary was built at
+  **`97ad9fa`**, which **predates all three commits above**, including
+  the matrix-output clamp that touches the very code path the overflow
+  finding is about. Either the run predates `a0310c7` and the line is
+  accurate, or the line is stale. **The ten overflow points are excluded
+  from every graded row**, so `pass=28` cannot turn on it — but **nobody
+  may say these numbers came from the code in the tree today.**
+- **The cwd-relative pathspec trap recurred.** The engineer reports
+  hitting it a **second** time, from `tools/difftest` — the same shape
+  that swept an untracked working state into `edcb60e` at the Pass 4
+  filing — and **caught it before committing this time** *(reported)*.
+  Recorded because a near-miss that is not written down is
+  indistinguishable from a trap that has gone away.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph; a **Pass 4b progress block** — the three sections measured, the derived-expectation headline, the three findings, the four re-derived tolerances, **the done-when re-answered clause by clause** (B2A/gray **met on stated terms**, v2/v4 **met on stated terms**, saturation and ICC-absolute **not met**), the build-commit discrepancy, the undispatched modules, the gates and the remaining owed items; a **second Pass 5 annotation** (sourcing landed, `bpc.rs` written, NA-009/NA-010, and the direction-keyed BPC warning); a **Pass 6 annotation** (rule 8's precondition, and DL-018/DL-021 as its inherited method rules); a **Pass 7 annotation** (`named_color.rs` exists, unwired, and DL-005 applies to it). **No plan text, no annotation and no earlier block rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§1** — the **`derived-expectation`** class added to the table, with what it cannot do; **§2.7** provenance (three commits, the **first reported gate** in three filings, the build-commit discrepancy, and the method that produced the tolerances); **§3.11** — **NC-062 … NC-083**, a shared coverage box, the record-to-row arithmetic, and six subsections including the encoded-PCS overflow with **the corpus correction to its own framing**; dated notes under **NA-006** (direction-dependence) and **NA-008** (the differential ran the other way); **NA-009** and **NA-010**, both filed from code the dispatch did not mention; **ten** new §6 dependency rows; **§7.7** re-checking every prior owed item — **five discharged** — and adding six. |
+| `ARCHITECTURE.md` §5 | **DL-021** — a measured implementation behaviour is a fact about **one direction and one path**, with the three instances tabulated against what this project had written, five conjunctive clauses, why it is one entry and not a note under NA-006, and what it does not claim. Plus a **dated status note under DL-020**: its first revisit condition has **fired** (the per-type transcription landed, A23/A25 resolved), so clause 5 is discharged for that instance. DL-001 … DL-019 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the post-Pass-4b position. |
+
+**Not touched, by instruction and by ownership:** `TOLERANCES.md`,
+`tools/`, `fixtures/`, the corpus, `LEGAL.md`. **Nothing was
+committed** — instructed not to, and committing is the engineer's act.
+**No git command was run**, by an agent that has no shell.
+
+### Left for the next session to not assume
+
+- **That any of the three commits exists or contains what is recorded
+  here.** The files and the corpus are verified; the repository is not.
+- **That `pass=28 fail=0` covers the tests.** It is the **differential
+  runner's** result. **No `cargo test --workspace` count came with this
+  dispatch**, so **NC-057 … NC-061 still have no reported outcome at
+  all**, five filings on.
+- **That the measured numbers came from today's code.** See the
+  build-commit discrepancy.
+- **That "the B2A direction is measured" includes every intent.**
+  **Saturation and ICC-absolute were not run in any of the three
+  directions**, and `B2A2` is a genuinely distinct third table.
+- **That §B says anything about real v4 profiles.** It is **one file
+  this project wrote**; there is **no real `mAB `/`mBA ` profile on this
+  machine at any price**.
+- **That the gray comparison priced NA-008.** It did not — wrong
+  direction.
+- **That agreement with lcms2 in B2A validates iccce's interpolation.**
+  The method difference there is **zero by lcms2's own override**; the
+  comparison shows sameness, not correctness.
+- **That Pass 4's done-when can be closed by engineering.** The
+  ICC-absolute clause is blocked on **A4b**, and only `ICC.1:2001-04`
+  settles it — an **operator** download.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.

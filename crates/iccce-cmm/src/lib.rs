@@ -39,9 +39,10 @@
 //! (both 16-bit Lab encodings + XYZ), [`lut_transform`] (mft1/mft2,
 //! both directions, per-type Lab codecs), [`lut_ab`] (mAB/mBA, GP-001
 //! counts), [`transform::Chain`] (the 8.10.2 fallback, N↔M channel
-//! chains), and [`named_color`] (Pass 7's core: ncl2 consumption with
-//! the always-legacy Lab decode, A26). Still to come: BPC (Pass 5),
-//! compiled transforms (Pass 6).
+//! chains, opt-in [`bpc`] via `with_bpc`), [`bpc`] (Pass 5: the
+//! 6.3.4.3-sourced scaling, A41 black, A42 estimation subset), and
+//! [`named_color`] (Pass 7's core: ncl2 with the always-legacy Lab
+//! decode, A26). Still to come: compiled transforms (Pass 6).
 
 pub mod bpc;
 pub mod clut;

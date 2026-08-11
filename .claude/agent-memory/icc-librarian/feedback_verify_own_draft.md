@@ -74,6 +74,27 @@ looking like evidence.**
    fixtures**. A negative claim about the tree decays exactly as fast as
    a positive one.
 
+6. **★ A TRUNCATED SEARCH IS NOT AN INVENTORY (Pass 4b filing,
+   2026-08-11).** Drafting the Pass 4b block, this librarian wrote that
+   `bpc.rs` and `named_color.rs` were *"referenced by nothing outside
+   their own files"*, from a grep run with `head_limit: 40`. **`bpc.rs`
+   is fully wired** — `Chain::with_bpc()` and an `iccce transform
+   --bpc` flag — and the `--bpc` matches were **in the truncated tail**.
+   Caught before the filing was reported, and recorded in
+   `NUMERIC_CLAIMS.md` §7.7 and `SESSION_LOG.md` rather than fixed
+   silently. **The rule: when the conclusion is *"X is referenced
+   nowhere"*, the search must be UNLIMITED** — an absence proved by a
+   truncated list is not an absence. Same family as *a count is not an
+   inventory*. (`named_color.rs` was re-checked with no limit and the
+   claim held for it.)
+
+7. **A prediction of this project's own, falsified by a DIRECTION
+   (same filing).** Three documents said a gray differential would give
+   **NA-008** its first measurement. The differential ran **GRAY→RGB**,
+   and NA-008 lives in the gray **destination** path — so it is still
+   unmeasured. *"A gray differential"* named a comparison, not a
+   direction. See [[iccce-direction-scoped-behaviour]].
+
 **How to apply.**
 
 - **Re-verify every carried-forward prediction on the Pass that was
@@ -88,6 +109,8 @@ looking like evidence.**
 - A count in a dispatch is a count. Ask what breakdown would turn it
   into coverage, and if the dispatch did not carry one, say so in the
   filing and add it to owed work.
+- **Never prove a negative with a limited search.** `head_limit` is for
+  sampling, never for *"nothing else matches"*.
 
 Related: [[iccce-verification-loop-runs-both-ways]],
 [[iccce-predicted-divergence-must-be-measured]], [[iccce-pass-status]].

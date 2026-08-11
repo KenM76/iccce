@@ -2060,3 +2060,124 @@ instance and the entry becomes history rather than a live debt; or a
 point clauses 1–4 should be checked against both instances rather than
 generalised from one; or a fixture is ever edited to make a test pass, in
 which case clause 4 has been broken and the reason must be recorded here.
+
+> **★ Dated status, 2026-08-11 (Pass 4b filing): the first revisit
+> condition has FIRED, and clause 5 is discharged for this instance.**
+> The corpus's **seventh** pass replaced the blanket sentence with **six
+> verbatim clause sentences** (10.12.2/4/6 and 10.13.2/4/6) and an
+> implementable per-type table, **retracted the old rule verbatim** and
+> filed it as spec-defect **C4**, and closed **A23** (permitted element
+> combinations enumerated) and **A25**, with **A24** closed for `mBA `
+> and partial for `mAB ` *(verified — `icc__type__lutAtoB_lutBtoA.md`
+> §§1–2 and the ambiguity register read 2026-08-11)*. **The entry above
+> is not edited**; this note is how it is corrected. The generalisation
+> in the ★ section — *a blanket sentence over a mirrored pair is a defect
+> class* — is **not** discharged by this; it is the rule the corpus now
+> follows, and **DL-021** is its second instance from the other side of
+> the same day.
+
+### DL-021 — **a measured implementation behaviour is a fact about the direction and the path it was measured in, until it is measured in the others.** Filed with three instances from one day, all in the same oracle, all of which had already been written down as unqualified rules
+
+**Date:** 2026-08-11 (Pass 4b) · **Measurements by:** `icc-conformance`
+· **Filed by:** `icc-librarian` · **Relates to** **DL-012** (a predicted
+disagreement measured *absent*), **DL-013** (the rule this entry shows to
+be half-stated), **DL-018** (an apparatus must be shown able to see the
+effect it looks for), **DL-020** (a blanket sentence over a mirrored pair
+is a defect class — the corpus-side twin of this rule), and
+`NUMERIC_CLAIMS.md` **NA-006**, **NC-067**, **NC-078**, §3.11.2–§3.11.3
+
+#### The three instances, and what each of them had been written down as
+
+| # | What this project had written | What was measured on 2026-08-11 | Where it was wrong |
+|---|---|---|---|
+| **1** | *"iccce interpolates n-linear, lcms2 tetrahedral"*, and later, after Pass 4 priced it: **"NA-006 costs up to 1,5741 ΔE2000 against lcms2."** | `cmsio1.c`'s `_cmsReadOutputLUT` calls **`ChangeInterpolationToTrilinear`** for **every Lab-PCS LUT**, and trilinear over three inputs **is** iccce's n-linear. **The interpolation-method envelope is identically ZERO in the B2A direction** (**NC-067**; the counterfactual prices what the comparison could have seen at **99–139×**). | The number is an **A2B** number. The same approximation costs 1,5741 in one direction and **exactly nothing** in the other, on the same profile, at the same pin. |
+| **2** | **DL-013** and corpus **M2**: *"lcms2 forces BPC on for **v4 profiles** at perceptual and saturation."* | `_cmsLinkProfiles` sets `BPC[i]` per profile, but `DefaultICCintents` consumes it as `ComputeConversion(i, …, BPC[i], …)` — the conversion **into** `hProfiles[i]`. **The DESTINATION profile's version decides.** v4 source into a v2 destination: **0,0, bit-identical**. v2 source into a v4 destination: **3,137×10⁻²** device (**NC-078**). | *"v4 profiles"* names a **pair member without a role**. Anyone using M2 to decide whether a comparison is confounded needs the **direction**, and half of them would get it wrong. |
+| **3** | *"lcms2 keys the legacy 16-bit PCSLAB encoding off the **tag type**"* (**DL-011**'s rule, **DL-012**'s measurement, both correct) | The same function inserts `_cmsStageAllocLabV4ToV2` **only when `OriginalType == cmsSigLut16Type`** — so on a **`lut8Type`** B2A the legacy scale is **not** applied, and iccce's `Lab8` codec agrees exactly. Had iccce applied the legacy scale there, `L*` would be **0,39 % low ≈ 0,2 ΔE2000** — *below* the perceptibility anchor and **invisible to any ΔE-graded suite**. | The rule was right and was **verified on one tag type**. Its correctness on the *other* member of the same family was an inference until Pass 4b measured it. |
+
+**All three live in the same file of the same oracle. Two of them were
+in this project's documents as unqualified rules for hours or days**, and
+in each case the qualification was recoverable by one reading of the
+source that nobody had done in that direction.
+
+#### The decision
+
+**When a behaviour of another implementation is measured or read, the
+record states the direction and the path it was established on, and any
+statement about the other direction or path is marked as an inference
+until it too is measured.** Concretely:
+
+1. **A record's scope line names the direction** — device→PCS or
+   PCS→device, source or destination, and which tag type — **not just
+   the profile, the pin and the intent.** A scope line that omits the
+   direction is incomplete in the same way one that omits the pin is.
+2. **When the object has a mirrored twin, assume the twin differs until
+   measured.** ICC.1 is built out of mirrored pairs (`A2Bx`/`B2Ax`,
+   `mAB `/`mBA `, `lut8`/`lut16`, source/destination), and an
+   implementation is free to treat the two members differently — lcms2
+   demonstrably does, in **three** places in one file.
+3. **A cost measured in one direction is quoted with that direction
+   attached**, permanently. *"n-linear costs 1,57 ΔE"* is not a claim
+   this project may make; *"1,57 ΔE in the A2B direction on this
+   profile's perceptual table, zero in the B2A direction because lcms2
+   forces trilinear there"* is.
+4. **When the method difference collapses to zero, the comparison gets
+   weaker, not stronger — and a counterfactual must say by how much.**
+   Agreement between two implementations that are running the *same*
+   algorithm is not evidence that the algorithm is right. **NC-067 is
+   the required shape**: the same table evaluated the other way, ungraded,
+   showing the comparison could have seen a difference **99–139×** larger.
+   This is **DL-018's rule** transplanted from a deleted requirement to a
+   method.
+5. **A prediction about the untested direction is filed as a
+   prediction**, in the register, so that measuring it later either
+   confirms or corrects something concrete. DL-012 and this entry are
+   both cases where the prediction was the thing that turned out to be
+   wrong.
+
+#### Why this is one entry and not a note under NA-006
+
+Because it is **not a fact about interpolation.** The same failure
+appeared in three unrelated mechanisms — an interpolator factory, a link
+flag, and an encoding stage — within one working day, and the common
+cause is a habit of writing down *"lcms2 does X"* when what was observed
+is *"lcms2 did X here."* A note under NA-006 would fix one number and
+leave the habit, and the habit is what produced the other two.
+
+#### What this entry does NOT claim
+
+- **It does not say lcms2 is inconsistent.** Each of the three
+  behaviours has a rationale in its own place (`_cmsReadOutputLUT`'s
+  comment argues that a Lab indexer space wants trilinear; the link flag
+  is consumed exactly where a conversion is built). **The defect is in
+  this project's transcription of them, not in lcms2.**
+- **It does not require every rule to be measured in every direction
+  before it may be used.** It requires the untested direction to be
+  **labelled** — the same standing as any other inference in these
+  documents.
+- **It does not apply only to lcms2.** The corpus's own
+  `icc__type__lutAtoB_lutBtoA.md` produced GP-001 by exactly this route,
+  which is why **DL-020's** mirrored-pair rule and this one are two
+  halves of one lesson: **DL-020 governs how a *specification* is
+  transcribed; DL-021 governs how an *implementation's behaviour* is.**
+
+**Evidence.** `tools/difftest/README.md` **§15.2.2** (the verbatim
+`ChangeInterpolationToTrilinear` quotation and its consequences),
+**§15.2.3** (the `lut8`/`lut16` encoding split), **§15.3.4** (the
+destination-version BPC measurement and its `_cmsLinkProfiles` /
+`DefaultICCintents` mechanism) and **§15.5** (the 28 emitted records) —
+**all read in the live source by this librarian**;
+`docs/TOLERANCES.md` §3.4.4.2 row A5 and §3.4.4.3 row B8 agree on every
+number *(verified — read; both files are `icc-conformance`'s and neither
+was edited)*. **The lcms2 source readings are `icc-conformance`'s: this
+librarian has neither built nor read lcms2**, and every C quotation above
+is carried with that attribution. Ledger rows
+`NUMERIC_CLAIMS.md` **NC-062 … NC-083**, and the dated note under
+**NA-006**. Commits **`9e2e29e`**, **`a0310c7`**, **`3d0c183`**
+*(reported — no agent in this project has ever run git)*.
+
+**Revisit if:** a fourth instance appears (the entry should then stop
+listing instances and simply be the rule); or lcms2's pin moves, at which
+point **all three instances must be re-measured, not re-read** — a
+retuned interpolator factory or a moved link flag would invalidate them
+**silently**, because the transcriptions would keep reproducing the old
+behaviour perfectly.
