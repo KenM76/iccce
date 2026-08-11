@@ -340,11 +340,14 @@ mod tests {
 
         // Round trip through the 1024-entry TRC table. Self-consistency
         // class: prices the table-quantisation + F.1-inversion
-        // approximation. Bound 1e-3 device units — justified as ~2×
-        // the table's input spacing (1/1023), the worst linear-interp
-        // inversion mismatch scale for a smooth curve; measured
-        // residuals are far below it, and the difftest will price this
-        // properly against lcms2 (recorded in the ROADMAP).
+        // approximation. Bound 1e-3 device units ≈ 1.02× the table's
+        // input spacing (1/1023 = 9.775e-4) — i.e. roughly ONE
+        // spacing, which per DL-016 means this bound CANNOT
+        // discriminate an off-by-one-sample bug; the exact-value
+        // sample-point tests carry that duty. (This comment originally
+        // claimed "~2× the spacing"; icc-librarian's audit corrected
+        // the arithmetic, 2026-08-11.) The difftest prices the
+        // approximation properly against lcms2.
         for &rgb in &[[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [0.25, 0.5, 0.75]] {
             let back = m.pcs_to_device(m.device_to_pcs(rgb)).unwrap();
             for i in 0..3 {

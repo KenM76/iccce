@@ -31,8 +31,12 @@
 //!
 //! ## Status
 //!
-//! Pass 0 scaffold. Matrix/TRC transforms are Pass 3; LUT transforms and
-//! rendering intents Pass 4; BPC Pass 5; compilation Pass 6
+//! Pass 3 core: the Annex F.3 matrix/TRC model ([`matrix_trc`]) with
+//! curve evaluation/inversion per Annex F.1 ([`curve`]) —
+//! media-relative colorimetric only; the absolute intent awaits its
+//! sourced formula. Pass 4 groundwork: the n-linear CLUT evaluator
+//! ([`clut`], the A16 named choice). Still to come: LUT transform
+//! assembly and intents (Pass 4), BPC (Pass 5), compilation (Pass 6)
 //! (`docs/ROADMAP.md`).
 
 pub mod clut;

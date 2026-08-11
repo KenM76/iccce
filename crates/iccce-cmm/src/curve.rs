@@ -10,12 +10,14 @@
 //! ## The rules implemented here, with their clauses
 //!
 //! - **Sampled-table interpolation is linear**, normatively (clause
-//!   10.6 verbatim: "Function values between the entries shall be
-//!   obtained through linear interpolation" — corpus A15, RESOLVED).
+//!   10.6 verbatim via `ICC_Spec/icc/icc__type__curve_parametric.md`:
+//!   "Function values between the entries shall be obtained through
+//!   linear interpolation" — resolving A15; the corpus file is the
+//!   verification trail per DL-014).
 //! - **Parametric outputs are clipped to [0,1]**, normatively (clause
-//!   10.18 verbatim: "The domain and range of each function shall be
-//!   [0,0 1,0]. Any function value outside the range shall be clipped"
-//!   — corpus A19, RESOLVED).
+//!   10.18 verbatim via the same corpus file: "The domain and range of
+//!   each function shall be [0,0 1,0]. Any function value outside the
+//!   range shall be clipped" — resolving A19).
 //! - **Inversion follows F.1**: monotone non-constant curves invert by
 //!   coordinate interchange; a **flat subdomain** inverts to the
 //!   **highest** x when the plateau ends before the domain's end and
@@ -29,16 +31,21 @@
 //!   anything; iccce refuses and reports rather than choosing
 //!   silently, per the report-don't-repair rule).
 //!
-//! ## Named divergence from ICC's sample code
+//! ## Named choice inside a declared hole — the pow guard (DL-015)
 //!
 //! `pow(negative, fractional)` is NaN. lcms2 guards the base before
 //! calling `pow`; ICC's own `IccTagLut.cpp` does not — a real
-//! behavioural difference between the two reference implementations on
-//! malformed/extreme parameters (`icc__type__curve_parametric.md`
-//! Guards). **iccce follows lcms2 (guard, evaluate the clamped-legal
-//! branch)**, recorded as a deliberate divergence from ICC's sample
-//! code. Cost: none on well-formed curves; on malformed ones it turns
-//! NaN into a defined, reported value.
+//! behavioural difference between the two reference implementations
+//! (`icc__type__curve_parametric.md` Guards). Clause 10.18 declares
+//! these parameter combinations **explicitly undefined**, so this is a
+//! choice inside a hole the standard leaves open, not a deviation from
+//! normative text. **iccce follows lcms2** (guard negative bases,
+//! evaluate 0). Cost: none on well-formed curves. Honesty note (from
+//! icc-librarian's audit, 2026-08-11): the substitution is defined but
+//! **silent** — `eval` returns a bare `f64` with no diagnostic
+//! channel; a per-evaluation diagnostic would be disproportionate, and
+//! the *curve-level* degeneracy reporting lives in `eval_inverse`'s
+//! `DegenerateParams`.
 
 use iccce_profile::tag_types::{Curve, ParametricCurve};
 
@@ -222,7 +229,12 @@ fn eval_table(t: &[u16], x: f64) -> f64 {
 /// legal branch value instead of NaN (the lcms2-following divergence
 /// named in the module doc).
 fn eval_parametric(func_type: u16, p: &[f64], x: f64) -> f64 {
-    let pow_guarded = |base: f64, exp: f64| if base > 0.0 { base.powf(exp) } else { 0.0 };
+    // Guard NEGATIVE bases only (the NaN case). `base == 0.0` goes to
+    // powf, which is IEEE-defined there: 0^positive = 0, 0^0 = 1 —
+    // the earlier `base > 0.0` form wrongly returned 0.0 for type 0
+    // with g = 0 at x = 0 (x⁰ = 1), caught by icc-librarian's audit
+    // 2026-08-11.
+    let pow_guarded = |base: f64, exp: f64| if base < 0.0 { 0.0 } else { base.powf(exp) };
     match func_type {
         0 => pow_guarded(x, p[0]),
         1 => {
