@@ -43,6 +43,7 @@
 //! the always-legacy Lab decode, A26). Still to come: BPC (Pass 5),
 //! compiled transforms (Pass 6).
 
+pub mod bpc;
 pub mod clut;
 pub mod curve;
 pub mod gray_trc;
