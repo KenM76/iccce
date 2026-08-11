@@ -16,8 +16,11 @@
 //! (`icc__type__lut8_lut16.md`) — at the perceptibility threshold, so
 //! the choice is measurable, not academic.
 //!
-//! **iccce's choice, per rule 4 (named and measured): n-linear
-//! interpolation**, citing A16 as the licence to choose. Why n-linear
+//! **iccce's choice, per rule 4: n-linear interpolation** — NAMED
+//! here; its cost against tetrahedral is a CORPUS BOUND (~1 ΔE), not
+//! yet an iccce measurement, and becomes measurable only when a
+//! tetrahedral implementation exists to differ from (ledger NA-006
+//! says the same). Citing A16 as the licence to choose. Why n-linear
 //! first: it is fully specified by its own definition (no scheme
 //! variants), works for every input dimensionality, and is exact on
 //! the class of functions the spec's own two-grid-point sentence

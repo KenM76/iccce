@@ -1183,3 +1183,203 @@ shell.
   clause 6.x or an Annex"* is a prediction until the document is open.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — ★ Pass 3 CLOSES: iccce is compared to another implementation for the first time, and a tolerance is corrected rather than widened
+
+**Seventh entry of the same calendar day and the same session**, and the
+one the previous six were building toward. Six commits *(reported)*, ten
+new ledger rows, two new named approximations, two new decision-log
+entries — and, for the first time in this project's history, **a number
+that compares `iccce` to something other than `iccce`.**
+
+| | Commit *(all **reported**; no agent in this project has ever run git)* |
+|---|---|
+| the four audit items this librarian filed as owed | **`55772c6`** |
+| the previous filing, committed | **`a9618fe`** |
+| n-linear CLUT evaluator (the A16 named choice) | **`fc5ff58`** |
+| 16-bit PCS encodings, exhaustive round trips, the D1 discriminator | **`0843094`** |
+| absolute intent (D.6/D.7) + the **sourced** Table 25 intent policy | **`6873df1`** |
+| the Pass 3 differential results + the `LEGAL.md` §1 dependency mirror | **`986dae6`** |
+
+**The hashes are reported.** This librarian has no shell and verified
+none of them. Everything marked *verified* below was read in the
+**working tree**, and the dispatch's account was **checked against the
+live source rather than transcribed** — which again produced corrections,
+listed below.
+
+### ★ The done-when, met — both numbers, with their classes
+
+*"sRGB→AdobeRGB round-trips within a stated ΔE, and matches lcms2 within
+a stated tolerance, with both numbers written down."*
+
+- **Against lcms2: max 3.4762×10⁻³ ΔE2000** (mean 5.1145×10⁻⁴) against a
+  tolerance of **2×10⁻²**. Class **`implementation-cross-check`** —
+  **the first rows of that class this ledger has ever carried.**
+- **Round trip: max 1.8788×10⁻² ΔE2000** (mean 8.674×10⁻⁴) against
+  **2.5×10⁻²**. Class **`self-consistency`**, and it stays labelled so
+  however reassuring it looks.
+
+sRGB IEC61966-2.1 → Adobe RGB (1998) — the pair the done-when names, both
+present, **no substitution invoked** — media-relative, `-c0`, **133
+deterministic points**, one platform, lcms2 at pin `21c582a`. Ledger
+**§3.8**, rows **NC-034 … NC-043**.
+
+**The pair is also a better instrument than "the named one" implies:**
+the source's TRCs are **1024-entry sampled tables** and the
+destination's is an **analytic gamma**, so one run exercises table
+interpolation *and* analytic evaluation, Annex-F.1 table inversion *and*
+analytic inversion. Had both been gammas, half of `iccce-cmm::curve`
+would have gone untested under a report saying *"sRGB → Adobe RGB
+verified."*
+
+### ★ Why these numbers are worth more than a green suite — two experiments that tested the justifications
+
+**1. The cross-check tolerance was derived from lcms2's own arithmetic,
+and then that derivation was checked by emulating it.** `cmsgamma.c`
+quantises a segment-free tone curve's input *and* output to 1/65535.
+Modelling exactly that inside iccce's model collapses the device-space
+residual from 6.705882×10⁻⁵ to **2.311449×10⁻⁷ — a factor of ~290, and
+below `transicc`'s own print floor.** The disagreement is **accounted
+for**, not absorbed. Ledger **NC-041**. *An assertion in a `why` string
+is exactly the kind of claim this project exists to distrust, and this is
+what distrusting one looks like when it survives.*
+
+**2. The round-trip tolerance FAILED, and what moved was the
+derivation.** It was 1×10⁻² for one run. `TOLERANCES.md` §0's procedure
+was followed **in order** and step 4 was reached only because step 3
+found something: the original reasoning — *"sRGB ⊂ Adobe RGB, so nothing
+is clipped"* — is true of the two **colour spaces** and **false of the
+two files.** Their encoded media whites differ by **5, 2 and 12 units of
+`s15Fixed16`'s lsb**; source white lands at **(1.000106, 0.999873,
+1.000254)** in destination linear space; **25 of 133 points clip.** The
+white-corner cost was then **predicted in closed form from the two
+matrices and the clamp alone** — **1.878244×10⁻² predicted vs
+1.878818×10⁻² observed, 0.03 %.** Ledger **NC-038**, **NC-042**; both
+justifications preserved in `TOLERANCES.md` §4.
+
+**3. And a seventh check exists to stop the round-trip gate rewarding a
+deleted requirement.** Removing iccce's clamping makes the round trip
+*better*; a gate with that gradient is not a gate. The pin holds
+|predicted − observed| to **5.7392×10⁻⁶** against 1×10⁻³, with a
+sensitivity control showing it would **fail by 19×** without clamping.
+Filed as the method rule **DL-018** — with the scope limit a first draft
+got wrong stated in the entry: it does **not** make the F.8–F.16 clamp
+*ordering* falsifiable, because iccce clamps at three sites and the
+other two make that one redundant. **Owed, not covered.**
+
+### A finding against lcms2, kept as a finding
+
+**8 of 399 output components (2.01 %) came back above 1.0, up to
+`1.000120`** — and **only on the analytic-inverse path**; the tabulated
+reverse curve saturates. Annex F.8–F.16 supports iccce; clause 6.4
+requires no clipping for float32 encodings and may make lcms2's
+excursion conforming and iccce's clamp merely stricter. **Recorded as a
+difference, not a verdict** (rule 7). Ledger **NC-043**. Note the
+status collision, kept visible rather than resolved by preference:
+`tools/difftest/README.md` §13.10 says the spec dispatch was **not
+made**; the dispatch says it **was**; the answer is **not in the
+corpus**, which is the only one of the three this librarian can check.
+
+### The three Pass 3 remainder items — closed, and one of them closed the right way round
+
+**Absolute intent was SOURCED and then implemented** — the corpus gap
+this librarian filed this morning closed the same day, and
+`icc__s__rendering_intents.md` came back carrying more than was asked:
+the **D.6/D.7 equations**, the **9.2.36** consequence, and a defect
+finding — **clause 6.2.3's prose states the source/destination ratio
+BACKWARDS.** The code implements the corrected direction and pins it with
+a test against the corpus's printed intermediates (**0.7067/0.85 =
+0.831412**, the backwards reading asserted **absent**). **Parametric
+inverses for types 1, 2 and 4** are implemented analytically — no sampled
+inverse, so rule 4's measured-cost obligation never arose. And the
+**perceptual/saturation policy was settled by SOURCING rather than by the
+differential**: ICC.1:2022 **Table 25** marks the TRC/matrix column
+*"Colorimetric"*. The progress block had said *"the differential test
+owns it"*; a measurement would have shown agreement, **but it would not
+have shown authority**.
+
+### ★ Three things this filing corrected by reading rather than transcribing
+
+1. **`lut_transform.rs` exists in the tree and the dispatch does not
+   mention it** — *"lut16Type evaluation pipeline — Pass 4 assembly,
+   stage 1"*, 4 tests, declared in the crate's `lib.rs`. **It was absent
+   from a `Glob` of the crates tree run earlier in this same filing
+   session.** Either an agent is writing concurrently or the earlier
+   enumeration was stale; this librarian cannot tell without a shell.
+   **The tree being described was moving while it was described**, and
+   the next session must not read *"Pass 4 needs the lut16 assembly"* as
+   *"none exists."*
+2. **Absolute intent is implemented in the library and unreachable
+   through the CLI**, which still refuses every intent but
+   media-relative *(verified)*. Since the harness drives the **binary**,
+   **no differential can exercise absolute intent** — it carries
+   unit-test and corpus evidence and **zero cross-check evidence**.
+   Registered as **NA-007**.
+3. **Two doc-comment claims overstate what was done.**
+   `iccce-cmm/src/lib.rs`'s §Status still says the absolute intent
+   *"awaits its sourced formula"* (second consecutive filing to report
+   that file's §Status); and `clut.rs` says its interpolation choice is
+   *"named **and measured**"* when the ~1 ΔE figure is a **corpus-derived
+   bound** and tetrahedral is deliberately absent, so **nothing has been
+   measured**. Registered as **NA-006**. Both **reported, not
+   repaired** — the files are the engineer's.
+
+### The count discrepancy, recorded unresolved
+
+`tools/difftest/README.md` §13.9's transcript ends **`pass=8`** over
+eight `check` lines; the engineer's verification re-run is reported as
+**`pass=7`**, with no per-line output. Structurally `checks()` registers
+**one** check and `pass3.rs` emits **seven** — 1 + 7 = 8 *(verified —
+both read)*. So `pass=7` is *consistent with* the smoke check not
+counting, **and that is a hypothesis.** The seven per-record values are
+unaffected: they agree across three independently written places. What is
+affected is that **the re-run cannot be quoted as re-verifying all eight
+lines, because nobody recorded which eight it ran.** A summary count is
+not an inventory.
+
+### Filed this session (closure)
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | The **Pass 3 completion record** — the done-when quoted and answered with both numbers, their classes and their tolerances; the three remainder items with how each closed; the corrections; the coverage statement; what is still open; and the Pass 4 code already in the tree. Header status updated. **No plan text, no prior annotation and no prior progress block rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§2.4** provenance for the six-commit set and the run-count discrepancy; a **dated status** on §3.7.0 (the held space filled, three superseded statements named); **§3.8**, ten rows **NC-034 … NC-043** with a shared coverage box; a dated status on §3.7.6 (two refusals discharged, one not); **NA-006** (the A16 CLUT choice — a *third kind* of named departure: a choice inside a **silence**) and **NA-007** (`wtpt` as stored); **§5.3, the retirement of *"iccce has never been compared to anything"***; eight new §6 dependency rows; **§7.4** and seven newly-owed items; §8. |
+| `ARCHITECTURE.md` §5 | **DL-017** (the harness may path-depend on iccce's crates — direction plus four conditions) and **DL-018** (an upper-bound gate on a deliberate cost needs a prediction pin, with the worked pair and the scope limit). DL-001…DL-016 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for Pass 4. |
+
+**Not touched, by instruction and by ownership:** `TOLERANCES.md`,
+`tools/difftest/`, `LEGAL.md`, and the corpus. **Nothing was committed**
+— instructed not to, and committing is the engineer's act. **No git
+command was run**, by an agent that has no shell.
+
+**A note on where the tolerance history lives, since three documents
+describe the same event.** `TOLERANCES.md` §4 owns the *number's*
+history (1×10⁻² → 2.5×10⁻², both justifications). `NUMERIC_CLAIMS.md`
+NC-038/NC-039 own the *measured values*. `ARCHITECTURE.md` DL-018 owns
+the *method rule* that generalises. **Deliberately not duplicated** —
+three jobs, one event, and the boundary is stated in DL-018 itself so a
+later reader does not "helpfully" merge them.
+
+### Left for the next session to not assume
+
+- **That any of the six commits exists or contains what is recorded
+  here.** The files are verified; the repository is not.
+- **That `lut_transform.rs` is committed**, or that the tree is stable
+  while being read.
+- **That the differential re-run verified all eight checks.** See the
+  count discrepancy.
+- **That absolute intent has been cross-checked.** It cannot be, through
+  the current CLI.
+- **That the NC-043 clamping question has been answered.** Two sources
+  disagree about whether it was even dispatched; the answer is not in
+  the corpus.
+- **That Pass 2 is done.** Still one scope decision, and it now blocks
+  something concrete: without `tools/gen-profiles`, every Pass 3
+  differential row skips everywhere but this machine.
+- **That "87 tests" means anything about coverage.** Two skip silently
+  without the system profile; all seven differential records skip
+  without the Windows colour directory.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.

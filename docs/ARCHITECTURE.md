@@ -1526,3 +1526,203 @@ normalised to `f64` at parse time, or an interpolation rewrite in Pass 6
 — which would move *where* the exactness must be asserted without
 changing that it must be; or a table type appears whose endpoints are
 not required to be attained (none is known).
+
+### DL-017 — `tools/difftest` **may path-depend on iccce's own crates**, because the arrow points harness → code-under-test. The coupling is permitted by four named conditions, and the invariant it might have threatened is untouched
+
+**Date:** 2026-08-11 (Pass 3 closure) · **Decided by:** `icc-conformance`
+while building the Pass 3 differential · **Filed by:** `icc-librarian` ·
+**Relates to** **DL-001** (the oracle is pinned and insulated), which
+this entry deliberately does *not* weaken
+
+**What was decided.** `tools/difftest/Cargo.toml` declares **three path
+dependencies** on the shipping crates:
+
+```toml
+[dependencies]
+iccce-color   = { path = "../../crates/iccce-color" }
+iccce-profile = { path = "../../crates/iccce-profile" }
+iccce-cmm     = { path = "../../crates/iccce-cmm" }
+```
+
+*(verified — read in the live tree, 2026-08-11.)* Mirrored in
+`LEGAL.md` §1 *(verified — read)* and in `tools/difftest/README.md`
+§13.2.
+
+**Why it needed a decision at all.** `tools/difftest`'s own module docs
+**previously forbade** exactly this, on the reasoning that any coupling
+between the harness and the code under test *"must be a documented
+decision, not a convenience."* The immediate need was real: computing
+ΔE2000 without `iccce-color` means either a second, unvalidated
+implementation of CIEDE2000 inside the harness — a ruler nobody has
+checked, grading a colour engine — or no ΔE at all, which would have made
+Pass 3's done-when unanswerable in the units it is written in.
+
+**The four conditions, all of which must remain true.** They are recorded
+here rather than only in the harness because a condition that lives only
+next to the code it constrains is a condition that quietly lapses.
+
+1. **The direction is the safe one.** The invariant that matters
+   (`tools/difftest/README.md` §1, `LEGAL.md` §4) is *"no crate under
+   `crates/` may reach lcms2."* These arrows point **difftest →
+   iccce** — harness → subject, the ordinary direction of a test
+   harness. `cargo tree` on any shipping crate still cannot reach lcms2;
+   the harness is still **outside the workspace**, so
+   `cargo test --workspace` still cannot pull it in, and the publication
+   guard is unchanged.
+2. **The ruler is validated against the literature, not against
+   itself.** `iccce_color::delta_e_2000` is graded against **all 34
+   published pairs of Sharma, Wu & Dalal (2005)** at 1×10⁻⁴ — **NC-001**,
+   the single `published-ground-truth` row in this project. Using an
+   unvalidated ΔE here would have hidden a systematic mis-scaling *inside
+   the metric*, where it is invisible by construction.
+3. **The claim does not change.** Every iccce-vs-lcms2 record is
+   **`implementation-cross-check`**, however good the ΔE code is. **A
+   good ruler does not promote a weak claim** — the same rule that
+   forbids transplanting an oracle's numbers into a unit test as
+   expectations (rule 3).
+4. **The answer under test still comes from subprocesses.** iccce's
+   colours come from running the **shipped `iccce transform` binary**;
+   lcms2's from running `transicc`. Calling
+   `MatrixTrcTransform::convert` in-process would be one line shorter and
+   would make the two sides **asymmetric** — printing, parsing and
+   argument handling exercised on one side only. The linked crates are
+   the **instrument**, never the **subject**.
+
+**The one exception, and it labels itself.** Record 7
+(`pass3/instrument/adobergb-device-to-lab-ruler`, ledger **NC-040**) *is*
+an in-process call: it holds iccce's device→Lab model against lcms2's
+rendering of the same profile, to check the ruler. It says so in its own
+`source` field, and at 8.79×10⁻⁵ ΔE2000 — below `transicc`'s Lab print
+floor — the two rulers are indistinguishable.
+
+**What this entry does NOT decide.** It does not permit a shipping crate
+to depend on the harness (the reverse arrow, which would be the
+dangerous one); it does not fold `tools/difftest` into the workspace;
+and it does not licence in-process evaluation as the default — condition
+4 is a constraint, not a preference, and `Iccce`'s doc comment forbids
+the shortcut at the site.
+
+**Evidence.** `tools/difftest/Cargo.toml` (the three path dependencies
+and the ~50 lines of rationale above them); `tools/difftest/README.md`
+§13.2; `docs/LEGAL.md` §1; `docs/TOLERANCES.md` §3.3.2 *(all read in the
+live tree by this librarian)*. Commit **`986dae6`** *(reported — no
+agent in this project has run git)*.
+
+**Revisit if:** the harness ever needs to compare something
+`iccce-color` cannot express (a second ruler would then need its own
+validation row before use); or a shipping crate is proposed to depend on
+anything under `tools/` (refuse, and re-read condition 1); or the
+workspace membership of `tools/difftest` is ever proposed to change,
+which would undo both the licence insulation and the publication guard
+at once.
+
+### DL-018 — an **upper-bound gate on a deliberate cost** must be paired with a **prediction pin**, because deleting the requirement makes the gate greener. Filed with the worked pair that demonstrates it, and with the scope limit that a first draft of that pair got wrong
+
+**Date:** 2026-08-11 (Pass 3 closure) · **Found by:** `icc-conformance`
+while deriving the round-trip tolerance · **Filed by:** `icc-librarian` ·
+**Relates to** **DL-016** (a bound cannot discriminate a defect whose
+magnitude is its own justification) — this is the same failure family,
+one level up: there, the bound could not *see* the error; here, the bound
+**rewards** it
+
+**The general shape.** Some measured quantities are not error at all;
+they are **the price of doing the right thing**. iccce's range clamping
+(Annex F.8–F.16, normative) discards the difference between two
+profiles' encoded media whites, and that discard **costs ΔE in a round
+trip**. Grading such a quantity with an upper bound produces a gate with
+a perverse gradient:
+
+| | round-trip metric | the 2.5×10⁻² gate |
+|---|---|---|
+| iccce as shipped, clamping per F.8–F.16 | 1.8788×10⁻² | **passes** |
+| **clamping deleted** | **0 (exact identity)** | **passes more comfortably** |
+
+**A gate that goes greener when a normative requirement is removed is
+not a gate.** Nothing about that failure announces itself: the suite
+stays green, the number *improves*, and the improvement is the symptom.
+
+**The decision.** When a check's metric is dominated by a **deliberate,
+required cost**, the upper-bound row is **not sufficient on its own**. It
+must be accompanied by a **prediction pin**: a second row asserting that
+the observed cost matches an **independently computed prediction** of
+that cost, to a tolerance derived from the measurement chain's own
+precision — plus a **sensitivity control** demonstrating the pin would
+fail if the requirement were removed. A pin without a sensitivity control
+is an assertion that the apparatus works.
+
+**The worked instance, in full, because the rule is only checkable
+against one.**
+
+- **The upper bound.** `pass3/srgb-to-adobergb-to-srgb/roundtrip-de2000`,
+  tolerance 2.5×10⁻² ΔE2000, observed **1.8788×10⁻²** (ledger
+  **NC-038**).
+- **The prediction.** From the two files' colorant matrices and the
+  clamp **alone** — no tone curve (every TRC in this pair is exactly 1
+  at 1), no lcms2, no measurement — the white-corner cost is
+  **1.878244×10⁻²** in closed form, against **1.878818×10⁻²** observed:
+  **0.03 % agreement**.
+- **The pin.** `pass3/roundtrip/white-clamp-cost-matches-prediction`
+  asserts |predicted − observed| < **1×10⁻³**, observed **5.7392×10⁻⁶**
+  (ledger **NC-039**). The bound is **10× the ≈1×10⁻⁴ ΔE00 floor** that
+  `iccce transform`'s 6-decimal device print imposes on each leg — a
+  tolerance derived from the measurement chain, not from the effect.
+- **The sensitivity control.** With clamping removed the observation
+  would be 0 and the pin's metric would read 1.878×10⁻² — **failing by
+  19×**. Printed by `pass3_report`.
+
+**★ The scope limit, and it is the most useful part of this entry
+because a first draft got it wrong.** The pin was first claimed to make
+the normative **F.8–F.16 clamp ORDERING** falsifiable. **It does not.**
+`iccce-cmm` clamps at **three independent sites**, each separately
+cited — `MatrixTrc::pcs_to_device` (F.8–F.16, linear → [0,1] before
+TRC⁻¹), `Trc::eval` (clause 10.18, the curve's domain), and
+`Trc::eval_inverse` / `invert_table` (F.1(b), the attainable range) — so
+the other two make the first **redundant at the shipped surface**. The
+pin catches **a wrong colorant matrix** and **clamping removed from all
+three sites**; it does **not** catch the F.8–F.16 clamp removed alone,
+and **no test in this repository distinguishes clamp-before from
+clamp-after through the binary.** Distinguishing them requires a TRC
+whose inverse is defined outside [0,1], **which iccce never permits**.
+Recorded as **owed, not covered** (`TOLERANCES.md` §3.3.3, blank row;
+`tools/difftest/README.md` §13.6.4). **The correction was made in place
+rather than by deleting the claim**, which is why a reader can tell
+"checked and narrower than hoped" from "never checked."
+
+**Where this rule comes due next, and it is not hypothetical.**
+**Pass 5, black point compensation**, is the same shape and worse: BPC
+exists to *change* the result, its round-trip and gamut behaviour
+generally *improve* under some metrics, and DL-013 records that lcms2
+forces it on for v4 perceptual and saturation at ≈3.15 `L*`. A Pass 5
+gate that is only an upper bound will reward both deleting BPC and
+mis-scaling it. **Pass 4** meets it wherever a clip, a gamut-mapping
+step or an intent-dependent adjustment dominates a metric.
+
+**What this entry does NOT claim.** It does not say every
+self-consistency row needs a pin — most price an approximation whose
+removal would make the metric *worse*, and those are already
+well-conditioned. It applies **only** where removing a requirement
+**improves** the metric. And it does not make the pin a correctness
+claim: NC-039 is `self-consistency`, and both its sides ultimately come
+from iccce.
+
+**A note on ownership, because the tolerance and the method are
+different objects.** The *number* 2.5×10⁻², its supersession of 1×10⁻²,
+and both justifications are logged in **`TOLERANCES.md` §4**, which is
+`icc-conformance`'s append-only tolerance history, and are **not
+duplicated here** — this entry is filed for the **method**, which is a
+standing rule about how gates are built and therefore belongs to the
+decision log. `NUMERIC_CLAIMS.md` **NC-038** and **NC-039** carry the
+measured values. Three documents, three different jobs, one event.
+
+**Evidence.** `tools/difftest/README.md` §13.6.3 and §13.6.4;
+`tools/difftest/src/pass3.rs` (the tolerance constants and their `why`
+strings) and `src/bin/pass3_report.rs` §5; `docs/TOLERANCES.md` §3.3.1
+rows 5–6, §3.3.3 and §4; `docs/NUMERIC_CLAIMS.md` **NC-038**,
+**NC-039**, **NC-042** *(all read in the live tree; **the run itself is
+`icc-conformance`'s and is reported — this librarian ran nothing**)*.
+Commit **`986dae6`** *(reported)*.
+
+**Revisit if:** a fixture arrives that distinguishes the three clamp
+sites (the scope limit above narrows, and the pin's coverage genuinely
+widens); or a Pass 5 BPC gate is written — at which point this entry is
+the checklist, not a precedent to be re-derived.

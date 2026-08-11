@@ -1,6 +1,6 @@
 ---
 name: iccce-verify-own-draft-too
-description: The verify-against-live-source rule applies to the librarian's OWN draft text and to totals carried in a dispatch, not only to the dispatch's account of what changed
+description: The verify-against-live-source rule applies to the librarian's OWN draft text, to totals carried in a dispatch, and to the tree's own shape — a file enumeration is a claim with a timestamp
 metadata:
   type: feedback
 ---
@@ -41,6 +41,21 @@ looking like evidence.**
    record of what was expected, corrected by a dated note. **A forecast
    about a future Pass becomes a claim about the tree the moment that
    Pass lands, and it has to be re-checked then — not carried forward.**
+
+4. **The TREE ITSELF moved mid-filing, and a `Glob` result was a claim
+   with a timestamp.** At the Pass 3 closure filing (2026-08-11) an
+   enumeration of `crates/**/*.rs` did not list
+   `iccce-cmm/src/lut_transform.rs`; a grep minutes later found it, with
+   four tests and a module doc reading *"Pass 4 assembly, stage 1"*.
+   **The closure dispatch's six-commit list never mentioned it.** Either
+   an agent was writing concurrently or the first enumeration was stale
+   — **and with no shell there is no way to tell which.** The filing said
+   so instead of picking the tidier reading. Lesson: *"I enumerated the
+   tree"* is evidence about **the moment of enumeration**, and in a
+   parallel-dispatch session that moment expires quickly. Re-check
+   anything load-bearing at the end of the filing, and when a file
+   appears that no dispatch claimed, **record its existence and its
+   unknown commit status** rather than absorbing it into the narrative.
 
 **How to apply.**
 

@@ -31,13 +31,15 @@
 //!
 //! ## Status
 //!
-//! Pass 3 core: the Annex F.3 matrix/TRC model ([`matrix_trc`]) with
-//! curve evaluation/inversion per Annex F.1 ([`curve`]) —
-//! media-relative colorimetric only; the absolute intent awaits its
-//! sourced formula. Pass 4 groundwork: the n-linear CLUT evaluator
-//! ([`clut`], the A16 named choice). Still to come: LUT transform
-//! assembly and intents (Pass 4), BPC (Pass 5), compilation (Pass 6)
-//! (`docs/ROADMAP.md`).
+//! Pass 3 DONE (2026-08-11, both done-when numbers in
+//! `docs/NUMERIC_CLAIMS.md` §3.8): the Annex F.3 matrix/TRC model
+//! ([`matrix_trc`]) with curve evaluation/inversion per Annex F.1
+//! ([`curve`]), all four intents — absolute per the sourced D.6/D.7
+//! formula. Pass 4 in assembly: n-linear CLUT ([`clut`]), 16-bit PCS
+//! encodings ([`pcs_encoding`]), the lut16 device→PCS pipeline
+//! ([`lut_transform`]), and the source→destination [`transform::Chain`]
+//! (CMYK→RGB live; B2A/lut8/mAB stages pending). Still to come: BPC
+//! (Pass 5), compilation (Pass 6) (`docs/ROADMAP.md`).
 
 pub mod clut;
 pub mod curve;
