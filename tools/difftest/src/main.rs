@@ -69,6 +69,27 @@
 //! where a known disagreement is deliberately not gated, and it is labelled
 //! rather than absorbed into a widened number.
 //!
+//! ### 28 — Pass 4b, the directions Pass 4 left unmeasured (added later still)
+//!
+//! Built by [`iccce_difftest::pass4b`] in **three independent sections**, so a
+//! missing system profile in one does not silence the others. Full record:
+//! README §15.
+//!
+//! | id | kind | what it can catch |
+//! |---|---|---|
+//! | `pass4b/srgb-to-swop/<intent>/apparatus-lut8-matches-iccce-cmm` | self-consistency | **the apparatus** — as Pass 4's row 0, for the `lut8` pipeline |
+//! | `…/device-vs-lcms2`, `…/roundtrip-lab-de2000` | cross-check | arithmetic disagreement in the **B2A** direction, at a tolerance that is a computed quantisation envelope |
+//! | **`…/device-lcms2-arithmetic-modelled`** | cross-check | **the row that claims agreement** — every lcms2 rounding modelled, gated 10× tighter |
+//! | `…/counterfactual-tetrahedral` | cross-check | **reported**: the sensitivity control. lcms2 forces *trilinear* for a Lab-PCS LUT, so the method envelope is zero; this says what it would have been |
+//! | `pass4b/fixture/{mab,mba}/{iccce,lcms2}-vs-derived-expectation` | **derived-expectation** | a wrong element order, a wrong PCSLAB encoding, dropped matrix offsets — against a **closed form**, not against an oracle |
+//! | `pass4b/fixture/mab/encoded-pcs-overflow-divergence` | cross-check | **reported, not graded**: iccce clamps the encoded PCS and lcms2 does not, worth 0.61 ΔE2000, and the clause question is unsettled |
+//! | `pass4b/fixture/forced-bpc-is-decided-by-the-DESTINATION-version` | oracle-reproducibility | **both sides are lcms2** — the size and the *direction-dependence* of the DL-013 confound |
+//! | `pass4b/gray-to-srgb/…` | cross-check | the **F.2 grayTRC** model; the attribution row reproduces lcms2's 4096-entry reverse tone curve and collapses the residual 457× |
+//!
+//! **§B's four derived rows are the first graded rows in this suite that need
+//! no system profile at all** — they read `fixtures/synthetic/v4-cmyk-mab-lab.icc`,
+//! which is category (a) and committed. Everything else still skips.
+//!
 //! ## Everything here skips without the Windows colour directory
 //!
 //! Every check's input is a category (c) system profile (`LEGAL.md` §3), and
@@ -96,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4,
+    pass3, pass4, pass4b,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -277,6 +298,26 @@ fn main() {
         ));
     }
     for r in p4_records {
+        report.push_record(r);
+    }
+
+    // Pass 4b — the three directions Pass 4 left unmeasured: the B2A
+    // (`lut8`) direction, the v4 `mAB `/`mBA ` fixture, and the grayTRC
+    // model. Same contract again; its three sections are independent, so a
+    // missing system profile still leaves the **synthetic** fixture's records
+    // graded — which is the first time any LUT row in this suite survives on a
+    // machine without the Windows colour directory.
+    let (p4b, p4b_records) = pass4b::run(&oracle);
+    if let Some(a) = &p4b.b2a {
+        report.note(format!("pass4b/A: {}", a.structure));
+    }
+    if let Some(a) = &p4b.mab {
+        report.note(format!("pass4b/B: {}", a.structure));
+    }
+    if let Some(a) = &p4b.gray {
+        report.note(format!("pass4b/C: {}", a.structure));
+    }
+    for r in p4b_records {
         report.push_record(r);
     }
 

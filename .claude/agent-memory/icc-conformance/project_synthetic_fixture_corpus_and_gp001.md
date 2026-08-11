@@ -27,6 +27,27 @@ tag-level and unusable outside `cargo test`.
   arbitrary split of the *encoded* D50 white chosen so the integers sum to it
   exactly — a structural invariant, not colorimetry.
 
+**★★ Updated 2026-08-11 (later still, Pass 4b).** Three things:
+
+1. **GP-001 is fixed and now has a regression that is not an oracle.**
+   `v4-cmyk-mab-lab.icc` is driven in both directions in `difftest`'s §B, and
+   iccce reproduces a **closed form derived from 10.12/10.13** to `f64` noise
+   (2.8×10⁻¹⁴ `L*`, 2.2×10⁻¹⁶ device). The `mBA ` counts (B=3, M=3, A=4) are
+   what make the chain evaluate at all, so that row *is* GP-001's regression.
+2. **The fixture is not merely convenient — it is the only instrument.** All
+   **40** `.icc`/`.icm` in `C:\Windows\System32\spool\drivers\color\` were
+   parsed and searched: **zero carry `mAB ` or `mBA `.** The only v4 profile
+   with a LUT (`BlackWhite.icc`, 4.0.0 `prtr` GRAY) carries an `mft1`. Without
+   `tools/gen-profiles` the entire v4 element-pipeline path is unmeasurable on
+   this machine at any price.
+3. **★ The fixture caught a defect it was not designed for.** Its 3×4 matrix
+   offsets exist because *dropping* them is the classic misread. They also push
+   the encoded `L*` to **1.00390625** at `K = 0` — outside the encodable PCS
+   range — where **iccce clamps and lcms2 does not, worth 0.61 ΔE2000**. The
+   best argument on file for authoring fixtures with awkward values rather than
+   tidy ones. Unsettled; see
+   [[project-lcms2-findings-pass4b-direction-dependence]].
+
 **★ FINDING GP-001 (open at filing).** `crates/iccce-profile/src/lut.rs`
 `decode_lut_ab` counts **B and M by `output_chan` and A by `input_chan` for
 BOTH tag types**. Correct for `mAB `; wrong for `mBA `. ICC.1:2022 **10.13.2 /

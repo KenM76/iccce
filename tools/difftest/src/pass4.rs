@@ -1014,7 +1014,7 @@ impl SourcePipeline {
 /// snaps a very small positive input to exactly zero. Transcribed rather than
 /// approximated, because the whole point of this emulation is that it is
 /// lcms2's arithmetic and not a paraphrase of it.
-fn fclamp(v: f64) -> f64 {
+pub(crate) fn fclamp(v: f64) -> f64 {
     if v < 1.0e-9 || v.is_nan() {
         0.0
     } else if v > 1.0 {
@@ -1040,7 +1040,7 @@ fn fclamp(v: f64) -> f64 {
 /// and was caught by
 /// [`tests::both_schemes_reproduce_a_separable_function_exactly`], which is
 /// exactly what that test is for.
-fn cell_lcms2(x: f64, points: usize) -> (usize, f64) {
+pub(crate) fn cell_lcms2(x: f64, points: usize) -> (usize, f64) {
     let x = fclamp(x);
     #[allow(clippy::cast_precision_loss)]
     let pk = x * (points - 1) as f64;
@@ -1053,7 +1053,7 @@ fn cell_lcms2(x: f64, points: usize) -> (usize, f64) {
 
 /// Cell origin and fraction for one axis of a `points`-node grid — **iccce's**
 /// convention, mirroring `iccce_cmm::clut::Clut::eval`.
-fn cell(x: f64, points: usize) -> (usize, f64) {
+pub(crate) fn cell(x: f64, points: usize) -> (usize, f64) {
     let x = x.clamp(0.0, 1.0);
     #[allow(clippy::cast_precision_loss)]
     let pos = x * (points - 1) as f64;
@@ -1067,7 +1067,7 @@ fn cell(x: f64, points: usize) -> (usize, f64) {
 /// 1-D table linear interpolation over `[0,1]` — same shape as
 /// `lut_transform.rs`'s `interp_table`, which is the function this one must
 /// agree with.
-fn interp_table(t: &[f64], x: f64) -> f64 {
+pub(crate) fn interp_table(t: &[f64], x: f64) -> f64 {
     let n = t.len();
     let x = x.clamp(0.0, 1.0);
     #[allow(clippy::cast_precision_loss)]

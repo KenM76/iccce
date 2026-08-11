@@ -163,12 +163,23 @@ tools/difftest/
   src/
     lib.rs           drive transicc AND iccce, parse them, grade the answer
     pass3.rs         the Pass 3 experiment: grid, tolerances, records (§13)
-    main.rs          the runner; registers the checks (§11, §13)
+    pass4.rs         Pass 4: CMYK→RGB through an mft2 A2B, all four intents,
+                     plus the mft2 pipeline reimplemented twice (§14)
+    pass4b.rs        Pass 4b: the B2A (mft1) direction, the v4 mAB/mBA
+                     fixture, and the F.2 grayTRC model (§15). Also carries
+                     the ragged-grid CLUT, lcms2's reverse tone curve, and
+                     the two closed forms
+    main.rs          the runner; registers the checks (§11, §13, §14, §15)
     bin/
       legacy_lab_probe.rs   the DL-011 experiment (§12) — also authors the
                             synthetic probe profiles byte by byte
       pass3_report.rs       the per-point Pass 3 record, and the two
                             experiments that TEST §13's justifications
+      pass4_report.rs       the same for Pass 4, incl. the interpolation
+                            envelope and the white-point experiment (§14)
+      pass4b_report.rs      the same for Pass 4b, incl. the tetrahedral
+                            counterfactual and the reverse-curve
+                            attribution (§15)
   out/               git-ignored; generated probe profiles land here
   target/            git-ignored
   vendor/            git-ignored
@@ -1760,3 +1771,522 @@ measured here even though `b3f4388` landed the code for it.
    interpolation hybrid, and the v2-display `wtpt` substitution. They belong in
    `icc__ref__lcms2_measured_behaviour.md` as M4/M5; `icc-spec-librarian`'s
    file, not this one's.
+
+---
+
+## 15. ★ Pass 4b — the three directions Pass 4 left unmeasured
+
+**Run 2026-08-11 by `icc-conformance`**, after §14, on the same machine and the
+same pin. Apparatus: `src/pass4b.rs`; per-point record and the experiments:
+`cargo run --bin pass4b_report`.
+
+§14.9 and `TOLERANCES.md` §3.4.3 list what Pass 4 did not touch. This section
+closes three of those items and leaves the rest labelled:
+
+| § | direction | tag type | first of |
+|---|---|---|---|
+| **A** | sRGB → `USWebCoatedSWOP`, **RGB→CMYK** | `mft1` (`lut8Type`), 3→4, 33³, 8-bit | the **B2A** direction; the first `lut8` evaluation compared to anything |
+| **B** | `fixtures/synthetic/v4-cmyk-mab-lab.icc`, **both** directions | `mAB `/`mBA `, ragged 5×4×3×2 and 3³ | the first **v4** LUT; the first **derived** (non-oracle) expectation for a LUT transform; the first graded rows in this suite that do **not** need a system profile |
+| **C** | `ewgray22.icm` → sRGB, **GRAY→RGB** | none — Annex **F.2** grayTRC | the first monochrome transform |
+
+**Result: 28 records, `pass=28 fail=0`.** Whole suite after Pass 4b:
+`summary pass=64 fail=0 skip=3 error=0`.
+
+### 15.1 The method, restated because Pass 4 had to learn it
+
+Pass 4 stated its expected divergence as *"iccce interpolates n-linear, lcms2
+tetrahedral"* and then read `cmsintrp.c`, which showed the four-input scheme is
+a hybrid that is **not tetrahedral at all** (§14.2). A tolerance derived from
+the wrong algorithm is a number with a story attached.
+
+So every deviation source below was **read out of lcms2 at pin `21c582a` before
+any comparison was run** and — where it is arithmetic rather than geometry —
+**modelled in the harness**, so that each tolerance is an envelope computed from
+lcms2's own arithmetic with **no lcms2 output in it**, and the residual after
+modelling is a separate, much tighter record. Three of Pass 4b's five in-advance
+predictions turned out to be the opposite of what the naive expectation would
+have been, and two of those are findings in their own right.
+
+### 15.2 §A — the B2A direction
+
+#### 15.2.1 The pair and the tag, read from its bytes
+
+| | source | destination |
+|---|---|---|
+| file | `sRGB Color Space Profile.icm` | `USWebCoatedSWOP.icc` |
+| category (`LEGAL.md` §3) | **(c)** | **(c)** |
+| version / class / spaces | 2.1.0 · `mntr` · `RGB ` → `XYZ ` | 2.1.0 · `prtr` · `CMYK` → **`Lab `** |
+| the tag that matters | `rTRC/gTRC/bTRC`, 1024-entry `curv` **tables** | **`B2A0` @83392, `B2A1` @228980** — `mft1`, 3 in / 4 out, **33 points per axis** (35 937 nodes), 256-entry 8-bit input and output tables, identity 3×3 |
+
+**Unlike `A2B0`/`A2B2`, the three `B2A*` tags are three different blocks at three
+different offsets**, so perceptual and media-relative are genuinely different
+tables here and each gets its own records. Both profiles are v2.1, so the
+forced-BPC confound is unreachable — and §15.3.4 shows it would not have fired
+in this direction even if one of them had been v4.
+
+#### 15.2.2 ★★ Finding — lcms2 does **not** use tetrahedral interpolation in the B2A direction, and the reason is a hard-coded override
+
+```c
+// cmsio1.c, _cmsReadOutputLUT — verbatim, including the comment:
+// Now it is time for a controversial stuff. I found that for 3D LUTS using
+// Lab used as indexer space,  trilinear interpolation should be used
+if (cmsGetPCS(hProfile) == cmsSigLabData)
+    ChangeInterpolationToTrilinear(Lut);
+```
+
+`ChangeInterpolationToTrilinear` sets `CMS_LERP_FLAGS_TRILINEAR` on **every**
+CLUT stage of the pipeline, which sends `DefaultInterpolatorsFactory`'s `case 3`
+down `TrilinearInterpFloat`/`TrilinearInterp16` instead of the tetrahedral
+routines it would otherwise select. **Trilinear over three inputs is n-linear**,
+which is exactly what `iccce-cmm`'s `Clut::eval` computes (NA-006).
+
+Consequences, all of which matter more than the size of the number:
+
+1. **The interpolation-method envelope that dominated Pass 4 — 1,57 ΔE2000 — is
+   identically zero in the B2A direction**, for every Lab-PCS profile, which is
+   every CMYK output profile in this machine's colour directory.
+2. It is in `_cmsReadOutputLUT` only. **The A2B direction is unaffected**, which
+   is why Pass 4 measured a large envelope and Pass 4b does not; the two results
+   are not in tension.
+3. **It is a policy, not a specification.** ICC.1 says nothing about CLUT
+   interpolation (corpus **A16**, SILENT). lcms2's own comment calls it
+   "controversial stuff" and offers a rationale ("Lab used as indexer space")
+   rather than a clause. iccce's n-linear happens to agree with it; that is
+   agreement between two choices, not conformance.
+4. **It means a cross-check in this direction cannot show that iccce's
+   interpolation is right** — only that it is the same. The counterfactual
+   record below is what stops that being invisible.
+
+#### 15.2.3 The remaining deviation sources, and one non-source
+
+- **8-bit table data is NOT a divergence.** `Type_LUT8_Read` widens every stored
+  byte with `FROM_8_TO_16(v) = (v<<8)|v = v·257`, and `257·255 = 65535`, so
+  lcms2's normalised sample is `v/255` — bit-identical to `iccce-cmm`'s
+  `f64::from(v)/255.0`. The 1/255 granularity of the table is *shared* and
+  cancels in the difference. What it does is make the pipeline **sensitive**:
+  the largest adjacent-node step in this CLUT is **0,2235** of the device range,
+  so an input difference is multiplied by up to `0,2235 × 32 = 7,2`.
+- **lcms2 quantises three times inside this pipeline**, all modelled in
+  `B2aPipeline::eval`: the 256-entry input curves are
+  `cmsBuildTabulatedToneCurve16`, so `cmsEvalToneCurveFloat` rounds their input
+  *and* output to 1/65535 (§13.6.1's finding); `EvaluateCLUTfloatIn16` rounds
+  the CLUT stage input to `u16` and returns `u16/65535`; the output curves round
+  twice more. Plus the source's 1024-entry `curv` TRCs, same mechanism.
+- **★ The Lab encoding is NOT a divergence, and this is the one worth an
+  assertion rather than a comment.** `_cmsReadOutputLUT` inserts
+  `_cmsStageAllocLabV4ToV2` **only when `OriginalType == cmsSigLut16Type`** —
+  for a `lut8Type` tag it does not, so the pipeline keeps lcms2's internal
+  v4-normalised Lab (`L*/100`, `(ab+128)/255`, from `cmspack.c`'s
+  `UnrollLabDoubleToFloat`). iccce's `PcsCodec::Lab8` encodes `L/100`,
+  `(ab+128)/255` — Tables 12/13's 8-bit column, corpus **A10**. **The two agree
+  exactly**: the legacy 652,8 scale belongs to `lut16Type`, and neither
+  implementation applies it here. Had iccce applied it, `L*` would be 0,39 % low
+  — ≈0,2 ΔE2000, *below* the perceptibility anchor and invisible to any suite
+  graded at it. The agreement is now measured in the direction where the mistake
+  is easiest to make.
+
+#### 15.2.4 The grid — 213 RGB points end to end, 258 Lab points PCS-side
+
+RGB: 8 cube corners, the 17-step neutral axis, three 9-step primary ramps, a
+`{0, ¼, ½, ¾, 1}³` lattice, 64 fixed-seed pseudo-random interior points. Lab:
+**125 node-aligned points** (`L*`, `a*`, `b*` each on `{0,8,16,24,32}/32` of the
+encoded axis — exact nodes of a 33-point table), a 21-step neutral axis, 48
+saturated hues at `C* = 60` well outside any CMYK gamut, and 64 pseudo-random.
+Deterministic by construction and pinned by tests.
+
+**What it does not cover:** nothing between 0 and 1/16 in RGB except through the
+random block — which is where the source EOTF's inverse slope and the XYZ→Lab
+sensitivity are both largest; **saturation and ICC-absolute** (the former is a
+third copy of the same shape, the latter would re-measure §14.6's white-point
+divergence rather than the B2A path); and no out-of-`[0,1]` device value, which
+the shipped CLI does not accept.
+
+#### 15.2.5 The three experiments
+
+**1 — the envelope.** `B2aPipeline` evaluates the whole `mft1` path twice,
+differing only in whether lcms2's roundings are applied, with the source model
+switched the same way. The maximum difference over the grid **is** the envelope,
+and no lcms2 output enters it: **1,330×10⁻⁴** device units at media-relative,
+**9,602×10⁻⁵** at perceptual. `DEVICE_B2A` is `5×10⁻⁴` — the larger with ~276 %
+headroom for the two roundings deliberately not modelled (lcms2 interpolates its
+curves and its CLUT in **16-bit fixed point**; the model uses `f64`).
+
+**Observed 1,330×10⁻⁴ against an envelope of 1,330 241×10⁻⁴ — 0,02 %.** The
+disagreement is not merely small, it is *accounted for*.
+
+**2 — the attribution.** The modelled prediction against `transicc`'s actual
+output: **3,101×10⁻⁵ (perceptual), 3,100×10⁻⁵ (media-relative), 3,097×10⁻⁵
+(PCS-side)**. That number is **2,03 lsb of 1/65535**, three times independently.
+What remains after modelling lcms2's arithmetic is lcms2's *fixed-point*
+arithmetic, and nothing else. `DEVICE_B2A_MODELLED` is `5×10⁻⁵`.
+
+**3 — the counterfactual, which is the sensitivity control.** The same table
+evaluated tetrahedrally: **1,527×10⁻²** (perceptual), **1,311×10⁻²**
+(media-relative) — **139× and 99× the observed disagreement**. Without it, "the
+two agree to 10⁻⁴" would be a claim about a comparison that might not be able to
+see a geometry difference at all. It can, by two orders of magnitude.
+
+#### 15.2.6 §A's numbers
+
+| record | tolerance | perceptual | media-relative |
+|---|---|---|---|
+| `…/apparatus-lut8-matches-iccce-cmm` | 1×10⁻⁹ | **0,0 exactly** | **0,0 exactly** |
+| `…/device-vs-lcms2` | 5×10⁻⁴ | **1,100×10⁻⁴** | **1,330×10⁻⁴** |
+| `…/device-mean` | ∞ reported | 2,362×10⁻⁵ | 2,546×10⁻⁵ |
+| `…/device-lcms2-arithmetic-modelled` | 5×10⁻⁵ | **3,101×10⁻⁵** | **3,100×10⁻⁵** |
+| `…/roundtrip-lab-de2000` | 5×10⁻² | **7,095×10⁻³** | **5,711×10⁻³** |
+| `…/counterfactual-tetrahedral` | ∞ reported | 1,527×10⁻² | 1,311×10⁻² |
+| `pass4b/lab-to-swop/media-relative/pcs-device-vs-lcms2` | 5×10⁻⁴ | — | **6,485×10⁻⁵** |
+| `…/pcs-device-lcms2-arithmetic-modelled` | 5×10⁻⁵ | — | **3,097×10⁻⁵** |
+
+The ΔE row carries both sides' CMYK back through **the same file's own `A2B1`**
+— not a second opinion, the same table's forward direction — because four ink
+components have no perceptual metric until they are in a space where a ΔE means
+something. The PCS-side rows take the source model out of the picture entirely
+and grade `iccce-cmm`'s `Lut16Model` **in process**, which their records say:
+the shipped CLI has no Lab entry point, so those two rows grade the *model*, not
+the binary.
+
+### 15.3 §B — the synthetic v4 fixture
+
+#### 15.3.1 The 40-profile sweep, and why a fixture was the only option
+
+Every `.icc`/`.icm` in `C:\Windows\System32\spool\drivers\color\` was parsed
+with `iccce inspect` and searched for `mAB `/`mBA ` tags. **40 profiles, zero
+matches.** The one v4 profile that carries a LUT at all (`BlackWhite.icc`,
+4.0.0, `prtr`, `GRAY`) carries a `B2A0` of type **`mft1`**. So on this machine
+the entire v4 element-pipeline path — the ragged CLUT, the 3×4 matrix with
+offsets, the five-element chain — **cannot be exercised against a real profile
+at all**, and `tools/gen-profiles`' `v4-cmyk-mab-lab.icc` is not a convenience
+but the only available instrument. It is also why §B's four derived rows are the
+**first graded rows in this suite that do not skip on a machine without the
+Windows colour directory**.
+
+#### 15.3.2 ★ The closed forms, and why they are a new kind of row
+
+Reading the generator's recipe shows both CLUTs store functions that are
+**affine in one input and constant in the others**:
+
+- `A2B0` (`mAB `, 4→3, grid 5×4×3×2): `L*` node = `100·(1 − K)`, `a*`/`b*` node =
+  `0x8080`, independent of C, M, Y.
+- `B2A0` (`mBA `, 3→4, grid 3³): `K` = `1 − L*` along the `L*` axis, `C=M=Y=0`,
+  independent of `a*`, `b*`.
+
+**Every interpolation geometry reproduces an affine function exactly**, so the
+method difference that dominates Pass 4 is *provably* zero here — and it is
+measured as such (`clut-is-affine-both-geometries-agree`) rather than asserted.
+The output is then a closed form in the input, derived from ICC.1:2022
+10.12.1/10.13.1 (element order), 10.12.5/10.13.4 (the 3×4 matrix and its offsets
+`1/256`, `2/256`, `3/256`, applied in the *normalised* domain) and 6.3.4.2
+Tables 12/13 (the **general** 16-bit PCSLAB encoding — `mAB `/`mBA ` are not in
+NOTE 3's legacy set):
+
+```
+mAB:  L* = 100·(1 − K) + 0,390625      a* = 1,9921875      b* = 2,98828125
+mBA:  C = M = Y = 0,   K = interp(1 → 32768/65535 → 0)  at  n_L = L*/100 + 1/256
+```
+
+Two details a reader should check rather than trust: the offsets are applied in
+the normalised domain, so `+1/256` is `+0,390625` of `L*` and `+1,9921875` of
+`a*`; and the mBA's **middle node is `round(0,5·65535) = 32768`, i.e.
+`0,500 007 63`, not `0,5`** — an expectation using the idealised line would be
+wrong by 7,6×10⁻⁶ and would look like an implementation defect.
+
+**This is a new `Kind`: `derived-expectation`.** It is **not** ground truth —
+nobody at the CIE or the ICC printed the number. It is stronger than a
+cross-check, because a cross-check is defeated when both implementations share a
+misreading whereas this is defeated only when *the derivation* shares it, and
+the derivation sits next to the number in a form a spec reader can check without
+running anything. And it has a stated weakness: the fixture and the derivation
+are read out of the **same corpus** by the same project, so if `ICC_Spec`'s
+transcription of 10.12/10.13 is wrong they are wrong together and agree
+perfectly. That is precisely why every derived row is paired with an lcms2
+cross-check over the same points — **the third reading**.
+
+| record | kind | tolerance | observed |
+|---|---|---|---|
+| `pass4b/fixture/clut-is-affine-both-geometries-agree` | self-consistency | 1×10⁻¹⁴ | **1,110×10⁻¹⁶** |
+| `…/mab/iccce-vs-derived-expectation` | **derived-expectation** | 1×10⁻¹² | **2,842×10⁻¹⁴** (`L*`) |
+| `…/mab/lcms2-vs-derived-expectation` | **derived-expectation** | 1×10⁻² | **2,325×10⁻³** (`L*`) |
+| `…/mba/iccce-vs-derived-expectation` | **derived-expectation** | 1×10⁻¹² | **2,220×10⁻¹⁶** (device) |
+| `…/mba/lcms2-vs-derived-expectation` | **derived-expectation** | 1×10⁻⁴ | **1,873×10⁻⁵** (device) |
+| `pass4b/srgb-to-fixture/media-relative/device-vs-lcms2` | cross-check | 1×10⁻⁴ | **5,200×10⁻⁵** |
+| `pass4b/fixture-to-srgb/media-relative/device-vs-lcms2` | cross-check | 2,5×10⁻⁴ | **1,012×10⁻⁴** |
+
+**iccce reproduces the closed form to `f64` noise in both directions**, which is
+the strongest statement any LUT row in this repository has been able to make —
+and it is a statement about **GP-001**'s fix as well, since the `mBA ` curve
+counts (B=3, M=3, A=4 for a 3-in/4-out tag) are what make the chain evaluate at
+all. lcms2 reproduces it to its own quantisation.
+
+#### 15.3.3 ★★ Finding — the encoded PCS overflows; iccce clamps it and lcms2 does not, and it costs 0,61 ΔE2000
+
+At `K = 0` the `mAB ` CLUT's `L*` node is full scale (`0xFFFF`, normalised 1,0)
+and the matrix then adds `+1/256`, so the value handed to the `B` curves is
+**1,003 906 25 — outside the range of the 16-bit PCS encoding it is about to be
+read as**.
+
+| | what it does | result |
+|---|---|---|
+| **iccce** | `Trc::eval` enforces clause **10.18**'s `[0,1]` curve domain, so the `B` curve clamps its input | `L* = 100` |
+| **lcms2** | a `curv` with `count = 0` becomes a type-1 parametric curve (γ = 1) whose segment domain is ±10²², evaluated as `pow(x, 1)` — nothing forces it back | `L* = 100,390 625` |
+
+Measured directly, `transicc -i<fixture> -o*Lab4` at `K = 0`:
+**`100.3906  1.9922  2.9883`** — the unclamped closed form to four decimals.
+
+**Cost: 0,6117 ΔE2000** over the 10 affected grid points, carried end to end
+into sRGB (device 4,440×10⁻³). That is well above everything else in Pass 4b and
+in the neighbourhood of §2's provisional 1,0 anchor — a difference that *would*
+be visible next to its neighbour.
+
+**Which is right is NOT settled here, and that is the finding.** The two
+readings:
+
+> *iccce's:* the `B` curves are `curveType` elements whose domain is `[0,1]`
+> (10.18), and the result of an `mAB ` is a **PCS value in a defined encoding**
+> whose range is 0…1 by construction (6.3.4.2, Tables 12/13). 1,003 906 25 has
+> no 16-bit code. Clipping the PCS is what clause **6.4** requires — and note
+> NA-003's correction, that 6.4 *is* the PCS clause (`TOLERANCES.md` §5.2).
+>
+> *lcms2's:* the float pipeline is unbounded by design, the elements are
+> function compositions, and clipping is the business of the *encoder* at the
+> end of the chain, not of every intermediate element.
+
+**A dispatch to `icc-spec-librarian` is OWED**, and the question to put is:
+
+> In `lutAToBType`/`lutBToAType` (ICC.1:2022 10.12/10.13), is the output of the
+> **matrix** element required to be clipped to the domain of the curve element
+> that follows it — and is the output of the final `B` curves required to be
+> clipped to the encodable PCS range of 6.3.4.2 — when a CMM evaluates the chain
+> in floating point rather than through the 16-bit encoding? Specifically: does
+> 10.18's statement of a `curveType`'s domain bind the *evaluator*, or only
+> describe the stored samples? And does clause 6.4's PCS clipping requirement
+> apply to the result of an `mAB ` before it is a PCS value, or only once it is
+> encoded?
+
+**Until it is settled the affected points are REPORTED, NOT GRADED** — the
+posture §14.6 takes with A4b, and for the same reasons: grading them would mean
+either a ~0,7 ΔE tolerance chosen because it passed, or a permanent red line
+that stops being read. The remaining 118 grid points are graded normally and the
+record names the excluded set and why.
+
+**One thing this finding is not:** a defect the fixture was designed to catch.
+`v4-cmyk-mab-lab.icc` carries non-zero matrix offsets because *dropping* them is
+the classic misread. That the same offsets also push a value past full scale is
+an accident of the fixture — and the best argument in this document for
+authoring fixtures with awkward values rather than tidy ones.
+
+#### 15.3.4 ★ Finding — lcms2's forced BPC is decided by the **destination** profile's version, which refines M2
+
+`ARCHITECTURE.md` DL-013 and corpus **M2** record that *"lcms2 forces BPC on v4
+profiles at the perceptual and saturation intents"*. Measured here in **both
+directions on the same pair of profiles**, that is half the rule:
+
+| direction | perceptual vs media-relative, lcms2 against itself |
+|---|---|
+| v4 fixture as **source**, v2 sRGB destination | **0,0 — bit-identical** |
+| v2 sRGB source, v4 fixture as **destination** | **3,137×10⁻²** device (`K` at black moves 99,6094 % → 96,4721 %) |
+
+The mechanism, read at the pin: `_cmsLinkProfiles` sets `BPC[i]` per profile,
+but `DefaultICCintents` consumes it as
+`ComputeConversion(i, hProfiles, Intent, BPC[i], …)`, which builds the
+conversion **from `hProfiles[i-1]` into `hProfiles[i]`**. The flag that decides
+is therefore the **destination** profile's version; a v4 *source* into a v2
+destination sets a flag nothing reads.
+
+Both sides of that measurement are lcms2, so it says nothing about iccce. What
+it says is that **anyone using M2 to decide whether a comparison is confounded
+needs the direction, not just the version** — and that §B's choice of the
+media-relative intent was necessary for the `mBA ` direction and
+belt-and-braces for the `mAB ` one. It belongs in
+`icc__ref__lcms2_measured_behaviour.md` as a correction to M2;
+`icc-spec-librarian`'s file, not this one's.
+
+### 15.4 §C — the gray axis
+
+#### 15.4.1 Both implementations build the same model, from the same constants
+
+```c
+// cmsio1.c: the gray input pipeline is the TRC then a 1x3 matrix of D50.
+static const cmsFloat64Number GrayInputMatrix[] =
+    { (InpAdj*cmsD50X), (InpAdj*cmsD50Y), (InpAdj*cmsD50Z) };
+```
+
+`cmsD50X/Y/Z` are `0.9642 / 1.0 / 0.8249` (`lcms2.h`) and `iccce_color::D50` is
+`0.9642 / 1.0000 / 0.8249` — **the same three literals** — so Annex F.2's white
+multiplication cannot diverge. (`InpAdj` is lcms2's internal 1/1,99997 XYZ
+encoding scale, undone by the matching `OutpAdj` on the destination side.) The
+`kTRC` is a single-value `curv` (γ = 2,199 218 75), which lcms2 turns into a
+type-1 parametric curve, so it is **analytic on both sides** and §13.6.1's
+tabulated-curve quantisation does not apply to the source either.
+
+Two consequences stated in advance, both confirmed:
+
+- **`wtpt` is not read by either side at the media-relative intent**, so §14.6's
+  divergence — lcms2 substituting D50 for a v2 *display* profile's `wtpt` —
+  **cannot fire here even though `ewgray22.icm` is exactly such a profile**
+  (v2.2, `mntr`, `wtpt` = D65 = 0,950 455 / 1,0 / 1,089 050). It would fire at
+  ICC-absolute; that intent is out of §C's scope and stays attributed to §14.6.
+- **Perceptual and media-relative must be the same transform**, because a
+  monochrome profile has no `A2B*`/`B2A*` for 8.10.2 to select between and the
+  destination is matrix/TRC. Graded at **exactly `0,0`**; observed 0,0 on both
+  sides.
+
+#### 15.4.2 ★ Finding — the whole residual is lcms2's 4096-entry reverse tone curve, attributed 457×
+
+Because the source contributes nothing, §C is the cleanest measurement available
+of lcms2's sRGB **output** model — which answers §14.9 item 4.
+`BuildRGBOutputMatrixShaper` inverts each 1024-entry `curv` with
+`cmsReverseToneCurve` = `cmsReverseToneCurveEx(4096, ·)`: a **4096-entry `u16`
+resampling** of the inverse, built by chording between forward-table knots, then
+evaluated through the float path that rounds input and output to 1/65535.
+iccce inverts the stored table directly.
+
+`ReverseCurve` reimplements it. The result:
+
+| | max | mean |
+|---|---|---|
+| iccce as shipped vs lcms2, device | **9,686×10⁻⁵** | 1,782×10⁻⁵ |
+| the same in ΔE2000 | **2,169×10⁻²** | 2,641×10⁻³ |
+| envelope (exact vs modelled destination — **no lcms2 output**) | 9,680×10⁻⁵ | 1,780×10⁻⁵ |
+| **modelled prediction vs lcms2's actual output** | **2,121×10⁻⁷** | — |
+| **shrink** | **457×** | |
+
+2,121×10⁻⁷ is **below `transicc`'s 4-decimal print floor** of 3,9×10⁻⁷ in
+normalised units. The disagreement is not merely explained, it is *reproduced*.
+Worst point `g = 2/255`: iccce `0,000300`, lcms2 `0,000397`, model `0,000397`.
+
+Note the envelope is 0,06 % *below* the observation (9,680 vs 9,686×10⁻⁵), and
+that is the expected direction: the envelope is computed between two `f64`
+pipelines while the observation additionally carries `transicc`'s 4-decimal
+print and `iccce transform`'s 6-decimal print. An envelope comfortably *above*
+the observation would have meant the model was pessimistic about lcms2.
+
+#### 15.4.3 ★ A sensitivity note that inverts one from Pass 3
+
+§13.6 recorded *"near black the device metric explodes while ΔE stays small"* —
+that is the *inverse* TRC's unbounded slope acting on a device comparison. Here
+the comparison is already in device units and the amplification runs the other
+way. Below sRGB's linear breakpoint a device difference `δ` becomes `δ/12,92` of
+linear light, and CIELAB's **chromatic** sensitivity on *its* linear segment is
+`da*/dX = 500 · 7,787 / X_n = 4038`, so with `δ = 9,68×10⁻⁵`:
+
+- `ΔL* ≈ 903,3 × δ/12,92 = 69,9 δ` = 6,8×10⁻³
+- `Δa* ≈ 4038 × (δ/12,92) × X_R = 136 δ` = 1,3×10⁻² (`X_R = 0,4361`)
+
+and near neutral `S_C ≈ 1` while `S_L ≈ 1,75`, so **the chromatic term is the
+larger by ~3× and the maximum ΔE is at the dark end, not the light one**. Union
+≈2×10⁻²; observed 2,169×10⁻². `DE_GRAY` is `5×10⁻²`.
+
+**The first draft of `DE_GRAY` said 1×10⁻² from a derivation taken at white, and
+the row failed at 2,17×10⁻².** The code was not wrong (the mechanism is
+attributed 457×) and the fixture was not wrong — the *derivation was looking at
+the wrong end of the axis*. `TOLERANCES.md` §4 logs it as a corrected
+justification with both texts kept.
+
+### 15.5 The records, as emitted
+
+```
+pass4b/srgb-to-swop/perceptual/apparatus-lut8-matches-iccce-cmm        PASS  1e-9    0.0
+pass4b/srgb-to-swop/perceptual/device-vs-lcms2                         PASS  5e-4    1.100000e-4
+pass4b/srgb-to-swop/perceptual/device-mean                             PASS  inf     2.361502e-5
+pass4b/srgb-to-swop/perceptual/device-lcms2-arithmetic-modelled        PASS  5e-5    3.101114e-5
+pass4b/srgb-to-swop/perceptual/roundtrip-lab-de2000                    PASS  5e-2    7.095173e-3
+pass4b/srgb-to-swop/perceptual/counterfactual-tetrahedral              PASS  inf     1.526949e-2
+pass4b/srgb-to-swop/media-relative/apparatus-lut8-matches-iccce-cmm    PASS  1e-9    0.0
+pass4b/srgb-to-swop/media-relative/device-vs-lcms2                     PASS  5e-4    1.330000e-4
+pass4b/srgb-to-swop/media-relative/device-mean                         PASS  inf     2.546479e-5
+pass4b/srgb-to-swop/media-relative/device-lcms2-arithmetic-modelled    PASS  5e-5    3.100458e-5
+pass4b/srgb-to-swop/media-relative/roundtrip-lab-de2000                PASS  5e-2    5.710814e-3
+pass4b/srgb-to-swop/media-relative/counterfactual-tetrahedral          PASS  inf     1.311299e-2
+pass4b/lab-to-swop/media-relative/pcs-device-vs-lcms2                  PASS  5e-4    6.485006e-5
+pass4b/lab-to-swop/media-relative/pcs-device-lcms2-arithmetic-modelled PASS  5e-5    3.097192e-5
+pass4b/fixture/clut-is-affine-both-geometries-agree                    PASS  1e-14   1.110223e-16
+pass4b/fixture/mab/iccce-vs-derived-expectation                        PASS  1e-12   2.842171e-14
+pass4b/fixture/mab/lcms2-vs-derived-expectation                        PASS  1e-2    2.325000e-3
+pass4b/fixture/mba/iccce-vs-derived-expectation                        PASS  1e-12   2.220446e-16
+pass4b/fixture/mba/lcms2-vs-derived-expectation                        PASS  1e-4    1.873190e-5
+pass4b/srgb-to-fixture/media-relative/device-vs-lcms2                  PASS  1e-4    5.200000e-5
+pass4b/fixture-to-srgb/media-relative/device-vs-lcms2                  PASS  2.5e-4  1.012157e-4
+pass4b/fixture/mab/encoded-pcs-overflow-divergence                     PASS  inf     6.117005e-1
+pass4b/fixture/forced-bpc-is-decided-by-the-DESTINATION-version        PASS  inf     3.137300e-2
+pass4b/gray-to-srgb/media-relative/device-vs-lcms2                     PASS  2.5e-4  9.686275e-5
+pass4b/gray-to-srgb/media-relative/device-mean                         PASS  inf     1.782154e-5
+pass4b/gray-to-srgb/media-relative/de2000-vs-lcms2                     PASS  5e-2    2.169482e-2
+pass4b/gray-to-srgb/media-relative/device-lcms2-arithmetic-modelled    PASS  5e-6    2.121004e-7
+pass4b/gray-to-srgb/perceptual-equals-media-relative                   PASS  0.0     0.0
+```
+
+`summary pass=64 fail=0 skip=3 error=0` for the whole suite.
+
+Environment: Windows 11 Pro 10.0.26200 x86-64; lcms2 2.19.1 at pin `21c582a`,
+MSVC Release, static; `iccce` built with `cargo build --release -p iccce-cli` at
+commit **`97ad9fa`**.
+
+### 15.6 Coverage statement — what "Pass 4b verified" is allowed to mean
+
+> **(A)** iccce's `lut8` **B2A** pipeline, driven from a matrix/TRC source,
+> agrees with lcms2 2.19.1 to **1,33×10⁻⁴ device units** (5,7×10⁻³ ΔE2000 when
+> carried back through the same profile's `A2B1`) over 213 deterministic RGB
+> points, `sRGB Color Space Profile.icm` → `USWebCoatedSWOP.icc`, at the
+> perceptual and media-relative intents, `-c0`; and to **6,49×10⁻⁵** over 258
+> Lab points with the source model removed. That disagreement is accounted for
+> to **0,02 %** by an envelope computed from lcms2's own roundings, and what
+> remains after modelling them is **2,03 lsb of 1/65535**. The
+> interpolation-method difference is zero because `_cmsReadOutputLUT` forces
+> trilinear for a Lab-PCS LUT; had it not, the disagreement would have been
+> **99–139× larger**, which is measured and not assumed.
+>
+> **(B)** iccce's `mAB ` and `mBA ` evaluation reproduces a **closed form
+> derived from ICC.1:2022 10.12/10.13 and Tables 12/13** to `f64` noise
+> (2,8×10⁻¹⁴ `L*`, 2,2×10⁻¹⁶ device) over 128 CMYK and 258 Lab points on **one
+> synthetic v4 fixture**, and agrees with lcms2 to 1,01×10⁻⁴ device end to end —
+> **except at the 10 points where the 3×4 matrix pushes the encoded PCS above
+> full scale**, where the two differ by **0,61 ΔE2000** and the specification
+> question is unsettled.
+>
+> **(C)** iccce's Annex **F.2** grayTRC model agrees with lcms2 to
+> **9,69×10⁻⁵ device / 2,17×10⁻² ΔE2000** over 69 points of the gray axis,
+> `ewgray22.icm` → the system sRGB profile, at the media-relative and perceptual
+> intents (which are bit-identical on both sides). The residual is **entirely**
+> lcms2's 4096-entry reverse tone curve: modelling it collapses the
+> disagreement **457×**, to below `transicc`'s print floor.
+
+Everything outside those three paragraphs is **not** verified. In particular
+Pass 4b says nothing about: the **saturation** or **ICC-absolute** intents in any
+of its three directions; `lut8` with an **XYZ** PCS (`iccce-cmm` refuses it by
+name — the 8-bit XYZ encoding is unsourced, corpus A10); any **real** v4 LUT
+profile (there is none on this machine); a **devicelink**; BPC; soft-proofing;
+any other platform; or any **published** value. §B's four derived-expectation
+rows are the strongest claims here and they are still not ground truth — §15.3.2
+states exactly what they can and cannot be defeated by.
+
+### 15.7 What §15 owes
+
+1. **The `icc-spec-librarian` dispatch on §15.3.3's clamp question.** Until it is
+   settled, one of the two implementations has a defect at every `mAB ` whose
+   matrix or curves can leave `[0,1]`, and neither can be called right. The
+   question is written out in §15.3.3 and should be put verbatim. *(Not
+   dispatched from this session: an `icc-spec-librarian` task was already running
+   in the corpus tree and a second writer there would collide.)*
+2. **A corpus correction to M2** — forced BPC is decided by the **destination**
+   profile's version (§15.3.4). The current wording would mislead anyone using it
+   to decide whether a comparison is confounded.
+3. **A corpus entry for the trilinear override** (§15.2.2), alongside M4's 4-D
+   hybrid: same file, opposite direction, opposite answer.
+4. **Saturation and ICC-absolute in the B2A direction.** `B2A2` exists and is a
+   third distinct table; absolute would exercise §14.6's white-point policy
+   through a **LUT** destination for the first time, where the D.6/D.7 composite
+   is applied before the PCS is encoded rather than after.
+5. **A synthetic `lut8` fixture in the suite.** §A's graded rows all skip without
+   the Windows colour directory; `fixtures/synthetic/v2-cmyk-mft1-lab.icc` exists
+   and is not yet wired into anything.
+6. **An out-of-gamut probe for the M3 divergence.** §13.10 item 1 records that
+   the size of lcms2's out-of-`[0,1]` float device output under genuine
+   out-of-gamut input is still unmeasured; §A's 48 saturated-hue Lab points are
+   the first grid in this suite genuinely outside the destination gamut, and the
+   excursion count was **not** recorded on this run.
+7. **A `NUMERIC_CLAIMS.md` mirror** of §15's numbers, and of the fact that
+   **NA-006's cost is zero in the B2A direction** — a materially different
+   statement from the one Pass 4 recorded, and it belongs next to it.
+   `icc-librarian`'s file, not this one's.

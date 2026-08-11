@@ -113,6 +113,7 @@ use std::process::{Command, Stdio};
 
 pub mod pass3;
 pub mod pass4;
+pub mod pass4b;
 
 // ===========================================================================
 // Locating the oracle
@@ -701,6 +702,32 @@ impl Iccce {
         intent: Intent,
         rows: &[Vec<f64>],
     ) -> Result<Vec<[f64; 3]>, DiffError> {
+        let out = self.transform_rows_shaped(src, dst, intent, rows, 3)?;
+        Ok(out.into_iter().map(|r| [r[0], r[1], r[2]]).collect())
+    }
+
+    /// ★ **Added 2026-08-11 for Pass 4b.** As [`Iccce::transform_rows`], but
+    /// for a destination whose channel count is **not three**.
+    ///
+    /// Pass 4 only ever converted *into* an RGB destination, so the output
+    /// width could be hard-coded. Pass 4b's B2A direction converts **into
+    /// CMYK** (3 in, 4 out) and its gray direction converts **out of** a
+    /// 1-channel source, so both widths have to be parameters. The arity guard
+    /// stays and is applied to the stated width: a short or long row is a real
+    /// disagreement about the shape of the answer and must not be silently
+    /// reshaped — that is how a 4-channel result gets quietly read as a
+    /// 3-channel one and compared against the wrong oracle column.
+    ///
+    /// `rows` are source device values in **0..1**, any width; the return is
+    /// one row of `out_channels` values in **0..1** per input row.
+    pub fn transform_rows_shaped(
+        &self,
+        src: &Path,
+        dst: &Path,
+        intent: Intent,
+        rows: &[Vec<f64>],
+        out_channels: usize,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
         let intent_arg = match intent {
             Intent::Perceptual => "perceptual",
             Intent::RelativeColorimetric => "media-relative",
@@ -759,7 +786,7 @@ impl Iccce {
                 stderr,
             });
         }
-        let parsed = parse_rows(&stdout, 3).ok_or_else(|| DiffError::Unparsable {
+        let parsed = parse_rows(&stdout, out_channels).ok_or_else(|| DiffError::Unparsable {
             args: args.clone(),
             stdout: stdout.clone(),
             stderr: stderr.clone(),
@@ -771,7 +798,7 @@ impl Iccce {
                 stdout,
             });
         }
-        Ok(parsed.into_iter().map(|r| [r[0], r[1], r[2]]).collect())
+        Ok(parsed)
     }
 }
 
@@ -1008,6 +1035,37 @@ pub enum Kind {
     /// exists so a harness check that compares an oracle result against a
     /// *published* number can say so.
     GroundTruth,
+    /// ★ **Added 2026-08-11 (Pass 4b).** An expectation **derived by
+    /// arithmetic** from (a) the specification's stated element order and
+    /// encoding and (b) the bytes of a *synthetic* fixture, with **no
+    /// implementation's output in it**.
+    ///
+    /// ## Why this is a separate variant and not [`Kind::GroundTruth`]
+    ///
+    /// It is **not a published value**. Nobody at the CIE or the ICC printed
+    /// the number; a reader of this repository derived it from clause text.
+    /// Calling it ground truth would overstate the chain of custody, and
+    /// `TOLERANCES.md` §1's whole point is that a weak claim must not be
+    /// quotable as a strong one.
+    ///
+    /// ## Why it is nevertheless stronger than [`Kind::CrossCheck`]
+    ///
+    /// A cross-check is defeated when both implementations share a misreading.
+    /// A derived expectation is defeated only when **the derivation** shares
+    /// the misreading — and the derivation is written down next to the number,
+    /// in a form a spec reader can check against the standard without running
+    /// anything. It is the only kind of expectation available for a v4 LUT
+    /// path on a machine that has no v4 LUT profile.
+    ///
+    /// ## What it cannot do, stated as prominently
+    ///
+    /// The fixture and the derivation are read out of the **same corpus** by
+    /// the same project. If `ICC_Spec`'s transcription of clause 10.12/10.13 is
+    /// wrong, the fixture bytes and this expectation are wrong **together** and
+    /// agree perfectly. That is exactly the failure mode a *third* reading —
+    /// lcms2's — is retained to catch, which is why every row of this kind in
+    /// Pass 4b is paired with a [`Kind::CrossCheck`] row over the same points.
+    DerivedExpectation,
     /// Agreement between iccce and lcms2. Evidence that two implementations
     /// read a clause the same way; two implementations can share a misreading.
     CrossCheck,
@@ -1027,6 +1085,7 @@ impl Kind {
     pub fn tag(self) -> &'static str {
         match self {
             Kind::GroundTruth => "ground-truth",
+            Kind::DerivedExpectation => "derived-expectation",
             Kind::CrossCheck => "cross-check",
             Kind::SelfConsistency => "self-consistency",
             Kind::OracleReproducibility => "oracle-reproducibility",

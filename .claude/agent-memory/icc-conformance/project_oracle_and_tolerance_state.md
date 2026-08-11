@@ -5,6 +5,35 @@ metadata:
   type: project
 ---
 
+**★★ Updated 2026-08-11 (later still, after Pass 4b).** Everything below still
+holds; add:
+
+- **`pass4b` exists** (`tools/difftest/src/pass4b.rs`, `bin/pass4b_report.rs`,
+  README **§15**, `TOLERANCES.md` **§3.4.4**): **three independent sections** —
+  §A the **B2A** direction (`sRGB → USWebCoatedSWOP`, `mft1`/`lut8`, 3→4, 33³,
+  213 RGB + 258 Lab points, perceptual and media-relative), §B the **v4
+  `mAB `/`mBA ` synthetic fixture** in both directions, §C the **F.2 grayTRC**
+  model (`ewgray22.icm → sRGB`, 69 points). **28 records, all pass.** Whole
+  suite: **`pass=64 fail=0 skip=3 error=0`**.
+- **A fourth `Kind` exists: `DerivedExpectation`.** An expectation computed by
+  arithmetic from clause text + a synthetic fixture's own bytes, with no
+  implementation's output in it. **Not** ground truth (nobody published it; the
+  fixture and the derivation share a corpus), but stronger than a cross-check.
+  Defined in `TOLERANCES.md` §3.4.4.1; §1's kind table was deliberately *not*
+  rewritten (shared section) — it carries a pointer, and extending it is owed.
+- **The §3.4.3 "still blank" rows for the B2A direction and for a synthetic LUT
+  fixture are now MEASURED.** The **published-value** row is still blank and
+  Pass 4b does not close it.
+- **`Iccce::transform_rows_shaped`** (n in / m out) was added — Pass 4 could
+  hard-code 3 outputs; a CMYK destination and a gray source cannot.
+- **Still blank and correctly so:** §3.2; any *published* ground-truth row for
+  Passes 3/4/4b; saturation and ICC-absolute anywhere in Pass 4b; `lut8` with
+  an XYZ PCS (refused by name); any **real** v4 LUT profile (a 40-profile sweep
+  of this machine found **zero** `mAB `/`mBA `); the M3 out-of-range excursion
+  count, which §A's saturated-hue block could have recorded and did not.
+
+New findings: [[project-lcms2-findings-pass4b-direction-dependence]].
+
 **★ Updated 2026-08-11 (later, after Pass 4).** Everything below still holds;
 add:
 
