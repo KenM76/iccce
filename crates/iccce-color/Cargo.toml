@@ -1,0 +1,23 @@
+# iccce-color — CIE colorimetry.
+#
+# INVARIANT (ARCHITECTURE.md §1): this crate depends on NOTHING — no
+# workspace siblings, no third-party crates. Its correctness is checked
+# against published CIE reference values, and that check must not require
+# an ICC file, a parser, or anyone else's code. An empty [dependencies]
+# section here is a load-bearing fact, not an accident.
+
+[package]
+name = "iccce-color"
+description = "CIE colorimetry: XYZ, xyY, Lab, LCh, chromatic adaptation, ΔE. No ICC, no I/O, no dependencies."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Intentionally empty. See crate invariant above.
+
+[lints]
+workspace = true

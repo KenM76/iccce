@@ -1,0 +1,45 @@
+# iccce — workspace manifest
+#
+# Four crates, per docs/ARCHITECTURE.md §1:
+#
+#   iccce-color    CIE colorimetry. INVARIANT: depends on nothing.
+#   iccce-profile  ICC profile parsing. INVARIANT: no colour maths.
+#   iccce-cmm      transforms — where profile and color meet, and where
+#                  every approximation lives.
+#   iccce-cli      the scriptable shell that makes the library verifiable
+#                  without a GUI.
+#
+# tools/difftest (the lcms2 differential oracle) is deliberately NOT a
+# workspace member: lcms2 is an oracle, never a dependency, and keeping
+# the harness out of the workspace guarantees the shipping crates cannot
+# accidentally link it.
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/iccce-color",
+    "crates/iccce-profile",
+    "crates/iccce-cmm",
+    "crates/iccce-cli",
+]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/KenM76/iccce"
+authors = ["Ken Mantle"]
+
+[workspace.lints.rust]
+# ARCHITECTURE.md §3.4: no `unsafe` without a written justification and a
+# named rejected alternative. Deny at the workspace level; a justified
+# exception carries an explicit, commented `#[allow]` at the site.
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+# Numeric code is exactly where silent lossy casts hide. Make every
+# narrowing conversion a deliberate, visible act.
+cast_possible_truncation = "warn"
+cast_precision_loss = "warn"
+cast_sign_loss = "warn"

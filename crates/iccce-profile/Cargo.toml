@@ -1,0 +1,23 @@
+# iccce-profile — ICC profile parsing and representation.
+#
+# INVARIANT (ARCHITECTURE.md §1): no colour maths in this crate. It
+# parses bytes into a faithful representation of what the file says,
+# including things that are wrong. The parser reports; it does not
+# repair.
+
+[package]
+name = "iccce-profile"
+description = "ICC v2/v4 profile parsing: header, tag table, tag types. Reports malformations, repairs nothing. No colour maths."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Intentionally empty for Pass 0–2. Any addition is classified
+# (permissive only) before adoption, per docs/LEGAL.md §1.
+
+[lints]
+workspace = true

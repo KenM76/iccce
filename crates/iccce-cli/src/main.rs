@@ -1,0 +1,148 @@
+//! # iccce — the command-line shell
+//!
+//! The scriptable surface of the engine. Exists from Pass 0 because it
+//! is what makes the library verifiable without a GUI: `tools/difftest`
+//! drives conversions through this binary and diffs the numbers against
+//! lcms2. Output is therefore **stable and machine-diffable** — one
+//! value per line, no decorative formatting on the data lines.
+//!
+//! ## Subcommands (grow with the Passes)
+//!
+//! | Command | Pass | Purpose |
+//! |---|---|---|
+//! | `inspect <profile>` | 0 | Print the header and tag table. Malformations are printed, not hidden — the CLI is the parser's disclosure surface. |
+//! | `transform` | 3+ | Convert values between profiles at a stated intent. |
+//!
+//! ## Exit codes
+//!
+//! - `0` — success.
+//! - `1` — operational failure (unreadable file, unparseable profile,
+//!   unsupported request). The reason goes to stderr.
+//! - `2` — usage error (unknown subcommand, missing argument).
+
+use std::process::ExitCode;
+
+/// Usage text. Printed to stderr on usage errors (exit 2), because a
+/// script piping stdout must never receive help text where it expected
+/// data.
+const USAGE: &str = "\
+iccce — ICC colour management engine
+
+USAGE:
+  iccce inspect <profile>   Print the profile header and tag table.
+
+Profiles are read as raw bytes; any file (or stream dump) containing an
+ICC profile is accepted. Malformations are reported, never repaired.
+";
+
+fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    match args.first().map(String::as_str) {
+        Some("inspect") => {
+            let Some(path) = args.get(1) else {
+                eprintln!("iccce inspect: missing <profile> argument\n\n{USAGE}");
+                return ExitCode::from(2);
+            };
+            cmd_inspect(path)
+        }
+        Some(other) => {
+            eprintln!("iccce: unknown subcommand `{other}`\n\n{USAGE}");
+            ExitCode::from(2)
+        }
+        None => {
+            eprintln!("{USAGE}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+/// `iccce inspect <profile>` — read the file, parse header + tag table,
+/// print both.
+///
+/// WHY this is the first command: ROADMAP Pass 0's done-when is "a real
+/// profile from the system's colour directory can be inspected". It
+/// exercises the byte-level parse with zero colour maths, which is
+/// exactly the layering ARCHITECTURE.md §1 mandates.
+fn cmd_inspect(path: &str) -> ExitCode {
+    let bytes = match std::fs::read(path) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("iccce inspect: cannot read `{path}`: {e}");
+            return ExitCode::from(1);
+        }
+    };
+
+    let profile = match iccce_profile::Profile::parse(&bytes) {
+        Ok(p) => p,
+        Err(e) => {
+            // A refusal is a result, not a crash — the reason is the
+            // deliverable (the parser reports; it does not repair).
+            eprintln!("iccce inspect: refused: {e}");
+            return ExitCode::from(1);
+        }
+    };
+
+    let h = &profile.header;
+    // One `key: value` per line, stable order — this output is a diff
+    // surface for tools/difftest, not a human UI.
+    println!("header.size: {}", h.size);
+    println!("header.cmm: {}", h.cmm_id);
+    println!("header.version: {} (0x{:08X})", h.version, h.version.raw);
+    println!("header.class: {}", h.device_class);
+    println!("header.colorspace: {}", h.color_space);
+    println!("header.pcs: {}", h.pcs);
+    if h.date.is_unspecified() {
+        println!("header.date: unspecified");
+    } else {
+        println!(
+            "header.date: {:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+            h.date.year, h.date.month, h.date.day, h.date.hours, h.date.minutes, h.date.seconds
+        );
+    }
+    println!("header.platform: {}", h.platform);
+    println!("header.flags: 0x{:08X}", h.flags);
+    println!("header.manufacturer: {}", h.manufacturer);
+    println!("header.model: 0x{:08X}", h.model);
+    println!("header.attributes: 0x{:016X}", h.attributes);
+    let intent_name = match h.rendering_intent {
+        0 => "perceptual",
+        1 => "media-relative",
+        2 => "saturation",
+        3 => "absolute",
+        _ => "UNKNOWN",
+    };
+    println!("header.intent: {} ({intent_name})", h.rendering_intent);
+    println!(
+        "header.illuminant: {:.4} {:.4} {:.4}",
+        h.illuminant.x.to_f64(),
+        h.illuminant.y.to_f64(),
+        h.illuminant.z.to_f64()
+    );
+    println!("header.creator: {}", h.creator);
+    let id_hex: String = h.profile_id.iter().map(|b| format!("{b:02x}")).collect();
+    if h.profile_id.iter().all(|&b| b == 0) {
+        // All-zero = not computed, which is NOT an error (corpus D4).
+        println!("header.id: not computed");
+    } else {
+        println!("header.id: {id_hex}");
+    }
+
+    println!("tags: {}", profile.tags.len());
+    for (i, t) in profile.tags.iter().enumerate() {
+        let type_sig = t
+            .type_sig
+            .map_or_else(|| "unreadable".to_string(), |s| s.to_string());
+        println!(
+            "tag[{i}]: {} offset={} size={} type={type_sig}",
+            t.sig, t.offset, t.size
+        );
+    }
+
+    // Disclosure surface: everything the file got wrong, verbatim.
+    println!("malformations: {}", profile.malformations.len());
+    for m in &profile.malformations {
+        println!("malformation: {m}");
+    }
+    ExitCode::SUCCESS
+}

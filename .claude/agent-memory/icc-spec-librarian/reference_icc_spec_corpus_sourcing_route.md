@@ -1,0 +1,23 @@
+---
+name: icc-spec-corpus-sourcing-route
+description: With the ICC spec PDF blocked, the ICC_Spec corpus is sourced from two permissively-licensed codebases on GitHub — ICC's own DemoIccMAX (BSD-3) and lcms2 (MIT) — cross-verified against each other
+metadata:
+  type: reference
+---
+
+**Corpus location:** `D:\Dev\Rag-Specialized\ICC_Spec\` (start at `index.md`, then `LEGAL_NOTE.md`).
+
+**The working sourcing route, when the ICC.1 PDF is unavailable** (see [[icc-tos-automated-access-blocker]]) — two independent, permissively-licensed sources, fetched from `raw.githubusercontent.com`, which is **not** "the Services" under ICC's ToS:
+
+| Source | Repo | Files that carry the facts | Licence |
+|---|---|---|---|
+| **ICC's own** `DemoIccMAX` / iccDEV | `InternationalColorConsortium/DemoIccMAX` | `IccProfLib/icProfileHeader.h` (header struct, all signature enums, tag-type structs), `IccProfLib/IccUtil.cpp` (D50, XYZ↔Lab, PCS scaling), `IccProfLib/IccTagLut.cpp` (parametric curve formulas) | BSD-3-Clause |
+| **Little-CMS** (v2.19) | `mm2/Little-CMS` | `src/cmspcs.c` (**the v2/v4 Lab encoding constants**), `src/cmsgamma.c` (parametric curves), `src/cmsvirt.c` (sRGB), `src/cmswtpnt.c` (**Bradford matrix**), `src/cmstypes.c` (mluc reader), `include/lcms2.h` (header struct, D50) | MIT |
+
+**Ground-truth test data (published literature, real ground truth per project rule 3):** Sharma/Wu/Dalal 2005 CIEDE2000 — all 34 pairs at `https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/dataNprograms/ciede2000testdata.txt` (HTTP 200). Already transcribed into `cie/cie__ref__delta_e.md`.
+
+**Two caveats worth carrying:**
+- **ICC's `icProfileHeader.h` is the iccMAX/v5 superset, not the ICC.1 header.** Its `icHeader` subdivides bytes 100–127 into v5 fields; for ICC.1 those are 28 reserved bytes. It also disclaims its own authority in its header comment. Cite it as *ICC-authored secondary*, never as clause text.
+- **A C header encodes offsets and enums exactly and prose requirements not at all** — so every normative "shall", every required/optional tag rule, and every rendering-intent semantic is a gap on this route, not a fact.
+
+**Tool limitations hit and worth not re-discovering:** `iso.org` returns **HTTP 403** to automated fetch; `brucelindbloom.com` fails SSL handshake (`HANDSHAKE_FAILURE_ON_CLIENT_HELLO`) — use CRAN `spacesXYZ`'s adaptation vignette as the independent Bradford corroboration instead.

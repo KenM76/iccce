@@ -1,0 +1,21 @@
+# tools/difftest/lcms2.pin
+#
+# The single source of truth for which lcms2 the oracle is. Every script in
+# this directory reads this file rather than hard-coding a version, so that
+# moving the pin is one edit in one place and shows up as one line in a diff.
+#
+# Format: KEY=VALUE, '#' starts a comment, no shell expansion, no quoting.
+# Parsed by fetch-lcms2.sh (sh) and build-lcms2.ps1 (PowerShell).
+#
+# CHANGING THE PIN IS A LICENCE EVENT. lcms2's licensing is not uniform
+# across the tree (MIT core, GPL-3.0 optional plugins — see LEGAL.md §4).
+# If you move this pin you must re-read the upstream LICENSE file and the
+# per-plugin headers at the new tag and re-record the verification in
+# LEGAL.md §4 with a new date. Do not assume it is still what it was.
+
+LCMS2_URL=https://github.com/mm2/Little-CMS.git
+LCMS2_TAG=lcms2.19.1
+LCMS2_COMMIT=21c582a594fe5279f90c0b93437c398f93bf62b0
+LCMS2_COMMIT_DATE=2026-05-06
+LCMS2_LICENCE=MIT
+LCMS2_LICENCE_VERIFIED=2026-08-11

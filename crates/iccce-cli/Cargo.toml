@@ -1,0 +1,31 @@
+# iccce-cli — the scriptable shell.
+#
+# Exists from Pass 0 (ARCHITECTURE.md §1): it is the surface that makes
+# the library verifiable without a GUI, and the surface the differential
+# oracle drives. Output is designed to be diffed by a script.
+
+[package]
+name = "iccce-cli"
+description = "Scriptable CLI for iccce: inspect profiles, run conversions, emit diffable numbers."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "iccce"
+path = "src/main.rs"
+
+[dependencies]
+iccce-color = { path = "../iccce-color" }
+iccce-profile = { path = "../iccce-profile" }
+iccce-cmm = { path = "../iccce-cmm" }
+# No argument-parsing dependency yet: one subcommand does not justify
+# one. When the surface grows, the candidate is clap (MIT OR Apache-2.0,
+# permissive — classified per docs/LEGAL.md §1) and adding it is a
+# recorded decision.
+
+[lints]
+workspace = true

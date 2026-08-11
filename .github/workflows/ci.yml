@@ -1,0 +1,52 @@
+# iccce CI — build and test on Linux AND Windows from the first commit.
+#
+# WHY both from day one (ROADMAP.md Pass 0): the sibling project's
+# `main` did not compile on Linux for weeks because nothing checked.
+# The check exists before there is anything interesting to check, so it
+# can never be "added later".
+#
+# fmt and clippy run on Linux only — their verdicts are
+# platform-independent, and running them twice buys nothing.
+
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Warnings are errors in CI (and only in CI, so local iteration stays
+  # frictionless). A warning that survives to CI is a decision nobody
+  # made.
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: build+test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build workspace
+        run: cargo build --workspace --all-targets
+      - name: Test workspace
+        run: cargo test --workspace
+
+  lint:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: rustfmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings

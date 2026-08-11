@@ -1,0 +1,26 @@
+# Rust build output
+target/
+
+# ICC profiles are copyrighted works (LEGAL.md §3). Nothing matching *.icc or
+# *.icm may enter the repository except fixtures whose provenance is recorded
+# in fixtures/reference/PROVENANCE.md, or profiles this project authored.
+*.icc
+*.icm
+!fixtures/**/*.icc
+!fixtures/**/*.icm
+
+# ------------------------------------------------------------------------
+# tools/difftest — the lcms2 oracle is pinned, NOT vendored.
+#
+# Why: lcms2 is a third-party codebase we do not own and do not wish to carry
+# in our history. `fetch-lcms2.sh` clones it at the pinned tag into
+# tools/difftest/vendor/, which is ignored here. The *pin* (tag + commit hash)
+# is committed, in tools/difftest/lcms2.pin; the *source* is not.
+#
+# Second reason, and the load-bearing one: lcms2's optional plugins
+# (plugins/fast_float, plugins/threaded) are GPL-3.0, not MIT. Keeping the
+# clone out of the tree keeps GPL-3.0 source out of an MIT repository
+# entirely, rather than relying on a build flag to keep it unused.
+# See LEGAL.md §4.
+# ------------------------------------------------------------------------
+tools/difftest/vendor/

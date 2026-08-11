@@ -1,0 +1,23 @@
+# iccce-cmm — transform construction and evaluation.
+#
+# Where iccce-profile (what the file says) and iccce-color (what the
+# maths means) meet — and, per ARCHITECTURE.md §1, where every
+# approximation lives. Any departure from exact colorimetry in this
+# crate is named and its cost measured in ΔE.
+
+[package]
+name = "iccce-cmm"
+description = "The CMM: build, evaluate and cache colour transforms from ICC profiles. All four rendering intents; every approximation named and measured."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+iccce-color = { path = "../iccce-color" }
+iccce-profile = { path = "../iccce-profile" }
+
+[lints]
+workspace = true
