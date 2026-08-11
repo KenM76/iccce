@@ -114,6 +114,7 @@ use std::process::{Command, Stdio};
 pub mod pass3;
 pub mod pass4;
 pub mod pass4b;
+pub mod pass5;
 
 // ===========================================================================
 // Locating the oracle
@@ -728,13 +729,48 @@ impl Iccce {
         rows: &[Vec<f64>],
         out_channels: usize,
     ) -> Result<Vec<Vec<f64>>, DiffError> {
+        self.transform_rows_shaped_bpc(src, dst, intent, rows, out_channels, false)
+    }
+
+    /// ★ **Added 2026-08-11 for Pass 5.** As [`Iccce::transform_rows_shaped`],
+    /// but with the shipped binary's **`--bpc`** flag optionally set.
+    ///
+    /// ## Why the flag is a parameter and not a second entry point
+    ///
+    /// Pass 5's whole subject is the *difference* between two invocations that
+    /// differ in exactly one flag. Expressing that as one function with a
+    /// `bool` makes it impossible for the two arms to drift apart in some other
+    /// respect — a second copy of this function would be free to pass a
+    /// different intent, a different profile order, or a different stdin
+    /// encoding, and the resulting difference would be attributed to BPC.
+    ///
+    /// ## What a refusal looks like, and why it is returned rather than hidden
+    ///
+    /// `iccce transform --bpc` **exits 1 with a named reason** when the chain
+    /// is outside its black-point estimation subset (`ChainError::
+    /// BpcNotApplicable` at ICC-absolute, `ChainError::BpcEstimationUnsupported`
+    /// for e.g. a v2 LUT side). That surfaces here as
+    /// [`DiffError::NonZeroExit`] carrying the child's `stderr`, and Pass 5
+    /// **grades one of those refusals as a deliverable** rather than treating it
+    /// as harness breakage: an engine that refuses by name where it cannot
+    /// estimate is behaving as `CLAUDE.md` rule 6 requires, and the boundary of
+    /// the subset is part of the coverage statement.
+    pub fn transform_rows_shaped_bpc(
+        &self,
+        src: &Path,
+        dst: &Path,
+        intent: Intent,
+        rows: &[Vec<f64>],
+        out_channels: usize,
+        bpc: bool,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
         let intent_arg = match intent {
             Intent::Perceptual => "perceptual",
             Intent::RelativeColorimetric => "media-relative",
             Intent::Saturation => "saturation",
             Intent::AbsoluteColorimetric => "absolute",
         };
-        let args = vec![
+        let mut args = vec![
             "transform".to_string(),
             "--src".to_string(),
             src.display().to_string(),
@@ -743,6 +779,9 @@ impl Iccce {
             "--intent".to_string(),
             intent_arg.to_string(),
         ];
+        if bpc {
+            args.push("--bpc".to_string());
+        }
 
         let mut child = Command::new(&self.exe)
             .args(&args)

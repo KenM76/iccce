@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b,
+    pass3, pass4, pass4b, pass5,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -318,6 +318,24 @@ fn main() {
         report.note(format!("pass4b/C: {}", a.structure));
     }
     for r in p4b_records {
+        report.push_record(r);
+    }
+
+    // Pass 5 — black point compensation. Its §A (the scaling map against
+    // ICC.1 6.3.4.3 and against Maria 2013's two constraints) needs neither a
+    // profile nor the oracle, so it is the first section in this suite that
+    // grades something on any machine at all; S1–S5 need the Windows colour
+    // directory and skip with a reason when it is absent, and S6 (the
+    // ICC-absolute refusal) runs off committed fixtures.
+    let (p5, p5_records) = pass5::run(&oracle);
+    if let Some(a) = &p5 {
+        report.note(format!(
+            "pass5: {} (run `cargo run --bin pass5_report` for the scenario table, the \
+             black-point predictions and the policy measurement)",
+            a.structure
+        ));
+    }
+    for r in p5_records {
         report.push_record(r);
     }
 

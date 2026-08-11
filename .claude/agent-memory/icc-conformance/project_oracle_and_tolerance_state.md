@@ -1,9 +1,28 @@
 ---
 name: project-oracle-and-tolerance-state
-description: iccce oracle/harness state — the harness drives transicc and the shipped iccce binary, computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md §3.1/§3.3/§3.4/§5 are filled through Pass 4; what is still deliberately blank.
+description: iccce oracle/harness state — the harness drives transicc and the shipped iccce binary (now with --bpc), computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md §3.1/§3.3/§3.4/§3.5/§5 are filled through Pass 5; what is still deliberately blank.
 metadata:
   type: project
 ---
+
+**★★★ Updated 2026-08-11 (after Pass 5).** Everything below still holds; add:
+
+- **`pass5` exists** (`tools/difftest/src/pass5.rs`, `bin/pass5_report.rs`,
+  README **§16**, `TOLERANCES.md` **§3.5** and **§6.5**): six scenarios
+  (S1–S6) plus a §A that grades the BPC **scaling map** against **ICC.1:2022
+  clause 6.3.4.3** and against a Gaussian solve of Maria 2013's two
+  constraints. **26 records, all pass.** Whole suite:
+  **`pass=90 fail=0 skip=3 error=0`**.
+- **`Iccce::transform_rows_shaped_bpc(.., bpc: bool)`** was added to `lib.rs`;
+  `transform_rows_shaped` delegates to it. A refusal surfaces as
+  `DiffError::NonZeroExit` carrying stderr, and Pass 5 **grades two of them**.
+- **§A and S6 need neither a system profile nor the oracle** — the first graded
+  rows in this suite that survive a machine with no colour directory *and* no
+  lcms2 build.
+- **`TOLERANCES.md` §3.5 is filled**; §3.2 and every *published* ground-truth
+  row remain blank, and for Pass 5 they can never be filled (A27/A42 — no
+  normative BPC text obtainable).
+- Findings: [[project-lcms2-findings-pass5-bpc]].
 
 **★★ Updated 2026-08-11 (later still, after Pass 4b).** Everything below still
 holds; add:
