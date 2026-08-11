@@ -104,6 +104,12 @@ pub enum ChainError {
         sig: Signature,
         type_name: String,
     },
+    /// BPC requested at the absolute intent — excluded because BPC
+    /// presupposes both whites already at D50 (sourced, Maria 2013).
+    BpcNotApplicable,
+    /// BPC requested but a side's black point is outside the named
+    /// estimation subset (A42) — refused, not guessed.
+    BpcEstimationUnsupported,
 }
 
 impl std::fmt::Display for ChainError {
@@ -120,6 +126,14 @@ impl std::fmt::Display for ChainError {
             Self::SourceTagUnsupported { sig, type_name } => write!(
                 f,
                 "source tag {sig} is {type_name}, not yet evaluable (assembly stage 3)"
+            ),
+            Self::BpcNotApplicable => write!(
+                f,
+                "BPC is excluded at the absolute intent (both whites are already D50-anchored)"
+            ),
+            Self::BpcEstimationUnsupported => write!(
+                f,
+                "black point not estimable within iccce's named subset (A42); refused, not guessed"
             ),
         }
     }
@@ -140,6 +154,18 @@ pub struct Chain {
     /// Media whites for the absolute scale, captured at build.
     src_white: Option<Xyz>,
     dst_white: Option<Xyz>,
+    /// Black point compensation, when the caller opted in via
+    /// [`Chain::with_bpc`]. NEVER forced: lcms2 forces BPC for v4
+    /// perceptual/saturation on the authority of an unpublished
+    /// reading (M2/DL-013, and its "always" has no published
+    /// corroboration — corpus `icc__ref__bpc.md`); iccce makes it an
+    /// explicit caller act, which is itself a recorded policy
+    /// difference from the oracle.
+    bpc: Option<crate::bpc::BpcScale>,
+    /// Major versions captured at build — the fixed-perceptual-black
+    /// estimation rule keys on them.
+    src_major: u8,
+    dst_major: u8,
 }
 
 impl Chain {
@@ -304,7 +330,63 @@ impl Chain {
             intent,
             src_white,
             dst_white,
+            bpc: None,
+            src_major: src.header.version.major(),
+            dst_major: dst.header.version.major(),
         })
+    }
+
+    /// Opt in to black point compensation (Pass 5). Errors are
+    /// refusals with names, never guesses:
+    ///
+    /// - **Absolute intent excluded** — BPC presupposes both whites
+    ///   already at D50 (Maria 2013's sourced exclusion, corpus
+    ///   `icc__ref__bpc.md`).
+    /// - **Estimation subset** (a labelled re-implementation subset of
+    ///   lcms2's, A42): a v4 side at perceptual uses the fixed
+    ///   perceptual black (A41 triple); a matrix/TRC or gray side uses
+    ///   its media-relative device-black; anything else —
+    ///   notably v2 LUT sources, where lcms2 runs an unattributed Lab
+    ///   ridge search — is [`ChainError::BpcEstimationUnsupported`].
+    pub fn with_bpc(mut self) -> Result<Chain, ChainError> {
+        if self.intent == Intent::Absolute {
+            return Err(ChainError::BpcNotApplicable);
+        }
+        let src_black = self.estimate_src_black()?;
+        let dst_black = self.estimate_dst_black()?;
+        self.bpc = Some(
+            crate::bpc::BpcScale::new(src_black, dst_black)
+                .ok_or(ChainError::BpcEstimationUnsupported)?,
+        );
+        Ok(self)
+    }
+
+    fn estimate_src_black(&self) -> Result<Xyz, ChainError> {
+        match &self.source {
+            SourceModel::MatrixTrc(m) => Ok(m.device_to_pcs([0.0, 0.0, 0.0])),
+            SourceModel::Gray(g) => Ok(g.device_to_pcs(0.0)),
+            SourceModel::Lut16(_) | SourceModel::LutAb(_) => {
+                if self.src_major >= 4 && self.intent == Intent::Perceptual {
+                    Ok(crate::bpc::PERCEPTUAL_BLACK)
+                } else {
+                    Err(ChainError::BpcEstimationUnsupported)
+                }
+            }
+        }
+    }
+
+    fn estimate_dst_black(&self) -> Result<Xyz, ChainError> {
+        match &self.dst {
+            DestModel::MatrixTrc(m) => Ok(m.device_to_pcs([0.0, 0.0, 0.0])),
+            DestModel::Gray(g) => Ok(g.device_to_pcs(0.0)),
+            DestModel::Lut16B2a(_) | DestModel::LutAb(_) => {
+                if self.dst_major >= 4 && self.intent == Intent::Perceptual {
+                    Ok(crate::bpc::PERCEPTUAL_BLACK)
+                } else {
+                    Err(ChainError::BpcEstimationUnsupported)
+                }
+            }
+        }
     }
 
     /// Destination device channel count (3 for matrix/TRC, the B2A
@@ -365,6 +447,14 @@ impl Chain {
                 }
             },
             SourceModel::Gray(g) => g.device_to_pcs(device[0]),
+        };
+
+        // BPC, when opted in: applied to the unified media-relative
+        // XYZ, before the destination (and never combined with
+        // absolute — with_bpc refuses that at build).
+        let xyz = match &self.bpc {
+            Some(scale) => scale.apply(xyz),
+            None => xyz,
         };
 
         // Absolute: the D.6/D.7 composite on unified XYZ (same rule
@@ -480,6 +570,57 @@ mod tests {
         // M+Y = red-ish: red channel dominant.
         let red = chain.convert(&[0.0, 1.0, 1.0, 0.0]).unwrap();
         assert!(red[0] > red[1] && red[0] > red[2], "red {red:?}");
+    }
+
+    /// BPC on/off differ in the DOCUMENTED DIRECTION through real
+    /// profiles (Pass 5's done-when clause 1, at the chain level):
+    /// sRGB → AdobeRGB with BPC maps source black to the destination's
+    /// black — since both are matrix/TRC with near-zero blacks the
+    /// shift is small but must be nonzero and dark-weighted; and BPC
+    /// at absolute refuses by name.
+    #[test]
+    fn bpc_on_off_differ_in_documented_direction() {
+        let srgb = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+        let argb = r"C:\Windows\System32\spool\drivers\color\AdobeRGB1998.icc";
+        let (Ok(s), Ok(d)) = (std::fs::read(srgb), std::fs::read(argb)) else {
+            eprintln!("skipped: system profiles absent");
+            return;
+        };
+        let src = Profile::parse(&s).unwrap();
+        let dst = Profile::parse(&d).unwrap();
+        let plain = Chain::new(&src, &dst, Intent::MediaRelative).unwrap();
+        let bpc = Chain::new(&src, &dst, Intent::MediaRelative)
+            .unwrap()
+            .with_bpc()
+            .unwrap();
+        let dark_plain = plain.convert(&[0.05, 0.05, 0.05]).unwrap();
+        let dark_bpc = bpc.convert(&[0.05, 0.05, 0.05]).unwrap();
+        let light_plain = plain.convert(&[0.9, 0.9, 0.9]).unwrap();
+        let light_bpc = bpc.convert(&[0.9, 0.9, 0.9]).unwrap();
+        let delta = |a: &[f64], b: &[f64]| {
+            a.iter()
+                .zip(b)
+                .map(|(x, y)| (x - y).abs())
+                .fold(0.0f64, f64::max)
+        };
+        let dark_shift = delta(&dark_plain, &dark_bpc);
+        let light_shift = delta(&light_plain, &light_bpc);
+        assert!(dark_shift > 0.0, "BPC must change dark values");
+        // Dark-weighted: the shift at 5% grey exceeds the shift at
+        // 90% grey (the map converges to identity at white).
+        assert!(
+            dark_shift > light_shift,
+            "dark {dark_shift} vs light {light_shift}"
+        );
+
+        // Absolute + BPC: refused by name.
+        assert_eq!(
+            Chain::new(&src, &dst, Intent::Absolute)
+                .unwrap()
+                .with_bpc()
+                .err(),
+            Some(ChainError::BpcNotApplicable)
+        );
     }
 
     /// Gray THROUGH THE CHAIN (the librarian's audit found both gray
