@@ -572,42 +572,70 @@ mod tests {
         assert!(red[0] > red[1] && red[0] > red[2], "red {red:?}");
     }
 
-    /// BPC on/off differ in the DOCUMENTED DIRECTION through real
-    /// profiles (Pass 5's done-when clause 1, at the chain level):
-    /// sRGB → AdobeRGB with BPC maps source black to the destination's
-    /// black — since both are matrix/TRC with near-zero blacks the
-    /// shift is small but must be nonzero and dark-weighted; and BPC
-    /// at absolute refuses by name.
+    /// BPC on/off differ in the DOCUMENTED DIRECTION (Pass 5's
+    /// done-when clause 1, at the chain level). The FIRST version of
+    /// this test used sRGB→AdobeRGB and asserted a nonzero shift —
+    /// wrong premise: matrix/TRC device blacks are exactly zero on
+    /// both sides, so BPC between them is the IDENTITY (a documented
+    /// consequence of the two-constraint map, asserted below as its
+    /// own fact). The direction test needs DISTINCT blacks: the
+    /// committed v4 fixture at perceptual (fixed A41 black) into
+    /// sRGB (zero black) — the −3.148 L* anchor direction.
     #[test]
     fn bpc_on_off_differ_in_documented_direction() {
+        let fixture = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/synthetic/v4-cmyk-mab-lab.icc"
+        );
         let srgb = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
-        let argb = r"C:\Windows\System32\spool\drivers\color\AdobeRGB1998.icc";
-        let (Ok(s), Ok(d)) = (std::fs::read(srgb), std::fs::read(argb)) else {
-            eprintln!("skipped: system profiles absent");
+        let (Ok(s), Ok(d)) = (std::fs::read(fixture), std::fs::read(srgb)) else {
+            eprintln!("skipped: profile absent");
             return;
         };
         let src = Profile::parse(&s).unwrap();
         let dst = Profile::parse(&d).unwrap();
-        let plain = Chain::new(&src, &dst, Intent::MediaRelative).unwrap();
-        let bpc = Chain::new(&src, &dst, Intent::MediaRelative)
+
+        // Equal-blacks identity: matrix/TRC → matrix/TRC-shaped BPC
+        // between exactly-zero blacks changes nothing. (Both source
+        // and destination here would need matrix/TRC; use sRGB→sRGB.)
+        let plain = Chain::new(&dst, &dst, Intent::MediaRelative).unwrap();
+        let bpc_id = Chain::new(&dst, &dst, Intent::MediaRelative)
             .unwrap()
             .with_bpc()
             .unwrap();
-        let dark_plain = plain.convert(&[0.05, 0.05, 0.05]).unwrap();
-        let dark_bpc = bpc.convert(&[0.05, 0.05, 0.05]).unwrap();
-        let light_plain = plain.convert(&[0.9, 0.9, 0.9]).unwrap();
-        let light_bpc = bpc.convert(&[0.9, 0.9, 0.9]).unwrap();
+        let probe = [0.05, 0.05, 0.05];
+        assert_eq!(
+            plain.convert(&probe).unwrap(),
+            bpc_id.convert(&probe).unwrap(),
+            "equal blacks: BPC is the identity"
+        );
+
+        // Distinct blacks: v4 LUT source at perceptual (fixed A41
+        // black) → sRGB (zero black). Dark values must move, and
+        // move MORE than light values (the map converges to identity
+        // at white).
+        let plain = Chain::new(&src, &dst, Intent::Perceptual).unwrap();
+        let bpc = Chain::new(&src, &dst, Intent::Perceptual)
+            .unwrap()
+            .with_bpc()
+            .unwrap();
         let delta = |a: &[f64], b: &[f64]| {
             a.iter()
                 .zip(b)
                 .map(|(x, y)| (x - y).abs())
                 .fold(0.0f64, f64::max)
         };
-        let dark_shift = delta(&dark_plain, &dark_bpc);
-        let light_shift = delta(&light_plain, &light_bpc);
+        let dark_in = [0.1, 0.1, 0.1, 0.9]; // heavy K: dark
+        let light_in = [0.05, 0.05, 0.05, 0.0]; // near-paper: light
+        let dark_shift = delta(
+            &plain.convert(&dark_in).unwrap(),
+            &bpc.convert(&dark_in).unwrap(),
+        );
+        let light_shift = delta(
+            &plain.convert(&light_in).unwrap(),
+            &bpc.convert(&light_in).unwrap(),
+        );
         assert!(dark_shift > 0.0, "BPC must change dark values");
-        // Dark-weighted: the shift at 5% grey exceeds the shift at
-        // 90% grey (the map converges to identity at white).
         assert!(
             dark_shift > light_shift,
             "dark {dark_shift} vs light {light_shift}"
