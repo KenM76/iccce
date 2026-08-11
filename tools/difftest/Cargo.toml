@@ -1,0 +1,64 @@
+# iccce-difftest — the harness that drives the lcms2 oracle.
+#
+# ---------------------------------------------------------------------------
+# THIS CRATE IS DELIBERATELY NOT A WORKSPACE MEMBER.
+# ---------------------------------------------------------------------------
+#
+# The root `Cargo.toml` lists exactly four members (crates/iccce-*) and does
+# not list this one. Because this directory sits *underneath* the workspace
+# root, cargo would otherwise refuse to build it with
+#
+#     error: current package believes it's in a workspace when it's not
+#
+# The fix is the empty `[workspace]` table below, which declares this package
+# the root of its own (one-package) workspace. That is the standard cargo
+# idiom for an out-of-tree tool, and it is preferred here over adding an
+# `exclude = ["tools/difftest"]` line to the root manifest for two reasons:
+#
+#   1. The root manifest belongs to `icc-engineer`; this file belongs to
+#      `icc-conformance`. Keeping the exclusion local keeps ownership clean.
+#   2. `exclude` is a *negative* statement that a reader has to go and find.
+#      `[workspace]` here is a positive one, at the place it matters.
+#
+# The invariant it protects (tools/difftest/README.md §1): lcms2 is an
+# **oracle, not a dependency**. No crate under `crates/` may acquire an lcms2
+# dependency in `[dependencies]` OR `[dev-dependencies]`. Keeping this crate
+# outside the workspace means `cargo test --workspace` cannot pull it in even
+# by accident, and `cargo tree` on a shipping crate can never reach it.
+#
+# ---------------------------------------------------------------------------
+# DEPENDENCIES: none, and that is a policy, not an accident.
+# ---------------------------------------------------------------------------
+#
+# `[dependencies]` is empty and is intended to stay that way. Everything here
+# is `std`: process spawning, pipe I/O, float parsing. The temptations are
+# serde (for machine-readable output) and a CLI parser; both are declined.
+# Machine-readable output is emitted as TSV by hand (see src/lib.rs
+# §"Machine-readable output"), which needs no escaping rules and no crates.
+#
+# LEGAL.md §1 requires every dependency to be classified before it is added.
+# The cheapest classification is the empty set. If a dependency is ever
+# genuinely needed, classify it in LEGAL.md first and record why std was
+# insufficient here.
+
+[package]
+name = "iccce-difftest"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "Differential-test harness driving the pinned lcms2 oracle. Not shipped; not a workspace member."
+publish = false
+
+# Declares this package the root of its own workspace. See the header.
+[workspace]
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+cast_possible_truncation = "warn"
+cast_precision_loss = "warn"
+cast_sign_loss = "warn"

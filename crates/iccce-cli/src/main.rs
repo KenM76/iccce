@@ -137,6 +137,21 @@ fn cmd_inspect(path: &str) -> ExitCode {
             "tag[{i}]: {} offset={} size={} type={type_sig}",
             t.sig, t.offset, t.size
         );
+        // Pass 2: decoded view. One `tag[i].decoded:` line per known
+        // type, plus one line per content issue — the CLI is the
+        // parser's disclosure surface, so issues print unconditionally.
+        match profile.decode_tag(t) {
+            None => println!("tag[{i}].decoded: (data out of bounds, see malformations)"),
+            Some(Err(e)) => println!("tag[{i}].decoded: REFUSED: {e}"),
+            Some(Ok(decoded)) => {
+                if let Some(line) = summarize(&decoded.data) {
+                    println!("tag[{i}].decoded: {line}");
+                }
+                for issue in &decoded.issues {
+                    println!("tag[{i}].issue: {issue}");
+                }
+            }
+        }
     }
 
     // Disclosure surface: everything the file got wrong, verbatim.
@@ -145,4 +160,72 @@ fn cmd_inspect(path: &str) -> ExitCode {
         println!("malformation: {m}");
     }
     ExitCode::SUCCESS
+}
+
+/// One stable, diffable line per decoded tag. `None` for types not
+/// yet decoded (`TagData::Unknown`) — printing nothing is more honest
+/// than printing "unknown", which would suggest the type was examined
+/// and not recognised rather than not yet implemented.
+fn summarize(data: &iccce_profile::tag_types::TagData) -> Option<String> {
+    use iccce_profile::tag_types::{Curve, TagData};
+    Some(match data {
+        TagData::Curve(Curve::Identity) => "curve identity".to_string(),
+        TagData::Curve(Curve::Gamma(g)) => format!("curve gamma={}", g.to_f64()),
+        TagData::Curve(Curve::Table(t)) => format!("curve table n={}", t.len()),
+        TagData::ParametricCurve(p) => format!(
+            "parametric funcType={} params={}",
+            p.func_type,
+            p.params
+                .iter()
+                .map(|v| format!("{:.6}", v.to_f64()))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        TagData::Text(t) => format!("text {:?}", t.to_string_lossy()),
+        TagData::Mluc(m) => format!(
+            "mluc records={} first={:?}",
+            m.records.len(),
+            m.records
+                .first()
+                .and_then(iccce_profile::tag_types::MlucRecord::to_string_lossy)
+                .unwrap_or_default()
+        ),
+        TagData::TextDescription(d) => format!(
+            "desc ascii={:?}",
+            String::from_utf8_lossy(
+                &d.ascii[..d
+                    .ascii
+                    .iter()
+                    .position(|&b| b == 0)
+                    .unwrap_or(d.ascii.len())]
+            )
+        ),
+        TagData::NamedColor2(n) => format!(
+            "ncl2 colors={} deviceCoords={}",
+            n.entries.len(),
+            n.n_device_coords
+        ),
+        TagData::Xyz(v) => format!(
+            "xyz n={} [{}]",
+            v.len(),
+            v.iter()
+                .map(|x| format!(
+                    "{:.4} {:.4} {:.4}",
+                    x.x.to_f64(),
+                    x.y.to_f64(),
+                    x.z.to_f64()
+                ))
+                .collect::<Vec<_>>()
+                .join("; ")
+        ),
+        TagData::S15Fixed16Array(v) => format!(
+            "sf32 n={} [{}]",
+            v.len(),
+            v.iter()
+                .map(|x| format!("{:.6}", x.to_f64()))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        TagData::Unknown => return None,
+    })
 }

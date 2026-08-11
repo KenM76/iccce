@@ -43,6 +43,7 @@ pub mod diag;
 pub mod header;
 pub mod num;
 pub mod tag_table;
+pub mod tag_types;
 
 pub use diag::{Malformation, ParseError};
 pub use header::{Header, ProfileVersion};
@@ -141,6 +142,17 @@ impl Profile {
         let start = entry.offset as usize;
         let end = start.checked_add(entry.size as usize)?;
         self.bytes.get(start..end)
+    }
+
+    /// Decode one tag's data into its typed representation (Pass 2).
+    /// `None` when the entry's bytes are out of bounds (that fact is
+    /// already a reported [`Malformation`] on the profile); `Some(Err)`
+    /// when the bytes exist but the layout is undecodable.
+    pub fn decode_tag(
+        &self,
+        entry: &TagEntry,
+    ) -> Option<Result<tag_types::DecodedTag, tag_types::TagDecodeError>> {
+        self.tag_data(entry).map(tag_types::decode)
     }
 }
 

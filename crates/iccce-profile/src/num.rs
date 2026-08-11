@@ -69,6 +69,27 @@ impl S15Fixed16 {
     }
 }
 
+/// `u8Fixed8Number`: unsigned 16-bit, 8 integer + 8 fraction bits,
+/// scale 256, range 0.0…255.996 (`icc__s__number_encodings.md`,
+/// cross-verified).
+///
+/// Sole ICC.1 use: `curveType`'s `count == 1` gamma shorthand — where
+/// misreading it as a table sample "builds a curve that crushes
+/// everything to black" (`icc__type__curve_parametric.md`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct U8Fixed8(pub u16);
+
+impl U8Fixed8 {
+    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+        u16_be(bytes, off).map(Self)
+    }
+
+    /// Exact conversion: `raw / 256.0`.
+    pub fn to_f64(self) -> f64 {
+        f64::from(self.0) / 256.0
+    }
+}
+
 /// A 4-byte signature: `uInt32`, conventionally four printable ASCII
 /// characters, MSB first (`icc__s__number_encodings.md`).
 ///
