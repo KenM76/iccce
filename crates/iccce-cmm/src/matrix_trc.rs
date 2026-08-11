@@ -50,7 +50,47 @@ mod tag {
     pub const R_TRC: Signature = Signature(0x7254_5243); // 'rTRC'
     pub const G_TRC: Signature = Signature(0x6754_5243); // 'gTRC'
     pub const B_TRC: Signature = Signature(0x6254_5243); // 'bTRC'
+    pub const WTPT: Signature = Signature(0x7774_7074); // 'wtpt'
     pub const PCS_XYZ: Signature = Signature(0x5859_5A20); // 'XYZ '
+}
+
+/// The four ICC rendering intents, as this transform serves them.
+///
+/// On a matrix/TRC profile the policy is SOURCED, not invented:
+/// ICC.1:2022 Table 25 (via `icc__s__rendering_intents.md` §4) marks
+/// the TRC/matrix model column "Colorimetric" — **perceptual and
+/// saturation are served by the colorimetric model, and ICC.1
+/// specifies no perceptual adjustment for this profile shape.** The
+/// fallback order behind that is 8.10.2 a)–d), `shall`-level.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Intent {
+    /// Served by the media-relative colorimetric model (Table 25).
+    Perceptual,
+    MediaRelative,
+    /// Served by the media-relative colorimetric model (Table 25).
+    Saturation,
+    /// Media-relative plus the white-point scaling below.
+    ///
+    /// Formula, VERBATIM ICC.1:2022 Annex D.6.1 (informative; the
+    /// normative twin is 6.3.2.2 Eq (1)–(6), reconstructed in the
+    /// corpus): `Xa = (Xmw / Xi) Xr` and `Xr = (Xi / Xmw) Xa` —
+    /// a per-component diagonal scale, NOT a matrix. `Xmw` =
+    /// mediaWhitePointTag as stored; `Xi` = the PCS white
+    /// (0.9642/1.0000/0.8249, Table 14). `chad` is NOT un-applied
+    /// (6.2.1 NOTE 1 / E.4: it is a provenance record).
+    ///
+    /// ★ Direction, per corpus spec-defect §12: clause 6.2.3's prose
+    /// states the composite ratio BACKWARDS; the equations govern.
+    /// Composite src→dst scale is `mw_src / mw_dst` (tested below
+    /// against the corpus's own printed intermediates).
+    ///
+    /// Known consequences, sourced: for a CONFORMING v4 display
+    /// profile `wtpt` shall equal the PCS illuminant (9.2.36), so
+    /// absolute ≡ media-relative — not a bug. For v2 profiles the
+    /// meaning of a non-D50 `wtpt` is corpus A4b (UNVERIFIED —
+    /// implementation consensus says use it as stored, which is what
+    /// this code does with the fact recorded here).
+    Absolute,
 }
 
 /// Why a profile could not become a matrix/TRC model, or a conversion
@@ -76,6 +116,11 @@ pub enum ModelError {
     SingularMatrix,
     /// A curve failed (constant, non-monotonic, unsupported inverse…).
     Curve(CurveError),
+    /// Absolute intent requested but the profile carries no usable
+    /// `wtpt` (mediaWhitePointTag) — the D.6/D.7 scaling has no input.
+    /// Refused, not defaulted: substituting Xi would silently make
+    /// absolute ≡ relative for a profile where that may be false.
+    AbsoluteNeedsWtpt,
 }
 
 impl std::fmt::Display for ModelError {
@@ -92,6 +137,10 @@ impl std::fmt::Display for ModelError {
             Self::TagUndecodable { sig, reason } => write!(f, "tag {sig} undecodable: {reason}"),
             Self::SingularMatrix => write!(f, "colorant matrix is singular"),
             Self::Curve(e) => write!(f, "curve: {e}"),
+            Self::AbsoluteNeedsWtpt => write!(
+                f,
+                "absolute intent requires a mediaWhitePointTag; refused rather than defaulted"
+            ),
         }
     }
 }
@@ -111,6 +160,10 @@ pub struct MatrixTrc {
     /// forward values — same posture as the Bradford inverse).
     matrix_inv: Mat3,
     pub trc: [Trc; 3],
+    /// `wtpt` (mediaWhitePointTag) as stored, when present and
+    /// well-shaped. Used ONLY by the absolute intent (D.6/D.7);
+    /// `None` is fine for every other intent, hence not a build error.
+    pub media_white: Option<Xyz>,
 }
 
 impl MatrixTrc {
@@ -153,10 +206,25 @@ impl MatrixTrc {
         };
         let trc = [curve(tag::R_TRC)?, curve(tag::G_TRC)?, curve(tag::B_TRC)?];
 
+        // wtpt is optional at build time (only absolute needs it) and
+        // tolerant of absence/misshape — but a present, well-shaped
+        // one is captured as stored (A4b: no adaptation second-guessed).
+        let media_white = find_first(profile, tag::WTPT).ok().and_then(|entry| {
+            match decoded(profile, tag::WTPT, entry) {
+                Ok(TagData::Xyz(v)) if v.len() == 1 => Some(Xyz {
+                    x: v[0].x.to_f64(),
+                    y: v[0].y.to_f64(),
+                    z: v[0].z.to_f64(),
+                }),
+                _ => None,
+            }
+        });
+
         Ok(MatrixTrc {
             matrix,
             matrix_inv,
             trc,
+            media_white,
         })
     }
 
@@ -214,7 +282,53 @@ impl MatrixTrcTransform {
     /// Convert one RGB triple, source device space → destination
     /// device space, media-relative.
     pub fn convert(&self, rgb: [f64; 3]) -> Result<[f64; 3], ModelError> {
-        self.dst.pcs_to_device(self.src.device_to_pcs(rgb))
+        self.convert_with_intent(rgb, Intent::MediaRelative)
+    }
+
+    /// Convert at a named intent. Perceptual and saturation are served
+    /// by the colorimetric model — the SOURCED Table 25 policy for
+    /// matrix/TRC profiles, not a shortcut (see [`Intent`]).
+    ///
+    /// Absolute (D.6/D.7): source PCS is scaled up by
+    /// `mw_src / Xi`, destination inverse scales down by
+    /// `Xi / mw_dst`; the composite is `mw_src / mw_dst` per
+    /// component — the corrected direction (corpus spec-defect §12:
+    /// clause 6.2.3's prose has it backwards; the equations govern).
+    pub fn convert_with_intent(
+        &self,
+        rgb: [f64; 3],
+        intent: Intent,
+    ) -> Result<[f64; 3], ModelError> {
+        let pcs = self.src.device_to_pcs(rgb);
+        let pcs = match intent {
+            Intent::Perceptual | Intent::MediaRelative | Intent::Saturation => pcs,
+            Intent::Absolute => {
+                // Xi: the PCS white, ICC's 4-figure triple (Table 14;
+                // same constant as iccce_color::D50, used everywhere
+                // per the mixing-precision rule).
+                let mw_src = self.src.media_white.ok_or(ModelError::AbsoluteNeedsWtpt)?;
+                let mw_dst = self.dst.media_white.ok_or(ModelError::AbsoluteNeedsWtpt)?;
+                // A zero/negative media-white component makes the
+                // scale meaningless — same refusal as absence (a
+                // degenerate wtpt IS an unusable wtpt).
+                if mw_dst.x <= 0.0 || mw_dst.y <= 0.0 || mw_dst.z <= 0.0 {
+                    return Err(ModelError::AbsoluteNeedsWtpt);
+                }
+                // Xa = (mw_src / Xi) · Xr   (D.7, source side)
+                // Xr' = (Xi / mw_dst) · Xa  (D.6, destination side)
+                // Xi cancels; composite per component: mw_src / mw_dst.
+                // Ratio computed FIRST: equal whites give exactly 1.0
+                // (IEEE x/x), making the sourced 9.2.36 consequence
+                // (absolute ≡ relative for conforming v4 displays)
+                // bit-exact rather than within-rounding.
+                Xyz {
+                    x: pcs.x * (mw_src.x / mw_dst.x),
+                    y: pcs.y * (mw_src.y / mw_dst.y),
+                    z: pcs.z * (mw_src.z / mw_dst.z),
+                }
+            }
+        };
+        self.dst.pcs_to_device(pcs)
     }
 }
 
@@ -258,6 +372,7 @@ mod tests {
             matrix,
             matrix_inv: matrix.inverse().unwrap(),
             trc: [Trc::Gamma(gamma), Trc::Gamma(gamma), Trc::Gamma(gamma)],
+            media_white: None,
         }
     }
 
@@ -357,6 +472,94 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Build a transform from two synthetic models with given media
+    /// whites, identity TRCs, well-conditioned identical matrices.
+    fn transform_with_whites(mw_src: Option<Xyz>, mw_dst: Option<Xyz>) -> MatrixTrcTransform {
+        let mut src = model(1.0);
+        let mut dst = model(1.0);
+        src.trc = [Trc::Identity, Trc::Identity, Trc::Identity];
+        dst.trc = [Trc::Identity, Trc::Identity, Trc::Identity];
+        src.media_white = mw_src;
+        dst.media_white = mw_dst;
+        MatrixTrcTransform { src, dst }
+    }
+
+    /// Absolute composite direction: the scale is mw_src / mw_dst —
+    /// verified against the CORPUS'S OWN printed intermediates for
+    /// spec-defect §12 (0.7067/0.85 = 0.831412; the backwards reading
+    /// 0.85/0.7067 = 1.202773 is asserted absent). Expectation source:
+    /// `icc__s__rendering_intents.md` §3 / spec_defects §12 arithmetic
+    /// — a cross-check against the corpus derivation, not this code.
+    #[test]
+    fn absolute_composite_direction_matches_corpus_derivation() {
+        let mw = |v: f64| Xyz { x: v, y: v, z: v };
+        let t = transform_with_whites(Some(mw(0.7067)), Some(mw(0.85)));
+        // Same matrices and identity TRCs: relative conversion is the
+        // identity, so the absolute output/input ratio IS the
+        // composite scale. Probe mid-range linear value.
+        let rel = t
+            .convert_with_intent([0.4, 0.4, 0.4], Intent::MediaRelative)
+            .unwrap();
+        let abs = t
+            .convert_with_intent([0.4, 0.4, 0.4], Intent::Absolute)
+            .unwrap();
+        let ratio = abs[1] / rel[1];
+        assert!((ratio - 0.831412).abs() < 5e-6, "ratio {ratio}");
+        assert!((ratio - 1.202773).abs() > 0.3, "backwards direction!");
+    }
+
+    /// Sourced consequence (9.2.36): a conforming v4 display profile
+    /// has wtpt == the PCS illuminant, making absolute ≡ relative
+    /// EXACTLY — not a bug. Arithmetic identity given equal whites.
+    #[test]
+    fn absolute_equals_relative_when_wtpt_is_pcs_white() {
+        let t = transform_with_whites(Some(iccce_color::D50), Some(iccce_color::D50));
+        for &rgb in &[[0.1, 0.5, 0.9], [1.0, 1.0, 1.0]] {
+            let rel = t.convert_with_intent(rgb, Intent::MediaRelative).unwrap();
+            let abs = t.convert_with_intent(rgb, Intent::Absolute).unwrap();
+            assert_eq!(rel, abs);
+        }
+    }
+
+    /// Absolute without wtpt refuses by name; a degenerate wtpt is
+    /// equally unusable.
+    #[test]
+    fn absolute_without_wtpt_refused() {
+        let t = transform_with_whites(None, Some(iccce_color::D50));
+        assert_eq!(
+            t.convert_with_intent([0.5, 0.5, 0.5], Intent::Absolute),
+            Err(ModelError::AbsoluteNeedsWtpt)
+        );
+        let degenerate = transform_with_whites(
+            Some(iccce_color::D50),
+            Some(Xyz {
+                x: 0.9,
+                y: 0.0,
+                z: 0.8,
+            }),
+        );
+        assert_eq!(
+            degenerate.convert_with_intent([0.5, 0.5, 0.5], Intent::Absolute),
+            Err(ModelError::AbsoluteNeedsWtpt)
+        );
+    }
+
+    /// Table 25 policy: perceptual and saturation on matrix/TRC are
+    /// served by the colorimetric model — identical outputs, sourced
+    /// (`icc__s__rendering_intents.md` §4), not a shortcut.
+    #[test]
+    fn perceptual_and_saturation_serve_colorimetric_on_matrix_trc() {
+        let m = model(2.2);
+        let t = MatrixTrcTransform {
+            src: m.clone(),
+            dst: m,
+        };
+        let rgb = [0.2, 0.6, 0.8];
+        let rel = t.convert_with_intent(rgb, Intent::MediaRelative).unwrap();
+        assert_eq!(t.convert_with_intent(rgb, Intent::Perceptual).unwrap(), rel);
+        assert_eq!(t.convert_with_intent(rgb, Intent::Saturation).unwrap(), rel);
     }
 
     /// A Lab-PCS profile is refused BY NAME for this model (F.3:
