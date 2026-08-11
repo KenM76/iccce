@@ -35,5 +35,10 @@
 //! rendering intents Pass 4; BPC Pass 5; compilation Pass 6
 //! (`docs/ROADMAP.md`).
 
-// Passes 3–7 will populate: plan, matrix_trc, lut, intent, bpc, compiled,
-// named_color.
+pub mod curve;
+pub mod matrix_trc;
+
+pub use curve::{CurveError, Trc};
+pub use matrix_trc::{MatrixTrc, MatrixTrcTransform, ModelError};
+
+// Passes 4–7 will populate: lut, intent, bpc, compiled, named_color.
