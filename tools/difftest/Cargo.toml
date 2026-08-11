@@ -50,6 +50,14 @@ license = "MIT"
 description = "Differential-test harness driving the pinned lcms2 oracle. Not shipped; not a workspace member."
 publish = false
 
+# Two binaries live here: the runner (`iccce-difftest`) and the DL-011
+# experiment (`legacy_lab_probe`, README §12). Without this key a bare
+# `cargo run` fails with "could not determine which binary to run", and README
+# §11.1 documents `cargo run` as the way to run the checks. The runner is the
+# default; the experiment is deliberately explicit, because it is a one-off
+# investigation rather than part of the suite.
+default-run = "iccce-difftest"
+
 # Declares this package the root of its own workspace. See the header.
 [workspace]
 

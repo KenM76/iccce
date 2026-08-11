@@ -1,9 +1,15 @@
 # `tools/difftest` — the differential oracle
 
-**Status: Pass 0, partially complete.** The oracle is pinned, built and
-demonstrated to answer questions. The Rust harness that will drive it is
-**not written yet**; this directory currently contains the pin, the
-fetch/build scripts, and the recorded evidence that they work.
+**Status: Pass 0 harness exists, 2026-08-11.** The oracle is pinned, built
+and demonstrated to answer questions; a minimal Rust harness now drives it
+programmatically (**§11**), and the first designed experiment has been run
+against it (**§12**) — settling the question `ARCHITECTURE.md` DL-011 left
+open and turning up a second, unrelated version-keyed divergence on the way.
+
+**One check is registered and it compares lcms2 against lcms2.** Nothing in
+this directory has yet compared anything to `iccce`, because `iccce` has no
+transform to compare (Pass 3). Said plainly here so that a green run is not
+mistaken for coverage.
 
 ---
 
@@ -140,6 +146,15 @@ tools/difftest/
   fetch-lcms2.sh     clone at the pin, VERIFY THE HASH, or fail
   build-lcms2.ps1    Windows / MSVC build   (exercised — see §6)
   build-lcms2.sh     POSIX build            (NOT yet exercised — see §7)
+  Cargo.toml         the harness crate. NOT a workspace member — see §11
+  src/
+    lib.rs           drive transicc, parse it, grade the answer
+    main.rs          the runner; registers the checks (§11)
+    bin/
+      legacy_lab_probe.rs   the DL-011 experiment (§12) — also authors the
+                            synthetic probe profiles byte by byte
+  out/               git-ignored; generated probe profiles land here
+  target/            git-ignored
   vendor/            git-ignored
     lcms2/           the clone
     build-msvc/      Windows build output; transicc.exe lives here
@@ -286,7 +301,7 @@ printf '255\n255\n255\n' | ./transicc.exe \
     -o "*Lab" -t1 -n
 ```
 
-Output, verbatim:
+Output, verbatim (as it appears on a terminal, both streams together):
 
 ```
 LittleCMS ColorSpace conversion calculator - 5.1 [LittleCMS 2.19]
@@ -294,9 +309,25 @@ Copyright (c) 1998-2026 Marti Maria Saguer. See COPYING file for details.
 99.9988 0.0188 -0.0173
 ```
 
-Note the two-line banner on **stdout**, before the numbers. Any harness
-parsing this must skip it — take the last non-empty line, do not assume
-line 1.
+> **⚠ Correction, 2026-08-11 — the banner is on STDERR, not stdout.**
+> The sentence that stood here said the two-line banner goes to stdout. It
+> does not. Redirecting the streams to separate files shows stdout carries
+> **only** the data line (with a trailing space and a CRLF):
+>
+> ```sh
+> printf '255\n255\n255\n' | ./transicc.exe -i"…" -o"*Lab" -t1 -n -c0 \
+>     >stdout.txt 2>stderr.txt
+> # stdout.txt: "99.9988 0.0188 -0.0173 \r\n"
+> # stderr.txt: the two banner lines
+> ```
+>
+> The original claim came from watching both streams interleaved in one
+> terminal, which is exactly the observation a harness makes impossible to
+> keep making. This is small, and it is the first thing the harness found.
+>
+> The advice that followed it is still right, for a different reason: **take
+> the last non-empty line of stdout**, never line 1. That is correct under
+> either arrangement and costs nothing, so `parse_values` does it.
 
 ### 8.3 The full set, and why these numbers are recognisable
 
@@ -370,11 +401,22 @@ someone an hour.
 
 - **Usage is printed by running with no arguments.** `-h` is *not* a
   valid flag — `transicc -h` exits non-zero with
-  `[transicc fatal error]: Unknown option`.
+  `[transicc fatal error]: Unknown option`. Note that running with **no**
+  arguments **exits 0** (measured 2026-08-11), so exit status alone cannot
+  distinguish "printed usage" from "converted something"; only a parsable
+  stdout line can.
 - **Flags take their argument attached**, with no space: `-i<profile>`,
   `-t<n>`, `-v<0..3>`. `-i profile.icc` is not the same thing.
-- **The two-line banner goes to stdout**, mixed in with the data. Parse
-  the last non-empty line.
+- **The two-line banner goes to STDERR** — corrected 2026-08-11, see the
+  boxed note in §8.2. stdout carries only the data line. Parse the last
+  non-empty line of stdout anyway.
+- **`-o*Lab2` does NOT expose the legacy encoding.** Measured 2026-08-11:
+  `*Lab`, `*Lab4` and `*Lab2` all print the identical triplet for the same
+  input, because `transicc`'s float output is in `L*`/`a*`/`b*` units and
+  lcms2 normalises across the built-in Lab profile's own encoding. So the
+  obvious "compare `*Lab2` against `*Lab4`" experiment silently measures
+  nothing. The v2/v4 encoding question has to be asked through a *profile's
+  own tag*, which is what §12 does.
 - **Input is one component per line on stdin**, not a space-separated
   triplet on one line.
 - **Default number range is device-native**, i.e. 0–255 for 8-bit RGB and
@@ -403,12 +445,290 @@ someone an hour.
 
 ## 10. Not done yet
 
-- The Rust difftest harness. Nothing drives `transicc` programmatically.
 - CGATS file I/O — `transicc` accepts `[CGATS input] [CGATS output]`
   positionally, which is the efficient way to push a whole corpus through
   in one process rather than one triplet at a time. Worth using once the
   corpus exists.
-- Linux build, and therefore Linux CI (§7).
-- The fixture corpus (`tools/gen-profiles`, `fixtures/synthetic`).
-- Any actual tolerance. `docs/TOLERANCES.md` is a skeleton with one
-  provisional anchor; nothing here has been compared to anything yet.
+- Linux build, and therefore Linux CI (§7). The harness runs on Linux —
+  it is `std`-only — but with no oracle it exits **3 (nothing ran)**.
+- The general fixture corpus (`tools/gen-profiles`, `fixtures/synthetic`).
+  §12's probe writes profiles byte by byte inside the harness because Pass
+  2's generator does not exist; when it does, port the probe onto it.
+- **Any comparison against `iccce`.** Every number here is lcms2's.
+- ΔE metrics in the harness (§11 explains why absolute-only, for now).
+
+---
+
+## 11. The harness — what it is and what it refuses to do
+
+`Cargo.toml` + `src/` is a **standalone crate, deliberately outside the
+workspace**. The root manifest lists four members and not this one;
+because this directory sits under the workspace root, cargo would refuse
+to build it without the empty `[workspace]` table in its manifest, which
+is the standard idiom and is preferred here to an `exclude` line in the
+root manifest (which belongs to a different agent). The invariant it
+protects is §1's: **no shipping crate may reach lcms2, even through
+`cargo tree`.**
+
+**Zero dependencies, as policy.** Everything is `std`. The temptations
+declined were `serde` (machine-readable output is hand-emitted TSV) and a
+CLI parser. `LEGAL.md` §1 requires classifying every dependency; the
+cheapest classification is the empty set.
+
+### 11.1 Run it
+
+```sh
+cd tools/difftest
+cargo test                      # the harness's own unit tests (12)
+cargo run                       # the registered checks
+cargo run --bin legacy_lab_probe  # the §12 experiment
+```
+
+Output is TSV:
+
+```
+check<TAB>id<TAB>status<TAB>kind<TAB>metric<TAB>tolerance<TAB>observed<TAB>detail
+summary<TAB>pass=N<TAB>fail=N<TAB>skip=N<TAB>error=N
+```
+
+| exit | meaning |
+|---|---|
+| 0 | at least one check ran and everything that ran passed |
+| 1 | a failure |
+| 2 | a harness/oracle error |
+| 3 | **nothing ran** — everything skipped, or no oracle on this machine |
+
+**3 is not 0, and that is the most important line in this section.** A
+run with no oracle skips every check; reporting that as success is how a
+suite quietly stops testing anything. `SKIP` and `ERROR` are likewise
+kept distinct from `FAIL`, and each carries its reason in `detail`.
+
+### 11.2 What the types make impossible
+
+Design choices worth stating, because each one closes a way this harness
+could have produced a claim it does not support:
+
+- **`Tolerance` cannot be built from a bare number.** It carries a `why`
+  string (`CLAUDE.md` rule 5).
+- **Every check states its `Kind`** — ground truth / cross-check /
+  self-consistency / **oracle-reproducibility**. The last is new and is
+  the honest label for "both sides are lcms2".
+- **`Intent` has exactly the four ICC intents.** lcms2's 10–15 are its
+  own black-preserving extensions; they cannot be expressed here, so no
+  result from this harness can accidentally be described as conformance
+  to something ICC.1 does not define.
+- **`Precalc` and `Bpc` are required fields**, never defaulted. `-c`
+  changes the answer (§9), and — §12 — lcms2 turns BPC on by itself for
+  v4 profiles at perceptual and saturation, so a record that does not say
+  what was asked for cannot be interpreted later.
+- **No ΔE.** The only metric is `abs-max-component`. Adding ΔE would mean
+  either depending on `iccce-color` (grading iccce with iccce's own
+  arithmetic — a coupling that must be a documented decision, not a
+  convenience) or writing a second ΔE2000 to get subtly wrong. The
+  comparisons available today are exact-encoding questions, for which
+  `ARCHITECTURE.md` DL-005 says ΔE is the wrong instrument anyway.
+
+### 11.3 The registered check, and exactly what it proves
+
+| | |
+|---|---|
+| **id** | `smoke/srgb-white-to-lab` |
+| **What** | system sRGB → `*Lab4`, media-relative colorimetric, `-c0`, input `255 255 255` |
+| **Expected** | `99.9988  0.0188  −0.0173` — from §8.2, recorded 2026-08-11 from this same pinned oracle |
+| **Kind** | **oracle-reproducibility** — *both sides are lcms2* |
+| **Metric / tolerance** | `abs-max-component` / **1×10⁻⁴** |
+| **Why that tolerance** | `transicc -n` prints four decimals and the recorded expectation is itself a four-decimal print, so agreement cannot be asserted more tightly than the reference is printed. **Arithmetic-agreement, not perceptual** — the 1.0 ΔE2000 anchor is irrelevant to it. For scale: the v2/v4 encoding error this project cares most about moves `L*` at white by ≈0.39, some 3900× this bound. |
+| **Result, 2026-08-11** | **PASS, observed deviation 0.000000e0** (exact agreement) on Windows 11 Pro 10.0.26200, MSVC, `LittleCMS 2.19` |
+
+Two things it does **not** establish, stated because a green line invites
+the opposite reading: it says nothing about whether lcms2 is right, and
+nothing about `iccce`, which is not in the loop. **These numbers must
+never be transplanted into an `iccce-color` or `iccce-cmm` unit test as
+expected values** — at that moment the claim would silently change from
+"the oracle still answers the same" to "iccce is correct" (`CLAUDE.md`
+rule 3).
+
+Note also that §8.2 recorded its numbers with no `-c` flag while the
+check passes `-c0`. Verified 2026-08-11: all of (no flag), `-c0`, `-c1`,
+`-c2`, `-c3` print the identical triplet for this transform, so the
+substitution does not change what is being reproduced.
+
+The check **skips** where the system sRGB profile is absent — category
+(c) under `LEGAL.md` §3, so on Linux CI this runner exits 3.
+
+---
+
+## 12. ★ The DL-011 experiment — measured, 2026-08-11
+
+`ARCHITECTURE.md` **DL-011** decided that the legacy 16-bit PCSLAB
+encoding keys off the **tag type** (`lut16Type`, `namedColor2Type`) and
+never off `header.version`, per ICC.1:2022 **6.3.4.2 NOTE 3** and
+**10.10**. It recorded, from the corpus, that **lcms2 keys the same
+decision on the profile version** — and flagged that claim as
+**unverified**, owing `icc-conformance` a behavioural difftest.
+
+**That difftest has now been run. The corpus's claim about lcms2 is
+wrong.**
+
+### 12.1 What was done
+
+`src/bin/legacy_lab_probe.rs` authors **four synthetic profiles byte by
+byte** (category (a), `LEGAL.md` §3) — `scnr` class, RGB device space,
+**Lab PCS**, whose only transform tag is an `A2B0` of type **`mft2`
+(`lut16Type`)** holding a 2×2×2 CLUT with chosen corner values:
+
+| file | header version |
+|---|---|
+| `probe_v2_1.icc` | `0x02100000` |
+| `probe_v4_3.icc` | `0x04300000` |
+| `probe_v4_4.icc` | `0x04400000` |
+| `probe_v4_3_mluc.icc` | `0x04300000`, with v4 `mluc` metadata |
+
+**The first three are byte-identical except for the version word**, and
+the program asserts that at run time (`byte-diff … offsets [8, 9]`)
+before believing any result. The fourth exists only to rule out the
+objection that the other three carry v2-era `desc`/`text` metadata in a
+v4 profile.
+
+Probes land exactly on CLUT corners, so nothing is interpolated; `-c0`
+stops lcms2 flattening the pipeline. The two candidate decodings are
+separated by ≥0.196 in `L*` and ≈1.09 in `a*` at the probes used, against
+a 16-bit quantisation floor of 0.0015 — the attribution bound is 0.01,
+about 7× the noise and 20× below the smallest separation, and an
+observation matching neither is reported as inconclusive rather than
+rounded to the nearer.
+
+### 12.2 The result
+
+At **media-relative colorimetric**, every profile — v2.1, v4.3, v4.4 and
+the fully-v4 `mluc` variant — decodes **LEGACY**:
+
+| probe | CLUT (L,a,b) | legacy predicts | general predicts | **lcms2 gave** |
+|---|---|---|---|---|
+| P1 | `FF00 8000 8000` | 100.0000, 0.0, 0.0 | 99.6109, −0.4980, −0.4980 | **100.0000, 0.0, 0.0** |
+| P2 | `0000 8000 8000` | 0.0, 0.0, 0.0 | 0.0, −0.4980, −0.4980 | **0.0, 0.0, 0.0** |
+| P3 | `8000 8000 8000` | 50.1961, 0.0, 0.0 | 50.0008, −0.4980, −0.4980 | **50.1961, 0.0, 0.0** |
+| P4 | `FF00 FF00 0000` | 100.0, 127.0, −128.0 | 99.6109, 126.0078, −128.0 | **100.0, 127.0, −128.0** |
+
+Worst deviation from the legacy prediction across all probes and all four
+profiles: **2×10⁻⁵** (`transicc`'s printing precision). The control — the
+v2.1 profile, where both rules agree — reads legacy, so the instrument
+can detect the effect it is looking for.
+
+**Corroborated by reading the pinned source**, which is where the
+mechanism is visible rather than inferred. `src/cmsio1.c`,
+`_cmsReadInputLUT`:
+
+```c
+// After reading it, we have now info about the original type
+OriginalType =  _cmsGetTagTrueType(hProfile, tag16);
+…
+// We need to adjust data only for Lab16 on output
+if (OriginalType != cmsSigLut16Type || cmsGetPCS(hProfile) != cmsSigLabData)
+    return Lut;
+…
+// Add a matrix for conversion V2 to V4 Lab PCS
+if (!cmsPipelineInsertStage(Lut, cmsAT_END, _cmsStageAllocLabV2ToV4(ContextID)))
+```
+
+**No version test.** The same tag-type test appears in
+`_cmsReadOutputLUT` (line ~627) and `_cmsReadDevicelinkLUT` (line ~782),
+and the `namedColor2Type` paths insert the stage unconditionally. The
+scale factor is `65535.0/65280.0` (`cmslut.c`
+`_cmsStageAllocLabV2ToV4`) — the same `1.00390625` DL-005 names.
+`cmsGetEncodedICCversion` appears in `cmsio1.c` only for the media white
+point and `chad` fix-ups on **v2 display** profiles.
+
+### 12.3 What this changes
+
+- **DL-011's rule is unchanged** — it comes from the specification text
+  and never depended on lcms2. It is now *also* what the field's dominant
+  CMM does.
+- **The predicted divergence does not exist on this pin.** DL-011 says
+  *"iccce follows the specification text and must log the divergence at
+  runtime rather than silently differing from the field's dominant CMM."*
+  On lcms2 2.19.1 there is nothing to log for `mft2`-in-v4: the two
+  agree. Pass 4 should still implement the tag-type selector, and the
+  runtime warning should be reconsidered rather than written on the
+  strength of a divergence that has now been measured as absent.
+- **The corpus's lcms2 claim needs retracting.** It named
+  `cmsLabEncoded2FloatV2` and `_cmsReadInputLUT` "inserting V2→V4 Lab
+  stages based on `cmsGetEncodedICCversion`". At this pin,
+  `cmsLabEncoded2FloatV2` is called from `cmspack.c` only — a *pixel
+  formatter* for callers who ask for a v2-encoded Lab buffer — and never
+  from profile reading. A dispatch to `icc-spec-librarian` is owed.
+- **Scope, stated honestly.** One tag (`A2B0`), one tag type (`mft2`),
+  one direction (device→PCS), one PCS (Lab), two intents, four synthetic
+  profiles, one platform, one lcms2 build. **`ncl2` (`namedColor2Type`)
+  was not tested behaviourally** — the source reading says it always gets
+  the legacy stage, which is agreement, but that is source reading, not
+  measurement. B2A (`_cmsReadOutputLUT`) was not tested behaviourally
+  either.
+
+### 12.4 ★ The second finding — lcms2 forces BPC on v4 perceptual and saturation
+
+The first run used both intent 0 and intent 1. At intent 0 the **v4**
+profiles matched *neither* hypothesis: black came back at `L* = −3.1482`
+instead of 0, while the byte-identical v2 profile was unaffected. That is
+**not** the Lab encoding. `src/cmscnvrt.c`, `_cmsLinkProfiles`:
+
+```c
+// Check if black point is really needed or allowed. Note that
+// following Adobe's document:
+// BPC does not apply to devicelink profiles, nor to abs colorimetric,
+// and applies always on V4 perceptual and saturation.
+if (TheIntents[i] == INTENT_PERCEPTUAL || TheIntents[i] == INTENT_SATURATION) {
+    // Force BPC for V4 profiles in perceptual and saturation
+    if (cmsGetEncodedICCversion(hProfiles[i]) >= 0x4000000)
+        BPC[i] = TRUE;
+}
+```
+
+with the black point taken from a fixed constant in that case
+(`cmssamp.c`: *"v4 + perceptual & saturation intents does have its own
+black point… Black point tag is deprecated in V4"*,
+`cmsPERCEPTUAL_BLACK_X/Y/Z` = 0.003 36 / 0.003 473 1 / 0.002 87).
+
+**So lcms2 silently enables black point compensation for v4 profiles at
+perceptual and saturation, on the authority of an Adobe document rather
+than ICC.1** — the user asked for neither.
+
+This was **confirmed quantitatively, not assumed**. Transcribing lcms2's
+own `ComputeBlackPointCompensation` (`a = (bpout − D50)/(bpin − D50)`,
+`b = −D50·(bpout − bpin)/(bpin − D50)`, per channel) and running the
+legacy-decoded `L*` through it predicts the observation:
+
+| probe | `L*` before BPC | predicted after | observed | Δ |
+|---|---|---|---|---|
+| P1 | 100.0000 | 100.0000 | 100.0000 | 0 |
+| P2 | 0.0000 | **−3.1482** | **−3.1482** | 3×10⁻⁵ |
+| P3 | 50.1961 | 49.8574 | 49.8574 | 3×10⁻⁵ |
+| P4 | 100.0000 | 100.0000 | 100.0000 | 0 |
+
+An earlier attempt to confirm it by re-running the v2 profile with `-b`
+**failed to decide**, and is kept in the program's output labelled as
+such: `-b` is a no-op on that fixture because `cmsDetectBlackPoint`
+reaches the fixed perceptual constant only through the same
+`>= 0x4000000` guard, and with source and destination black points equal
+lcms2 skips the stage. Two arms that differ in more than the variable
+cannot settle anything — worth recording, because a reader repeating it
+would otherwise read the null result as a refutation.
+
+**Consequences, which are larger than the finding that prompted them:**
+
+1. **Pass 4 will disagree with lcms2 at perceptual and saturation on
+   every v4 profile**, unless iccce copies a behaviour ICC.1 does not
+   require. That disagreement is ≈3.15 `L*` at black — nothing like
+   sub-perceptual.
+2. **Pass 5 (BPC) inherits it.** Any lcms2 cross-check at perceptual or
+   saturation against a v4 profile is measuring BPC whether or not `-b`
+   was passed. A tolerance set without knowing that would be a tolerance
+   set on the wrong quantity.
+3. It is a plausible origin for the corpus's belief that lcms2 keys Lab
+   decoding on the profile version. lcms2 **does** key a decision on the
+   profile version — at perceptual intent. Just not that one.
+
+Neither finding is ground truth about colour: both are
+`implementation-cross-check`-class observations of one build of one
+implementation (`NUMERIC_CLAIMS.md` §1). What they establish is what
+iccce will be compared against, which is exactly what an oracle is for.
