@@ -108,7 +108,7 @@ residual that has silently grown from 10⁻¹² to 9×10⁻⁵ still passes a
 |---|---|
 | **Pass** | 1 — colorimetry (`iccce-color`) |
 | **Date** | 2026-08-11 |
-| **Commit** | **NONE — the work was uncommitted at the time of filing.** The dispatch carried no commit hash and this librarian has no shell with which to look for one. Whoever commits Pass 1 must add the hash to §2 of this file, exactly as `ROADMAP.md`'s Pass 0 record was completed. Until then every row below is anchored to *the working tree as read on 2026-08-11*, which is a weaker anchor than a hash and is recorded as one. |
+| **Commit** | `7313c5b` (2026-08-11) — filled in by `icc-engineer` immediately after committing, per this row's own request. Every row below is anchored to that commit. |
 | **Platform** | Windows 11 Pro 10.0.26200, MSVC toolchain. **No Linux run of these tests has been observed by anyone** — CI exists and its execution history has never been checked (`SESSION_LOG.md`, Pass 0). |
 | **Precision** | Every computation in `iccce-color` is `f64` throughout (`mat3.rs` module doc: `C̄'⁷` alone overflows `f32`). No row below is an `f32` claim. |
 

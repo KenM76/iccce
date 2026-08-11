@@ -112,12 +112,10 @@ code.
 
 ### Pass 1 completion record — filed 2026-08-11 by `icc-librarian`
 
-**Commit:** **none — the work was uncommitted when this was filed**, and
-the dispatch carried no hash. This librarian has no shell and did not
-look for one. Whoever commits Pass 1 must fill the hash in here and in
-`docs/NUMERIC_CLAIMS.md` §2, as `icc-engineer` did for Pass 0's record.
-Until then every claim below is anchored to *the working tree as read on
-2026-08-11*.
+**Commit:** `7313c5b` (2026-08-11, "Pass 1: colorimetry — XYZ/xyY,
+Lab/LCh, Bradford, ΔE76/ΔE2000"). Hash filled in by `icc-engineer`
+immediately after committing, as for Pass 0; the record was filed
+against the working tree and lands in the same commit it anchors.
 
 #### The done-when, answered exactly
 
