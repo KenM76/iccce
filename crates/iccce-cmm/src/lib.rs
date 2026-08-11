@@ -38,9 +38,10 @@
 //! [`gray_trc`] (F.2), [`clut`] (n-linear, A16), [`pcs_encoding`]
 //! (both 16-bit Lab encodings + XYZ), [`lut_transform`] (mft1/mft2,
 //! both directions, per-type Lab codecs), [`lut_ab`] (mAB/mBA, GP-001
-//! counts), and [`transform::Chain`] (the 8.10.2 fallback, N↔M
-//! channel chains). Still to come: BPC (Pass 5), compiled transforms
-//! (Pass 6), named colour (Pass 7).
+//! counts), [`transform::Chain`] (the 8.10.2 fallback, N↔M channel
+//! chains), and [`named_color`] (Pass 7's core: ncl2 consumption with
+//! the always-legacy Lab decode, A26). Still to come: BPC (Pass 5),
+//! compiled transforms (Pass 6).
 
 pub mod clut;
 pub mod curve;
@@ -48,10 +49,9 @@ pub mod gray_trc;
 pub mod lut_ab;
 pub mod lut_transform;
 pub mod matrix_trc;
+pub mod named_color;
 pub mod pcs_encoding;
 pub mod transform;
 
 pub use curve::{CurveError, Trc};
 pub use matrix_trc::{MatrixTrc, MatrixTrcTransform, ModelError};
-
-// Passes 4–7 will populate: lut, intent, bpc, compiled, named_color.
