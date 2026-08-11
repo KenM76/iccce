@@ -43,6 +43,7 @@
 
 pub mod clut;
 pub mod curve;
+pub mod lut_ab;
 pub mod lut_transform;
 pub mod matrix_trc;
 pub mod pcs_encoding;

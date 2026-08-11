@@ -61,6 +61,9 @@ mod tag {
 pub enum SourceModel {
     MatrixTrc(Box<MatrixTrc>),
     Lut16(Box<Lut16Model>),
+    /// A v4 `mAB ` A2B pipeline (device→PCS only; the mBA/B2A twin is
+    /// blocked on a sourcing question — `lut_ab` module doc).
+    LutAb(Box<crate::lut_ab::LutAbModel>),
 }
 
 /// A destination profile's PCS→device model, chosen per the same
@@ -225,11 +228,21 @@ impl Chain {
                             }
                         }
                     }
-                    TagData::LutAToB(_) => {
-                        unsupported = Some(ChainError::SourceTagUnsupported {
-                            sig,
-                            type_name: "lutAToBType".into(),
-                        });
+                    TagData::LutAToB(l) => {
+                        let pcs = if src.header.pcs == tag::PCS_LAB {
+                            PcsKind::Lab
+                        } else {
+                            PcsKind::Xyz
+                        };
+                        match crate::lut_ab::LutAbModel::from_lut_ab(&l, pcs) {
+                            Ok(m) => source = Some(SourceModel::LutAb(Box::new(m))),
+                            Err(e) => {
+                                unsupported = Some(ChainError::SourceTagUnsupported {
+                                    sig,
+                                    type_name: format!("lutAToBType ({e})"),
+                                });
+                            }
+                        }
                     }
                     _ => {}
                 }
@@ -276,6 +289,7 @@ impl Chain {
         match &self.source {
             SourceModel::MatrixTrc(_) => 3,
             SourceModel::Lut16(l) => l.input_channels(),
+            SourceModel::LutAb(l) => l.device_channels(),
         }
     }
 
@@ -297,6 +311,16 @@ impl Chain {
                 Some(PcsValue::Xyz(x)) => x,
                 // Lab PCS → XYZ relative to the PCS white (D50) —
                 // `iccce-color`'s cross-verified formulas.
+                Some(PcsValue::Lab(lab)) => lab.to_xyz(D50),
+                None => {
+                    return Err(ChainError::ChannelMismatch {
+                        expected,
+                        actual: device.len(),
+                    });
+                }
+            },
+            SourceModel::LutAb(l) => match l.device_to_pcs(device) {
+                Some(PcsValue::Xyz(x)) => x,
                 Some(PcsValue::Lab(lab)) => lab.to_xyz(D50),
                 None => {
                     return Err(ChainError::ChannelMismatch {
