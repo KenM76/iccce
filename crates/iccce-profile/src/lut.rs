@@ -319,14 +319,30 @@ pub(crate) fn decode_lut_ab(
     let offset_c = u32_be(data, 24).expect("length checked");
     let offset_a = u32_be(data, 28).expect("length checked");
 
-    // Curve counts: A = inputChan; B and M = outputChan (corpus,
-    // code-derived). Elements are stored back to back, each padded to
-    // 4 bytes, with no count field — curve n must be parsed to find
-    // curve n+1, so one malformed curve makes the rest unreachable
-    // (reported by position via CurveChainBroken).
-    let b_curves = decode_curve_chain(type_sig, data, offset_b, output_chan, issues)?;
-    let m_curves = decode_curve_chain(type_sig, data, offset_m, output_chan, issues)?;
-    let a_curves = decode_curve_chain(type_sig, data, offset_a, input_chan, issues)?;
+    // Curve counts are PER TAG TYPE — GP-001 (2026-08-11): the first
+    // version used the mAB convention for both types, breaking every
+    // real CMYK B2A0 while square LUTs hid it; caught by the synthetic
+    // fixture corpus, confirmed against the PDF by icc-conformance:
+    //   mAB (10.12.2/4/6): B = output, M = output, A = input
+    //   mBA (10.13.2/4/6): B = input,  M = input,  A = output
+    // Consistent with "B is always the PCS-side end": for mAB the PCS
+    // is the output; for mBA it is the input. lcms2's Type_LUTB2A_Read
+    // agrees. (Corpus per-type transcription owed to
+    // icc-spec-librarian; the clause readings above are conformance's
+    // direct PDF reads, recorded in tools/gen-profiles/README.md §5.)
+    let is_mba = type_sig == crate::tag_types::sig::MBA;
+    let (b_count, m_count, a_count) = if is_mba {
+        (input_chan, input_chan, output_chan)
+    } else {
+        (output_chan, output_chan, input_chan)
+    };
+    // Elements are stored back to back, each padded to 4 bytes, with
+    // no count field — curve n must be parsed to find curve n+1, so
+    // one malformed curve makes the rest unreachable (reported by
+    // position via CurveChainBroken).
+    let b_curves = decode_curve_chain(type_sig, data, offset_b, b_count, issues)?;
+    let m_curves = decode_curve_chain(type_sig, data, offset_m, m_count, issues)?;
+    let a_curves = decode_curve_chain(type_sig, data, offset_a, a_count, issues)?;
 
     let matrix = if offset_mat == 0 {
         None

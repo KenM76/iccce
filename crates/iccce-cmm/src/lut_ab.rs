@@ -37,6 +37,14 @@
 use crate::clut::Clut;
 use crate::curve::{CurveError, Trc};
 use crate::lut_transform::{PcsKind, PcsValue};
+
+/// Which way this model evaluates — the tag type's property, fixed at
+/// build, making the wrong-direction call structurally inert.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Direction {
+    AToB,
+    BToA,
+}
 use iccce_color::{Lab, Xyz};
 use iccce_profile::lut::{ClutSamples, CurveElement, LutAB};
 
@@ -69,22 +77,20 @@ impl std::fmt::Display for LutAbError {
     }
 }
 
-/// An `mAB ` compiled to an evaluable pipeline.
+/// An `mAB ` or `mBA ` compiled to an evaluable pipeline.
 ///
-/// ★ SCOPE — mAB (device→PCS) ONLY, deliberately. The mBA direction
-/// is blocked on a sourcing question found while designing this
-/// module: the profile layer decodes curve counts as A = inputChan,
-/// B/M = outputChan (code-derived), which is consistent for mAB but
-/// for mBA (whose INPUT is the PCS) would put the A curves on the PCS
-/// side — contradicting the corpus's own "B is always the PCS-side
-/// end". Clause 10.13's actual per-element counts are not yet
-/// transcribed (the mAB/mBA byte tables are the corpus's stated
-/// backlog, A23/A24 area). Until sourced, evaluating an mBA could
-/// silently apply N-channel curves to a 3-channel stage or vice
-/// versa — refused instead. Question owed to icc-spec-librarian.
+/// HISTORY NOTE: the first version was mAB-only, refusing mBA on a
+/// curve-count contradiction found during design. The refusal was
+/// vindicated within the hour — GP-001: the guessed counts WOULD have
+/// been wrong. The counts are now settled from the PDF (mAB
+/// 10.12.2/4/6: B/M = output, A = input; mBA 10.13.2/4/6: B/M =
+/// input, A = output — conformance's direct reads, fixed in the
+/// profile layer), and both directions evaluate. The [`Direction`]
+/// field makes calling the wrong method a `None`, not a wrong number.
 #[derive(Debug, Clone)]
 pub struct LutAbModel {
-    /// Device-side channel count (A curves / CLUT input for mAB).
+    direction: Direction,
+    /// Device-side channel count (input for mAB, output for mBA).
     device_chan: usize,
     /// PCS-side channel count — always 3 here (checked at build).
     a_curves: Option<Vec<Trc>>,
@@ -107,10 +113,22 @@ fn curves_to_trc(elements: &[CurveElement]) -> Result<Vec<Trc>, CurveError> {
 }
 
 impl LutAbModel {
+    /// Build from a decoded `mBA ` tag: input = PCS (3), output =
+    /// device. Same stored elements, evaluated the other way.
+    pub fn from_mba(lut: &LutAB, pcs: PcsKind) -> Result<LutAbModel, LutAbError> {
+        let mut m = Self::build(lut, pcs)?;
+        m.direction = Direction::BToA;
+        m.device_chan = usize::from(lut.output_chan);
+        Ok(m)
+    }
+
     /// Build from a decoded `mAB ` tag (`pcs` from `header.pcs`).
-    /// The tag's input side is the device side; mBA is out of scope
-    /// per the struct doc's sourcing blocker.
+    /// The tag's input side is the device side.
     pub fn from_lut_ab(lut: &LutAB, pcs: PcsKind) -> Result<LutAbModel, LutAbError> {
+        Self::build(lut, pcs)
+    }
+
+    fn build(lut: &LutAB, pcs: PcsKind) -> Result<LutAbModel, LutAbError> {
         let (input, output) = (usize::from(lut.input_chan), usize::from(lut.output_chan));
         if input == 0 || output == 0 || input > 15 {
             return Err(LutAbError::BadChannelCounts {
@@ -146,8 +164,9 @@ impl LutAbModel {
             out
         });
 
-        // mAB reading: the tag's input side is the device side.
+        // mAB reading by default; from_mba overrides.
         Ok(LutAbModel {
+            direction: Direction::AToB,
             device_chan: input,
             a_curves,
             clut,
@@ -169,7 +188,7 @@ impl LutAbModel {
     /// `mAB `: device → PCS. A → CLUT → M → Matrix → B → decode.
     #[must_use]
     pub fn device_to_pcs(&self, device: &[f64]) -> Option<PcsValue> {
-        if device.len() != self.device_chan {
+        if self.direction != Direction::AToB || device.len() != self.device_chan {
             return None;
         }
         let mut v: Vec<f64> = device.to_vec();
@@ -198,10 +217,39 @@ impl LutAbModel {
         Some(decode_v4_pcs(self.pcs, [v[0], v[1], v[2]]))
     }
 
-    // NOTE: no pcs_to_device here — the mBA direction is blocked on
-    // the curve-count sourcing question in the struct doc. Adding it
-    // with guessed counts would be exactly the silent-plausible-wrong
-    // failure this project is organised against.
+    /// `mBA `: PCS → device. encode → B → Matrix → M → CLUT → A
+    /// (clause 10.13's order; counts per 10.13.2/4/6 fixed in the
+    /// profile layer — GP-001).
+    #[must_use]
+    pub fn pcs_to_device(&self, pcs: PcsValue) -> Option<Vec<f64>> {
+        if self.direction != Direction::BToA {
+            return None;
+        }
+        let mut v: Vec<f64> = encode_v4_pcs(self.pcs, pcs)?.to_vec();
+        if let Some(b) = &self.b_curves {
+            v = apply_curves(b, &v)?;
+        }
+        if let Some(mx) = &self.matrix {
+            if v.len() != 3 {
+                return None;
+            }
+            v = apply_matrix_3x4(mx, &v);
+        }
+        if let Some(m) = &self.m_curves {
+            v = apply_curves(m, &v)?;
+        }
+        if let Some(clut) = &self.clut {
+            let mut out = vec![0.0f64; clut.outputs];
+            if !clut.eval(&v, &mut out) {
+                return None;
+            }
+            v = out;
+        }
+        if let Some(a) = &self.a_curves {
+            v = apply_curves(a, &v)?;
+        }
+        Some(v)
+    }
 }
 
 fn apply_curves(curves: &[Trc], v: &[f64]) -> Option<Vec<f64>> {
@@ -240,8 +288,22 @@ fn decode_v4_pcs(kind: PcsKind, n: [f64; 3]) -> PcsValue {
     }
 }
 
-// (The v4 PCS ENCODE direction lands with mBA support, once the
-// curve-count question is sourced — see the struct doc.)
+/// v4 16-bit PCS encode (inverse of the decode), clamped to [0,1].
+fn encode_v4_pcs(kind: PcsKind, pcs: PcsValue) -> Option<[f64; 3]> {
+    Some(match (kind, pcs) {
+        (PcsKind::Lab, PcsValue::Lab(lab)) => [
+            (lab.l / 100.0).clamp(0.0, 1.0),
+            ((lab.a + 128.0) / 255.0).clamp(0.0, 1.0),
+            ((lab.b + 128.0) / 255.0).clamp(0.0, 1.0),
+        ],
+        (PcsKind::Xyz, PcsValue::Xyz(xyz)) => [
+            (xyz.x * 32768.0 / 65535.0).clamp(0.0, 1.0),
+            (xyz.y * 32768.0 / 65535.0).clamp(0.0, 1.0),
+            (xyz.z * 32768.0 / 65535.0).clamp(0.0, 1.0),
+        ],
+        _ => return None,
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -380,5 +442,52 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    /// mBA on the committed synthetic fixture (category (a)),
+    /// cross-checked against transicc's recorded output for the SAME
+    /// tag: Lab(50, 0, 0) → CMYK with K = 49.6117%
+    /// (tools/gen-profiles/README.md §5, conformance's run at the
+    /// pin). implementation-cross-check class: both read identical
+    /// synthetic bytes, so agreement bounds the evaluators, not the
+    /// spec. Tolerance 1e-3: transicc prints 4 decimals of percent
+    /// (~1e-6 in 0..1) but its pipeline quantises to u16 (~1.5e-5)
+    /// and the ragged-grid interpolation differs (n-linear vs
+    /// hybrid) away from nodes; 1e-3 admits those and still refuses
+    /// a wrong curve count (GP-001's symptom was a REFUSAL, and a
+    /// swapped count shifts K by whole percent).
+    #[test]
+    fn mba_fixture_matches_transicc_recorded_value() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/synthetic/v4-cmyk-mab-lab.icc"
+        );
+        let Ok(bytes) = std::fs::read(path) else {
+            panic!("committed fixture missing: {path}");
+        };
+        let profile = iccce_profile::Profile::parse(&bytes).unwrap();
+        let entry = profile
+            .tags
+            .iter()
+            .find(|t| t.sig.to_string() == "'B2A0'")
+            .unwrap();
+        let decoded = profile.decode_tag(entry).unwrap().unwrap();
+        let iccce_profile::tag_types::TagData::LutBToA(l) = decoded.data else {
+            panic!("B2A0 not mBA");
+        };
+        let m = LutAbModel::from_mba(&l, PcsKind::Lab).unwrap();
+        let cmyk = m
+            .pcs_to_device(PcsValue::Lab(iccce_color::Lab {
+                l: 50.0,
+                a: 0.0,
+                b: 0.0,
+            }))
+            .unwrap();
+        assert_eq!(cmyk.len(), 4);
+        assert!(
+            (cmyk[3] - 0.496117).abs() < 1e-3,
+            "K = {} vs transicc 0.496117",
+            cmyk[3]
+        );
     }
 }

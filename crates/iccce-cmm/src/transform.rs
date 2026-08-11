@@ -74,6 +74,8 @@ pub enum DestModel {
     /// A lut16 B2A tag: evaluated FORWARD (its stored pipeline IS the
     /// PCS→device direction — no inversion happens anywhere).
     Lut16B2a(Box<Lut16Model>),
+    /// A v4 `mBA ` pipeline (counts per 10.13.2/4/6 — GP-001).
+    LutAb(Box<crate::lut_ab::LutAbModel>),
 }
 
 /// Chain build/run errors.
@@ -163,17 +165,29 @@ impl Chain {
                 } else {
                     (PcsKind::Xyz, true)
                 };
-                let built = match decoded.data {
-                    TagData::Lut16(l) => Lut16Model::from_lut16(&l, input_is_xyz, pcs).ok(),
+                match decoded.data {
+                    TagData::Lut16(l) => {
+                        if let Ok(m) = Lut16Model::from_lut16(&l, input_is_xyz, pcs) {
+                            if m.input_channels() == 3 {
+                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                            }
+                        }
+                    }
                     // Real press profiles ship mft1 B2A tables (SWOP
                     // does); Lab-8-bit per Tables 12/13 (A10 resolved).
-                    TagData::Lut8(l) => Lut16Model::from_lut8(&l, input_is_xyz, pcs).ok(),
-                    _ => None,
-                };
-                if let Some(m) = built {
-                    if m.input_channels() == 3 {
-                        dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                    TagData::Lut8(l) => {
+                        if let Ok(m) = Lut16Model::from_lut8(&l, input_is_xyz, pcs) {
+                            if m.input_channels() == 3 {
+                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                            }
+                        }
                     }
+                    TagData::LutBToA(l) => {
+                        if let Ok(m) = crate::lut_ab::LutAbModel::from_mba(&l, pcs) {
+                            dst_model = Some(DestModel::LutAb(Box::new(m)));
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -281,6 +295,7 @@ impl Chain {
         match &self.dst {
             DestModel::MatrixTrc(_) => 3,
             DestModel::Lut16B2a(l) => l.output_channels(),
+            DestModel::LutAb(l) => l.device_channels(),
         }
     }
 
@@ -361,6 +376,17 @@ impl Chain {
         match &self.dst {
             DestModel::MatrixTrc(m) => Ok(m.pcs_to_device(xyz)?.to_vec()),
             DestModel::Lut16B2a(l) => {
+                let pcs_value = match l.pcs_kind() {
+                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
+                    PcsKind::Xyz => PcsValue::Xyz(xyz),
+                };
+                l.pcs_to_device(pcs_value)
+                    .ok_or(ChainError::ChannelMismatch {
+                        expected: 3,
+                        actual: 3,
+                    })
+            }
+            DestModel::LutAb(l) => {
                 let pcs_value = match l.pcs_kind() {
                     PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
                     PcsKind::Xyz => PcsValue::Xyz(xyz),
