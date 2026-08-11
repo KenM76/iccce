@@ -26,10 +26,11 @@ inspected, and `difftest` can invoke lcms2 on the same file.
 
 ### Pass 0 completion record — filed 2026-08-11 by `icc-librarian`
 
-**Commit:** not recorded here. The Pass 0 work was uncommitted when this
-record was filed; the commit is the engineer's act. **Whoever makes it
-should return and write the hash into this line** — a completion record
-without a commit is a claim nobody can re-derive later.
+**Commit:** `f976a0e` (root commit, 2026-08-11, "Pass 0: scaffold,
+oracle, and header/tag-table parsing" — 47 files). Hash filled in by
+`icc-engineer` immediately after committing, per this record's own
+request; the record itself was filed one commit earlier in time but
+lands in the same root commit.
 
 **Done-when, clause 1 — a real profile is inspected.** Reported by
 `icc-engineer` from a run on this machine (Windows 11 Pro 10.0.26200):
