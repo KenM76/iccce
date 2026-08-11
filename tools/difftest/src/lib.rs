@@ -37,16 +37,41 @@
 //!   difftest that wandered into them and reported "conforms" would be
 //!   reporting on something the specification does not define. [`Intent`] has
 //!   four variants and no escape hatch.
-//! - **It cannot compute ΔE.** Every metric here is absolute, per component.
-//!   Computing ΔE would mean either depending on `iccce-color` (grading iccce
-//!   with iccce's own arithmetic — acceptable for some purposes but a
-//!   coupling that must be a deliberate, documented decision rather than a
-//!   convenience) or re-implementing ΔE2000 here (a second implementation to
-//!   get subtly wrong). Neither is worth it for the first version, when the
-//!   only comparisons available are exact-encoding questions that ΔE is the
-//!   wrong instrument for anyway — see `ARCHITECTURE.md` DL-005.
 //! - **It cannot pretend a missing oracle is a pass.** See [`Outcome::Skip`]
 //!   and [`Report::exit_code`].
+//!
+//! ## ★ What changed on 2026-08-11 (Pass 3): ΔE is now computable, deliberately
+//!
+//! Until Pass 3 this header said the harness *cannot* compute ΔE, on the
+//! grounds that doing so would mean either depending on `iccce-color` — which
+//! is grading iccce with iccce's own arithmetic — or writing a second ΔE2000
+//! to get subtly wrong. It also said the coupling **"must be a deliberate,
+//! documented decision rather than a convenience"**. Pass 3 needs a perceptual
+//! statement about an iccce-vs-lcms2 disagreement, so the decision has been
+//! taken and is recorded in `Cargo.toml`'s header and in README §13.2. In one
+//! paragraph:
+//!
+//! - The metric (`iccce_color::delta_e_2000`) is graded against **all 34
+//!   published pairs of Sharma, Wu & Dalal (2005)** at 1×10⁻⁴ — the one
+//!   ground-truth row in `TOLERANCES.md` §3.1.1. It is a ruler checked
+//!   against the literature, not against itself.
+//! - **The claim is unchanged.** Every iccce-vs-lcms2 record is
+//!   [`Kind::CrossCheck`] regardless of how well-validated the ΔE code is.
+//!   A good ruler does not turn a cross-check into ground truth.
+//! - **The answers still come from subprocesses.** iccce's numbers come from
+//!   running the shipped `iccce transform` binary ([`Iccce`]), lcms2's from
+//!   running `transicc` ([`Oracle`]). The linked crates are the *instrument*,
+//!   never the *subject*.
+//! - The instrument is itself cross-checked: `pass3` carries both sides'
+//!   device outputs into Lab twice — once through iccce's own destination
+//!   model, once through the oracle — and reports the disagreement between
+//!   the two rulers.
+//!
+//! What the harness still cannot do is *invent* a ΔE for a comparison whose
+//! output space has no colorimetric meaning. [`Metric`] therefore keeps its
+//! absolute per-component variants, and `ARCHITECTURE.md` DL-005 still governs
+//! encoding questions: **legacy-Lab correctness is asserted by exact-value
+//! integer invariants, never by ΔE.**
 //!
 //! ## Machine-readable output
 //!
@@ -85,6 +110,8 @@ use std::fmt;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+
+pub mod pass3;
 
 // ===========================================================================
 // Locating the oracle
@@ -286,6 +313,142 @@ impl Oracle {
 
         Ok(values)
     }
+
+    /// Run **one** `transicc` invocation over **many** input triples and
+    /// return one output row per input row.
+    ///
+    /// ## Why batch, and why it is not just a loop
+    ///
+    /// `transicc` reads components from stdin until EOF and prints one line
+    /// per completed tuple. A 133-point grid is therefore *one* process, not
+    /// 133 — which matters less for speed than for **provenance**: every row
+    /// in the returned grid came from a single transform lcms2 built once,
+    /// so a per-invocation difference (a re-read profile, a re-linked
+    /// pipeline) cannot vary between rows and masquerade as a colour effect.
+    ///
+    /// `req.values` must already be flattened: `components_per_row *
+    /// row_count` numbers, one per line. The row count is derived, and a
+    /// short or long final row is an [`DiffError::Arity`] rather than a
+    /// silently truncated grid.
+    ///
+    /// **Stdin is written on a background thread.** With ~400 numbers the
+    /// write is far larger than a pipe buffer, and `transicc` interleaves
+    /// reading with writing; a single-threaded write-then-wait deadlocks the
+    /// moment its stdout buffer fills. That deadlock is worse than a wrong
+    /// number because it produces no output at all.
+    pub fn convert_batch(
+        &self,
+        req: &Request,
+        components_per_row: usize,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
+        assert!(components_per_row > 0, "components_per_row must be > 0");
+        if req.values.len() % components_per_row != 0 {
+            return Err(DiffError::Internal(format!(
+                "{} input values is not a whole number of {components_per_row}-component rows",
+                req.values.len()
+            )));
+        }
+        let rows_in = req.values.len() / components_per_row;
+        let args = req.to_args();
+
+        let mut child = Command::new(&self.exe)
+            .args(&args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+
+        let mut buf = String::with_capacity(req.values.len() * 20);
+        for v in &req.values {
+            // `{v}` prints f64's shortest round-trip form; transicc parses
+            // with atof, so nothing is lost on the way in.
+            buf.push_str(&format!("{v}\n"));
+        }
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| DiffError::Internal("child stdin was not piped".into()))?;
+        let writer = std::thread::spawn(move || -> io::Result<()> {
+            stdin.write_all(buf.as_bytes())?;
+            stdin.flush()
+            // `stdin` is dropped here, closing the pipe. transicc reads until
+            // EOF; without this drop it would never finish.
+        });
+
+        let out = child
+            .wait_with_output()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+        match writer.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => return Err(DiffError::Pipe(e)),
+            Err(_) => return Err(DiffError::Internal("stdin writer thread panicked".into())),
+        }
+
+        let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+        if !out.status.success() {
+            return Err(DiffError::NonZeroExit {
+                args,
+                code: out.status.code(),
+                stdout,
+                stderr,
+            });
+        }
+
+        let rows = parse_rows(&stdout, components_per_row).ok_or_else(|| DiffError::Unparsable {
+            args: args.clone(),
+            stdout: stdout.clone(),
+            stderr: stderr.clone(),
+        })?;
+        if rows.len() != rows_in {
+            return Err(DiffError::Arity {
+                expected: rows_in,
+                got: rows.len(),
+                stdout,
+            });
+        }
+        Ok(rows)
+    }
+}
+
+/// Every fully numeric line of `stdout`, parsed as `components_per_row`
+/// floats each.
+///
+/// Lines that are not entirely numeric are **dropped, not failed** — that is
+/// how the banner is skipped without hard-coding what the banner says. A
+/// numeric line with the wrong component count *is* a failure (`None`),
+/// because that is a real disagreement about the shape of the answer and
+/// silently dropping it would shorten the grid.
+///
+/// Returns `None` if nothing parsed at all.
+pub fn parse_rows(stdout: &str, components_per_row: usize) -> Option<Vec<Vec<f64>>> {
+    let mut rows = Vec::new();
+    for line in stdout.lines() {
+        let t = line.trim();
+        if t.is_empty() {
+            continue;
+        }
+        let mut vals = Vec::new();
+        let mut all_numeric = true;
+        for tok in t.split_whitespace() {
+            match tok.parse::<f64>() {
+                Ok(v) => vals.push(v),
+                Err(_) => {
+                    all_numeric = false;
+                    break;
+                }
+            }
+        }
+        if !all_numeric || vals.is_empty() {
+            continue; // banner, copyright, prompt — not data.
+        }
+        if vals.len() != components_per_row {
+            return None;
+        }
+        rows.push(vals);
+    }
+    if rows.is_empty() { None } else { Some(rows) }
 }
 
 /// Take the last non-empty line of `transicc` stdout and parse it as
@@ -301,6 +464,188 @@ pub fn parse_values(stdout: &str) -> Option<Vec<f64>> {
         out.push(tok.parse::<f64>().ok()?);
     }
     if out.is_empty() { None } else { Some(out) }
+}
+
+// ===========================================================================
+// Driving iccce — the OTHER subprocess
+// ===========================================================================
+
+/// A located `iccce` executable: **the code under test, invoked exactly the
+/// way the oracle is invoked.**
+///
+/// ## Why a subprocess and not a function call
+///
+/// This crate links `iccce-cmm` (see `Cargo.toml`'s header), so calling
+/// `MatrixTrcTransform::convert` in-process would be one line shorter. It is
+/// forbidden here, for two reasons that are the whole point of the harness:
+///
+/// 1. **Symmetry.** lcms2's answer crosses a process boundary, is printed as
+///    text, and is parsed back. If iccce's answer did not, the two sides
+///    would differ in more than the arithmetic — printing, rounding and
+///    argument handling would all be exercised on one side only, and a bug in
+///    the *shipped* surface (`iccce transform`) would be invisible to the very
+///    test that exists to find it.
+/// 2. **What is actually shipped.** `target/release/iccce.exe` is the
+///    artefact a user runs. Testing a library call and reporting it as "iccce
+///    agrees with lcms2" would be a claim about code that is one wrapper away
+///    from the claim's subject.
+///
+/// The linked crates are used only as the *measuring instrument* (device →
+/// PCS → Lab → ΔE), never to produce the answer under test.
+///
+/// ## The wire format, which is not the oracle's
+///
+/// `iccce transform` reads **one whitespace-separated triple per line, floats
+/// in 0..1**, and writes one converted triple per line at **6 decimals**.
+/// `transicc` reads **one component per line in the device's own range**
+/// (0–255 for 8-bit RGB) and prints **4 decimals**. The two conventions are
+/// different in *both* directions, and every comparison in `pass3` states the
+/// scaling it applied. Mixing them silently rescales everything by 255, which
+/// looks like a catastrophic colour error rather than a units bug and wastes
+/// an afternoon.
+#[derive(Debug, Clone)]
+pub struct Iccce {
+    exe: PathBuf,
+}
+
+impl Iccce {
+    /// Find the `iccce` binary, in this order:
+    ///
+    /// 1. `$ICCCE_BIN`, if set. As with `$ICCCE_TRANSICC`, a variable that is
+    ///    set but names a non-file is an **error**, not a fall-through: an
+    ///    operator who named a binary meant that binary.
+    /// 2. `../../target/release/iccce{.exe}` — what
+    ///    `cargo build --release -p iccce-cli` produces at the workspace root.
+    /// 3. `../../target/debug/iccce{.exe}`.
+    ///
+    /// **The release build is preferred and that is deliberate**, so the
+    /// numbers recorded describe the artefact users run. If only a debug build
+    /// is present the caller should say so in its report — `f64` arithmetic is
+    /// not supposed to differ between profiles, but "not supposed to" is the
+    /// phrase this role exists to distrust.
+    ///
+    /// `Ok(None)` means no binary was found, which is a **skip**, not an
+    /// error: a fresh checkout has not been built yet.
+    pub fn locate() -> Result<Option<Iccce>, DiffError> {
+        if let Some(v) = std::env::var_os("ICCCE_BIN") {
+            let p = PathBuf::from(v);
+            if p.is_file() {
+                return Ok(Some(Iccce { exe: p }));
+            }
+            return Err(DiffError::OracleNamedButMissing(p));
+        }
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        for rel in [
+            "../../target/release/iccce.exe",
+            "../../target/release/iccce",
+            "../../target/debug/iccce.exe",
+            "../../target/debug/iccce",
+        ] {
+            let c = root.join(rel);
+            if c.is_file() {
+                return Ok(Some(Iccce { exe: c }));
+            }
+        }
+        Ok(None)
+    }
+
+    /// The binary that will be invoked. Print it in any report, for the same
+    /// reason [`Oracle::path`] is printed: "iccce agrees with lcms2" is not
+    /// falsifiable unless the reader can tell which build said so.
+    pub fn path(&self) -> &Path {
+        &self.exe
+    }
+
+    /// `true` when the located binary came from `target/debug`.
+    pub fn is_debug_build(&self) -> bool {
+        self.exe
+            .components()
+            .any(|c| c.as_os_str().eq_ignore_ascii_case("debug"))
+    }
+
+    /// Run `iccce transform --src <src> --dst <dst>` over a grid of RGB
+    /// triples **in 0..1**, returning one output triple per input triple.
+    ///
+    /// The intent is not a parameter because the shipped binary implements
+    /// exactly one (media-relative colorimetric) and **refuses any other by
+    /// name** rather than substituting. When Pass 4 adds intents this grows an
+    /// argument; until then, passing one would document a capability that does
+    /// not exist.
+    ///
+    /// Stdin is written on a background thread for the deadlock reason given
+    /// on [`Oracle::convert_batch`].
+    pub fn transform_grid(
+        &self,
+        src: &Path,
+        dst: &Path,
+        grid: &[[f64; 3]],
+    ) -> Result<Vec<[f64; 3]>, DiffError> {
+        let args = vec![
+            "transform".to_string(),
+            "--src".to_string(),
+            src.display().to_string(),
+            "--dst".to_string(),
+            dst.display().to_string(),
+        ];
+
+        let mut child = Command::new(&self.exe)
+            .args(&args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+
+        let mut buf = String::with_capacity(grid.len() * 32);
+        for t in grid {
+            // Full round-trip precision on the way in. `iccce transform`
+            // parses with str::parse::<f64>, so this is lossless — the input
+            // side of the comparison must not be where precision is lost.
+            buf.push_str(&format!("{} {} {}\n", t[0], t[1], t[2]));
+        }
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| DiffError::Internal("child stdin was not piped".into()))?;
+        let writer = std::thread::spawn(move || -> io::Result<()> {
+            stdin.write_all(buf.as_bytes())?;
+            stdin.flush()
+        });
+
+        let out = child
+            .wait_with_output()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+        match writer.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => return Err(DiffError::Pipe(e)),
+            Err(_) => return Err(DiffError::Internal("stdin writer thread panicked".into())),
+        }
+
+        let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+        if !out.status.success() {
+            return Err(DiffError::NonZeroExit {
+                args,
+                code: out.status.code(),
+                stdout,
+                stderr,
+            });
+        }
+
+        let rows = parse_rows(&stdout, 3).ok_or_else(|| DiffError::Unparsable {
+            args: args.clone(),
+            stdout: stdout.clone(),
+            stderr: stderr.clone(),
+        })?;
+        if rows.len() != grid.len() {
+            return Err(DiffError::Arity {
+                expected: grid.len(),
+                got: rows.len(),
+                stdout,
+            });
+        }
+        Ok(rows.into_iter().map(|r| [r[0], r[1], r[2]]).collect())
+    }
 }
 
 // ===========================================================================
@@ -564,23 +909,51 @@ impl Kind {
 
 /// How two vectors of numbers are compared.
 ///
-/// Only one variant today. ΔE metrics are deliberately absent — see the
-/// module header, "What this library deliberately cannot do".
+/// **"ΔE" alone is not a metric** (`TOLERANCES.md` §3): every variant below
+/// says which difference formula, over what, reduced how. A record that says
+/// `dE2000-max` and a record that says `dE2000-mean` are answering different
+/// questions and must never be quoted for each other — a mean over a grid
+/// hides exactly the outlier a colour engine gets wrong.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Metric {
     /// Maximum absolute difference over components, in the output space's own
     /// units. For Lab that is `L*`/`a*`/`b*` units, **not** ΔE: the largest
     /// single-component error, which is the conservative reading.
     AbsMaxComponent,
+    /// Maximum absolute difference over every component of every row of a
+    /// grid, expressed in **normalised device units (0..1)**. The unit matters:
+    /// `transicc` prints device values in 0..255, `iccce transform` in 0..1,
+    /// and a number quoted without its scale is wrong by 255.
+    DeviceAbsMaxNormalised,
+    /// Mean absolute difference over every component of every row, normalised
+    /// device units. Reported **alongside** the max, never instead of it.
+    DeviceAbsMeanNormalised,
+    /// Maximum CIEDE2000 over the rows of a grid, `kL=kC=kH=1`, computed in
+    /// D50 CIELAB. The formula is `iccce_color::delta_e_2000` — validated
+    /// against all 34 Sharma, Wu & Dalal (2005) pairs (`TOLERANCES.md`
+    /// §3.1.1). Using a validated ruler does **not** make the record ground
+    /// truth; see [`Kind`].
+    DeltaE2000Max,
+    /// Mean CIEDE2000 over the rows of a grid, `kL=kC=kH=1`, D50 CIELAB.
+    DeltaE2000Mean,
 }
 
 impl Metric {
     pub fn tag(self) -> &'static str {
         match self {
             Metric::AbsMaxComponent => "abs-max-component",
+            Metric::DeviceAbsMaxNormalised => "device-abs-max-normalised(0..1)",
+            Metric::DeviceAbsMeanNormalised => "device-abs-mean-normalised(0..1)",
+            Metric::DeltaE2000Max => "dE2000-max(kL=kC=kH=1,D50)",
+            Metric::DeltaE2000Mean => "dE2000-mean(kL=kC=kH=1,D50)",
         }
     }
 
+    /// Only the pairwise variant can be measured from two flat vectors. The
+    /// grid variants are computed by [`crate::pass3`] from whole grids and
+    /// arrive via [`Record`] already reduced; asking for one here is a
+    /// programming error, not a runtime condition, so it panics rather than
+    /// returning a plausible number.
     fn measure(self, got: &[f64], expected: &[f64]) -> f64 {
         match self {
             Metric::AbsMaxComponent => got
@@ -588,6 +961,11 @@ impl Metric {
                 .zip(expected)
                 .map(|(g, e)| (g - e).abs())
                 .fold(0.0_f64, f64::max),
+            other => panic!(
+                "{} is a grid metric: build a Record with the value already reduced, \
+                 do not call Metric::measure",
+                other.tag()
+            ),
         }
     }
 }
@@ -690,10 +1068,146 @@ impl Check {
     }
 }
 
+/// One finished, gradeable line of a report — **the unit `Report` stores.**
+///
+/// [`Check`] describes a comparison the harness knows how to *run* (one
+/// `transicc` invocation, one expected vector). Not every comparison has that
+/// shape: a Pass 3 grid comparison runs two different binaries over 133
+/// triples and reduces the result to one number, and contorting `Check` to
+/// express that would have made the simple case unreadable. `Record` is the
+/// common denominator — id, kind, metric, tolerance, provenance, outcome —
+/// and `Check` produces one via [`Record::from_check`].
+///
+/// The fields nobody may omit are the same three as ever: **kind** (how strong
+/// is this claim), **tolerance-with-a-why** (`CLAUDE.md` rule 5), and
+/// **source** (where the expectation came from). A `Record` cannot be built
+/// without all three, which is the whole reason it is a struct and not a
+/// tuple.
+#[derive(Debug, Clone)]
+pub struct Record {
+    pub id: String,
+    pub kind: Kind,
+    pub metric: Metric,
+    pub tolerance: Tolerance,
+    /// **Where the expectation came from** — a citation for ground truth, a
+    /// document section and date for a recorded oracle value, or a plain
+    /// statement that both sides were computed in this run.
+    pub source: String,
+    /// Free text: what was compared, over what, with what settings. Tabs and
+    /// newlines are stripped on emit.
+    pub detail: String,
+    pub outcome: Outcome,
+}
+
+impl Record {
+    /// Grade an already-reduced observation against a tolerance.
+    ///
+    /// Used by grid comparisons, which do their own reduction. The
+    /// pass/fail decision stays here so it is made in exactly one place:
+    /// `observed <= tolerance.value`, `<=` and not `<`, so a tolerance stated
+    /// as "the printed precision" admits a difference of exactly that.
+    pub fn graded(
+        id: impl Into<String>,
+        kind: Kind,
+        metric: Metric,
+        tolerance: Tolerance,
+        observed: f64,
+        source: impl Into<String>,
+        detail: impl Into<String>,
+    ) -> Record {
+        let outcome = if observed.is_finite() && observed <= tolerance.value {
+            Outcome::Pass {
+                observed,
+                got: Vec::new(),
+            }
+        } else {
+            Outcome::Fail {
+                observed,
+                got: Vec::new(),
+            }
+        };
+        Record {
+            id: id.into(),
+            kind,
+            metric,
+            tolerance,
+            source: source.into(),
+            detail: detail.into(),
+            outcome,
+        }
+    }
+
+    /// A record that could not run. Kept distinct from a failure — a skip
+    /// whose reason is not recorded is indistinguishable from a pass in a
+    /// summary line, which is how coverage silently goes to zero.
+    pub fn skipped(
+        id: impl Into<String>,
+        kind: Kind,
+        metric: Metric,
+        tolerance: Tolerance,
+        source: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Record {
+        let reason = reason.into();
+        Record {
+            id: id.into(),
+            kind,
+            metric,
+            tolerance,
+            source: source.into(),
+            detail: reason.clone(),
+            outcome: Outcome::Skip { reason },
+        }
+    }
+
+    /// A record whose comparison broke — harness or oracle, not colour.
+    pub fn errored(
+        id: impl Into<String>,
+        kind: Kind,
+        metric: Metric,
+        tolerance: Tolerance,
+        source: impl Into<String>,
+        detail: impl Into<String>,
+    ) -> Record {
+        let detail = detail.into();
+        Record {
+            id: id.into(),
+            kind,
+            metric,
+            tolerance,
+            source: source.into(),
+            detail: detail.clone(),
+            outcome: Outcome::Error { detail },
+        }
+    }
+
+    fn from_check(check: &Check, outcome: Outcome) -> Record {
+        let detail = match &outcome {
+            Outcome::Pass { got, .. } | Outcome::Fail { got, .. } => format!(
+                "{} | got={:?} expected={:?}",
+                check.request.describe(),
+                got,
+                check.expected
+            ),
+            Outcome::Skip { reason } => reason.clone(),
+            Outcome::Error { detail } => detail.clone(),
+        };
+        Record {
+            id: check.id.to_string(),
+            kind: check.kind,
+            metric: check.metric,
+            tolerance: check.tolerance,
+            source: check.source.to_string(),
+            detail,
+            outcome,
+        }
+    }
+}
+
 /// A run of checks, and its machine-readable rendering.
 #[derive(Debug, Default)]
 pub struct Report {
-    rows: Vec<(Check, Outcome)>,
+    rows: Vec<Record>,
     /// Free-text notes emitted as `note` records — the provenance of the run
     /// (which binary, which banner) belongs here.
     notes: Vec<String>,
@@ -709,13 +1223,17 @@ impl Report {
     }
 
     pub fn push(&mut self, check: Check, outcome: Outcome) {
-        self.rows.push((check, outcome));
+        self.rows.push(Record::from_check(&check, outcome));
+    }
+
+    pub fn push_record(&mut self, record: Record) {
+        self.rows.push(record);
     }
 
     pub fn counts(&self) -> (usize, usize, usize, usize) {
         let mut c = (0, 0, 0, 0);
-        for (_, o) in &self.rows {
-            match o {
+        for r in &self.rows {
+            match &r.outcome {
                 Outcome::Pass { .. } => c.0 += 1,
                 Outcome::Fail { .. } => c.1 += 1,
                 Outcome::Skip { .. } => c.2 += 1,
@@ -745,30 +1263,29 @@ impl Report {
         for n in &self.notes {
             writeln!(w, "note\t{}", sanitise(n))?;
         }
-        for (check, outcome) in &self.rows {
-            let (observed, detail) = match outcome {
-                Outcome::Pass { observed, got } | Outcome::Fail { observed, got } => (
-                    format!("{observed:.6e}"),
-                    format!(
-                        "{} | got={:?} expected={:?} | tolerance because: {} | expectation source: {}",
-                        check.request.describe(),
-                        got,
-                        check.expected,
-                        check.tolerance.why,
-                        check.source
-                    ),
-                ),
-                Outcome::Skip { reason } => ("-".to_string(), reason.clone()),
-                Outcome::Error { detail } => ("-".to_string(), detail.clone()),
+        for r in &self.rows {
+            let observed = match &r.outcome {
+                Outcome::Pass { observed, .. } | Outcome::Fail { observed, .. } => {
+                    format!("{observed:.6e}")
+                }
+                Outcome::Skip { .. } | Outcome::Error { .. } => "-".to_string(),
             };
+            // The `why` and the `source` travel on EVERY line, including
+            // skips and errors. A tolerance quoted without its justification
+            // is the thing this whole role exists to prevent, and a reader
+            // grepping one line out of a log must not have to go and find it.
+            let detail = format!(
+                "{} | tolerance because: {} | expectation source: {}",
+                r.detail, r.tolerance.why, r.source
+            );
             writeln!(
                 w,
                 "check\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                check.id,
-                outcome.tag(),
-                check.kind.tag(),
-                check.metric.tag(),
-                check.tolerance.value,
+                r.id,
+                r.outcome.tag(),
+                r.kind.tag(),
+                r.metric.tag(),
+                r.tolerance.value,
                 observed,
                 sanitise(&detail)
             )?;

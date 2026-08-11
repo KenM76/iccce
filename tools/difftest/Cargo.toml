@@ -27,19 +27,72 @@
 # by accident, and `cargo tree` on a shipping crate can never reach it.
 #
 # ---------------------------------------------------------------------------
-# DEPENDENCIES: none, and that is a policy, not an accident.
+# DEPENDENCIES: zero THIRD-PARTY, and that is a policy, not an accident.
 # ---------------------------------------------------------------------------
 #
-# `[dependencies]` is empty and is intended to stay that way. Everything here
-# is `std`: process spawning, pipe I/O, float parsing. The temptations are
-# serde (for machine-readable output) and a CLI parser; both are declined.
-# Machine-readable output is emitted as TSV by hand (see src/lib.rs
-# §"Machine-readable output"), which needs no escaping rules and no crates.
+# No third-party crate appears here and none is intended to. Everything the
+# harness does for itself is `std`: process spawning, pipe I/O, float parsing.
+# The standing temptations are serde (for machine-readable output) and a CLI
+# parser; both are declined. Machine-readable output is emitted as TSV by hand
+# (see src/lib.rs §"Machine-readable output"), which needs no escaping rules
+# and no crates.
 #
 # LEGAL.md §1 requires every dependency to be classified before it is added.
-# The cheapest classification is the empty set. If a dependency is ever
-# genuinely needed, classify it in LEGAL.md first and record why std was
-# insufficient here.
+# The cheapest classification is the empty set.
+#
+# ---------------------------------------------------------------------------
+# THE ONE EXCEPTION, ADDED 2026-08-11 FOR PASS 3, AND WHY IT IS SAFE
+# ---------------------------------------------------------------------------
+#
+# Three PATH dependencies on iccce's own crates are declared below. src/lib.rs
+# §"What this library deliberately cannot do" previously said the harness
+# "cannot compute ΔE", because doing so would mean either depending on
+# `iccce-color` (grading iccce with iccce's own arithmetic) or writing a second
+# ΔE2000 to get subtly wrong. That paragraph also said the coupling "must be a
+# deliberate, documented decision rather than a convenience". This is that
+# decision, taken for Pass 3 and recorded here rather than inferred from a
+# diff:
+#
+#   1. THE DIRECTION IS THE SAFE ONE. The invariant README §1 protects is
+#      "no crate under crates/ may reach lcms2". These arrows point
+#      difftest -> iccce, i.e. harness -> code under test, which is the normal
+#      shape of a test harness and leaves that invariant untouched. `cargo
+#      tree` on any shipping crate still cannot reach lcms2, and this crate is
+#      still outside the workspace, so `cargo test --workspace` still cannot
+#      pull it in.
+#
+#   2. THE METRIC IS INDEPENDENTLY VALIDATED; THE CLAIM IS NOT WEAKENED.
+#      `iccce_color::delta_e_2000` is graded against ALL 34 published pairs of
+#      Sharma, Wu & Dalal (2005) at 1e-4 — the single GROUND-TRUTH row in
+#      docs/TOLERANCES.md §3.1.1 (NC-001). Using it as a ruler is therefore
+#      using a ruler that has been checked against the literature, not against
+#      itself. What it emphatically does NOT do is upgrade the CLAIM: a Pass 3
+#      iccce-vs-lcms2 comparison stays Kind::CrossCheck no matter how good the
+#      ΔE code is.
+#
+#   3. THE ANSWER UNDER TEST DOES NOT COME FROM THESE CRATES. iccce's colour
+#      values are obtained by running the SHIPPED `iccce transform` BINARY as a
+#      subprocess (src/lib.rs, `Iccce`), exactly as lcms2's come from running
+#      `transicc`. The linked crates are used only to (a) read the destination
+#      profile's matrix/TRC model so both sides' device outputs can be carried
+#      into Lab, and (b) evaluate ΔE2000 there. Swapping the subprocess for an
+#      in-process call would make the two sides asymmetric and is forbidden by
+#      the doc comment on `Iccce`.
+#
+#   4. THE INSTRUMENT IS ITSELF CROSS-CHECKED. Carrying device values into Lab
+#      through iccce's own destination model is a ruler built partly from the
+#      thing being measured. src/pass3.rs therefore ALSO computes the same
+#      Lab values through the oracle (transicc <dst> -> *Lab4) and reports the
+#      disagreement between the two rulers, so an instrument error shows up as
+#      a number instead of hiding in the metric.
+#
+# All three crates are MIT and are this repository's own code, so there is no
+# new licence exposure to classify in LEGAL.md §1.
+
+[dependencies]
+iccce-color = { path = "../../crates/iccce-color" }
+iccce-profile = { path = "../../crates/iccce-profile" }
+iccce-cmm = { path = "../../crates/iccce-cmm" }
 
 [package]
 name = "iccce-difftest"
@@ -50,18 +103,17 @@ license = "MIT"
 description = "Differential-test harness driving the pinned lcms2 oracle. Not shipped; not a workspace member."
 publish = false
 
-# Two binaries live here: the runner (`iccce-difftest`) and the DL-011
-# experiment (`legacy_lab_probe`, README §12). Without this key a bare
-# `cargo run` fails with "could not determine which binary to run", and README
-# §11.1 documents `cargo run` as the way to run the checks. The runner is the
-# default; the experiment is deliberately explicit, because it is a one-off
-# investigation rather than part of the suite.
+# Three binaries live here: the runner (`iccce-difftest`), the DL-011
+# experiment (`legacy_lab_probe`, README §12), and the Pass 3 detail report
+# (`pass3_report`, README §13). Without this key a bare `cargo run` fails with
+# "could not determine which binary to run", and README §11.1 documents
+# `cargo run` as the way to run the checks. The runner is the default; the
+# other two are deliberately explicit, because one is a one-off investigation
+# and the other emits a per-point table nobody wants in a suite run.
 default-run = "iccce-difftest"
 
 # Declares this package the root of its own workspace. See the header.
 [workspace]
-
-[dependencies]
 
 [lints.rust]
 unsafe_code = "deny"

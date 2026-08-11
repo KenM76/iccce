@@ -10,40 +10,68 @@
 //! Exit codes are the contract in `lib.rs`: `0` all-passed (and at least one
 //! ran), `1` a failure, `2` a harness/oracle error, `3` **nothing ran**.
 //!
-//! ## What is registered here, as of 2026-08-11
+//! ## What is registered here, as of 2026-08-11 (Pass 3)
 //!
-//! **Exactly one check, and it compares lcms2 against lcms2.** That is worth
-//! saying plainly, because a runner with one green line looks like coverage:
+//! **Eight records: one oracle-reproducibility smoke check and seven Pass 3
+//! records.** The difference between them matters more than the count:
+//!
+//! ### 1 — the smoke check, which is lcms2 against lcms2
 //!
 //! - `smoke/srgb-white-to-lab` — the sRGB white → Lab conversion recorded in
 //!   `README.md` §8.2, re-run and compared to the recorded numbers. Its kind
 //!   is [`Kind::OracleReproducibility`]: **both sides are lcms2**. It
-//!   establishes that the harness drives the oracle correctly, that the pin
-//!   and toolchain still produce the recorded answer, and nothing whatever
-//!   about whether iccce is right — iccce is not in the loop and has no
-//!   transform to put in it yet (Pass 3).
+//!   establishes that the harness drives the oracle correctly and that the
+//!   pin and toolchain still produce the recorded answer. It says nothing
+//!   whatever about whether iccce is right; iccce is not in that loop.
 //!
-//! It also **skips** on any machine without the Windows colour directory,
-//! because its input is a category (c) system profile (`LEGAL.md` §3). On the
-//! Linux CI runner this runner therefore exits **3, not 0**. That is the
-//! intended behaviour: a suite that skipped everything has not passed.
+//! ### 7 — Pass 3, which is the first time iccce is graded at all
 //!
-//! ## Why the expectation is allowed to come from lcms2 here
+//! Built by [`iccce_difftest::pass3`] over a 133-point deterministic grid,
+//! sRGB → Adobe RGB (1998), media-relative colorimetric, `-c0`:
+//!
+//! | id | kind | what it can catch |
+//! |---|---|---|
+//! | `pass3/srgb-to-adobergb/device-vs-lcms2` | cross-check | arithmetic disagreement with lcms2 in device units |
+//! | `pass3/srgb-to-adobergb/device-mean` | cross-check | **reported, not graded** (tolerance ∞) |
+//! | `pass3/srgb-to-adobergb/de2000-vs-lcms2` | cross-check | the same disagreement, expressed perceptually |
+//! | `pass3/srgb-to-adobergb/de2000-mean` | cross-check | **reported, not graded** (tolerance ∞) |
+//! | `pass3/srgb-to-adobergb-to-srgb/roundtrip-de2000` | self-consistency | the cost of the approximations in the loop — an **upper** bound |
+//! | `pass3/roundtrip/white-clamp-cost-matches-prediction` | self-consistency | a **missing** normative F.8–F.16 clamp, which the upper bound above would reward |
+//! | `pass3/instrument/adobergb-device-to-lab-ruler` | cross-check | a wrong ruler underneath the ΔE numbers |
+//!
+//! **Two of the seven are ungraded means.** They pass because there is
+//! nothing for them to fail, their tolerance prints as `inf`, and their `why`
+//! string says so. A green line is not evidence; the `kind` and the tolerance
+//! on the same line are what tell a reader what it is worth.
+//!
+//! ## Everything here skips without the Windows colour directory
+//!
+//! Every check's input is a category (c) system profile (`LEGAL.md` §3), and
+//! Pass 3 additionally needs `target/release/iccce`. On a runner missing
+//! either, this binary exits **3, not 0**. That is the intended behaviour: a
+//! suite that skipped everything has not passed.
+//!
+//! ## Why the smoke check's expectation is allowed to come from lcms2
 //!
 //! `CLAUDE.md` rule 3 forbids an expectation that came from the code under
-//! test. There is no code under test here — nothing of iccce's runs. The
-//! expectation came from lcms2 and is compared against lcms2, which is a
-//! *regression* claim about the toolchain, and the [`Kind`] on the record
+//! test. In the smoke check there is no code under test — nothing of iccce's
+//! runs. The expectation came from lcms2 and is compared against lcms2, which
+//! is a *regression* claim about the toolchain, and the [`Kind`] on the record
 //! says exactly that. **These numbers must never be transplanted into an
 //! `iccce-color` or `iccce-cmm` unit test as expected values.** At that
 //! moment they would become an expectation derived from an implementation,
 //! and the claim would silently change from "the oracle still answers the
 //! same" to "iccce is correct", which it would not support.
+//!
+//! The Pass 3 records have no recorded expectation at all: **both sides are
+//! computed in the run**, which is why they are cross-checks and not
+//! reproducibility checks, and why nothing in them can go stale.
 
 use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
+    pass3,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -127,6 +155,15 @@ fn main() {
                     },
                 );
             }
+            // Pass 3's records are emitted as skips too, so the report has the
+            // same eight lines everywhere. A suite that emits nothing when it
+            // cannot run is indistinguishable, in a log, from one that was
+            // never wired up.
+            for r in pass3::unavailable_records(&pass3::Unavailable::Skip(
+                "oracle not built on this machine".into(),
+            )) {
+                report.push_record(r);
+            }
             finish(&report);
             return;
         }
@@ -148,6 +185,11 @@ fn main() {
                     },
                 );
             }
+            for r in pass3::unavailable_records(&pass3::Unavailable::Error(format!(
+                "oracle version check failed: {e}"
+            ))) {
+                report.push_record(r);
+            }
             finish(&report);
             return;
         }
@@ -157,6 +199,29 @@ fn main() {
         let outcome = c.run(&oracle);
         report.push(c, outcome);
     }
+
+    // Pass 3. `run` returns its own skip/error records rather than
+    // propagating, so a missing profile or an unbuilt binary produces seven
+    // labelled SKIP lines instead of an absence.
+    let (analysis, records) = pass3::run(&oracle);
+    if let Some(a) = &analysis {
+        report.note(format!(
+            "pass3: iccce={} ({}) grid={} points clipped={} \
+             (run `cargo run --bin pass3_report` for the per-point record)",
+            a.iccce_exe.display(),
+            if a.iccce_is_debug {
+                "DEBUG BUILD"
+            } else {
+                "release"
+            },
+            a.grid.len(),
+            a.clipped_points
+        ));
+    }
+    for r in records {
+        report.push_record(r);
+    }
+
     finish(&report);
 }
 

@@ -1,15 +1,28 @@
 # `tools/difftest` — the differential oracle
 
-**Status: Pass 0 harness exists, 2026-08-11.** The oracle is pinned, built
-and demonstrated to answer questions; a minimal Rust harness now drives it
-programmatically (**§11**), and the first designed experiment has been run
-against it (**§12**) — settling the question `ARCHITECTURE.md` DL-011 left
-open and turning up a second, unrelated version-keyed divergence on the way.
+**Status: Pass 3 differential run, 2026-08-11.** The oracle is pinned, built
+and demonstrated to answer questions; a Rust harness drives it
+programmatically (**§11**); the first designed experiment (**§12**) settled
+what `ARCHITECTURE.md` DL-011 left open and turned up a second, unrelated
+version-keyed divergence on the way; and **§13 is the first comparison in this
+repository between `iccce` and anything else.**
 
-**One check is registered and it compares lcms2 against lcms2.** Nothing in
-this directory has yet compared anything to `iccce`, because `iccce` has no
-transform to compare (Pass 3). Said plainly here so that a green run is not
-mistaken for coverage.
+**Eight records are registered. One compares lcms2 against lcms2 (§11.3);
+seven grade `iccce` (§13).** Of those seven, two are ungraded means whose
+tolerance is literally `inf`. Said plainly here so that
+`summary pass=8 fail=0` is not mistaken for eight independent proofs.
+
+> **The two numbers ROADMAP Pass 3 asks for, up front** — full derivation and
+> scope in §13:
+>
+> | | value | tolerance | kind |
+> |---|---|---|---|
+> | **iccce vs lcms2**, sRGB → Adobe RGB (1998) | **max 3.476×10⁻³ ΔE2000** (mean 5.114×10⁻⁴) | 2×10⁻² | cross-check |
+> | **round trip** sRGB → Adobe RGB → sRGB, iccce alone | **max 1.8788×10⁻² ΔE2000** (mean 8.674×10⁻⁴) | 2.5×10⁻² | self-consistency |
+>
+> Scope, which travels with them: **one profile pair, one intent
+> (media-relative colorimetric), one direction, 133 grid points, one platform
+> (Windows 11 / MSVC), one lcms2 build.**
 
 ---
 
@@ -148,11 +161,14 @@ tools/difftest/
   build-lcms2.sh     POSIX build            (NOT yet exercised — see §7)
   Cargo.toml         the harness crate. NOT a workspace member — see §11
   src/
-    lib.rs           drive transicc, parse it, grade the answer
-    main.rs          the runner; registers the checks (§11)
+    lib.rs           drive transicc AND iccce, parse them, grade the answer
+    pass3.rs         the Pass 3 experiment: grid, tolerances, records (§13)
+    main.rs          the runner; registers the checks (§11, §13)
     bin/
       legacy_lab_probe.rs   the DL-011 experiment (§12) — also authors the
                             synthetic probe profiles byte by byte
+      pass3_report.rs       the per-point Pass 3 record, and the two
+                            experiments that TEST §13's justifications
   out/               git-ignored; generated probe profiles land here
   target/            git-ignored
   vendor/            git-ignored
@@ -446,16 +462,30 @@ someone an hour.
 ## 10. Not done yet
 
 - CGATS file I/O — `transicc` accepts `[CGATS input] [CGATS output]`
-  positionally, which is the efficient way to push a whole corpus through
-  in one process rather than one triplet at a time. Worth using once the
-  corpus exists.
+  positionally. **Partly obsolete as a motivation**: §13 pushes a 133-point
+  grid through one `transicc` process on stdin (`Oracle::convert_batch`),
+  which gets the same one-process-per-comparison property without a file
+  format. CGATS remains worth using if a corpus ever needs to live on disk.
 - Linux build, and therefore Linux CI (§7). The harness runs on Linux —
-  it is `std`-only — but with no oracle it exits **3 (nothing ran)**.
+  it is `std`-only — but with no oracle it exits **3 (nothing ran)**, and
+  §13's checks additionally need the Windows colour directory, so on Linux
+  they skip regardless.
 - The general fixture corpus (`tools/gen-profiles`, `fixtures/synthetic`).
   §12's probe writes profiles byte by byte inside the harness because Pass
   2's generator does not exist; when it does, port the probe onto it.
-- **Any comparison against `iccce`.** Every number here is lcms2's.
-- ΔE metrics in the harness (§11 explains why absolute-only, for now).
+  **§13 uses no synthetic profiles at all** — both its profiles are category
+  (c) system files, which is why every §13 check skips off this machine.
+- **The reverse direction, Adobe RGB → sRGB.** Spot-checked by hand on
+  2026-08-11 (§13.4) and not in the suite. It is the direction that would
+  exercise a *genuine* gamut clip rather than §13's 1-lsb excursions.
+- **Any intent but media-relative colorimetric**, and any LUT profile.
+  Pass 4.
+- **Distinguishing clamp-before-TRC⁻¹ from clamp-after** (§13.6). iccce
+  clamps at three sites, so the normative F.8–F.16 *ordering* is currently
+  unobservable at the shipped surface. Recorded as owed.
+
+Done since this list was written: ΔE metrics (§11.2 and §13.2 record the
+decision and its limits), and the first comparison against `iccce` (§13).
 
 ---
 
@@ -470,19 +500,30 @@ root manifest (which belongs to a different agent). The invariant it
 protects is §1's: **no shipping crate may reach lcms2, even through
 `cargo tree`.**
 
-**Zero dependencies, as policy.** Everything is `std`. The temptations
-declined were `serde` (machine-readable output is hand-emitted TSV) and a
-CLI parser. `LEGAL.md` §1 requires classifying every dependency; the
-cheapest classification is the empty set.
+**Zero THIRD-PARTY dependencies, as policy.** Everything the harness does
+for itself is `std`. The temptations declined were `serde` (machine-readable
+output is hand-emitted TSV) and a CLI parser. `LEGAL.md` §1 requires
+classifying every dependency; the cheapest classification is the empty set.
+
+**Three path dependencies on iccce's own crates were added 2026-08-11 for
+Pass 3** — `iccce-color`, `iccce-profile`, `iccce-cmm`. The decision, its
+four-part justification and its limits are in `Cargo.toml`'s header and in
+§13.2. The one-line version: the arrow points *harness → code under test*,
+which is the normal shape of a test harness and leaves §1's invariant
+(no shipping crate may reach lcms2) exactly where it was.
 
 ### 11.1 Run it
 
 ```sh
 cd tools/difftest
-cargo test                      # the harness's own unit tests (12)
-cargo run                       # the registered checks
+cargo test                        # the harness's own unit tests (18)
+cargo run                         # the registered checks (8 records)
 cargo run --bin legacy_lab_probe  # the §12 experiment
+cargo run --bin pass3_report      # the §13 per-point record + experiments
 ```
+
+`cargo run` needs **`cargo build --release -p iccce-cli` to have been run at
+the workspace root**, or §13's seven records skip with that as their reason.
 
 Output is TSV:
 
@@ -521,12 +562,16 @@ could have produced a claim it does not support:
   changes the answer (§9), and — §12 — lcms2 turns BPC on by itself for
   v4 profiles at perceptual and saturation, so a record that does not say
   what was asked for cannot be interpreted later.
-- **No ΔE.** The only metric is `abs-max-component`. Adding ΔE would mean
-  either depending on `iccce-color` (grading iccce with iccce's own
-  arithmetic — a coupling that must be a documented decision, not a
-  convenience) or writing a second ΔE2000 to get subtly wrong. The
-  comparisons available today are exact-encoding questions, for which
-  `ARCHITECTURE.md` DL-005 says ΔE is the wrong instrument anyway.
+- **~~No ΔE.~~ ★ Superseded 2026-08-11 — see §13.2.** This entry read: *"The
+  only metric is `abs-max-component`. Adding ΔE would mean either depending
+  on `iccce-color` (grading iccce with iccce's own arithmetic — a coupling
+  that must be a documented decision, not a convenience) or writing a second
+  ΔE2000 to get subtly wrong."* Pass 3 needs a perceptual statement, so the
+  documented decision has been taken and the coupling exists. The kept half
+  of the original entry: `ARCHITECTURE.md` **DL-005 still governs encoding
+  questions — legacy-Lab correctness is asserted by exact-value integer
+  invariants, never by ΔE**, and §12's probe still uses no ΔE at all.
+  `Metric` accordingly keeps its absolute variants alongside the new ΔE ones.
 
 ### 11.3 The registered check, and exactly what it proves
 
@@ -732,3 +777,472 @@ Neither finding is ground truth about colour: both are
 `implementation-cross-check`-class observations of one build of one
 implementation (`NUMERIC_CLAIMS.md` §1). What they establish is what
 iccce will be compared against, which is exactly what an oracle is for.
+
+---
+
+## 13. ★ Pass 3 — the matrix/TRC differential: iccce against lcms2
+
+**Run 2026-08-11 by `icc-conformance`.** This is the **first comparison in
+this repository between `iccce` and any other implementation.** Everything
+before it either compared lcms2 to lcms2 (§8, §11.3) or graded
+`iccce-color` against published CIE data with no oracle in the loop
+(`TOLERANCES.md` §3.1).
+
+Apparatus: `src/pass3.rs` (grid, tolerances, records) and
+`src/bin/pass3_report.rs` (per-point record, and the two experiments that
+**test** the tolerances' justifications rather than asserting them).
+
+### 13.1 The profile pair, and why no substitution was needed
+
+ROADMAP Pass 3's done-when names **sRGB → AdobeRGB**. Both profiles are
+present on this machine in the Windows colour directory, so the done-when is
+answered as written and **no substitution-with-reason is invoked**:
+
+| | source | destination |
+|---|---|---|
+| file | `C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm` | `C:\Windows\System32\spool\drivers\color\AdobeRGB1998.icc` |
+| category (`LEGAL.md` §3) | **(c)** — read locally, never committed | **(c)** — read locally, never committed |
+| version / class / spaces | 2.1 · `mntr` · `RGB ` → `XYZ ` | 2.1 · `mntr` · `RGB ` → `XYZ ` |
+| `desc` | `sRGB IEC61966-2.1` | `Adobe RGB (1998)` |
+| `cprt` | Copyright (c) 1998 Hewlett-Packard Company | Copyright 2000 Adobe Systems Incorporated |
+| colorants (r/g/b XYZ) | (0.4361, 0.2225, 0.0139) (0.3851, 0.7169, 0.0971) (0.1431, 0.0606, 0.7141) | (0.6097, 0.3111, 0.0195) (0.2053, 0.6257, 0.0609) (0.1492, 0.0632, 0.7446) |
+| **TRC** | **1024-entry sampled `curv` tables** (one shared tag-data block at offset 1084 for all three) | **single-value `curv` gamma, γ = 2.19921875** (`u8Fixed8` `0x0233`, exact in binary) |
+| malformations reported | 0 | 0 |
+
+**The TRC row is why this is a good pair rather than merely the named one.**
+The source's tone curve is a *sampled table* and the destination's is an
+*analytic gamma*, so one run exercises `iccce-cmm::curve`'s table
+interpolation **and** its analytic evaluation, its Annex-F.1 table inversion
+**and** its analytic inversion. Had both been gammas, half of that crate
+would have gone untested while the report said "sRGB → Adobe RGB verified".
+
+**Both are v2.1**, which matters for a reason recorded in §12.4 and taken up
+in §13.3.
+
+### 13.2 The instrument, and the design decision that had to be taken to build it
+
+Three of `iccce`'s own crates are now **path dependencies of this harness**.
+§11.2 previously said the harness *cannot* compute ΔE precisely because that
+coupling "must be a documented decision, not a convenience". This is the
+decision. Four things make it safe, and all four are load-bearing:
+
+1. **The direction is the safe one.** §1's invariant is *no crate under
+   `crates/` may reach lcms2*. These arrows point **difftest → iccce**, i.e.
+   harness → code under test. `cargo tree` on any shipping crate still
+   cannot reach lcms2; this crate is still outside the workspace, so
+   `cargo test --workspace` still cannot pull it in.
+2. **The ruler is validated against the literature.**
+   `iccce_color::delta_e_2000` is graded against **all 34 published pairs of
+   Sharma, Wu & Dalal (2005)** at 1×10⁻⁴ — the single **ground-truth** row in
+   `TOLERANCES.md` §3.1.1 (NC-001). It is not a ruler checked against itself.
+3. **The claim is unchanged.** Every iccce-vs-lcms2 record here is
+   **cross-check**, not ground truth, however good the ΔE code is. A good
+   ruler does not upgrade a weak claim.
+4. **The answers still come from subprocesses.** iccce's colours come from
+   running the shipped **`iccce transform` binary**; lcms2's from running
+   `transicc`. The linked crates are the *instrument*, never the *subject*.
+   Calling `MatrixTrcTransform::convert` in-process would be one line shorter
+   and would make the two sides asymmetric — printing, parsing and argument
+   handling exercised on one side only — so `Iccce`'s doc comment forbids it.
+
+**The one exception is labelled as one.** Record 7 (§13.5) is an *instrument
+check*: it holds iccce's device→Lab model, called in-process, against lcms2's
+rendering of the same profile. That record says so in its own `source` field.
+
+#### The units trap
+
+| | input | output |
+|---|---|---|
+| `iccce transform` | one whitespace-separated triple per line, floats **0..1** | 6 decimals, **0..1** |
+| `transicc` (8-bit RGB) | one component per line, **0..255** | 4 decimals, **0..255** |
+
+Different in *both* directions. `pass3.rs` works in normalised 0..1
+throughout and converts only at the `transicc` boundary. A number quoted
+without its scale is wrong by 255, which looks like catastrophic colour error
+rather than a units bug.
+
+### 13.3 Settings, and the trap that was avoided by construction
+
+| setting | value | why |
+|---|---|---|
+| intent | **media-relative colorimetric** (`-t1`) | the only intent iccce implements in Pass 3; `iccce transform` refuses any other **by name** rather than substituting |
+| precalculation | **`-c0`** (`cmsFLAGS_NOOPTIMIZE`) | an oracle must be the reference implementation's most accurate path — the same reason `fast_float` is never built (§3). Any other `-c` makes a disagreement ambiguous between "iccce is wrong" and "lcms2 approximated" |
+| BPC | not requested | but see below |
+| grid | 133 deterministic points | §13.7 |
+
+**Perceptual and saturation were not compared, deliberately.** §12.4 /
+`ARCHITECTURE.md` **DL-013**: lcms2's `_cmsLinkProfiles` sets `BPC = TRUE` on
+its own authority ("following Adobe's document") whenever the intent is
+perceptual or saturation **and** `cmsGetEncodedICCversion >= 0x4000000`.
+Measured effect ≈**3.15 `L*` at black** — nothing like sub-perceptual. A
+tolerance set at those intents without knowing that is a tolerance set on the
+wrong quantity.
+
+**This pair would have escaped that trap anyway** — both profiles are v2.1
+(`0x02100000`), below the version gate. That is worth stating and worth *not*
+relying on: escaping a trap by accident is not avoiding it. The intent is
+pinned at media-relative **by construction** (iccce implements nothing else),
+and the v2-ness is recorded as a *second, independent* reason the comparison
+is clean.
+
+### 13.4 ★ Finding — lcms2 does not clamp its float device output on the high side, and iccce does
+
+**8 of 399 output components (2.01%) came back from `transicc` outside
+`[0,1]`** — up to `1.000 120` — all of them on grid points whose maximum
+channel is 1.0. iccce returns exactly `1.000 000` for the same inputs.
+
+**Which one does the specification support?** ICC.1:2022 **Annex F.8–F.16**
+is normative for the matrix/TRC PCS→device direction and clamps each linear
+component to `[0,1]` **before** the inverse TRC; that is what
+`crates/iccce-cmm/src/matrix_trc.rs` implements and cites. On that reading
+iccce is right and lcms2 is permissive.
+
+**But the mechanism suggests lcms2 has no policy here at all.** Measured the
+same day in the *reverse* direction (Adobe RGB → sRGB, whose destination TRC
+inverse is a **tabulated** reverse curve rather than an analytic gamma),
+lcms2 **does** saturate: `0 1 0` → `0.000000 1.000000 0.000000`, no
+excursion. So the difference tracks *which inversion path lcms2 took* —
+`pow(1.000106, 1/γ)` is perfectly finite and nothing forces it back, whereas
+a reverse table has nothing to return outside its range. That is an artefact,
+not a stated position.
+
+**Status: FINDING, not failure** (`CLAUDE.md` rule 7). It is recorded here
+and **not** settled from the specification text, because settling it properly
+means putting the question to `icc-spec-librarian`, and **no Agent tool was
+available in the session that ran this** — so the dispatch could not be made
+and is **owed**, not done. The specific question to put:
+
+> Does ICC.1:2022 require a matrix/TRC PCS→device conversion to deliver a
+> device value within `[0,1]`, or only to clamp the *linear* value before
+> TRC⁻¹? `TOLERANCES.md` NA-003 records that clause 6.4 requires clipping
+> "on a per-component basis" on **integer** conversion and *no* clipping for
+> float32 encodings — which may make lcms2's float excursion conforming and
+> iccce's clamp merely stricter. The two clauses need reading together.
+
+**How it is handled in the numbers meanwhile.** The device-space check
+compares against lcms2's output **clamped into `[0,1]`**, so it grades
+*arithmetic* disagreement; the *unclamped* maximum (1.200×10⁻⁴) and the count
+of excursions are reported on the same record as a separate quantity. The ΔE
+check is structurally blind to this, and that is correct rather than a gap: a
+device code outside `[0,1]` denotes no colour in that device space, so there
+is no colour difference to measure. Stated in the record so nobody reads the
+ΔE silence as agreement.
+
+### 13.5 The seven records, and what each can catch
+
+`cargo run` emits these on stdout as TSV. Reproduced in §13.9.
+
+| # | id | kind | metric | tolerance | observed |
+|---|---|---|---|---|---|
+| 1 | `pass3/srgb-to-adobergb/device-vs-lcms2` | cross-check | device abs-max, 0..1 | **5×10⁻⁴** | **6.7059×10⁻⁵** |
+| 2 | `pass3/srgb-to-adobergb/device-mean` | cross-check | device abs-mean, 0..1 | **∞ — reported, not graded** | 6.1672×10⁻⁶ |
+| 3 | `pass3/srgb-to-adobergb/de2000-vs-lcms2` | cross-check | ΔE2000 max | **2×10⁻²** | **3.4762×10⁻³** |
+| 4 | `pass3/srgb-to-adobergb/de2000-mean` | cross-check | ΔE2000 mean | **∞ — reported, not graded** | 5.1145×10⁻⁴ |
+| 5 | `pass3/srgb-to-adobergb-to-srgb/roundtrip-de2000` | self-consistency | ΔE2000 max | **2.5×10⁻²** | **1.8788×10⁻²** |
+| 6 | `pass3/roundtrip/white-clamp-cost-matches-prediction` | self-consistency | ΔE2000 max | **1×10⁻³** | **5.7392×10⁻⁶** |
+| 7 | `pass3/instrument/adobergb-device-to-lab-ruler` | cross-check | ΔE2000 max | **5×10⁻²** | **8.7945×10⁻⁵** |
+
+Two of the seven are **means with an infinite tolerance**. They pass because
+there is nothing for them to fail. They exist so the distribution is on file
+next to the max — **a mean over a grid hides exactly the outlier a colour
+engine gets wrong**, and quoting one for the other is the misuse the `metric`
+column is there to prevent.
+
+Record 7 is the **instrument check**: iccce's Adobe RGB device→Lab model
+(in-process) against `transicc -i<dst> -o*Lab4 -t1 -c0` over the same 133
+device values. It exists because records 3–5 measure things *with a ruler
+built partly out of the code under test*; if that ruler were wrong, their ΔE
+would be systematically mis-scaled and the error would hide inside the metric
+instead of appearing as a number. At 8.79×10⁻⁵ ΔE2000 — below `transicc`'s
+own Lab print floor of ~1×10⁻⁴ — the two rulers are indistinguishable, so the
+ΔE figures above are not resting on a bent one.
+
+### 13.6 ★ The tolerances, and the two experiments that test their justifications
+
+Full derivations live on the constants in `src/pass3.rs`. What follows is
+what each number rests on and, more importantly, **what was done to check
+that the reasoning was true rather than plausible**.
+
+#### 13.6.1 Device-space, 5×10⁻⁴ — and the quantisation experiment
+
+The bound is derived from **lcms2's own arithmetic**, not from iccce's:
+
+> `cmsgamma.c`, `cmsEvalToneCurveFloat`:
+> ```c
+> // Check for 16 bits table. If so, this is a limited-precision tone curve
+> if (Curve->nSegments == 0) {
+>     In  = (cmsUInt16Number) _cmsQuickSaturateWord(v * 65535.0);
+>     Out = cmsEvalToneCurve16(Curve, In);
+>     return (cmsFloat32Number) (Out / 65535.0);
+> }
+> ```
+
+The source profile's TRCs are exactly that case — 1024-entry sampled tables,
+no analytic segments — so lcms2 rounds both the curve's **input** and its
+**output** to 1/65535 where iccce interpolates in `f64` throughout. Each
+rounding is ≤ ½ lsb = 7.63×10⁻⁶; the input term is amplified by the sRGB
+EOTF's peak slope (≈2.275 at white) to ≈1.74×10⁻⁵; total ≈**2.5×10⁻⁵ in
+source-linear**. That is then amplified by the destination inverse gamma,
+`(1/γ)·L^(1/γ−1)`, **which is unbounded as `L` → 0** — so there is no finite
+uniform device-space tolerance valid over the whole cube, and pretending
+otherwise would be the dishonest part. Evaluated at *this grid's* darkest
+non-zero step (1/16 device → 4.03×10⁻³ linear → ×11.6) the envelope is
+2.9×10⁻⁴; **5×10⁻⁴** is that rounded up.
+
+**The tolerance is therefore grid-dependent by construction**, and its `why`
+string says so: a grid extended nearer black must **re-derive** it, never
+re-tune it.
+
+**★ The experiment.** An assertion in a `why` string is exactly the kind of
+claim this role exists to distrust, so `pass3_report` §4 **tests** it by the
+method §12.4 established — *predict the confound quantitatively from the
+other implementation's own arithmetic*. It emulates lcms2's evaluation inside
+iccce's model (`linear = Q(TRC(Q(device)))`, `Q(v) = round(v·65535)/65535`)
+and re-measures against lcms2's actual output:
+
+| residual against lcms2's measured output | max | mean |
+|---|---|---|
+| device (0..1), **iccce as shipped** | 6.705882×10⁻⁵ | 6.167183×10⁻⁶ |
+| device (0..1), **with lcms2's 16-bit quantisation modelled** | **2.311449×10⁻⁷** | 1.448340×10⁻⁷ |
+| ΔE2000, iccce as shipped | 3.476186×10⁻³ | 5.114460×10⁻⁴ |
+| ΔE2000, with quantisation modelled | 8.412613×10⁻⁵ | 1.772019×10⁻⁵ |
+
+**The device-space residual shrinks by a factor of 290, to 2.31×10⁻⁷ —
+*below* `transicc`'s own print floor of 1×10⁻⁴/255 = 3.92×10⁻⁷.** The
+disagreement is accounted for, essentially completely, by a named
+approximation in the **oracle**. The justification stands, and it stands
+because it was measured.
+
+Two limits, stated so a partial collapse could not have been over-read: lcms2
+interpolates its table in 16-bit fixed point (`LinLerp1D` +
+`_cmsQuickSaturateWord`) while the emulation interpolates in `f64` and rounds
+once; and lcms2 carries the pipeline in `f32`. A residual of a few lsb was
+the expected floor. It came in below it.
+
+#### 13.6.2 ΔE2000 cross-check, 2×10⁻²
+
+Carrying the device value back through the destination model **undoes** the
+inverse-gamma amplification that made §13.6.1 grid-dependent, so this one has
+a finite ceiling over the whole cube. The same 2.5×10⁻⁵ source-linear error
+becomes ≤2.5×10⁻⁵ in PCS XYZ (`‖M_src‖∞` = 1.0, the Y row, by construction
+for a D50-referenced media-relative profile), and Lab's steepest
+sensitivities are on `f`'s linear segment where `f'(t) = 7.787`:
+`dL*/dY ≤ 903.3` and `da*/dX ≤ 4038`. Worst case, every term aligned at its
+maximum at the most sensitive point in the space: **ΔE00 ≲ 0.28**.
+
+**2×10⁻² is set deliberately *tighter* than that ceiling**, because 0.28 is a
+pessimistic union bound and a residual that had quietly grown from 3×10⁻³ to
+0.27 would still pass a 0.28 gate with nothing to show it —
+`TOLERANCES.md` §3.1's boxed warning, applied. 50× below the (⚠ provisional)
+1.0 ΔE2000 perceptibility anchor, whose ⚠ this inherits and can afford.
+
+#### 13.6.3 ★ Round trip, 2.5×10⁻² — a tolerance that FAILED, and why the number moved
+
+**This tolerance was 1×10⁻² for the length of one run, and that run failed at
+1.8788×10⁻².** The sequence is kept because `TOLERANCES.md` §0 makes the
+*order* of the diagnosis the point.
+
+The original justification read: *"sRGB and Adobe RGB (1998) share their red
+(0.64, 0.33) and blue (0.15, 0.06) primaries and Adobe's green is more
+saturated, so the sRGB triangle is strictly contained, no grid point is
+clipped, and the only losses are interpolation ones."* Every clause of that
+is true **of the two colour spaces** and the conclusion is false **of the two
+files**.
+
+**★ The experiment** (`pass3_report` §5). A matrix/TRC profile's media white
+is its colorant sum `M·(1,1,1)`, and the two files' colorants were authored
+and rounded to `s15Fixed16` independently — HP in 1998, Adobe in 2000.
+Measured from the tags:
+
+```
+media white = colorant sum M*(1,1,1), as ENCODED in each file:
+  source (sRGB)      X=0.96427917 Y=0.99996948 Z=0.82508850
+  dest   (AdobeRGB)  X=0.96420288 Y=1.00000000 Z=0.82490540
+  difference         dX=+7.629e-5  dY=-3.052e-5  dZ=+1.831e-4
+```
+
+Those differences are **5, 2 and 12 units of `s15Fixed16`'s 1/65536 lsb**,
+accumulated over three colorant tags. Consequently the source's device white
+lands *outside* the destination's encoded cube:
+
+```
+source white through M_dst^-1 : R=1.00010586 G=0.99987297 B=1.00025354
+clamped to [0,1] per F.8-F.16 : R=1.00000000 G=0.99987297 B=1.00000000
+channels actually clipped     : [0, 2]   <-- the original justification said 'none'
+```
+
+**25 of the 133 grid points are clipped somewhere**, all on the high-value
+faces of the cube. Predicting the round-trip ΔE at white from **the two
+matrices and the clamp alone** — no tone curve (every TRC here is exactly 1
+at 1), no lcms2, no measurement:
+
+| | ΔE2000 |
+|---|---|
+| **predicted**, closed form | 1.878244×10⁻² |
+| **observed**, two invocations of the shipped binary | 1.878818×10⁻² |
+| relative agreement | **0.03 %** |
+
+Mechanism established. The number is then re-derived from it:
+
+| term | value | source |
+|---|---|---|
+| range clamp of the encoded white-point mismatch | 1.8782×10⁻² | closed form from the two files' colorant tags |
+| 1024-entry table interpolation, forward + inverse | ≈1×10⁻³ | `h²·max(f'')/8`, `h = 1/1023`, `max(f'') ≈ 3.0`, ×903.3 `dL*/dY`, two non-cancelling evaluations |
+| **sum** | ≈1.98×10⁻² | |
+| **tolerance** | **2.5×10⁻²** | the sum with ~25 % headroom, because the closed form is evaluated at the white corner only and the other 24 clipped points were not separately predicted |
+
+**This is a corrected justification, not a widened number.** The distinction
+is the whole of `TOLERANCES.md` §0's procedure: step 4 ("is the tolerance
+wrong?") is reachable only after steps 1–3, and it was reached because step 3
+found a property of the *corpus* the original derivation did not know about.
+The change is logged in `TOLERANCES.md` §4 with both justifications, per the
+append-only rule. **The number is corpus-specific and says so** — a different
+profile pair re-derives it from its own colorant tags.
+
+#### 13.6.4 ★ The check that stops §13.6.3 rewarding a deleted requirement — 1×10⁻³
+
+Record 5 is an **upper** bound on a quantity that is mostly a *deliberate
+cost*. Remove iccce's range clamping and the round trip gets **better**: the
+upper bound would go green while a normative requirement had been deleted. A
+gate that rewards that is not a gate.
+
+Record 6 refuses the trade. It pins |predicted − observed| at device white,
+where the prediction is closed-form `f64` arithmetic on the two colorant
+matrices and the clamp, and the observation crosses two subprocess
+boundaries. Tolerance 1×10⁻³ = ten times the ~1×10⁻⁴ ΔE00 floor imposed by
+`iccce transform`'s 6-decimal device print on each leg (±5×10⁻⁷ per
+component × `dL*/d device ≈ 85` at white ÷ `S_L ≈ 1.75`).
+
+**The sensitivity control** (`pass3_report` §5, printed): with no clamping at
+all the round trip is the exact identity, the observation would be 0, and
+this record's metric would read 1.878×10⁻² — **failing by 19×**. An apparatus
+not shown able to detect the effect it is looking for is not an experiment.
+
+**★ Scope, and it is narrower than it first looks.** A first draft of this
+check claimed it made the normative **F.8–F.16 *ordering*** falsifiable.
+That claim was wrong, and it is corrected here rather than deleted. Reading
+`iccce-cmm::curve`, range clamping happens at **three** independent sites,
+each with its own citation:
+
+| site | clause | what it clamps |
+|---|---|---|
+| `MatrixTrc::pcs_to_device` | **F.8–F.16** | linear → `[0,1]` before TRC⁻¹ |
+| `Trc::eval` | **10.18** (domain) | curve input → `[0,1]` |
+| `Trc::eval_inverse` / `invert_table` | **F.1(b)** | `y` → the attainable range |
+
+So record 6 catches a **wrong colorant matrix** and **clamping removed from
+all three sites**, and does **not** catch the F.8–F.16 clamp being removed on
+its own, because the other two make it redundant. For this profile pair the
+clamp-before/clamp-after *ordering* is **unobservable at the shipped
+surface**, and no test in this repository currently distinguishes them.
+`matrix_trc.rs`'s module doc is right that the order is normative and right
+about the symptom if a CMM got it wrong; it is `iccce-cmm`'s own
+belt-and-braces clamping that makes it undetectable here. Distinguishing the
+two orders needs a TRC whose inverse is defined outside `[0,1]`, which iccce
+never permits. **Recorded as owed, not as covered.**
+
+#### 13.6.5 Instrument check, 5×10⁻²
+
+Dominated by `transicc`'s print precision rather than by either
+implementation: Lab printed to 4 decimals gives a ΔE00 floor of ≈1×10⁻⁴
+before any arithmetic. Above that, lcms2's `cmsD50X/Y/Z` and iccce's `D50`
+agree to 4 decimals **by construction** (`illuminant.rs` cites both as its
+sources) but not beyond, and a 1×10⁻⁴ white-point difference moves `L*` by
+~0.01. **5×10⁻² is ~5× that** — loose enough not to fail on known,
+understood differences, tight enough that a swapped colorant, a missing D50
+adaptation, or the v2/v4 Lab encoding error (≈0.39 `L*`) could not pass.
+
+### 13.7 The grid — 133 points, and what it does not cover
+
+| block | count | why it is there |
+|---|---|---|
+| cube corners | 8 | black, white, three primaries, three secondaries — where clamping, gamut edges and TRC endpoints all live |
+| neutral axis | 17 (`k/16`) | neutrals are where a wrong white point or a channel-asymmetric TRC shows up as a visible cast, and where nothing else in the cube can hide it |
+| 4×4×4 lattice on `{0, 1/3, 2/3, 1}` | 64 | systematic interior coverage that cannot accidentally miss a face or an edge |
+| primaries/secondaries at half | 6 | mid-tone saturated colour, which a 1/3–2/3 lattice approximates but does not hit |
+| pseudo-random interior | 48 | a fixed-seed LCG (MMIX constants), mapped into `[0.02, 0.98]`. Systematic grids can sit exactly on table entries and never interpolate; these deliberately do not |
+| **total after de-duplication** | **133** | 143 before; the corners recur in the lattice |
+
+**Deterministic by construction** — no `rand` crate, no clock, no hash seed.
+Two runs on two machines compare the same 133 colours or the comparison
+between their reports means nothing. Pinned by five unit tests
+(`pass3::tests`), including one that asserts the count, because a silently
+changed grid silently changes the scope of every number above.
+
+**What it does not cover, stated because "verified" without scope is the
+claim this whole role exists to prevent:**
+
+- **Nothing below 1/16 except exact zero.** The destination inverse gamma
+  amplifies without bound as linear → 0, which is precisely where §13.6.1's
+  device-space tolerance is least transferable.
+- **No genuinely out-of-gamut input**, because sRGB ⊂ Adobe RGB in
+  chromaticity makes it impossible in this direction. The clip path is
+  exercised only by the 1-lsb white-point excursions of §13.6.3, not by a
+  real gamut clip. The reverse direction would; it is not in the suite.
+- **One profile pair, one intent, one direction, one platform, one lcms2
+  build.** Both profiles are v2; **no v4 profile is exercised at all.**
+- **No LUT profile, no CMYK, no grey, no `chad`, no absolute colorimetric.**
+  Pass 4.
+
+### 13.8 Coverage statement — what "Pass 3 verified" is allowed to mean
+
+> **iccce's Annex F.3 matrix/TRC model agrees with lcms2 2.19.1 to a maximum
+> of 3.476×10⁻³ ΔE2000 (mean 5.114×10⁻⁴) and 6.706×10⁻⁵ in normalised device
+> units (0.0171 in 0..255), over 133 deterministic points, sRGB →
+> Adobe RGB (1998), media-relative colorimetric, `-c0`, on Windows 11 Pro
+> 10.0.26200 / MSVC. The residual is accounted for to a factor of 290 by
+> lcms2's own 16-bit quantisation of tabulated tone curves. Round-tripping
+> sRGB → Adobe RGB → sRGB through iccce alone costs a maximum of
+> 1.8788×10⁻² ΔE2000 (mean 8.674×10⁻⁴), of which 1.8782×10⁻² is the range
+> clamp discarding a 5/2/12-lsb difference between the two files' encoded
+> media whites and is predicted in closed form from the colorant tags.**
+
+Everything outside that sentence is **not** verified. In particular it says
+nothing about v4 profiles, LUT profiles, any other intent, the absolute
+colorimetric white-point adjustment, BPC, or any platform but this one — and,
+per §1, agreement with lcms2 is evidence that two implementations read a
+clause the same way, which two implementations can do while both being wrong.
+
+### 13.9 The machine-readable lines, as emitted 2026-08-11
+
+`cargo run` output, `detail` column elided for width. The full lines carry
+the whole `why` and `source` text on **every** record — including skips — so
+a tolerance grepped out of a log always arrives with its justification
+attached.
+
+```
+note	oracle: D:\Dev\iccce\tools\difftest\vendor/build-msvc/transicc.exe
+note	banner: LittleCMS ColorSpace conversion calculator - 5.1 [LittleCMS 2.19]
+note	pass3: iccce=.../target/release/iccce.exe (release) grid=133 points clipped=25
+check	smoke/srgb-white-to-lab	PASS	oracle-reproducibility	abs-max-component	0.0001	0.000000e0	...
+check	pass3/srgb-to-adobergb/device-vs-lcms2	PASS	cross-check	device-abs-max-normalised(0..1)	0.0005	6.705882e-5	...
+check	pass3/srgb-to-adobergb/device-mean	PASS	cross-check	device-abs-mean-normalised(0..1)	inf	6.167183e-6	...
+check	pass3/srgb-to-adobergb/de2000-vs-lcms2	PASS	cross-check	dE2000-max(kL=kC=kH=1,D50)	0.02	3.476186e-3	...
+check	pass3/srgb-to-adobergb/de2000-mean	PASS	cross-check	dE2000-mean(kL=kC=kH=1,D50)	inf	5.114460e-4	...
+check	pass3/srgb-to-adobergb-to-srgb/roundtrip-de2000	PASS	self-consistency	dE2000-max(kL=kC=kH=1,D50)	0.025	1.878818e-2	...
+check	pass3/roundtrip/white-clamp-cost-matches-prediction	PASS	self-consistency	dE2000-max(kL=kC=kH=1,D50)	0.001	5.739153e-6	...
+check	pass3/instrument/adobergb-device-to-lab-ruler	PASS	cross-check	dE2000-max(kL=kC=kH=1,D50)	0.05	8.794459e-5	...
+summary	pass=8	fail=0	skip=0	error=0
+```
+
+Environment for all of the above: Windows 11 Pro 10.0.26200 x86-64; lcms2
+2.19.1 at pin `21c582a`, MSVC Release, static; `iccce` built with
+`cargo build --release -p iccce-cli` at commit **`051707f`**.
+
+### 13.10 What §13 owes
+
+1. **A dispatch to `icc-spec-librarian`** on §13.4's clamping question —
+   clause 6.4's integer-vs-float32 clipping rule read together with Annex
+   F.8–F.16. Not made: no Agent tool was available in the session that ran
+   this.
+2. **A fixture that distinguishes clamp-before from clamp-after** (§13.6.4).
+   Needs a TRC whose inverse is defined outside `[0,1]`.
+3. **The reverse direction in the suite**, Adobe RGB → sRGB — the one that
+   exercises a real gamut clip.
+4. **A v4 profile pair**, so that the version-gated behaviours §12.4 found
+   are exercised rather than merely avoided.
+5. **A synthetic pair from `tools/gen-profiles`** (Pass 2's generator, which
+   does not exist), so that §13 does not skip entirely on a machine without
+   the Windows colour directory.
+6. **A `NUMERIC_CLAIMS.md` mirror** of §13's numbers, and of NA-004 in
+   `TOLERANCES.md` §5 — `icc-librarian`'s file, not this one's.
