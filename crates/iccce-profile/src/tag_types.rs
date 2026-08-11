@@ -103,6 +103,11 @@ pub enum TagIssue {
     /// `mAB `/`mBA ` CLUT: `gridPoints` entries beyond `inputChan`
     /// shall be zero (`icc__type__lutAtoB_lutBtoA.md`, code-derived).
     ClutGridPointsBeyondInputChan,
+    /// `mAB `/`mBA ` with `offsetB == 0`: B curves appear in ALL four
+    /// permitted element combinations (10.12.1/10.13.1, A23 CLOSED —
+    /// the corpus's seventh pass), so an absent B chain is a
+    /// malformation. Reported; the tag still decodes.
+    LutAbMissingBCurves,
 }
 
 impl std::fmt::Display for TagIssue {
@@ -159,6 +164,11 @@ impl std::fmt::Display for TagIssue {
             Self::ClutGridPointsBeyondInputChan => {
                 write!(f, "clut: gridPoints beyond inputChan not zero")
             }
+            Self::LutAbMissingBCurves => write!(
+                f,
+                "mAB/mBA: offsetB == 0, but B curves are in every permitted \
+                 element combination (10.12.1/10.13.1)"
+            ),
         }
     }
 }
@@ -227,7 +237,8 @@ impl std::fmt::Display for TagDecodeError {
             }
             Self::MlucUnsupportedRecordSize { record_size } => write!(
                 f,
-                "mluc recordSize {record_size} (shall be 12): record layout unknown, refused"
+                "mluc recordSize {record_size} unsupported (10.15 says SHOULD contain 12; \
+                 Table 54 prints the constant — corpus defect §17): record layout unknown, refused"
             ),
             Self::LutSizeOverflow { type_sig } => {
                 write!(f, "{type_sig}: computed LUT size overflows, refused")

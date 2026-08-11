@@ -261,12 +261,16 @@ fn apply_curves(curves: &[Trc], v: &[f64]) -> Option<Vec<f64>> {
 
 /// The 3×4: nine coefficients row-major, then the three offsets added
 /// per row (corpus: dropping them is "a uniform colour cast that looks
-/// like a white-point problem").
+/// like a white-point problem"). Output is clamped to [0,1] — the
+/// NORMATIVE matrix-output clamp captured in the corpus's per-type
+/// re-transcription of 10.12/10.13 (2026-08-11, seventh pass); it was
+/// absent from the first implementation of this function because the
+/// clause text had not been transcribed yet.
 fn apply_matrix_3x4(m: &[f64; 12], v: &[f64]) -> Vec<f64> {
     vec![
-        m[0] * v[0] + m[1] * v[1] + m[2] * v[2] + m[9],
-        m[3] * v[0] + m[4] * v[1] + m[5] * v[2] + m[10],
-        m[6] * v[0] + m[7] * v[1] + m[8] * v[2] + m[11],
+        (m[0] * v[0] + m[1] * v[1] + m[2] * v[2] + m[9]).clamp(0.0, 1.0),
+        (m[3] * v[0] + m[4] * v[1] + m[5] * v[2] + m[10]).clamp(0.0, 1.0),
+        (m[6] * v[0] + m[7] * v[1] + m[8] * v[2] + m[11]).clamp(0.0, 1.0),
     ]
 }
 

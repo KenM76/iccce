@@ -340,6 +340,12 @@ pub(crate) fn decode_lut_ab(
     // no count field — curve n must be parsed to find curve n+1, so
     // one malformed curve makes the rest unreachable (reported by
     // position via CurveChainBroken).
+    // A23 (CLOSED): B curves appear in all four permitted element
+    // combinations, so offsetB == 0 is reportable — reported, decoded
+    // anyway (represent what the file says).
+    if offset_b == 0 {
+        issues.push(TagIssue::LutAbMissingBCurves);
+    }
     let b_curves = decode_curve_chain(type_sig, data, offset_b, b_count, issues)?;
     let m_curves = decode_curve_chain(type_sig, data, offset_m, m_count, issues)?;
     let a_curves = decode_curve_chain(type_sig, data, offset_a, a_count, issues)?;
