@@ -1303,3 +1303,226 @@ further ICC-hosted document is obtained by human retrieval, which
 extends the permission to that document by a **new** entry and never by
 analogy to this one; or an agent is ever granted written consent for
 automated access, which is a different decision about a different act.
+
+---
+
+### DL-015 — `pow(negative, fractional)` in a parametric curve is **guarded**, following lcms2 rather than ICC's own sample code. This is a divergence **inside a hole the specification declares open** — it is *not* a deviation from normative text, and the difference from DL-010 is the point of the entry
+
+**Date:** 2026-08-11 (Pass 3) · **Decided by:** `icc-engineer`, on the
+corpus's Guards section · **Filed by:** `icc-librarian`
+
+**Decision.** `crates/iccce-cmm/src/curve.rs::eval_parametric` evaluates
+every `pow` through a local closure:
+
+```rust
+let pow_guarded = |base: f64, exp: f64| if base > 0.0 { base.powf(exp) } else { 0.0 };
+```
+
+so a negative (or zero) base returns **0.0** instead of `NaN`.
+*(verified — read in the live source by this librarian, 2026-08-11.)*
+ICC's own reference implementation calls `pow` unguarded; lcms2 guards.
+**iccce follows lcms2**, and the module doc says so under the heading
+*"Named divergence from ICC's sample code."* *(verified — read.)*
+
+**Why it needed a decision at all.** The two reference implementations
+*behave differently* on the same input, so an implementer who reads
+either one and copies it is making a choice without knowing it. The
+corpus states the conflict and the direction to take, verbatim:
+*"`pow(negative, fractional)` = NaN. lcms2 additionally guards `e > 0`
+before `pow`; ICC's code does not. **A real behavioural difference
+between the two implementations on malformed/extreme parameters.**
+Follow lcms2 (guard), and record it as a deliberate divergence from
+ICC's sample code."* *(verified —
+`ICC_Spec\icc\icc__type__curve_parametric.md` §Guards, read.)*
+
+**★ What kind of departure this is, stated precisely, because the
+obvious mis-filing is to shelve it next to DL-010.** DL-010 is a
+departure **from printed normative text** — ICC.1:2022 writes a decimal
+breakpoint and iccce uses a rational. **This is not that.** ICC.1:2022
+**10.18** declares the relevant parameter combinations **explicitly
+undefined**: *"The domain and range of each function shall be [0,0
+1,0]. Any function value outside the range shall be clipped to the
+range of the function"*, with complex/undefined parameter combinations
+called out as undefined — which the corpus rightly notes is *a stated
+non-requirement, stronger than silence.* Table 68's formulas are
+normative; **what `pow` does with a negative base under a fractional
+exponent is not specified by anything.** So iccce is choosing inside a
+hole the standard leaves open, and **this entry must never be restated
+as a conformance departure.** It is registered in `NUMERIC_CLAIMS.md`
+§4 as **NA-004** because rule 4 requires every named choice to be
+registered — not because it is a deviation from a requirement.
+
+**★ Two precisions the module doc's own wording does not carry, found
+while filing and reported rather than repaired** (the file is the
+engineer's):
+
+1. **"turns NaN into a defined, reported value" — it is defined; it is
+   not reported.** `Trc::eval` returns a bare `f64` and has no
+   diagnostic channel; the substitution of `0.0` for `NaN` is **silent
+   at the evaluation site**, and nothing anywhere in the workspace
+   surfaces that it happened. That is not necessarily wrong — invariant
+   §3.2 (*report, do not repair*) binds the **parser**, and an undefined
+   parameter combination is not automatically a malformation, so there
+   may be nothing for the parser to have reported. But *"reported"* is a
+   claim about a disclosure surface, this project distinguishes those
+   carefully, and the surface does not exist. **Do not carry the word
+   forward.**
+2. **The guard also fires on one well-formed input.** Parametric type 0
+   with `g = 0` is the constant curve `y = x⁰ = 1`; at **exactly
+   `x = 0`** the base is `0.0`, which is not `> 0.0`, so `pow_guarded`
+   returns `0.0` while every `x > 0` returns `1.0`. The mathematical
+   value at the origin is 1. So the guard introduces a **step at the
+   origin on a degenerate constant curve** — a curve whose *inverse* is
+   already refused by name (`CurveError::ConstantNotInvertible`) but
+   whose forward evaluation is permitted. *(verified — derived from
+   `eval_parametric` and `invert_parametric` as written; no test in the
+   repository exercises `g = 0` forward.)* Cost is confined to that one
+   point of that one degenerate curve.
+
+**The cost, and its exact status.** *"None on well-formed curves"* —
+which is consistent with the code (for `a > 0`, `b ≥ 0` the base is
+positive across the whole branch, so the guard never fires) and is
+**analytic, not measured**. No test in this repository compares guarded
+against unguarded output, and `NUMERIC_CLAIMS.md` NA-004 records the
+cost as **unmeasured**. Nobody may write *"measured to cost nothing."*
+
+**Consequence.** iccce's register of named departures now holds two
+kinds, and they are not interchangeable: **NA-001** (deviation from
+printed normative text, DL-010) and **NA-004** (a choice inside a stated
+non-requirement, this entry). A future reader auditing conformance needs
+to be able to tell them apart at a glance, which is why the register
+states the kind in the row rather than only in the prose.
+
+**Evidence.** `crates/iccce-cmm/src/curve.rs` — module doc §"Named
+divergence from ICC's sample code", `eval_parametric`, `pow_guarded`
+*(all read in the live source by this librarian, 2026-08-11)*;
+`ICC_Spec\icc\icc__type__curve_parametric.md` §Guards and its
+frontmatter (`evidence: primary_spec (clauses 10.6, 10.18, Annex F.1,
+verified 2026-08-11) / cross_verified_2src (prior code provenance…)`)
+*(read — the citation therefore satisfies **DL-014**: the corpus file is
+named and the cited facts are `primary_spec` in its split evidence
+line)*; `docs/NUMERIC_CLAIMS.md` **NA-004**. Commit **`c4038eb`**
+*(reported by the dispatching engineer; `icc-librarian` has no shell and
+ran no git command)*.
+
+**Revisit if:** ICC's sample code adds the guard, or a later ICC edition
+specifies the undefined case (either would make this a non-divergence);
+or a real profile is found whose intended output depends on the
+unguarded branch, which would make the choice visible in colour rather
+than only in NaN-avoidance; or a difftest ever measures iccce and lcms2
+disagreeing *here*, which would mean the two guards are not the same
+guard and the corpus's reading of lcms2 needs re-checking (a
+source-reading, not a measurement — the same distinction DL-012 turned
+on).
+
+---
+
+### DL-016 — sampled-table curves are asserted by **exact values at the sample points**, because the self-consistency round trip **would have passed with the off-by-one-sample bug in place**. A method decision, filed with the measured instance that justifies it
+
+**Date:** 2026-08-11 (Pass 3) · **Found by:** `icc-engineer` on the
+first run of Pass 3's tests · **Filed by:** `icc-librarian` ·
+**Relates to** **DL-005**, which decided the same *shape* of thing
+prospectively; this is the retrospective twin
+
+**What happened.** `eval_table` (linear interpolation over a sampled
+`curveType`, clause 10.6) paired the **clamped** segment index with the
+**unclamped** fraction. At `x = 1.0` the fraction is 0 while the segment
+index has clamped to `n − 2`, so the function returned `t[n − 2]`
+instead of `t[n − 1]` — for a fine gamma table, **TRC(1.0) ≈ 0.998
+instead of 1.0**. The test `table_eval_exact_at_samples` failed on the
+first run; the code was fixed and the finding is written at the site.
+*(verified — `crates/iccce-cmm/src/curve.rs`, the `frac` derivation and
+its explanatory comment, and the test, read in the live source by this
+librarian.)*
+
+**Why this is a decision-log entry and not a session-log line — this
+paragraph is the entry.** Because of what the *other* tests would have
+done. Three checks in this Pass touch a real profile's sampled TRCs, and
+**two of them pass with the bug present:**
+
+| Check | Bound | Residual **with the bug** | Verdict |
+|---|---|---|---|
+| Real-profile device→PCS→device round trip | `1×10⁻³` device units | `1/1023 = 9.775×10⁻⁴` | **PASSES**, with ~2 % of margin |
+| Real-profile white → colorant sum, `X` | `1×10⁻²` | `≈1.9×10⁻³` (X scaled by 0.998) | **PASSES** |
+| `table_eval_exact_at_samples` | `1×10⁻¹⁵` at each sample | `≈2×10⁻³` | **FAILS** — the one that caught it |
+
+**The first row is the load-bearing one, and the coincidence in it is
+structural rather than bad luck.** With the bug, `eval(1.0)` returns the
+second-to-last sample; inverting that value lands exactly on the
+second-to-last sample's abscissa, `(n − 2)/(n − 1)`. **The error is
+therefore exactly one table spacing** — and the round-trip bound was
+justified as *"≈ the table's input spacing"*. **Any bound derived from
+the table's spacing is by construction the wrong instrument for an
+off-by-one-sample error**, because the two quantities are the same
+quantity. A tolerance cannot discriminate a defect whose magnitude is
+its own justification.
+
+**★ The exact status of that arithmetic.** It was **computed by
+`icc-librarian` from the code as written** — the buggy branch was
+reconstructed from the comment at the site and from `invert_table`'s
+segment search. **Nothing was run**; this agent has no shell. It rests
+on the profile's TRC tables having **1024 entries**, which is the
+engineer's statement in a test comment and has **not** been verified
+here (the profile is a binary this librarian did not read). Anybody
+re-deriving it should establish `n` first: at `n = 1024`,
+`1/(n−1) = 9.775×10⁻⁴`, inside the `1×10⁻³` gate; at `n = 512` it would
+be `1.96×10⁻³` and the round trip would have failed. **The conclusion
+"the round trip would have passed" is therefore true for this profile's
+table size and is not a general law** — which is itself the argument for
+not depending on it either way.
+
+**Decision.** Sampled-table curve evaluation is asserted by **exact
+values at the sample points, at `f64`-noise tolerance**, endpoints
+included and especially. A round-trip or self-consistency bound derived
+from the table's own spacing **may not be relied on** to catch a
+sample-indexing error, and a Pass that ships table interpolation without
+an exact-value endpoint test has not tested it. Interpolation *between*
+samples is a separate assertion (the midpoint check, at `1×10⁻¹²`)
+because it tests a different thing: that the rule is linear (clause
+10.6, normative — corpus **A15**), not that the endpoints are the right
+entries.
+
+**Why it generalises beyond curves.** Every table in this format is
+read by the same shape of code — CLUT grids (Pass 4), `mft1`/`mft2`
+input and output tables, `ncl2` PCS coordinates. **The endpoint of a
+table is the place an off-by-one hides best**, because it is the one
+place where a clamp exists to be paired wrongly with something.
+
+**Relation to DL-005, which is not superseded and is strengthened.**
+DL-005 decided *before any code existed* that legacy-Lab correctness
+would be asserted with exact integer invariants rather than in ΔE,
+because the error mode sits **below** the grading tolerance. That was a
+prediction. This entry is the same principle with a **measured
+instance**: an error that sits below its natural tolerance, caught only
+by the exact-value assertion, with the margin computed. **A predicted
+methodological hazard and a demonstrated one are different objects
+(the DL-011/DL-012 lesson), and this project now has one of each.**
+
+**What this entry does NOT claim.** It does not claim the test suite is
+adequate, that other off-by-ones are absent, or that the bug ever
+existed anywhere but in an uncommitted working tree during one
+afternoon. **It shipped nothing.** The record exists because *"the
+exact-value discipline paid"* is only demonstrable if the instance is
+written down **with its counterfactual** — and the counterfactual, not
+the bug, is the content.
+
+**A second finding from the same first run is filed elsewhere,
+deliberately.** The real-profile white-point tolerance was re-justified
+after failing — the profile's colorant `Z` sums to **0.825089**, `1.9×10⁻⁴`
+from ICC's 4-figure D50, which is the file's author's own white
+rounding and a fact about the **file**. That is a rule-5 worked example
+about *tolerances*, and it belongs in `NUMERIC_CLAIMS.md`
+(**NC-031**), not here: no decision was taken, a number was justified.
+
+**Evidence.** `crates/iccce-cmm/src/curve.rs` — `eval_table` and its
+comment, `table_eval_exact_at_samples`, `invert_table`;
+`crates/iccce-cmm/src/matrix_trc.rs` — `system_srgb_profile_end_to_end`
+and its two bounds *(all read in the live source, 2026-08-11)*;
+`docs/NUMERIC_CLAIMS.md` **NC-025**, **NC-031**, **NC-032**. Commit
+**`c4038eb`** *(reported)*.
+
+**Revisit if:** the table representation changes — e.g. tables
+normalised to `f64` at parse time, or an interpolation rewrite in Pass 6
+— which would move *where* the exactness must be asserted without
+changing that it must be; or a table type appears whose endpoints are
+not required to be attained (none is known).

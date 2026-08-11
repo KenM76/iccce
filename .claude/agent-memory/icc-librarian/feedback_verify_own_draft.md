@@ -9,7 +9,7 @@ metadata:
 the ones this librarian wrote itself, and including a total that arrives
 looking like evidence.**
 
-**Why.** Two concrete incidents, both 2026-08-11:
+**Why.** Three concrete incidents, all 2026-08-11:
 
 1. Drafting the Pass 2 batch 2 ROADMAP block, this librarian wrote
    *"iccMAX identification and refusal by name — not delivered by either
@@ -30,8 +30,23 @@ looking like evidence.**
    establishes no-crash robustness; it establishes nothing about which
    code ran.
 
+3. **A prediction filed twice, refuted by the code.** The Pass 3
+   annotation in `ROADMAP.md` and the carried list in
+   `NEXT_SESSION.md` — **both written by this librarian** — said
+   *"NA-002's Bradford cost comes due at Pass 3, because sRGB→AdobeRGB
+   adapts."* When Pass 3 landed, reading the source showed **it does not
+   adapt at all**: `iccce-cmm` imports only `Mat3` and `Xyz`, never
+   touches `adapt.rs`, never reads `chad`/`wtpt`. The dispatch did not
+   contradict the prediction; **the code did.** Left standing as the
+   record of what was expected, corrected by a dated note. **A forecast
+   about a future Pass becomes a claim about the tree the moment that
+   Pass lands, and it has to be re-checked then — not carried forward.**
+
 **How to apply.**
 
+- **Re-verify every carried-forward prediction on the Pass that was
+  predicted about.** A "what Pass N inherits" annotation is written
+  before Pass N exists; the day it exists, it is a testable claim.
 - Before writing *"X is not delivered"* or *"X does not exist"*, grep
   for X. The cost is one tool call; the cost of the alternative is a
   permanent document asserting a false fact about the repository.

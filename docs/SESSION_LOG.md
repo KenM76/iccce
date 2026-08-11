@@ -1004,3 +1004,182 @@ that has no shell.
   if anyone fills them.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-11 (autonomous-loop continuation) — Pass 3: iccce's first transform, a bug the exact-value tests caught, and a prediction of this librarian's own that the code refuted
+
+**Sixth entry of the same calendar day and the same session.** Two
+commits, twelve new ledger rows, two new decision-log entries — and
+**still no comparison against lcms2**, which is the thing the Pass is
+named for.
+
+| | Commit *(all **reported**)* |
+|---|---|
+| Pass 3 core — `iccce-cmm/src/curve.rs`, `matrix_trc.rs` | **`c4038eb`** |
+| `iccce transform` + the engineer's agent-memory | **`051707f`** |
+
+**The hashes are *reported*.** This librarian has no shell, ran no git
+command, and has verified neither that these commits exist nor that they
+contain what the dispatch says. Everything below marked **verified** was
+read in the working tree; **the dispatch's account was checked against
+the live source rather than transcribed**, and doing so produced three
+corrections — one of them to a prediction this librarian filed itself,
+twice.
+
+**This session ran in parallel with an `icc-conformance` dispatch**, on
+the operator's instruction of 2026-08-11 (faster loop ticks, parallel
+dispatch on disjoint file sets). Consequence for the record: **the Pass
+3 done-when numbers are being produced elsewhere, at the same time, and
+whether that landed is `unverified` here.** Nothing in this entry may be
+read as evidence that it did.
+
+### What was built
+
+**A tone-curve engine and the Annex F.3 matrix/TRC model.** `curveType`
+and `parametricCurveType` forward; **inversion per Annex F.1, which is
+NORMATIVE**; the F.3 model with the inverse's **clamp before the inverse
+TRC** (F.8–F.16) asserted on measured output; **PCSXYZ only**, with a
+Lab-PCS profile refused by name and tested against the real SWOP press
+profile. Plus `iccce transform` — triples on stdin, **6 decimals** out,
+*"the interface `tools/difftest` diffs against transicc"*, one decimal
+finer than `transicc` so the comparison is never limited by iccce's
+print precision. **14 new tests**, `curve.rs` 9 and `matrix_trc.rs` 5;
+**68 `#[test]` declarations workspace-wide** *(verified — counted across
+10 files)*, against a reported 68 green with `fmt`/`clippy` clean.
+
+**The pattern worth naming, because it recurs four times in one Pass:
+refusal by name, never substitution.** The Lab PCS; parametric inverses
+for types 1, 2 and 4; the three unimplemented intents; and the
+non-monotonic curve, whose inverse the specification leaves free to be
+**anything** and which iccce refuses rather than choosing silently. In
+this domain a plausible substitute is not merely wrong, it is invisible.
+
+### ★ Two findings from the first test run, and the first is the important one
+
+**1. A real bug, caught by an exact-value test — and the round trip
+would have missed it.** `eval_table` paired the **clamped** segment
+index with the **unclamped** fraction, returning `t[n−2]` at `x = 1.0`:
+**`TRC(1.0) ≈ 0.998`**, a 0.2 % error of exactly the class this project
+exists to catch.
+
+The counterfactual is the content. With the bug present, the
+real-profile **round trip** would have missed by `1/1023 = 9.775×10⁻⁴`
+against its `1×10⁻³` bound — **inside, with about 2 % of margin** — and
+the white check would have missed by `1.9×10⁻³` against `1×10⁻²`, also
+inside. **Both would have passed.** The reason is structural rather than
+unlucky: the error is **exactly one table spacing**, and the round-trip
+bound was justified as *≈ the table's input spacing*. **A tolerance
+cannot discriminate a defect whose magnitude is its own
+justification.** Only the `1×10⁻¹⁵` assertion at the sample points
+caught it. Filed as **DL-016**, with the arithmetic labelled for what it
+is: **`icc-librarian`'s reconstruction from the code as written, nothing
+run, resting on a 1024-entry table size that is the engineer's statement
+in a comment and unverified here.**
+
+**2. A fact about a real file, and a tolerance re-justified instead of
+tuned.** The system sRGB profile's colorant `Z` sums to **0.825089** —
+`1.9×10⁻⁴` from ICC's 4-figure D50, **the 1998 author's own white
+rounding**. The original `1×10⁻⁴` bound was a quantisation claim *the
+file never made*. The replacement is justified by **what it
+discriminates**: D65-referenced colorants would sit `0.26` away, **26×
+the new `1×10⁻²` bound**, while authoring spread is **50× inside** it.
+It cannot fail on a well-formed profile and cannot pass a wrong white.
+Ledger **NC-031** — and the fourth consecutive occasion on which rule
+5's first question, *is the code wrong?*, was answered **no**.
+
+### ★ A prediction this librarian filed twice, refuted by the code
+
+The Pass 3 annotation in `ROADMAP.md` and the carried list in
+`NEXT_SESSION.md` both said **NA-002's cost comes due at Pass 3**,
+because *"sRGB→AdobeRGB adapts."* **It does not.** `iccce-cmm` performs
+**no chromatic adaptation at all** — it imports only `Mat3` and `Xyz`
+from `iccce-color`, never touches `adapt.rs`, and never reads `wtpt` or
+`chad`. Colorants in a conformant profile are **already** D50-referenced,
+so source-forward + destination-inverse *is* the media-relative
+conversion. *(verified — imports and both conversion functions read.)*
+**Bradford is still unexercised by any transform in this project**, and
+the debt moves to the first Pass that adapts — most likely Pass 4.
+
+Both statements are **left standing** as the record of what was
+expected; the correction is filed as a dated note in
+`NUMERIC_CLAIMS.md` §4 and in the ROADMAP's progress block. **This is
+the memory rule paying for itself**: the live-source check covers the
+librarian's own inferences, not only the dispatch's account — and this
+is now the second time it has caught one.
+
+The same reading produced **NA-005**, a new register entry: *colorants
+are used **as stored** and `chad`/`wtpt` are never consulted.* Correct
+on a conformant profile, **unbounded** on a non-conformant one, nothing
+checks it at build time, and the only place the property is verified
+anywhere is a single test on a single file.
+
+### DL-015 — a divergence that is deliberately **not** filed next to DL-010
+
+`pow(negative, fractional)` is NaN; **lcms2 guards, ICC's own sample
+code does not**, and iccce follows lcms2. The corpus states the conflict
+verbatim and directs the choice. **What matters is the kind of
+departure**: clause 10.18 declares those parameter combinations
+**explicitly undefined** — *a stated non-requirement, stronger than
+silence* — so this is a choice **inside a hole the standard leaves
+open**, not a deviation from printed normative text like DL-010. The
+register (`NUMERIC_CLAIMS.md` §4) now states the *kind* in the row, so
+an auditor can tell **NA-001** and **NA-004** apart at a glance.
+
+Two limits found while filing and **reported, not repaired** (the file
+is the engineer's): the module doc says the guard yields a *"defined,
+reported value"* — it is defined, and **nothing reports it**,
+`Trc::eval` having no diagnostic channel; and the guard **also fires on
+a well-formed input**, parametric type 0 with `g = 0` at exactly
+`x = 0`, giving `0.0` where `x⁰ = 1`.
+
+### The done-when is NOT met, and that is the headline
+
+*"sRGB→AdobeRGB round-trips within a stated ΔE, and matches lcms2 within
+a stated tolerance, with both numbers written down."* **Neither number
+exists.** NC-032 is a round trip through **one** profile in **device
+units** — source and destination the same, so the matrix and its inverse
+cancel and it prices only the curve stack. It is **not** the done-when's
+ΔE. And **`iccce` has still never been compared to another
+implementation**: zero `implementation-cross-check` rows, on the day the
+transform that makes one possible finally landed. **Pass 3 is IN
+PROGRESS. So is Pass 2** (one scope decision), so the Passes are no
+longer completing in order.
+
+### Filed this session (continuation)
+
+| Where | What |
+|---|---|
+| `ARCHITECTURE.md` §5 | **DL-015** (the `pow` guard; the kind-of-departure distinction; the two doc-comment limits) and **DL-016** (exact-value assertions at sample points, with the counterfactual arithmetic and its exact epistemic status). DL-001…DL-014 untouched. |
+| `docs/NUMERIC_CLAIMS.md` | **§1** gains the **`normative-rule-conformance`** evidence class, with its transcription-risk caveat stated in the row. **§2.3** a provenance block for `c4038eb`/`051707f`; **§2.3.1** a **DL-014 citation audit of the new code only** — four of five compliant, one naming an ambiguity-register row instead of the file carrying the clause. **§3.7** twelve rows, **NC-022…NC-033**, with **§3.7.0** stating in advance where the pending done-when numbers will go and that **no NC number is reserved** for them. **§4** gains **NA-004**, **NA-005** and the dated NA-002 correction. **§5.2**, **§6** (six new dependency rows), **§7.3**, **§8**. |
+| `ROADMAP.md` | A **Pass 3 progress block** — the done-when answered exactly as *not met*, what was delivered, the two findings, the corrections to its own annotation, DL-015, the gates, and a three-item remainder of which **only one is engineering**. Header status updated. **No plan text and no prior annotation rewritten.** |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the pending conformance numbers and Pass 4. |
+
+Not touched, by instruction and by ownership: `tools/difftest/` and
+`TOLERANCES.md` (`icc-conformance` is working in them **in parallel**,
+right now), the corpus (`icc-spec-librarian`), and `LEGAL.md`.
+**Nothing was committed** — instructed not to, and committing is the
+engineer's act. **No git command was run**, by an agent that has no
+shell.
+
+### Left for the next session to not assume
+
+- **That `c4038eb` or `051707f` exist or contain what is recorded here.**
+  The files are verified; the repository is not.
+- **That the parallel `icc-conformance` run landed.** Look for the rows
+  in `NUMERIC_CLAIMS.md` and `TOLERANCES.md`; do not infer them from
+  this entry. Three filings running, checking has beaten assuming.
+- **That Pass 3 is done.** It is not, and it cannot be until two
+  measured numbers exist.
+- **That "68 green" means 68 assertions ran.** Two of Pass 3's fourteen
+  tests **skip silently** when the system sRGB profile is absent, and
+  `cargo test` cannot distinguish *passed* from *did not run*.
+- **That NC-032's residual is known.** Only its **bound** is on record.
+  The residual is the cheapest number in the ledger to obtain and it
+  would turn DL-016's reconstruction into a measurement.
+- **That the absolute-intent formula is somewhere in the corpus.** It is
+  **not transcribed**, it is a **new named gap**, and *"it is probably in
+  clause 6.x or an Annex"* is a prediction until the document is open.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.
