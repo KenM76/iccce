@@ -226,6 +226,55 @@ fn summarize(data: &iccce_profile::tag_types::TagData) -> Option<String> {
                 .collect::<Vec<_>>()
                 .join(",")
         ),
+        TagData::Lut8(l) => format!(
+            "lut8 in={} out={} clutPoints={} matrixIdentity={}",
+            l.input_chan,
+            l.output_chan,
+            l.clut_points,
+            l.matrix_is_identity()
+        ),
+        TagData::Lut16(l) => format!(
+            "lut16 in={} out={} clutPoints={} inputEnt={} outputEnt={} matrixIdentity={}",
+            l.input_chan,
+            l.output_chan,
+            l.clut_points,
+            l.input_ent,
+            l.output_ent,
+            l.matrix_is_identity()
+        ),
+        TagData::LutAToB(l) => format!("lutAToB {}", summarize_lut_ab(l)),
+        TagData::LutBToA(l) => format!("lutBToA {}", summarize_lut_ab(l)),
         TagData::Unknown => return None,
     })
+}
+
+/// Shared element summary for the mAB /mBA pipelines: which elements
+/// are present, and the CLUT's shape when there is one.
+fn summarize_lut_ab(l: &iccce_profile::lut::LutAB) -> String {
+    let curves = |c: &Option<Vec<iccce_profile::lut::CurveElement>>| match c {
+        Some(v) => v.len().to_string(),
+        None => "absent".to_string(),
+    };
+    let clut = match &l.clut {
+        Some(c) => format!(
+            "grid=[{}] prec={}",
+            c.grid_points[..usize::from(l.input_chan).min(16)]
+                .iter()
+                .map(u8::to_string)
+                .collect::<Vec<_>>()
+                .join("x"),
+            c.precision
+        ),
+        None => "absent".to_string(),
+    };
+    format!(
+        "in={} out={} B={} matrix={} M={} clut={} A={}",
+        l.input_chan,
+        l.output_chan,
+        curves(&l.b_curves),
+        if l.matrix.is_some() { "3x4" } else { "absent" },
+        curves(&l.m_curves),
+        clut,
+        curves(&l.a_curves)
+    )
 }

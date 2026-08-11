@@ -41,6 +41,10 @@ pub mod sig {
     pub const NCL2: Signature = Signature(0x6E63_6C32); // 'ncl2'
     pub const XYZ: Signature = Signature(0x5859_5A20); // 'XYZ '
     pub const SF32: Signature = Signature(0x7366_3332); // 'sf32'
+    pub const MFT1: Signature = Signature(0x6D66_7431); // 'mft1'
+    pub const MFT2: Signature = Signature(0x6D66_7432); // 'mft2'
+    pub const MAB: Signature = Signature(0x6D41_4220); // 'mAB '
+    pub const MBA: Signature = Signature(0x6D42_4120); // 'mBA '
 }
 
 /// A reported (never repaired) issue inside a tag's data.
@@ -94,6 +98,11 @@ pub enum TagIssue {
     DescMacBlockShortOrMissing,
     /// `desc`'s Unicode block is absent or short.
     DescUnicodeShortOrMissing,
+    /// A LUT-family pad byte that shall be zero is not.
+    LutPadNonZero,
+    /// `mAB `/`mBA ` CLUT: `gridPoints` entries beyond `inputChan`
+    /// shall be zero (`icc__type__lutAtoB_lutBtoA.md`, code-derived).
+    ClutGridPointsBeyondInputChan,
 }
 
 impl std::fmt::Display for TagIssue {
@@ -146,6 +155,10 @@ impl std::fmt::Display for TagIssue {
                 write!(f, "desc: Macintosh ScriptCode block short or missing")
             }
             Self::DescUnicodeShortOrMissing => write!(f, "desc: Unicode block short or missing"),
+            Self::LutPadNonZero => write!(f, "lut: pad byte(s) non-zero"),
+            Self::ClutGridPointsBeyondInputChan => {
+                write!(f, "clut: gridPoints beyond inputChan not zero")
+            }
         }
     }
 }
@@ -169,6 +182,31 @@ pub enum TagDecodeError {
     /// assuming 12 would misparse. Report-and-refuse (the corpus's
     /// stated direction, matching lcms2's refusal).
     MlucUnsupportedRecordSize { record_size: u32 },
+    /// A LUT's computed size overflows even `u128` — dimensions are
+    /// attacker-controlled bytes (`255^255` must refuse, not wrap).
+    LutSizeOverflow { type_sig: Signature },
+    /// A LUT's computed size exceeds the tag's actual bytes. Refused
+    /// BEFORE allocation; `needed` is `u128` because the honest
+    /// number may not fit anything smaller.
+    LutSizeExceedsTag {
+        type_sig: Signature,
+        needed: u128,
+        actual: usize,
+    },
+    /// `mAB `/`mBA ` CLUT `precision` not 1 or 2 — the sample width
+    /// is unknowable ("No other value is legal",
+    /// `icc__type__lutAtoB_lutBtoA.md`).
+    ClutBadPrecision { precision: u8 },
+    /// An `mAB `/`mBA ` curve chain broke at element `element`
+    /// (byte `position` from tag start). Elements have no count field
+    /// and no per-curve offsets — curve n must parse to find n+1, so
+    /// everything after the break is unreachable and the tag is
+    /// undecodable as a transform; the position is the report.
+    CurveChainBroken {
+        type_sig: Signature,
+        element: u8,
+        position: usize,
+    },
 }
 
 impl std::fmt::Display for TagDecodeError {
@@ -190,6 +228,26 @@ impl std::fmt::Display for TagDecodeError {
             Self::MlucUnsupportedRecordSize { record_size } => write!(
                 f,
                 "mluc recordSize {record_size} (shall be 12): record layout unknown, refused"
+            ),
+            Self::LutSizeOverflow { type_sig } => {
+                write!(f, "{type_sig}: computed LUT size overflows, refused")
+            }
+            Self::LutSizeExceedsTag {
+                type_sig,
+                needed,
+                actual,
+            } => write!(f, "{type_sig}: LUT needs {needed} bytes, tag has {actual}"),
+            Self::ClutBadPrecision { precision } => {
+                write!(f, "clut precision {precision} (shall be 1 or 2): refused")
+            }
+            Self::CurveChainBroken {
+                type_sig,
+                element,
+                position,
+            } => write!(
+                f,
+                "{type_sig}: curve chain broken at element {element} (byte {position}); \
+                 later elements unreachable"
             ),
         }
     }
@@ -392,6 +450,16 @@ pub enum TagData {
     /// that arity check belongs to the consumer that knows the tag
     /// signature, not to this type decoder.
     S15Fixed16Array(Vec<S15Fixed16>),
+    /// `lut8Type` (`'mft1'`) — general 8-bit encodings; NOT in the
+    /// legacy-Lab set (6.3.4.2 NOTE 3: "and only those tag types").
+    Lut8(crate::lut::Lut8),
+    /// `lut16Type` (`'mft2'`) — Lab PCS data uses the LEGACY 16-bit
+    /// encoding in a profile of any version (see `lut` module doc).
+    Lut16(crate::lut::Lut16),
+    /// `lutAToBType` (`'mAB '`): A → CLUT → M → Matrix → B.
+    LutAToB(crate::lut::LutAB),
+    /// `lutBToAType` (`'mBA '`): same storage, reverse traversal.
+    LutBToA(crate::lut::LutAB),
     Unknown,
 }
 
@@ -416,6 +484,12 @@ pub fn decode(data: &[u8]) -> Result<DecodedTag, TagDecodeError> {
         sig::NCL2 => TagData::NamedColor2(decode_ncl2(type_sig, body)?),
         sig::XYZ => TagData::Xyz(decode_xyz(body, &mut issues)),
         sig::SF32 => TagData::S15Fixed16Array(decode_sf32(body, &mut issues)),
+        // LUT family: offsets inside are tag-start-relative, so these
+        // take `data`, not `body`.
+        sig::MFT1 => TagData::Lut8(crate::lut::decode_lut8(type_sig, data, &mut issues)?),
+        sig::MFT2 => TagData::Lut16(crate::lut::decode_lut16(type_sig, data, &mut issues)?),
+        sig::MAB => TagData::LutAToB(crate::lut::decode_lut_ab(type_sig, data, &mut issues)?),
+        sig::MBA => TagData::LutBToA(crate::lut::decode_lut_ab(type_sig, data, &mut issues)?),
         _ => TagData::Unknown,
     };
     Ok(DecodedTag {
@@ -710,6 +784,77 @@ fn decode_sf32(body: &[u8], issues: &mut Vec<TagIssue>) -> Vec<S15Fixed16> {
         .collect()
 }
 
+/// Parse ONE curve element (`curv` or `para`, with its own 8-byte
+/// base) at absolute position `pos` inside `mAB `/`mBA ` tag data.
+/// Returns the element and its UNPADDED byte length (the caller
+/// applies the 4-byte padding rule between elements), or `None` when
+/// the element is unparseable — which the caller reports positionally
+/// as [`TagDecodeError::CurveChainBroken`], because with no count
+/// field and no per-curve offsets, everything after it is
+/// unreachable (`icc__type__lutAtoB_lutBtoA.md`).
+///
+/// A `para` with an unknown `funcType` is unparseable BY CONSTRUCTION
+/// here even though the standalone decoder tolerates it: without
+/// Table 67's parameter count the element's length is unknowable, and
+/// guessing a length would silently corrupt every element after it.
+pub(crate) fn decode_curve_element(
+    data: &[u8],
+    pos: usize,
+    issues: &mut Vec<TagIssue>,
+) -> Option<(crate::lut::CurveElement, usize)> {
+    use crate::lut::CurveElement;
+    let ts = Signature::read(data, pos)?;
+    let reserved = data.get(pos + 4..pos + 8)?;
+    if reserved.iter().any(|&b| b != 0) {
+        issues.push(TagIssue::BaseReservedNonZero);
+    }
+    match ts {
+        sig::CURV => {
+            let count = u32_be(data, pos + 8)? as usize;
+            match count {
+                0 => Some((CurveElement::Curve(Curve::Identity), 12)),
+                1 => {
+                    let g = U8Fixed8::read(data, pos + 12)?;
+                    Some((CurveElement::Curve(Curve::Gamma(g)), 14))
+                }
+                n => {
+                    let end = pos.checked_add(12)?.checked_add(n.checked_mul(2)?)?;
+                    if end > data.len() {
+                        return None;
+                    }
+                    let table = (0..n)
+                        .map(|i| u16_be(data, pos + 12 + 2 * i).expect("bounded"))
+                        .collect();
+                    Some((CurveElement::Curve(Curve::Table(table)), 12 + 2 * n))
+                }
+            }
+        }
+        sig::PARA => {
+            let func_type = u16_be(data, pos + 8)?;
+            let n = match func_type {
+                0 => 1,
+                1 => 3,
+                2 => 4,
+                3 => 5,
+                4 => 7,
+                _ => return None, // length unknowable, see doc comment
+            };
+            let end = pos + 12 + 4 * n;
+            if end > data.len() {
+                return None;
+            }
+            let params = (0..n)
+                .map(|i| S15Fixed16::read(data, pos + 12 + 4 * i).expect("bounded"))
+                .collect();
+            Some((
+                CurveElement::Parametric(ParametricCurve { func_type, params }),
+                12 + 4 * n,
+            ))
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -959,14 +1104,239 @@ mod tests {
         );
     }
 
-    /// A type this batch does not decode comes back Unknown-with-sig,
-    /// distinguishable from corruption.
+    /// A type iccce does not decode comes back Unknown-with-sig,
+    /// distinguishable from corruption. ('view' is a real ICC type —
+    /// viewingConditionsType — that iccce has not implemented; it was
+    /// 'mAB ' until batch 2 made that decodable, which this test
+    /// caught, as designed.)
     #[test]
     fn unknown_type_is_named_not_corrupt() {
-        let mut t = base(b"mAB "); // LUT family: batch 2
+        let mut t = base(b"view");
         t.extend_from_slice(&[0u8; 24]);
         let d = decode(&t).unwrap();
         assert_eq!(d.data, TagData::Unknown);
-        assert_eq!(d.type_sig.to_string(), "'mAB '");
+        assert_eq!(d.type_sig.to_string(), "'view'");
+    }
+
+    /// mft2: 3-in/1-out, clutPoints=2, tiny but complete. Layout per
+    /// `icc__type__lut8_lut16.md` Table 40 (primary_spec): head 52
+    /// bytes, then input tables (3×2 entries), CLUT (2³×1 = 8), output
+    /// table (1×2).
+    #[test]
+    fn lut16_decodes_and_sections_partition() {
+        let mut t = base(b"mft2");
+        t.extend_from_slice(&[3, 1, 2, 0]); // in, out, clutPoints, pad
+        // Identity 3×3.
+        for i in 0..9u32 {
+            let v = if i % 4 == 0 { 0x0001_0000u32 } else { 0 };
+            t.extend_from_slice(&v.to_be_bytes());
+        }
+        t.extend_from_slice(&2u16.to_be_bytes()); // inputEnt
+        t.extend_from_slice(&2u16.to_be_bytes()); // outputEnt
+        for v in 0..6u16 {
+            t.extend_from_slice(&v.to_be_bytes()); // input tables
+        }
+        for v in 100..108u16 {
+            t.extend_from_slice(&v.to_be_bytes()); // CLUT
+        }
+        for v in [0u16, 0xFFFF] {
+            t.extend_from_slice(&v.to_be_bytes()); // output table
+        }
+        let d = decode(&t).unwrap();
+        match &d.data {
+            TagData::Lut16(l) => {
+                assert_eq!((l.input_chan, l.output_chan, l.clut_points), (3, 1, 2));
+                assert!(l.matrix_is_identity());
+                assert_eq!(l.input_tables, vec![0, 1, 2, 3, 4, 5]);
+                assert_eq!(l.clut, (100..108).collect::<Vec<u16>>());
+                assert_eq!(l.output_tables, vec![0, 0xFFFF]);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(d.issues.is_empty());
+    }
+
+    /// Hostile mft2 dimensions refuse BEFORE allocation:
+    /// clutPoints=255, inputChan=255 → 255^255 overflows u128.
+    #[test]
+    fn lut16_hostile_dimensions_refused() {
+        let mut t = base(b"mft2");
+        t.extend_from_slice(&[255, 255, 255, 0]);
+        t.extend_from_slice(&[0u8; 40]); // matrix + ents
+        assert!(matches!(
+            decode(&t),
+            Err(TagDecodeError::LutSizeOverflow { .. })
+        ));
+    }
+
+    /// mft1 has NO ent fields — tables are exactly 256 entries
+    /// (clause 10.11). 1-in/1-out, clutPoints=2.
+    #[test]
+    fn lut8_fixed_256_tables() {
+        let mut t = base(b"mft1");
+        t.extend_from_slice(&[1, 1, 2, 0]);
+        for i in 0..9u32 {
+            let v = if i % 4 == 0 { 0x0001_0000u32 } else { 0 };
+            t.extend_from_slice(&v.to_be_bytes());
+        }
+        t.extend_from_slice(&[7u8; 256]); // input table
+        t.extend_from_slice(&[9u8; 2]); // CLUT: 2^1 × 1
+        t.extend_from_slice(&[8u8; 256]); // output table
+        let d = decode(&t).unwrap();
+        match &d.data {
+            TagData::Lut8(l) => {
+                assert_eq!(l.input_tables.len(), 256);
+                assert_eq!(l.clut, vec![9, 9]);
+                assert_eq!(l.output_tables.len(), 256);
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// mAB with B curves only (identity curv × 3), everything else at
+    /// offset 0 = ABSENT (the sentinel is unambiguous: offset 0 would
+    /// be the type signature).
+    #[test]
+    fn lut_ab_b_only_pipeline() {
+        let mut t = base(b"mAB ");
+        t.extend_from_slice(&[3, 3, 0, 0]); // in, out, pad
+        t.extend_from_slice(&32u32.to_be_bytes()); // offsetB
+        t.extend_from_slice(&[0u8; 16]); // mat, M, CLUT, A all absent
+        // Three identity curv elements, each 12 bytes (already 4-aligned).
+        for _ in 0..3 {
+            t.extend_from_slice(b"curv");
+            t.extend_from_slice(&[0u8; 4]); // reserved
+            t.extend_from_slice(&0u32.to_be_bytes()); // count = 0
+        }
+        let d = decode(&t).unwrap();
+        match &d.data {
+            TagData::LutAToB(l) => {
+                let b = l.b_curves.as_ref().unwrap();
+                assert_eq!(b.len(), 3);
+                assert!(
+                    b.iter()
+                        .all(|c| matches!(c, crate::lut::CurveElement::Curve(Curve::Identity)))
+                );
+                assert!(l.matrix.is_none());
+                assert!(l.clut.is_none());
+                assert!(l.m_curves.is_none());
+                assert!(l.a_curves.is_none());
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// Full mAB : A(1) + CLUT(2×… per-dim) + M(1) + Matrix(3×4) + B(1),
+    /// 1-in/1-out… no — matrix requires 3-channel M-side; keep the
+    /// structural decode test at 1-in/1-out WITH a matrix present
+    /// anyway: the DECODER represents what the file says (whether a
+    /// matrix is *meaningful* for non-3-channel data is A24, a
+    /// consumer question, still unsourced).
+    #[test]
+    fn lut_ab_full_pipeline_with_3x4_matrix_and_per_dim_clut() {
+        let mut t = base(b"mAB ");
+        t.extend_from_slice(&[1, 1, 0, 0]);
+        // Element order in the file is our choice; offsets say where.
+        // Layout: B@32(curv,12) Matrix@44(48) M@92(curv,12)
+        // CLUT@104(20+2·2=24) A@128(para type0, 16)
+        t.extend_from_slice(&32u32.to_be_bytes()); // B
+        t.extend_from_slice(&44u32.to_be_bytes()); // Matrix
+        t.extend_from_slice(&92u32.to_be_bytes()); // M
+        t.extend_from_slice(&104u32.to_be_bytes()); // CLUT
+        t.extend_from_slice(&128u32.to_be_bytes()); // A
+        // B: identity curv.
+        t.extend_from_slice(b"curv");
+        t.extend_from_slice(&[0u8; 4]);
+        t.extend_from_slice(&0u32.to_be_bytes());
+        // Matrix: 12 × s15Fixed16 — e03/e13/e23 are the trap; give
+        // them distinct values and assert they arrive.
+        for i in 0..12u32 {
+            t.extend_from_slice(&(i * 0x0001_0000).to_be_bytes());
+        }
+        // M: identity curv.
+        t.extend_from_slice(b"curv");
+        t.extend_from_slice(&[0u8; 4]);
+        t.extend_from_slice(&0u32.to_be_bytes());
+        // CLUT: gridPoints[0]=2 (rest zero), prec=2, pad, 2 samples.
+        let mut grid = [0u8; 16];
+        grid[0] = 2;
+        t.extend_from_slice(&grid);
+        t.extend_from_slice(&[2, 0, 0, 0]); // prec=2 + pad
+        t.extend_from_slice(&0x1111u16.to_be_bytes());
+        t.extend_from_slice(&0x2222u16.to_be_bytes());
+        // A: para funcType 0, one param (gamma 1.0).
+        t.extend_from_slice(b"para");
+        t.extend_from_slice(&[0u8; 4]);
+        t.extend_from_slice(&0u16.to_be_bytes());
+        t.extend_from_slice(&[0u8; 2]);
+        t.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+
+        let d = decode(&t).unwrap();
+        match &d.data {
+            TagData::LutAToB(l) => {
+                let m = l.matrix.unwrap();
+                // The three offset terms (indices 9..12) survived —
+                // the 36-byte misread would have lost them.
+                assert_eq!(m[9].to_f64(), 9.0);
+                assert_eq!(m[11].to_f64(), 11.0);
+                let clut = l.clut.as_ref().unwrap();
+                assert_eq!(clut.grid_points[0], 2);
+                assert_eq!(clut.precision, 2);
+                assert_eq!(
+                    clut.samples,
+                    crate::lut::ClutSamples::U16(vec![0x1111, 0x2222])
+                );
+                assert!(matches!(
+                    l.a_curves.as_ref().unwrap()[0],
+                    crate::lut::CurveElement::Parametric(_)
+                ));
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(d.issues.is_empty());
+    }
+
+    /// A broken element in a curve chain fails positionally — with no
+    /// count field, everything after it is unreachable.
+    #[test]
+    fn lut_ab_broken_curve_chain_reported_by_position() {
+        let mut t = base(b"mAB ");
+        t.extend_from_slice(&[3, 3, 0, 0]);
+        t.extend_from_slice(&32u32.to_be_bytes()); // offsetB
+        t.extend_from_slice(&[0u8; 16]);
+        // First element valid, second is garbage.
+        t.extend_from_slice(b"curv");
+        t.extend_from_slice(&[0u8; 4]);
+        t.extend_from_slice(&0u32.to_be_bytes());
+        t.extend_from_slice(b"XXXX");
+        t.extend_from_slice(&[0u8; 8]);
+        assert!(matches!(
+            decode(&t),
+            Err(TagDecodeError::CurveChainBroken {
+                element: 1,
+                position: 44,
+                ..
+            })
+        ));
+    }
+
+    /// CLUT precision outside {1,2}: sample width unknowable, refused.
+    #[test]
+    fn clut_bad_precision_refused() {
+        let mut t = base(b"mBA ");
+        t.extend_from_slice(&[1, 1, 0, 0]);
+        t.extend_from_slice(&[0u8; 8]); // B, Matrix absent
+        t.extend_from_slice(&0u32.to_be_bytes()); // M absent
+        t.extend_from_slice(&32u32.to_be_bytes()); // CLUT
+        t.extend_from_slice(&0u32.to_be_bytes()); // A absent
+        let mut grid = [0u8; 16];
+        grid[0] = 2;
+        t.extend_from_slice(&grid);
+        t.extend_from_slice(&[3, 0, 0, 0]); // prec=3: illegal
+        t.extend_from_slice(&[0u8; 4]);
+        assert_eq!(
+            decode(&t),
+            Err(TagDecodeError::ClutBadPrecision { precision: 3 })
+        );
     }
 }

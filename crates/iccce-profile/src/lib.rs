@@ -41,6 +41,7 @@
 
 pub mod diag;
 pub mod header;
+pub mod lut;
 pub mod num;
 pub mod tag_table;
 pub mod tag_types;
