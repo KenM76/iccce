@@ -50,6 +50,9 @@ mod tag {
     pub const A2B0: Signature = Signature(0x4132_4230);
     pub const A2B1: Signature = Signature(0x4132_4231);
     pub const A2B2: Signature = Signature(0x4132_4232);
+    pub const B2A0: Signature = Signature(0x4232_4130);
+    pub const B2A1: Signature = Signature(0x4232_4131);
+    pub const B2A2: Signature = Signature(0x4232_4132);
     pub const PCS_LAB: Signature = Signature(0x4C61_6220); // 'Lab '
 }
 
@@ -58,6 +61,16 @@ mod tag {
 pub enum SourceModel {
     MatrixTrc(Box<MatrixTrc>),
     Lut16(Box<Lut16Model>),
+}
+
+/// A destination profile's PCS→device model, chosen per the same
+/// 8.10.2 fallback (B2Ax → B2A0 → TRC/matrix inverse).
+#[derive(Debug, Clone)]
+pub enum DestModel {
+    MatrixTrc(Box<MatrixTrc>),
+    /// A lut16 B2A tag: evaluated FORWARD (its stored pipeline IS the
+    /// PCS→device direction — no inversion happens anywhere).
+    Lut16B2a(Box<Lut16Model>),
 }
 
 /// Chain build/run errors.
@@ -112,10 +125,11 @@ impl From<ModelError> for ChainError {
 #[derive(Debug, Clone)]
 pub struct Chain {
     pub source: SourceModel,
-    pub dst: MatrixTrc,
+    pub dst: DestModel,
     intent: Intent,
     /// Media whites for the absolute scale, captured at build.
     src_white: Option<Xyz>,
+    dst_white: Option<Xyz>,
 }
 
 impl Chain {
@@ -123,7 +137,47 @@ impl Chain {
     /// fallback (module doc); destination must currently be
     /// matrix/TRC.
     pub fn new(src: &Profile, dst: &Profile, intent: Intent) -> Result<Chain, ChainError> {
-        let dst_model = MatrixTrc::from_profile(dst)?;
+        // Destination: B2Ax → B2A0 → matrix/TRC (the same 8.10.2
+        // fallback, B-side). A lut16 B2A's input side is the PCS, so
+        // in an XYZ-PCS profile the 3×3 matrix APPLIES (A21) —
+        // input_is_pcs_xyz is keyed on the destination's PCS.
+        let dst_intent_tag = match intent {
+            Intent::Perceptual => tag::B2A0,
+            Intent::MediaRelative | Intent::Absolute => tag::B2A1,
+            Intent::Saturation => tag::B2A2,
+        };
+        let mut dst_model = None;
+        for sig in [dst_intent_tag, tag::B2A0] {
+            if dst_model.is_some() {
+                break;
+            }
+            let Some(entry) = dst.tags.iter().find(|t| t.sig == sig) else {
+                continue;
+            };
+            if let Some(Ok(decoded)) = dst.decode_tag(entry) {
+                let (pcs, input_is_xyz) = if dst.header.pcs == tag::PCS_LAB {
+                    (PcsKind::Lab, false)
+                } else {
+                    (PcsKind::Xyz, true)
+                };
+                let built = match decoded.data {
+                    TagData::Lut16(l) => Lut16Model::from_lut16(&l, input_is_xyz, pcs).ok(),
+                    // Real press profiles ship mft1 B2A tables (SWOP
+                    // does); Lab-8-bit per Tables 12/13 (A10 resolved).
+                    TagData::Lut8(l) => Lut16Model::from_lut8(&l, input_is_xyz, pcs).ok(),
+                    _ => None,
+                };
+                if let Some(m) = built {
+                    if m.input_channels() == 3 {
+                        dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                    }
+                }
+            }
+        }
+        let dst_model = match dst_model {
+            Some(m) => m,
+            None => DestModel::MatrixTrc(Box::new(MatrixTrc::from_profile(dst)?)),
+        };
 
         // 8.10.2 step 2: the intent's own A2Bx; step 3: A2B0.
         let intent_tag = match intent {
@@ -154,11 +208,22 @@ impl Chain {
                             source = Some(SourceModel::Lut16(Box::new(m)));
                         }
                     }
-                    TagData::Lut8(_) => {
-                        unsupported = Some(ChainError::SourceTagUnsupported {
-                            sig,
-                            type_name: "lut8Type".into(),
-                        });
+                    TagData::Lut8(l) => {
+                        let pcs = if src.header.pcs == tag::PCS_LAB {
+                            PcsKind::Lab
+                        } else {
+                            PcsKind::Xyz
+                        };
+                        // A2B input is device — matrix not applicable.
+                        match Lut16Model::from_lut8(&l, false, pcs) {
+                            Ok(m) => source = Some(SourceModel::Lut16(Box::new(m))),
+                            Err(e) => {
+                                unsupported = Some(ChainError::SourceTagUnsupported {
+                                    sig,
+                                    type_name: format!("lut8Type ({e})"),
+                                });
+                            }
+                        }
                     }
                     TagData::LutAToB(_) => {
                         unsupported = Some(ChainError::SourceTagUnsupported {
@@ -187,12 +252,23 @@ impl Chain {
         };
 
         let src_white = read_wtpt(src);
+        let dst_white = read_wtpt(dst);
         Ok(Chain {
             source,
             dst: dst_model,
             intent,
             src_white,
+            dst_white,
         })
+    }
+
+    /// Destination device channel count (3 for matrix/TRC, the B2A
+    /// tag's output count otherwise — e.g. 4 for CMYK).
+    pub fn output_channels(&self) -> usize {
+        match &self.dst {
+            DestModel::MatrixTrc(_) => 3,
+            DestModel::Lut16B2a(l) => l.output_channels(),
+        }
     }
 
     /// Source device channel count.
@@ -203,8 +279,9 @@ impl Chain {
         }
     }
 
-    /// Convert one set of source device values to destination RGB.
-    pub fn convert(&self, device: &[f64]) -> Result<[f64; 3], ChainError> {
+    /// Convert one set of source device values to destination device
+    /// values (`output_channels()` of them — 3 for RGB, 4 for CMYK…).
+    pub fn convert(&self, device: &[f64]) -> Result<Vec<f64>, ChainError> {
         let expected = self.input_channels();
         if device.len() != expected {
             return Err(ChainError::ChannelMismatch {
@@ -237,8 +314,7 @@ impl Chain {
                 .src_white
                 .ok_or(ChainError::Model(ModelError::AbsoluteNeedsWtpt))?;
             let mw_dst = self
-                .dst
-                .media_white
+                .dst_white
                 .ok_or(ChainError::Model(ModelError::AbsoluteNeedsWtpt))?;
             if mw_dst.x <= 0.0 || mw_dst.y <= 0.0 || mw_dst.z <= 0.0 {
                 return Err(ChainError::Model(ModelError::AbsoluteNeedsWtpt));
@@ -252,7 +328,26 @@ impl Chain {
             xyz
         };
 
-        Ok(self.dst.pcs_to_device(xyz)?)
+        // Destination: matrix/TRC inverse, or the B2A pipeline
+        // evaluated forward. A Lab-PCS B2A consumes Lab: the unified
+        // XYZ converts back via the D50-relative formulas — the exact
+        // inverse of the source side's unification, so an XYZ↔Lab pair
+        // in the middle costs only f64 noise (the round trip is an
+        // arithmetic identity, tested in iccce-color).
+        match &self.dst {
+            DestModel::MatrixTrc(m) => Ok(m.pcs_to_device(xyz)?.to_vec()),
+            DestModel::Lut16B2a(l) => {
+                let pcs_value = match l.pcs_kind() {
+                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
+                    PcsKind::Xyz => PcsValue::Xyz(xyz),
+                };
+                l.pcs_to_device(pcs_value)
+                    .ok_or(ChainError::ChannelMismatch {
+                        expected: 3,
+                        actual: 3,
+                    })
+            }
+        }
     }
 }
 

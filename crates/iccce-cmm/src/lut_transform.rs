@@ -48,6 +48,21 @@ pub enum PcsKind {
     Lab,
 }
 
+/// The PCS codec a pipeline's end uses — the (tag type × PCS kind)
+/// product, all sourced:
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PcsCodec {
+    /// lut16 + Lab: the LEGACY 16-bit encoding (6.3.4.2 NOTE 3).
+    Lab16Legacy,
+    /// lut8 + Lab: the 8-bit encoding of Tables 12/13 — corpus A10
+    /// RESOLVED against the PDF: L* 0→00h, 100,0→FFh (v×100/255);
+    /// a*/b* −128,0→00h, 0→80h, 127,0→FFh (v−128). lut8 is NOT in
+    /// the legacy set ("and only those tag types").
+    Lab8,
+    /// 16-bit XYZ: u1Fixed15 (code/32768).
+    Xyz16,
+}
+
 /// The evaluated PCS result, decoded to colorimetric values.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PcsValue {
@@ -65,6 +80,10 @@ pub enum LutModelError {
     /// A table dimension violates 10.10's own bounds (entries 2–4096
     /// — A22 resolved) or the CLUT is degenerate.
     BadTableShape,
+    /// A lut8 tag with XYZ PCS: the 8-bit XYZ encoding is NOT sourced
+    /// in the corpus (Tables 12/13 cover Lab; the XYZ 8-bit form has
+    /// no verified row). Refused by name until sourced, never guessed.
+    Lut8XyzPcsUnsourced,
 }
 
 impl std::fmt::Display for LutModelError {
@@ -74,6 +93,10 @@ impl std::fmt::Display for LutModelError {
                 write!(f, "lut16: unusable channel counts in={input} out={output}")
             }
             Self::BadTableShape => write!(f, "lut16: table shape outside 10.10's bounds"),
+            Self::Lut8XyzPcsUnsourced => write!(
+                f,
+                "lut8 with XYZ PCS: 8-bit XYZ encoding unsourced, refused by name"
+            ),
         }
     }
 }
@@ -90,7 +113,7 @@ pub struct Lut16Model {
     matrix: Option<[[f64; 3]; 3]>,
     clut: Clut,
     output_tables: Vec<Vec<f64>>,
-    pcs: PcsKind,
+    codec: PcsCodec,
 }
 
 impl Lut16Model {
@@ -163,12 +186,135 @@ impl Lut16Model {
             matrix,
             clut,
             output_tables,
-            pcs,
+            codec: match pcs {
+                PcsKind::Lab => PcsCodec::Lab16Legacy,
+                PcsKind::Xyz => PcsCodec::Xyz16,
+            },
+        })
+    }
+
+    /// Build from a decoded `lut8Type`. Tables are always exactly 256
+    /// entries and all samples `uInt8` (clause 10.11; normalised
+    /// ÷255). Lab PCS uses the 8-bit Tables 12/13 encoding (A10
+    /// resolved); XYZ PCS is refused by name — its 8-bit encoding is
+    /// unsourced (see [`LutModelError::Lut8XyzPcsUnsourced`]).
+    pub fn from_lut8(
+        lut: &iccce_profile::lut::Lut8,
+        input_is_pcs_xyz: bool,
+        pcs: PcsKind,
+    ) -> Result<Lut16Model, LutModelError> {
+        if pcs == PcsKind::Xyz {
+            return Err(LutModelError::Lut8XyzPcsUnsourced);
+        }
+        let input_chan = usize::from(lut.input_chan);
+        let output_chan = usize::from(lut.output_chan);
+        if input_chan == 0 || input_chan > 15 || output_chan == 0 {
+            return Err(LutModelError::BadChannelCounts {
+                input: lut.input_chan,
+                output: lut.output_chan,
+            });
+        }
+        let norm8 = |v: u8| f64::from(v) / 255.0;
+        let input_tables: Vec<Vec<f64>> = (0..input_chan)
+            .map(|c| {
+                lut.input_tables[c * 256..(c + 1) * 256]
+                    .iter()
+                    .copied()
+                    .map(norm8)
+                    .collect()
+            })
+            .collect();
+        let output_tables: Vec<Vec<f64>> = (0..output_chan)
+            .map(|c| {
+                lut.output_tables[c * 256..(c + 1) * 256]
+                    .iter()
+                    .copied()
+                    .map(norm8)
+                    .collect()
+            })
+            .collect();
+        let clut = Clut::new(
+            vec![usize::from(lut.clut_points); input_chan],
+            output_chan,
+            lut.clut.iter().copied().map(norm8).collect(),
+        )
+        .map_err(|_| LutModelError::BadTableShape)?;
+        let matrix = if input_is_pcs_xyz && !lut.matrix_is_identity() {
+            let m = &lut.matrix;
+            let f = |i: usize| m[i].to_f64();
+            Some([[f(0), f(1), f(2)], [f(3), f(4), f(5)], [f(6), f(7), f(8)]])
+        } else {
+            None
+        };
+        Ok(Lut16Model {
+            input_chan,
+            output_chan,
+            input_tables,
+            matrix,
+            clut,
+            output_tables,
+            codec: PcsCodec::Lab8,
         })
     }
 
     pub fn input_channels(&self) -> usize {
         self.input_chan
+    }
+
+    pub fn output_channels(&self) -> usize {
+        self.output_chan
+    }
+
+    /// What the tag's PCS side encodes (as built).
+    pub fn pcs_kind(&self) -> PcsKind {
+        match self.codec {
+            PcsCodec::Lab16Legacy | PcsCodec::Lab8 => PcsKind::Lab,
+            PcsCodec::Xyz16 => PcsKind::Xyz,
+        }
+    }
+
+    /// Evaluate a B2A-direction tag: PCS value in, device values out.
+    ///
+    /// The PCS value is ENCODED to normalised 16-bit code space first
+    /// (the tables consume codes, not colorimetric values): Lab via
+    /// the LEGACY encoding — the same tag-type rule as the A2B
+    /// direction (6.3.4.2 NOTE 3) — and XYZ via u1Fixed15
+    /// (`pcs_encoding` formulas, continuous form). Requires
+    /// `input_chan == 3` (the PCS side is three components).
+    ///
+    /// The 3×3 matrix: for a B2A tag in an XYZ-PCS profile the input
+    /// side genuinely IS PCSXYZ, so A21 makes the matrix applicable —
+    /// the caller signals that via `from_lut16`'s `input_is_pcs_xyz`.
+    #[must_use]
+    pub fn pcs_to_device(&self, pcs: PcsValue) -> Option<Vec<f64>> {
+        if self.input_chan != 3 {
+            return None;
+        }
+        // Colorimetric → normalised code space, the inverse of the
+        // decode direction, per codec.
+        let norm16 = |code: f64| (code / 65535.0).clamp(0.0, 1.0);
+        let input: [f64; 3] = match (self.codec, pcs) {
+            (PcsCodec::Lab16Legacy, PcsValue::Lab(lab)) => [
+                norm16(lab.l * 652.8), // LEGACY encode, this tag type's rule
+                norm16((lab.a + 128.0) * 256.0),
+                norm16((lab.b + 128.0) * 256.0),
+            ],
+            // 8-bit Tables 12/13: L 0..100 → 0..1; ab −128..127 → 0..1.
+            (PcsCodec::Lab8, PcsValue::Lab(lab)) => [
+                (lab.l / 100.0).clamp(0.0, 1.0),
+                ((lab.a + 128.0) / 255.0).clamp(0.0, 1.0),
+                ((lab.b + 128.0) / 255.0).clamp(0.0, 1.0),
+            ],
+            (PcsCodec::Xyz16, PcsValue::Xyz(xyz)) => [
+                norm16(xyz.x * 32768.0), // u1Fixed15 encode
+                norm16(xyz.y * 32768.0),
+                norm16(xyz.z * 32768.0),
+            ],
+            _ => return None, // PCS kind mismatch: caller error
+        };
+
+        // Same pipeline as the A2B direction; output stays device 0..1.
+        self.eval_pipeline(&input)
     }
 
     /// Evaluate device values (each 0..1) to the decoded PCS value.
@@ -177,11 +323,46 @@ impl Lut16Model {
     /// output arities belong to devicelink evaluation, a later stage).
     #[must_use]
     pub fn device_to_pcs(&self, device: &[f64]) -> Option<PcsValue> {
-        if device.len() != self.input_chan || self.output_chan != 3 {
+        if self.output_chan != 3 {
+            return None;
+        }
+        let o = self.eval_pipeline(device)?;
+
+        // PCS decode per codec. Normalised table outputs map back to
+        // code space continuously (rounding mid-pipeline would
+        // quantise the transform — module doc).
+        let code16 = |x: f64| x * 65535.0;
+        Some(match self.codec {
+            PcsCodec::Xyz16 => PcsValue::Xyz(Xyz {
+                // u1Fixed15: value = code/32768 = normalised × 65535/32768.
+                x: decode_pcs_xyz_f(code16(o[0])),
+                y: decode_pcs_xyz_f(code16(o[1])),
+                z: decode_pcs_xyz_f(code16(o[2])),
+            }),
+            PcsCodec::Lab16Legacy => PcsValue::Lab(Lab {
+                l: decode_lab_l_f(code16(o[0])),
+                a: decode_lab_ab_f(code16(o[1])),
+                b: decode_lab_ab_f(code16(o[2])),
+            }),
+            // 8-bit Tables 12/13, continuous: normalised 0..1 → L
+            // 0..100, ab −128..127 (A10 resolved).
+            PcsCodec::Lab8 => PcsValue::Lab(Lab {
+                l: o[0] * 100.0,
+                a: o[1] * 255.0 - 128.0,
+                b: o[2] * 255.0 - 128.0,
+            }),
+        })
+    }
+
+    /// Stages 1–4 (tables → matrix → CLUT → tables) on normalised
+    /// code-space values — shared by both directions; only the PCS
+    /// encode/decode at the ends differs.
+    fn eval_pipeline(&self, input: &[f64]) -> Option<Vec<f64>> {
+        if input.len() != self.input_chan {
             return None;
         }
         // Stage 1: per-channel input tables (linear interp, 10.6).
-        let mut v: Vec<f64> = device
+        let mut v: Vec<f64> = input
             .iter()
             .zip(&self.input_tables)
             .map(|(&x, t)| interp_table(t, x))
@@ -206,30 +387,13 @@ impl Lut16Model {
         }
 
         // Stage 4: output tables.
-        let o: Vec<f64> = clut_out
-            .iter()
-            .zip(&self.output_tables)
-            .map(|(&x, t)| interp_table(t, x))
-            .collect();
-
-        // Stage 5: PCS decode. The 0..1 normalised table outputs map
-        // back to 16-bit code space (×65535, the inverse of the ÷65535
-        // normalisation) and decode per the PCS kind — Lab uses the
-        // LEGACY encoding, this tag type's rule (module doc).
-        let code = |x: f64| x * 65535.0;
-        Some(match self.pcs {
-            PcsKind::Xyz => PcsValue::Xyz(Xyz {
-                // u1Fixed15: value = code/32768 = normalised × 65535/32768.
-                x: decode_pcs_xyz_f(code(o[0])),
-                y: decode_pcs_xyz_f(code(o[1])),
-                z: decode_pcs_xyz_f(code(o[2])),
-            }),
-            PcsKind::Lab => PcsValue::Lab(Lab {
-                l: decode_lab_l_f(code(o[0])),
-                a: decode_lab_ab_f(code(o[1])),
-                b: decode_lab_ab_f(code(o[2])),
-            }),
-        })
+        Some(
+            clut_out
+                .iter()
+                .zip(&self.output_tables)
+                .map(|(&x, t)| interp_table(t, x))
+                .collect(),
+        )
     }
 }
 

@@ -272,7 +272,11 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             }
         };
         match chain.convert(&device) {
-            Ok(out) => println!("{:.6} {:.6} {:.6}", out[0], out[1], out[2]),
+            Ok(out) => {
+                // Destination channel count varies (3 RGB, 4 CMYK…).
+                let line: Vec<String> = out.iter().map(|v| format!("{v:.6}")).collect();
+                println!("{}", line.join(" "));
+            }
             Err(e) => {
                 eprintln!("iccce transform: line {}: {e}", lineno + 1);
                 return ExitCode::from(1);
