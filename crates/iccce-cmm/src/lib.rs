@@ -44,6 +44,7 @@ pub mod curve;
 pub mod lut_transform;
 pub mod matrix_trc;
 pub mod pcs_encoding;
+pub mod transform;
 
 pub use curve::{CurveError, Trc};
 pub use matrix_trc::{MatrixTrc, MatrixTrcTransform, ModelError};
