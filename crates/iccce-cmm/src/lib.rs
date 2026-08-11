@@ -35,6 +35,7 @@
 //! rendering intents Pass 4; BPC Pass 5; compilation Pass 6
 //! (`docs/ROADMAP.md`).
 
+pub mod clut;
 pub mod curve;
 pub mod matrix_trc;
 
