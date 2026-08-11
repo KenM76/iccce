@@ -1,7 +1,8 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-11: Pass 4b measured all three blank directions; done-when open on saturation + operator-blocked A4b; next free NC-084.
+- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-11: Pass 5 DONE on stated terms (estimators never discriminated); Pass 4 still open; next free NC-105.
+- [What were they free to disagree about?](project_free_to_disagree.md) — DL-023: pre-register the negative result from both sources; DL-022: iccce never forces BPC, 3,137 L*, reported not graded.
 - [Say which direction](project_direction_scoped_behaviour.md) — DL-021: a measured implementation behaviour is a fact about one direction/path; three lcms2 half-rules in one file.
 - [Refuse, then let a fixture decide](project_refusal_discharged_by_fixture.md) — DL-020: refuse what the corpus can't supply; only an independently authored fixture discharges the doubt (GP-001).
 - [A tolerance can't swallow and claim](project_tolerance_cannot_swallow_and_claim.md) — DL-019: wide structural gate + tight gate with the difference switched off; report-not-grade what nobody can adjudicate.

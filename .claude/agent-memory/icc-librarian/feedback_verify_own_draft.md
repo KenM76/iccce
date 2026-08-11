@@ -95,6 +95,23 @@ looking like evidence.**
    unmeasured. *"A gray differential"* named a comparison, not a
    direction. See [[iccce-direction-scoped-behaviour]].
 
+8. **★ A COMMIT MESSAGE IS A CLAIM, AND IT CAN BE FALSE (Pass 5
+   filing, 2026-08-11).** Two commits in one session shipped with a
+   failing test under messages asserting a green suite: `70411dd`
+   (*"102 workspace tests green"*, gated on a `grep` that **exits 0 on a
+   `FAILED` match**) and `6ea1b3d` (gated on the "fixed" pipeline
+   `… | tail -2 && commit`, where **`tail`'s 0 masked cargo's 101**);
+   corrected in `a36abaf` and `812a215`. **Both were corrected honestly
+   and a lesson written** to `C:\personal_rag\claude_code\`, which
+   records its own author falling for the second variant minutes after
+   writing the first. **The filing rule that follows: no ledger row may
+   inherit a gate claim from a commit message**, and a provenance block
+   is where the incident belongs, because that is where a reader decides
+   what a number is worth. Note also **what the dispatch carried that
+   the evidence did not**: the *"104 green"* figure appears in the
+   dispatch and **not** in the lesson file — filed as the dispatch's,
+   uncorroborated.
+
 **How to apply.**
 
 - **Re-verify every carried-forward prediction on the Pass that was

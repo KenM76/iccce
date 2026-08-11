@@ -1,79 +1,75 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-11 (Pass 4b measured B2A/v4-fixture/gray; done-when open on saturation + A4b-blocked absolute) — next free NC-084, DL-021 filed, Pass 5 + Pass 7 code already in tree
+description: iccce status snapshot 2026-08-11 (Pass 5 DONE — done-when met on stated terms, estimators never discriminated; Pass 4 still open on saturation + A4b) — next free NC-105, DL-022/DL-023 filed, Pass 6 is next
 metadata:
   type: project
 ---
 
-**Snapshot of 2026-08-11 (the Pass 4b filing — the tenth of one calendar
-day). Verify before relying on any of it** — read `docs/ROADMAP.md`
-(Pass 4b block, the second Pass 5 annotation), `docs/NUMERIC_CLAIMS.md`
-§2.7 + §3.11 + §7.7, `docs/NEXT_SESSION.md`, newest `SESSION_LOG.md`.
+**Snapshot of 2026-08-11 (the Pass 5 completion filing — the eleventh of
+one calendar day). Verify before relying on any of it** — read
+`docs/ROADMAP.md` (Pass 5 completion record, second Pass 6 annotation),
+`docs/NUMERIC_CLAIMS.md` §2.8 + §3.12 + §7.8, `docs/NEXT_SESSION.md`,
+newest `SESSION_LOG.md`.
 
 **Pass 0 done · Pass 1 core · Pass 2 DONE · Pass 3 DONE · Pass 4 IN
-PROGRESS, done-when NOT met — by exactly two items.**
+PROGRESS (done-when open on exactly two items: saturation in B2A, and
+ICC-absolute blocked on operator-only `ICC.1:2001-04` via A4b) ·
+★★ Pass 5 DONE, done-when MET on stated terms.**
 
-**★ Pass 4b measured all three previously-blank directions**, 28 records,
-**`pass=28 fail=0`** *(reported; no `cargo test` count came with it, so
-NC-057…NC-061 STILL have no outcome)*. B2A (`mft1`) **1,330e-4** device
-vs 5e-4, envelope agrees **0,02 %**, modelled residual **2,03 lsb of
-1/65535**; v4 `mAB `/`mBA ` fixture **2,842e-14 L\* / 2,220e-16 device**
-vs a **closed form derived from clause text** (new class
-**`derived-expectation`** — NOT ground truth); gray **9,686e-5** device,
-attribution **457×** to below the print floor.
+**Pass 5's headline is a BOUNDARY, not a number.** Done-when met:
+direction **0,0 exactly** (a sign with an algebraic proof, no tolerance);
+lcms2 match **1,110 588×10⁻⁴** device out of the fixture / **4,600×10⁻⁵**
+into it, baseline (BPC off) **1,012 157×10⁻⁴** graded first; **map vs
+ICC.1:2022 clause 6.3.4.3's printed equation 1,110×10⁻¹⁶**, vs Maria
+(2013) §4.2 **3,331×10⁻¹⁶**. Six scenarios **pre-registered from both
+sources before running, all six confirmed** *(reported)*. **BUT the two
+ESTIMATORS were never discriminated** — a negative result derived in
+advance ⇒ **DL-023**; the only instrument is **a non-zero-black v4 LUT
+fixture, which does not exist** (owed to gen-profiles). Also: lcms2 does
+**no BPC at all** below `IsEmptyLayer`'s **0,002** (≈0,41 `L*`,
+**solved for, not observed**) — iccce deliberately lacks it; and
+**iccce NEVER forces BPC** ⇒ **DL-022**, 3,137 348 `L*`, **reported not
+graded**.
 
-**Done-when remainder = (1) saturation in B2A (`B2A2` is a distinct
-table, cheap), (2) ICC-absolute — blocked on A4b, i.e. on an OPERATOR
-download of ICC.1:2001-04.** Pass 4 is **not closable by engineering**.
-v2/v4 clause judged **MET on stated terms**: v4 = **one synthetic
-fixture**, because a 40-profile sweep found **zero `mAB `/`mBA ` tags**.
+**★ My judgements this filing.** (1) **Class**: the map row **NC-084 is
+`derived-expectation`, NOT `normative-rule-conformance`** — the corpus's
+`evidence:` line for `icc__ref__bpc.md` §2/§3 reads
+**`cross_verified_2src`**, the ledger's first normative-rule rows are
+NC-022…NC-027 (Pass 3), and it grades a **map function**, not a
+transform. `bpc.rs` still heads it "PRIMARY-SOURCED" — **the DL-014
+audit now decides a ledger class.** (2) **Dispatch correction**: it
+called 4,6×10⁻⁵ *"the policy arm"*; that is **NC-096** (cross-check),
+the policy is **NC-100** at 3,137 3×10⁻², **ungraded**. (3) `pass5.rs`
+has **NO `#[test]`** (pass3 7, pass4 7, pass4b 8) — 14 rows on unpinned
+grids; and **§16 states no `pass=` line**, so Pass 5's 26 records is
+**my subtraction** (whole suite 90 − 64), reconciling with 5+7+8+6.
 
-**★ DL-021 (new):** *a measured implementation behaviour is a fact about
-the direction/path it was measured in until measured in the others.*
-Three lcms2 instances, same file: (1) `_cmsReadOutputLUT` forces
-**trilinear** for Lab-PCS LUTs ⇒ **NA-006's 1,5741 ΔE is an A2B number,
-B2A envelope is ZERO**; (2) forced BPC keyed by the **DESTINATION**
-version (M2/DL-013 half-stated); (3) legacy Lab applied for `lut16Type`
-**not** `lut8Type`. Also bit this project's own prediction: the gray
-differential ran GRAY→RGB, so **NA-008 is STILL unmeasured** (it lives in
-the gray *destination* path).
+**★ The double red-commit incident** (recorded in §2.8 + session log):
+`70411dd` claimed *"102 workspace tests green"* with one red — gate was
+`… | grep -E '…|FAILED' && commit`, **grep exits 0 on a FAILED match**;
+corrected `a36abaf`. Then `6ea1b3d` (dispatch says *"104 green"* — **the
+lesson file does not carry that number**) via `… | tail -2 && commit`,
+**tail exits 0**; corrected `812a215`. Lesson at
+`C:\personal_rag\claude_code\lesson_20260811_grep_on_test_output_matches_failed_lines_with_exit_0.md`
+*(read)*, **hardened with its own author's recidivism**. Consequence:
+**no ledger row inherits a gate claim from a commit message.**
 
-**★ My catch this filing:** the corpus's **seventh pass** answered half
-the encoded-PCS-overflow clause question **before** the dispatch called
-it open — 10.12.5/10.13.3 VERBATIM *"shall be clipped to the range 0,0
-to 1,0"* at the **matrix output**, `primary_spec`. iccce's clamp is
-normatively backed; the queued `icc-spec-librarian` dispatch should be
-**narrowed to the final-B-curve half**. Also: **A23/A25 RESOLVED, A24
-partial, C4 filed** ⇒ **DL-020's first revisit condition FIRED**.
+**Ledger: NC-084 … NC-104 filed; next free NC-105.** NA-010's cost is
+now **MEASURED** (NC-094: ΔL* 0,005 364 / ΔE76 0,037 416 / **ΔE2000
+0,050 201** — corroborates the corpus to 2×10⁻⁵ by an independent
+route). **NA-009's cost is still unmeasured and now for a stated
+reason** (reachable ≠ discriminable).
 
-**Ledger: NC-062 … NC-083 filed; next free NC-084.** New **NA-009**
-(BPC black-point *estimation* subset, A42) and **NA-010** (perceptual
-black 0.00336/0.0034731/0.00287 — lcms2 **and iccDEV** against ICC.1
-Table 16, 0,037 ΔE76 corpus-derived, **exactly zero at 16-bit PCS**).
+**Counts, verified:** **103** `#[test]` across **18** files under
+`crates/` (was 102). **`lib.rs`'s §Status is FIXED** at last (was stale
+four times). `named_color.rs` (Pass 7) still reachable from nothing.
+**Pass 6 (performance) is next** and is the first Pass whose rule-8
+precondition holds across the whole transform surface.
 
-**★ Undispatched code in the tree (5th consecutive filing):**
-`iccce-cmm/src/bpc.rs` (Pass 5, 4 tests) and `named_color.rs` (Pass 7,
-2 tests). Corpus `icc__ref__bpc.md` landed: **the BPC scaling map IS in
-ICC.1:2022, clause 6.3.4.3, under another name** — so "Pass 5 pending
-sourcing" is false. **BPC is also WIRED**: `Chain::with_bpc()` +
-`iccce transform --bpc`, refusing by name at absolute and outside the
-estimation subset, and **iccce NEVER forces BPC** (a recorded policy
-difference from lcms2, one direction already priced by NC-078). **Pass 5
-is missing MEASUREMENT, not code**; TOLERANCES §3.5's blanks are now a
-gap and NA-009/NA-010's costs are OWED. `NamedColors` genuinely is
-reachable from nothing. *(My first draft said both were unwired — from a
-head-limited grep. See [[iccce-verify-own-draft-too]] item 6.)*
-**`iccce-cmm/src/lib.rs`'s §Status is stale a 4th time** ("Still to
-come: BPC") — saved by its own "trust the module" instruction.
+**Commits, ALL reported — no agent here has ever run git:** `8be1ed3`,
+`70411dd`/`a36abaf`, `6ea1b3d`/`812a215`, `46f16e8`, `df3a233`.
 
-**Counts, verified:** **102** `#[test]` declarations across **18** files
-under `crates/` (was 95/16). **Unresolved:** README §15.5 says the
-binary was built at **`97ad9fa`**, which predates the clamp commit.
-
-**Commits, ALL reported — no agent here has ever run git:** `9e2e29e`,
-`a0310c7`, `3d0c183`.
-
-Related: [[iccce-direction-scoped-behaviour]],
+Related: [[iccce-free-to-disagree]], [[iccce-direction-scoped-behaviour]],
 [[iccce-refusal-discharged-by-fixture]], [[iccce-verify-own-draft-too]],
 [[iccce-tolerance-cannot-swallow-and-claim]],
 [[iccce-predicted-divergence-must-be-measured]],

@@ -2095,3 +2095,226 @@ committed** — instructed not to, and committing is the engineer's act.
   settles it — an **operator** download.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+## 2026-08-11 (autonomous-loop continuation) — ★★ Pass 5 CLOSES: the BPC map is graded against a clause of the primary specification, the best finding of the Pass is something the run could not do and said so first, and TWO commits shipped red under messages claiming a green suite
+
+**Eleventh entry of the same calendar day.** Filed by `icc-librarian`
+against the working tree, `tools/`, the live corpus and
+`C:\personal_rag\`.
+
+**Commits, all reported** *(no agent in this project has ever run git)*:
+**`8be1ed3`** (the Pass 4b filing committed + the `iccce-cmm/src/lib.rs`
+§Status fix), **`70411dd`** → **`a36abaf`** and **`6ea1b3d`** →
+**`812a215`** (the BPC core, and the two red commits below),
+**`46f16e8`** (the `--bpc` CLI — the iccce commit README §16 names),
+**`df3a233`** (the Pass 5 measurements). **Verified in the working
+tree**: `bpc.rs` wired, `--bpc` on the CLI, `tools/difftest/src/pass5.rs`
++ `src/bin/pass5_report.rs` present, README §16 and `TOLERANCES.md` §3.5
+filled — **and `lib.rs`'s §Status now correct**, closing a staleness this
+project reported **four times**.
+
+### ★★ The done-when is MET, and the terms are the interesting part
+
+- **"Differ in the documented direction"** — met **with no tolerance at
+  all**. `out − in = (Xd − Xs)/(Xi − Xs)·(Xi − X)`, whose second factor
+  is `≥ 0` in gamut, so the **sign** is provable at every point: **0,0
+  exactly** in both directions (largest fall **4,304×10⁻² device =
+  3,5159 ΔE2000**).
+- **"Match lcms2's BPC within tolerance"** — **1,110 588×10⁻⁴** device
+  out of the fixture, **4,600×10⁻⁵** into it (against **both** lcms2
+  arms), **1,262 374×10⁻² ΔE2000**, on a **BPC-off baseline graded
+  first** at 1,012 157×10⁻⁴.
+- **And a third thing nobody asked for**: the **scaling map** against
+  **ICC.1:2022 6.3.4.3**'s printed equation at **1,110×10⁻¹⁶**, and
+  against a Gaussian elimination on **Maria (2013) §4.2** at
+  **3,331×10⁻¹⁶**. Three independent statements of one map, ~1,5 ulp
+  apart.
+
+### ★★ The finding of the Pass is a NEGATIVE result, and it was derived before anything ran
+
+Both implementations' reach was read out of their sources first —
+`Chain::with_bpc`'s subset against lcms2's six first-match-wins guards
+at the pin — and the intersection said, **in advance**:
+
+> **Everywhere iccce will do BPC at all, lcms2's estimator reduces to
+> the same two values** — `XYZ (0,0,0)` on every matrix/TRC or gray side
+> in reach (`trc(0) = 0` everywhere), the **same A41 triple** on a v4
+> LUT side at perceptual.
+
+**So Pass 5 grades the map, the direction and the pipeline, and cannot
+discriminate the two ESTIMATORS.** A session that had measured first
+would have found six small numbers and read them as six independent
+agreements about "BPC". **When two implementations agree, the question
+is what they were free to disagree about** — and it is answerable from
+their sources, before the run, more cheaply than the run itself. Filed
+as **DL-023**, with its cheap companion: **print the sensitivity
+ratio** (Pass 5's are **388×** and **682×**; the off arm is already
+being run as the baseline, so it costs nothing).
+
+**The instrument that would close it does not exist**: a synthetic v4
+RGB-or-gray LUT fixture with a **non-zero device black**.
+`fixtures/synthetic/` holds 38 `.icc` *(verified — enumerated)*, one v4
+LUT, black zero. **Owed to `tools/gen-profiles`** — the same shape as
+the GP-001 arc.
+
+### ★★ Two recorded differences that are not defects
+
+1. **lcms2 silently does NO BPC below a threshold.** `IsEmptyLayer`
+   drops the whole stage when the BPC matrix's deviation from the
+   identity plus its offsets is under **0,002** — so lcms2 stops doing
+   BPC once the two blacks are within ≈**0,41 `L*`**. **iccce has no
+   such threshold.** For the S2/S3 map the discriminant is **0,015 342,
+   7,7× the threshold**, so nothing measured turns on it, and **the
+   0,41 figure is SOLVED FOR, not observed** — recorded at that strength
+   and no higher. **The constant is not in the corpus**, because
+   `ICC_Spec` §7.2's list came from `cmssamp.c` and this one is in
+   `cmscnvrt.c`.
+2. **★ iccce NEVER forces BPC; lcms2 forces it for a v4 destination at
+   perceptual.** Unasked against unasked: **3,137 348 `L*`**, lcms2
+   lighter. **Neither is a defect — the number IS the policy**, and it
+   is **REPORTED, NOT GRADED** under DL-019, because the enable policy
+   rests on a document nobody here has read and the one published source
+   (Maria 2013) is silent on it. The corpus's **D11** fingerprint is
+   *answered*: the size matches the A41 triple's `L*` to 1,1×10⁻⁴ and
+   **the sign identifies lcms2's M2 route, not iccDEV's** — distinguished
+   by measuring the *other* direction, which is DL-021's discipline
+   applied to a policy. **Promoted to `ARCHITECTURE.md` DL-022**, out of
+   the paragraph in NA-009 where it had been living, because it now has
+   a measured size, a graded posture and **a user-visible consequence**:
+   two correct CMMs give different pictures by default, silently.
+
+### ★★ The double red-commit incident, recorded with both false claims named
+
+**Two commits this session shipped with a failing test under a message
+claiming a green suite**, and the second happened *after* the lesson for
+the first had been written:
+
+| Commit | The false claim | The gate that let it through | Corrected in |
+|---|---|---|---|
+| **`70411dd`** | *"102 workspace tests green"* — **one was red** | `cargo test … \| grep -E 'test result: ok. [1-9]\|FAILED' && git commit` — **grep exits 0 on a `FAILED` match** | **`a36abaf`** |
+| **`6ea1b3d`** | *"104 green"* *(the number is the **dispatch's**; the lesson file does not carry it)* | the "fixed" gate `cargo test -q 2>&1 \| tail -2 && commit` — **`tail` exits 0**, masking cargo's 101 | **`812a215`** |
+
+**Both were corrected honestly rather than quietly**, and the lesson is
+written up at
+`C:\personal_rag\claude_code\lesson_20260811_grep_on_test_output_matches_failed_lines_with_exit_0.md`
+*(**verified — read**)*. **It names all four commits and the "102"
+claim, and it records that its own author fell for the pipeline variant
+minutes after writing it** — which is why the remedy it states is
+**mechanical, not attentional**: capture the exit code before any
+display, `cargo test --workspace -q > log 2>&1; TESTS=$?`, gate on
+`$TESTS`. It also cross-references the older
+`lesson_20260807_pipeline_exit_status_belongs_to_the_last_element.md`,
+whose own amendments already record **four** instances of the same idiom
+in one day in the sibling project *(verified — read)*. **Exit codes
+compose; text matching does not, and neither does a pipe.**
+
+**What this costs the ledger, and it is not nothing.** Every gate figure
+this project holds is *reported*, and this session demonstrated that a
+reported figure can be produced by a gate that was never actually read.
+**§2.8 records it in the provenance block** — the right place, because a
+provenance block is where a reader decides how much a number is worth —
+and **no §3.12 row inherits any gate claim from a commit message.** The
+one gate figure §3.12 rests on is the whole-suite
+**`pass=90 fail=0 skip=3 error=0`** transcribed at the README's head.
+
+### ★ Three things this filing found by reading rather than transcribing
+
+1. **★ A labelling error in the dispatch.** It described the lcms2 match
+   as *"map 1.11e-16 …; **policy arm 4.6e-5**"*. **4,600×10⁻⁵ is not
+   the policy arm** — it is **NC-096**, the BPC-on cross-check in S3.
+   **The policy row is NC-100 at 3,137 3×10⁻², REPORTED NOT GRADED.**
+   They differ by ~680× **and by their posture**, which is the whole
+   point of DL-019. Understandable (§16.4 is titled *"…and the
+   policy"*), corrected rather than absorbed.
+2. **★ `tools/difftest/src/pass5.rs` has NO unit tests** *(verified
+   twice — `tools/` grepped for `#[test]` with **no result limit**,
+   returning `pass3.rs` 7, `pass4.rs` 7, `pass4b.rs` 8 and **no
+   `pass5.rs`**; then `pass5.rs` grepped alone)*. Pass 3 pinned its grid
+   with five tests and Pass 4 asserted its corners really are corners.
+   **Fourteen of the new rows rest on two grids that nothing pins**, and
+   a silently changed grid would silently change their scope with
+   nothing failing.
+3. **★ §16 states no `pass=`/`fail=` line of its own**, unlike §15's
+   `pass=28 fail=0` *(verified — §16 read end to end)*. **Pass 5's
+   record count is this librarian's subtraction** of two reported
+   whole-suite totals (90 − 64 = 26), and it reconciles exactly with
+   §3.12.1's row enumeration (5 + 7 + 8 + 6). **A reconciliation that
+   comes out right is not a report**, and the block says so.
+
+### ★ A class judgement, made rather than inherited
+
+The dispatch suggested the map row might be *"the ledger's first
+primary-spec-conformance row for a TRANSFORM"* and asked for a judgement.
+**The answer is no, on three grounds**, and **NC-084 is filed as
+`derived-expectation`** (§3.12.2): (a) §1's `normative-rule-conformance`
+class requires the corpus at **`primary_spec`** tier, and
+`icc__ref__bpc.md`'s `evidence:` line reads **`cross_verified_2src`**
+for §2/§3 *(verified — frontmatter read)*; (b) the ledger's first
+normative-rule-conformance rows are **NC-022 … NC-027**, filed at Pass
+3; (c) **it is not a transform** — it grades the map function
+`BpcScale`, while the end-to-end row is **NC-098**, whose expectation has
+a fixture's bytes in it. **A class is not raised by how good the number
+looks.** What NC-084 *is*, at full strength: a **derived expectation with
+no fixture in it at all** — which removes the class's stated weakness
+and leaves only transcription risk. **Promotion is one line from
+`icc-spec-librarian`**, and the **DL-014 audit item now decides a ledger
+class**, not just a doc-comment heading: `bpc.rs` still heads 6.3.4.3
+**"PRIMARY-SOURCED"** *(verified — read)*.
+
+### ★ One named approximation's cost discharged, one shown to be undischargeable
+
+- **NA-010 — MEASURED.** NC-094 rebuilt the map with **ICC.1 Table 16's
+  printed decimals** on §B's grid and reproduced the corpus's two Python
+  passes **to 2×10⁻⁵ ΔE76** by an independent route (Rust, a fixture's
+  stored bytes), **plus a ΔE2000 the corpus never computed: 0,050 201**
+  — the **same order as §B's entire agreement budget**, so on a float
+  path the constant is *not* negligible against the noise. **This is the
+  verification loop running the direction it ran at Pass 1** — and this
+  time the corpus was right.
+- **NA-009 — still unmeasured, and now for a stated reason.** Being
+  *reachable* is not being *discriminable*. The §6 dependency row that
+  predicted *"wiring makes the cost come due"* was **half wrong**, and
+  its dated status says so.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph; the **Pass 5 completion record** — the done-when answered clause by clause with the estimator boundary in the same table, the pre-registered negative result, the two non-defect differences (`IsEmptyLayer`, the never-force policy), the coverage statement, the gates including the three read-not-transcribed findings, the dispatch's labelling correction, and six owed items; a **second Pass 6 annotation** (rule 8's precondition now met for every stage a compiled transform would touch, and DL-023 as the sharpest inherited rule). **No plan text, no earlier block and no annotation rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§2.8** provenance (six commits, the red-commit row, the `pass=90` subtraction, the `pass5.rs` pinning gap); **§3.12** — **NC-084 … NC-104**, a shared coverage box, the record arithmetic, and ten subsections including the **class judgement**, the **pre-registered negative result**, the closed form and its third reading, the policy, the `IsEmptyLayer` threshold, A41 priced, the two graded refusals, and *what §3.12 does not claim*; **dated notes under NA-009** (cost still unmeasured, and why) **and NA-010** (cost MEASURED — its *"nobody may restate it as an iccce measurement"* clause superseded); **eleven** new §6 dependency rows; **§7.8** re-checking every prior owed item — **one discharged, one split** — and adding six. |
+| `ARCHITECTURE.md` §5 | **DL-022** — iccce never forces BPC: the measured size, the three reasons it is a decision rather than a note (user-visible consequence, contaminates every comparison, previously written down twice in weaker places), and four things it does not claim. **DL-023** — state what the two implementations were **free to disagree about**, from their sources, before the run; publish the negative result; name the instrument that would close it; print the sensitivity ratio. DL-001 … DL-021 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for the post-Pass-5 position. |
+
+**Not touched, by instruction and by ownership:** `TOLERANCES.md`,
+`tools/`, `fixtures/`, the corpus, `LEGAL.md`. **Nothing was
+committed** — instructed not to, and committing is the engineer's act.
+**No git command was run**, by an agent that has no shell.
+
+### Left for the next session to not assume
+
+- **That any of the six commits exists or contains what is recorded
+  here.** The files, `tools/`, the corpus and the personal_rag lesson
+  are verified; **the repository is not**, and this is the session that
+  proved a commit message can be false.
+- **That `pass=90 fail=0` covers `cargo test`.** It is the
+  **differential runner's** whole-suite figure. **No `cargo test
+  --workspace` outcome has been reported at any of the last six
+  filings**, and **NC-057 … NC-061 still have none.** 103 `#[test]`
+  declarations exist under `crates/` *(verified — counted)*; that is not
+  a pass result.
+- **That "iccce's BPC matches lcms2's" is a statement about BPC.** It is
+  a statement about **the scaling map, the direction and the pipeline**,
+  on **one synthetic fixture**, at **one intent**, in **two
+  directions**. **Neither ESTIMATOR was tested, by either side.**
+- **That the estimator gap is a hedge.** It is a **derived** result with
+  a named instrument that does not exist yet.
+- **That lcms2 always does BPC when asked.** Below `IsEmptyLayer`'s
+  0,002 it does none at all — **solved for, never triggered here**.
+- **That NC-100 is a defect in either implementation.** It is a policy,
+  and it is ungradable until an operator fetches a document.
+- **That Pass 4 moved.** It did not: **saturation in B2A** and
+  **ICC-absolute** (blocked on **A4b**) are exactly where the Pass 4b
+  filing left them, and Pass 5's saturation gap is a **different** item.
+- **That anything ran on Linux, or that any CI run has ever been
+  observed.** Still nothing, by anyone, ever.

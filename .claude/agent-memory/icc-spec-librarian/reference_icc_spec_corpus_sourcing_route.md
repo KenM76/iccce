@@ -13,7 +13,9 @@ metadata:
 
 | Source | Repo | Files that carry the facts | Licence |
 |---|---|---|---|
-| **ICC's own** `DemoIccMAX` / iccDEV | `InternationalColorConsortium/DemoIccMAX` | `IccProfLib/icProfileHeader.h` (header struct, all signature enums, tag-type structs), `IccProfLib/IccUtil.cpp` (D50, XYZ↔Lab, PCS scaling), `IccProfLib/IccTagLut.cpp` (parametric curve formulas) | BSD-3-Clause |
+| **ICC's own** `DemoIccMAX` → **now `iccDEV`** | **`InternationalColorConsortium/iccDEV`** (the `DemoIccMAX` path still redirects) | `IccProfLib/icProfileHeader.h` (header struct, all signature enums, tag-type structs), `IccProfLib/IccUtil.cpp` (D50, XYZ↔Lab, PCS scaling), `IccProfLib/IccTagLut.cpp` (parametric curve formulas), **`IccProfLib/IccCmm.h` + `IccCmm.cpp` (the CMM itself — perceptual black constants, the v2→v4 PCS black scaling of clause 6.3.4.3)** | BSD-3-Clause |
+
+**★ Tool limit, verified 2026-08-11: GitHub *code search* returns ZERO results for `InternationalColorConsortium/iccDEV`** — even for symbols that demonstrably exist (`gh search code --repo … CIccCmm` → empty, while the identical query shape works on `mm2/Little-CMS`). The repo is not in the code-search index. **Use the contents API instead:** `gh api repos/InternationalColorConsortium/iccDEV/contents/<path> --jq '.content' | base64 -d`. Pin used for the BPC pass: `b5f8def112ff98764fdf64e12d5d948395d0b62c` (master moves daily).
 | **Little-CMS** (v2.19) | `mm2/Little-CMS` | `src/cmspcs.c` (**the v2/v4 Lab encoding constants**), `src/cmsgamma.c` (parametric curves), `src/cmsvirt.c` (sRGB), `src/cmswtpnt.c` (**Bradford matrix**), `src/cmstypes.c` (mluc reader), `include/lcms2.h` (header struct, D50) | MIT |
 
 **Ground-truth test data (published literature, real ground truth per project rule 3):** Sharma/Wu/Dalal 2005 CIEDE2000 — all 34 pairs at `https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/dataNprograms/ciede2000testdata.txt` (HTTP 200). Already transcribed into `cie/cie__ref__delta_e.md`.

@@ -2181,3 +2181,193 @@ point **all three instances must be re-measured, not re-read** — a
 retuned interpolator factory or a moved link flag would invalidate them
 **silently**, because the transcriptions would keep reproducing the old
 behaviour perfectly.
+
+### DL-022 — **iccce NEVER forces black point compensation; it is an explicit caller act.** A deliberate, measured divergence from the oracle with a **user-visible** consequence, filed as a decision because it can no longer be carried as a note
+
+**Date:** 2026-08-11 (Pass 5 completion) · **Measurement by:**
+`icc-conformance` · **Filed by:** `icc-librarian` · **Relates to**
+**DL-013** (lcms2's forcing, first recorded), **DL-019** (report-not-grade
+when the mechanism is known and the authority is not), **DL-021**
+(instance 2 — the forcing is keyed by the **destination**), and
+`NUMERIC_CLAIMS.md` **NC-020**, **NC-078**, **NC-100**, **NA-009**
+
+#### The decision
+
+**`iccce` applies BPC if and only if the caller asks for it**
+(`Chain::with_bpc()`, reached from the shipped binary as
+`iccce transform --bpc`). **It does not force BPC on for any profile
+version, any intent, or any combination of the two.** lcms2 does: for a
+**v4 destination** at perceptual or saturation it sets the flag
+unconditionally, **overriding the caller** — `_cmsLinkProfiles` writes
+`BPC[i] = TRUE` before the caller's flag is ever read, which is why
+asking and not asking produce **bit-identical** output there
+(**NC-095**, graded at exactly 0,0).
+
+#### Why this is a decision and not a defect on either side
+
+| | |
+|---|---|
+| **What lcms2 rests on** | A source comment attributing the policy to **Adobe's document**. **Nobody in this project has read that document.** It is `AdobeBPC.pdf` / ICC WP40 / ISO 18619, and it is **ToS-barred or blocked to agent tools** — an operator browser download |
+| **What the one published BPC source says** | **Maria (2013)** corroborates the **exclusion** set (absolute, devicelink, abstract — the ground for `BpcNotApplicable`, and the basis of **NC-104**) and is **silent on the enable policy**. It discusses the v4 fixed black only as the easy case of black-point *detection*, **never** as a reason to override a caller (`ICC_Spec` §7.1) |
+| **What ICC.1:2022 says** | The **scaling map** is there, at **6.3.4.3**, under another name (**NC-084**). **The applicability is not.** There is no clause that says when BPC *shall* be applied |
+| **What it costs, measured** | **3,137 348 `L*`** at black on one pair (sRGB → `v4-cmyk-mab-lab.icc`, perceptual), lcms2 **lighter**; **NC-100**. The sign is diagnosed, not tolerated: it matches the corpus's **D11** fingerprint to **1,1×10⁻⁴ `L*`** and identifies **lcms2's M2 route**, not **iccDEV's** — the two being distinguishable in the opposite direction, which was measured (**NC-093**) |
+
+**So the disagreement's mechanism is fully identified and its authority
+does not exist.** That is exactly **DL-019**'s condition, and the
+consequence is the same: **NC-100 is REPORTED, NOT GRADED.** The two
+available gradings were considered and **both rejected in writing** — a
+~3,2 `L*` tolerance would be a number chosen because it passed (rule 5),
+and a permanent red line would assert a verdict no obtainable document
+supports (rule 7).
+
+#### The three things that make it a decision-log entry rather than a note
+
+1. **It has a user-visible consequence.** This is not an internal
+   approximation. **Two correct CMMs give different pictures by
+   default**, through a flag on a shipped binary: someone converting
+   sRGB into a v4 profile at perceptual gets a lighter black from
+   `transicc` than from `iccce`, with no error, no warning and nothing
+   in either output to indicate why. **Rule 1 in its purest form** — and
+   the reason the difference is *documented at the call site* rather
+   than merely tolerated.
+2. **It contaminates every comparison in the Pass.** *"A comparison that
+   does not account for it measures iccce's **policy** and reports the
+   answer as a **tolerance**."* Pass 5 accounts for it by running the
+   cross-checks **`--bpc` against `-b`** and separately reporting the
+   unasked-against-unasked arm. **Any future Pass that compares BPC
+   without doing this will produce a wrong tolerance that looks fine.**
+3. **It was already written down twice in weaker places and that was
+   not enough.** It lived as a paragraph inside **NA-009** (*"recorded
+   here rather than minted as its own entry"*) and as a sentence in
+   `bpc.rs`'s field doc. **Neither is where a reader looks for a
+   deliberate divergence from the oracle**, and neither could carry the
+   measured size, because at the time there was none.
+
+#### What this entry does NOT claim
+
+- **It does not say lcms2 is wrong.** Its behaviour may be exactly what
+  the unread document specifies. **Rule 7 cuts both ways**: a
+  disagreement with lcms2 is a finding, and a finding is not a verdict.
+- **It does not say iccce's default is better colour.** For a v4
+  perceptual destination, forcing BPC may well produce the *more useful*
+  result. The claim is narrower and is about **authority**: iccce will
+  not override a caller on the strength of a document nobody here has
+  read.
+- **It does not settle whether BPC should be forced.** It records that
+  the question is open, who could close it, and what it costs while it
+  stays open.
+- **It is not a claim about saturation.** iccce's estimation subset
+  admits **only perceptual** on a LUT side, so the saturation arm has no
+  iccce half at all — the policy difference there is **unmeasured**.
+
+**Evidence.** `tools/difftest/README.md` **§16.4.2** (the policy, with
+its mechanism), **§16.4.3** (the D11 fingerprint answered in both
+directions), **§16.1** (both implementations' reach, tabulated from
+their sources); `docs/TOLERANCES.md` **§3.5.4 row P16**, which agrees on
+every figure *(verified — read; the file is `icc-conformance`'s and was
+not edited)*; `crates/iccce-cmm/src/bpc.rs` and
+`crates/iccce-cli/src/main.rs` *(verified — the `--bpc` flag and its
+refusal path read)*. Ledger rows **NC-093**, **NC-095**, **NC-100**, and
+the dated note under **NA-009**. Commits **`46f16e8`**, **`df3a233`**
+*(reported — no agent in this project has ever run git)*.
+
+**Revisit if:** `AdobeBPC.pdf` / ICC WP40 / ISO 18619 is obtained — at
+which point **NC-100 becomes gradable in one direction or the other, and
+this entry either gains a clause or is reversed by a new entry**; or
+iccce's estimation subset widens to admit saturation (a second place to
+measure the same policy); or lcms2's pin moves, since the forcing is a
+behaviour at a pin (**re-run, not re-read**).
+
+### DL-023 — **before a cross-check is graded, state what the two implementations were FREE to disagree about — derived from their sources, before the run.** A pre-registered negative result is a finding; a small residual discovered afterwards is not
+
+**Date:** 2026-08-11 (Pass 5 completion) · **Method by:**
+`icc-conformance` · **Filed by:** `icc-librarian` · **Relates to**
+**DL-018** (an apparatus must be shown able to see the effect it looks
+for), **DL-021** (a behaviour is a fact about one direction), **DL-012**
+(a predicted disagreement measured absent), and `NUMERIC_CLAIMS.md`
+§3.12.3, **NC-067**, **NA-009**
+
+#### The decision
+
+**Every comparison between iccce and another implementation states, in
+advance and from both sides' sources, which of the quantities under test
+the two were actually free to differ on.** Where the answer is *"none"*
+for some component, **that component's agreement is not evidence and the
+record says so** — as a **pre-registered negative result**, not as a
+caveat appended after a suspiciously small number.
+
+Concretely, three obligations:
+
+1. **Read both reaches before running anything.** Pass 5 tabulated
+   `Chain::with_bpc`'s applicability subset against lcms2's six
+   first-match-wins black-point guards **at the pin**, and derived the
+   scenario set from the intersection.
+2. **Publish the negative result the intersection produces**, at the top
+   of the coverage statement rather than in a footnote. Pass 5's is:
+   **everywhere iccce will do BPC at all, lcms2's estimator reduces to
+   the same two values** — `XYZ (0,0,0)` on every matrix/TRC or gray
+   side in reach (every TRC in the corpus has `trc(0) = 0`) and the same
+   **A41** triple on a v4 LUT side at perceptual. **So Pass 5's rows
+   grade the scaling map, the direction and the pipeline; they do not
+   discriminate the two ESTIMATORS, and no row may be quoted as if they
+   did.**
+3. **Name the instrument that would close the gap**, so the gap is an
+   item of work rather than a permanent hedge. Pass 5's is **a synthetic
+   v4 RGB-or-gray LUT fixture with a non-zero device black** — the same
+   shape as **DL-020**: a doubt the corpus cannot discharge, discharged
+   by bytes this project authors.
+
+**And its cheap companion, which Pass 5 also demonstrates: state the
+sensitivity ratio.** *"iccce and lcms2 agree to 1,1×10⁻⁴"* means nothing
+until it sits beside *"BPC itself moves this transform by 3,5159
+ΔE2000"* — **388×**, and **682×** in the other direction. **A comparison
+that cannot state such a ratio has not shown that it could have
+failed.** Where the effect being graded has a natural "off" arm, the
+ratio is **free**, because the off arm is already run as the baseline
+(**NC-089**).
+
+#### Why this is not already covered by DL-018 or DL-021
+
+- **DL-018** requires a **prediction pin** so that *deleting a
+  requirement* cannot make a gate greener. It is about the **gate**.
+- **DL-021** requires a measured behaviour to carry its **direction**.
+  It is about **scope**.
+- **DL-023 is about what the comparison is capable of distinguishing at
+  all** — a property of the *scenario set*, fixed before any tolerance
+  is chosen and before any number exists. **A suite can satisfy both
+  earlier rules perfectly and still consist entirely of comparisons that
+  could not have failed.** NC-067's counterfactual was the first sign of
+  this (a method difference collapsing to zero); Pass 5 is the case
+  where the collapse covers a whole *rule* of the feature, and where it
+  was **predicted rather than discovered**.
+
+#### What this entry does NOT claim
+
+- **It does not devalue the agreeing rows.** NC-090 and NC-096 are real
+  evidence about the map, the direction and the pipeline — and they are
+  388× and 682× more sensitive than the effect they grade. **What they
+  are not is evidence about estimation.**
+- **It does not require an instrument to exist before a Pass may
+  close.** Pass 5's done-when is **MET**; the gap is stated in the same
+  breath. **A done-when is met on its terms, and the terms are part of
+  the claim.**
+- **It does not make "we agreed" suspicious by default.** It makes
+  *unexamined* agreement suspicious. The remedy is a reading of two
+  sources, done once, before the run — which in this Pass cost less than
+  the run did.
+
+**Evidence.** `tools/difftest/README.md` **§16.1** (the scenario set,
+with a prediction column written before each run and **all six
+confirmed** — *reported*), **§16.7** paragraph (C) (the coverage
+statement carrying the negative result), **§16.8** item 4 (the fixture
+owed); `docs/TOLERANCES.md` **§3.5.1** and **§6.5** item 1, which state
+the same rule in `icc-conformance`'s own words *(verified — read; not
+edited)*; `tools/difftest/src/pass5.rs`'s module header, which tabulates
+both implementations' reach *(verified — read)*. Ledger §3.12.3.
+Commit **`df3a233`** *(reported)*.
+
+**Revisit if:** a Pass produces an agreement claim **without** stating
+what the two sides were free to disagree about (the entry should then
+gain the instance); or the non-zero-black fixture is authored, at which
+point Pass 5's negative result becomes a **measurable** question and
+**NA-009's cost comes due for the first time**.
