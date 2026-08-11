@@ -30,13 +30,14 @@ iccce — ICC colour management engine
 
 USAGE:
   iccce inspect <profile>   Print the profile header and tag table.
-  iccce transform --src <profile> --dst <profile>
-                            Convert device values, source -> destination,
-                            media-relative colorimetric (the only intent
-                            implemented; others are refused by name).
-                            Reads one triple per line from stdin, floats
-                            in 0..1 whitespace-separated; writes one
-                            converted triple per line, 6 decimals.
+  iccce transform --src <profile> --dst <profile> [--intent <i>]
+                            Convert device values, source -> destination.
+                            <i>: media-relative (default), perceptual,
+                            saturation, absolute. Reads one set of source
+                            device values per line from stdin (floats in
+                            0..1, whitespace-separated; count = source
+                            channel count, e.g. 4 for CMYK); writes one
+                            converted RGB triple per line, 6 decimals.
 
 Profiles are read as raw bytes; any file (or stream dump) containing an
 ICC profile is accepted. Malformations are reported, never repaired.
@@ -184,6 +185,7 @@ fn cmd_inspect(path: &str) -> ExitCode {
 fn cmd_transform(args: &[String]) -> ExitCode {
     let mut src_path: Option<&String> = None;
     let mut dst_path: Option<&String> = None;
+    let mut intent = iccce_cmm::matrix_trc::Intent::MediaRelative;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -196,15 +198,19 @@ fn cmd_transform(args: &[String]) -> ExitCode {
                 i += 2;
             }
             "--intent" if i + 1 < args.len() => {
-                let intent = &args[i + 1];
-                if intent != "media-relative" {
-                    eprintln!(
-                        "iccce transform: intent `{intent}` not implemented \
-                         (Pass 3 implements media-relative only); refusing \
-                         rather than substituting"
-                    );
-                    return ExitCode::from(1);
-                }
+                intent = match args[i + 1].as_str() {
+                    "media-relative" => iccce_cmm::matrix_trc::Intent::MediaRelative,
+                    "perceptual" => iccce_cmm::matrix_trc::Intent::Perceptual,
+                    "saturation" => iccce_cmm::matrix_trc::Intent::Saturation,
+                    "absolute" => iccce_cmm::matrix_trc::Intent::Absolute,
+                    other => {
+                        // Refuse an unknown name rather than substituting:
+                        // a substituted intent produces plausible wrong
+                        // colour.
+                        eprintln!("iccce transform: unknown intent `{other}`\n\n{USAGE}");
+                        return ExitCode::from(2);
+                    }
+                };
                 i += 2;
             }
             other => {
@@ -229,13 +235,17 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let transform = match iccce_cmm::MatrixTrcTransform::new(&src, &dst) {
+    // The Chain handles both source shapes (matrix/TRC and lut16 A2B)
+    // with the sourced 8.10.2 fallback; the source's channel count
+    // (3 for RGB, 4 for CMYK, …) sets the per-line input arity.
+    let chain = match iccce_cmm::transform::Chain::new(&src, &dst, intent) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("iccce transform: cannot build transform: {e}");
             return ExitCode::from(1);
         }
     };
+    let channels = chain.input_channels();
 
     let stdin = std::io::stdin();
     for (lineno, line) in std::io::BufRead::lines(stdin.lock()).enumerate() {
@@ -250,17 +260,18 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             continue;
         }
         let vals: Result<Vec<f64>, _> = line.split_whitespace().map(str::parse::<f64>).collect();
-        let rgb: [f64; 3] = match vals {
-            Ok(v) if v.len() == 3 => [v[0], v[1], v[2]],
+        let device: Vec<f64> = match vals {
+            Ok(v) if v.len() == channels => v,
             _ => {
                 eprintln!(
-                    "iccce transform: line {}: expected three floats, got `{line}`",
+                    "iccce transform: line {}: expected {channels} floats \
+                     (source channel count), got `{line}`",
                     lineno + 1
                 );
                 return ExitCode::from(1);
             }
         };
-        match transform.convert(rgb) {
+        match chain.convert(&device) {
             Ok(out) => println!("{:.6} {:.6} {:.6}", out[0], out[1], out[2]),
             Err(e) => {
                 eprintln!("iccce transform: line {}: {e}", lineno + 1);
