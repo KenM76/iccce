@@ -1,5 +1,6 @@
 # Agent memory — icc-spec-librarian
 
+- [Published ground truth — the survey, done](reference_published_ground_truth_state.md) — **ICC.1:2022 Annex D.6.3 IS transform ground truth** (start at Table D.3); the LUT path is **structurally** unclosable; what was checked and found empty
 - [ICC ToS blocks automated access](project_icc_tos_automated_access_blocker.md) — never agent-fetch color.org (incl. `registry.color.org`); **the bar does NOT generalise — cie.co.at and eci.org are permissive; fogra.org bars via robots.txt instead**
 - [Pass 10 / measurement sourcing state](reference_measurement_profiling_sourcing_state.md) — **FOGRA51 is EMBEDDED in `PSOcoated_v3.icc`'s `targ` tag**; CIE tables held+checksum-verified; **Argyll is AGPL — BARRED**; industry D50 Z is `0,82521`, not ICC's `0,8249`
 - [Don't transcribe numeric tables; write incrementally](feedback_dont_transcribe_numeric_tables.md) — download into `_sources/` and POINT at it with spot-checks; write each finding to disk as established — a dead run lost everything it held in context
@@ -7,12 +8,12 @@
 - [ICC PDF drops minus signs](reference_icc_pdf_symbol_font_sign_loss.md) — Symbol-font glyphs land in U+F0xx and every extractor silently discards them; exhaustive map + which engine per structure; Read tool cannot render PDF pages here
 - [ICC-absolute: clause 6.2.3 is backwards](reference_icc_absolute_intent_clause_trap.md) — the prose inverts the media-white ratio; implement Eq (1)–(6); `chad` is never a render-time step
 - [BPC is SOURCED — verdicts, not gaps](reference_icc_bpc_sourcing_state.md) — **4.2.5.4 short-circuit returns `InitialLab`, NOT `outRamp[first]`** (shipped-iccce bug); forcing verdict NO; root not vertex; the ink fit never runs
-- [Corpus defects are caught from outside](feedback_corpus_defects_are_caught_from_outside.md) — **read this first of the five lesson memories**; **n=8** and not one was found by re-reading; a search (full-text *or* a constant sweep) is evidence only about what it covered
+- [Corpus defects are caught from outside](feedback_corpus_defects_are_caught_from_outside.md) — **read first of the lesson memories**; **n=9**, none found by re-reading; **a DISQUALIFYING entry removes its own auditor (C5)**
 - [Shared layout is not shared semantics](feedback_shared_layout_is_not_shared_semantics.md) — C4: one curve-count sentence for `mAB `+`mBA ` from a shared C struct; wrong for `mBA `, caused GP-001; grep for "the ONLY difference between X and Y"
 - [A retraction is a grep, not a paragraph](feedback_a_retraction_is_a_grep_not_a_paragraph.md) — C1b: two file bodies kept the retracted C1 selector; a partly-corrected file outranks an uncorrected one in danger
 - [Verify a document's identity from its title page](feedback_verify_document_identity_from_title_page.md) — a file named `BlackPointCompensation.pdf` was **ISO/CD 18619, not WP40**; **a document that cites X is not X**
 - [Label the predicate, not just the payload](feedback_label_the_predicate_not_just_the_payload.md) — cross-verified constants say nothing about the rule selecting them; the A1 near-miss
-- [DERIVED values need a second pass](feedback_derived_values_need_a_second_pass.md) — a provenance label is not an arithmetic audit; the C2 D50-chromaticity erratum, caught by an iccce unit test
+- [DERIVED values need a second pass](feedback_derived_values_need_a_second_pass.md) — **a displayed value is an INTERVAL; two passes at higher precision is ONE pass (C5)**; plus the C2 D50-chromaticity erratum
 - [Reading source is not observing behaviour](feedback_reading_source_is_not_observing_behaviour.md) — "lcms2 does X" needs a run, not a citation; the C3 retraction of a divergence that measurement found absent
 - [lcms2 measured quirks live in one file](reference_lcms2_measured_behaviour_file.md) — `M<n>` at pin 21c582a; check M2/M4/M5 first; **M6 is source-read**; **M2's Adobe attribution is RETRACTED (M2 itself stands)**
 - [ICC.1 conformance binds only *reading*](reference_icc_conformance_clause_binds_only_reading.md) — clause 5 never binds a CMM's computed output; verdicts say "diverges", not "non-conforming" (A39b); plus the clamp-the-input pattern and the 6.4-vs-6.5 device-range trap

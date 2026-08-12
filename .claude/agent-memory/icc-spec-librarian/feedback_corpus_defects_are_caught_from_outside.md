@@ -1,13 +1,13 @@
 ---
 name: corpus-defects-are-caught-from-outside
-description: With n=8 corpus-made errors (C1, C1b, C2, C3, C4, A28's overstatement, bpc.md §7.2's one-file constant sweep, and the un-transcribed ISO 4.2.5.4 return value), not one was found by re-reading the corpus — arrange for external auditors (the primary document, an execution, a second consumer) rather than for more careful re-reading; includes the "a full-text search is evidence about vocabulary, not content" rule
+description: With n=9 corpus-made errors (C1, C1b, C2, C3, C4, A28's overstatement, bpc.md §7.2's one-file constant sweep, and the un-transcribed ISO 4.2.5.4 return value, and C5's wrongly-DISQUALIFIED ground-truth fixture), not one was found by re-reading the corpus — arrange for external auditors (the primary document, an execution, a second consumer) rather than for more careful re-reading; includes the "a full-text search is evidence about vocabulary, not content" rule
 metadata:
   type: feedback
 ---
 
 **A corpus cannot audit itself. Optimise for how fast something *outside* it will disagree, not for how carefully it was re-read.**
 
-**Why:** as of 2026-08-12 the ICC_Spec corpus has made eight recorded defects, and every one was overturned by a different mechanism than the one that let it through — **none by re-reading the corpus**:
+**Why:** as of 2026-08-12 the ICC_Spec corpus has made **nine** recorded defects, and every one was overturned by a different mechanism than the one that let it through — **none by re-reading the corpus**:
 
 | id | The claim | Overturned by |
 |---|---|---|
@@ -56,6 +56,10 @@ a section about a *different* document's scoping defect, so it was filed under
 "Adobe's bug" rather than under "what the algorithm returns". **Where a clause
 states a RETURN VALUE, transcribe it verbatim at the place an implementer will
 grep for it, even if another section already paraphrased it.**
+
+**★ n=9, added 2026-08-12 (13th pass): `C5`. `icc__ref__spec_defects.md` §13.2 point-evaluated a worked example whose printed inputs were intervals, called ONE typo TWO, and on the strength of the apparent pattern wrote "the black row is not ground truth" — disqualifying ICC.1:2022 Annex D.6.3, THE only published transform ground truth in the field.** Overturned when `icc-engineer` asked a **different question** ("does published ground truth exist *anywhere*?"), forcing the example to be re-derived from scratch by an agent that had not read §13.2 first. **The mechanism is the one this memory keeps predicting: a fresh derivation from the primary document, prompted by a question the original entry was not written to answer.** The tell had been sitting in §13.2's own table for eight passes — `Z` marked ✔ at the same `0,4 %` agreement `Y` was marked ✘ for — **and no amount of re-reading found it, because to its author the entry was not uncertain.**
+
+**★ The new-shape lesson from C5, distinct from the interval arithmetic (that part lives in [[derived-values-need-a-second-pass]]): a corpus entry that DISQUALIFIES something is far more dangerous than one that asserts something, and is checked far less often.** An assertion invites the next consumer to test it. A disqualification tells them not to look — so it removes its own auditor. **C1, C1b, C2, C3, C4 were all wrong assertions and all were caught within days by someone using them. C5 was a wrong *rejection* and survived eight passes and eleven filings, because nobody uses a fixture they were told is broken.** **How to apply: any sentence of the form "X is not usable / not ground truth / not reliable" gets the same evidence bar as a load-bearing positive claim, plus an explicit statement of what it costs if the rejection is wrong.**
 
 **Note also what the ambiguity register did and did not do.** It tracked C1 correctly (as A1, flagged the whole time). It could not have tracked C4: the wrong sentence never became an `A` row because **it was never uncertain to its author**. A register only records the uncertainty someone thought to write down.
 

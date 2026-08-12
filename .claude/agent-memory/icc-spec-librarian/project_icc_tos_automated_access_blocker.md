@@ -1,6 +1,6 @@
 ---
 name: icc-tos-automated-access-blocker
-description: color.org's ToS bans automated/AI access — never agent-fetch color.org. FIVE documents are now in _sources/ from Ken's browser (ICC.1:2022, ICC.1:2001-04, AdobeBPC, ISO/CD 18619, PDF20_AN001); only ICC.1:2010-12 is still wanted. Acquisition is still not a redistribution licence, and the four new documents have FOUR DIFFERENT licence terms.
+description: color.org's ToS bans automated/AI access — never agent-fetch color.org. FIVE documents are now in _sources/ from Ken's browser (ICC.1:2022, ICC.1:2001-04, AdobeBPC, ISO/CD 18619, PDF20_AN001); only ICC.1:2010-12 is still wanted. Acquisition is still not a redistribution licence. ALSO: itu.int WAF-rejects agents and printtechnologies.org grants nothing — four site postures now, and "absence of a prohibition is not a grant".
 metadata:
   type: project
 ---
@@ -13,6 +13,16 @@ metadata:
 
 **The pair is the standing rule: at `color.org` the prose barred while robots permitted; at `fogra.org` robots bars while the prose is silent. The restrictive signal governs in both. "One of the two permits it" is not the test.**
 
+**★★ 2026-08-12 (13th pass): TWO MORE POSTURES, so there are now FOUR SHAPES and "check robots + check the prose" is no longer a complete procedure.**
+
+| Site | Posture | Verdict |
+|---|---|---|
+| **`itu.int`** | **★ A THIRD SHAPE — nothing forbids it; the server simply refuses.** A WAF rejects *every* agent request: `curl https://www.itu.int/robots.txt` returns **HTTP 200** with body `The requested URL was rejected. Please consult with your administrator.` plus a support ID. `/rec/R-REC-BT.709/en` → 245-byte rejection page. **There is no robots.txt to read and no prose to weigh.** **Report as a TOOL LIMIT, not as a permission question. ITU-R BT.709 is free — one operator browser click.** |
+| **`printtechnologies.org`** (APT, ex-NPES — CGATS/TR001 publisher) | **★ A FOURTH SHAPE — a permission framework that declines to express a permission.** `robots.txt` is **24 lines, ALL comments**: the Cloudflare *content-signals* preamble explaining `search` / `ai-input` / `ai-train`, **with no `User-agent`, no `Disallow`, and no `Content-Signal:` line at all.** By its own clause (c) the operator *"neither grants nor restricts permission via content signal."* **Boilerplate that explains a vocabulary is not a grant. Nothing was fetched beyond `robots.txt`.** |
+| **`w3.org`** | **★ AGENT RETRIEVAL OK.** `robots.txt` disallows only WordPress/blog internals; `/Graphics/` is permitted. Used for the 1996 sRGB document. |
+
+**Generalised: the question is never "does robots.txt disallow it?" — it is "has this operator expressed a permission?" Absence of a prohibition is not a grant, and a 200 response is not a permission.**
+
 **Why:** the ToS (Effective 2026-01-01, checked 2026-08-11) prohibits "using any robot, spider, or other automated device to access the Services for any purpose, including **monitoring, copying, or training artificial intelligence or machine learning models**, without prior written consent from ICC." The clause names AI/ML explicitly, so it is not a strained reading of a generic anti-scraping term. Recorded deliberately as a conflicting signal: `www.color.org/robots.txt` does *not* disallow the specification index and `archive.color.org` serves no robots.txt at all — **the machine-readable permission and the prose contract point opposite ways, and the prose contract was taken as binding.**
 
 **How to apply:**
@@ -22,7 +32,7 @@ metadata:
   - **`BlackPointCompensation.pdf` is NOT ICC WP40** — it is **ISO/CD 18619**, `ISO TC 130/WG7 N 063`, `2013-05-2`, **stage (30) committee draft**. WP40 is cited in its own Bibliography as `[1]` and is **superseded**. **Cite as "ISO/CD 18619:2013 clause 4.2.x", never as "ISO 18619"** — the document's own warning page forbids the latter.
   - **The four documents have FOUR DIFFERENT licence terms** and they must not be treated alike: ICC.1:2001-04 = ICC terms (no reproduction right); **AdobeBPC = text reproduction PROHIBITED but the ALGORITHM is patent-free and explicitly open to implement** (two separate grants, do not conflate); ISO/CD 18619 = © ISO, extracts restricted, **and a citation constraint on top**; **PDF20_AN001 = CC-BY-4.0**, the only freely quotable one. Recorded per-document at `D:\Dev\iccce\docs\LEGAL.md` **§2.5**.
   - **Extraction engine ranking INVERTS for the two BPC PDFs: use `pypdf`, not poppler.** `pdftotext -layout` turns every non-Latin-1 glyph into `U+FFFD` there (20 / 49 occurrences), losing `≤`, `×` and the `U+2013` en-dash minus signs. **`ICC.1-2001-04.pdf` has no Symbol-font sign-loss problem at all** — do not apply [[icc-pdf-symbol-font-sign-loss]]'s map to it.
-- **The only ICC document still wanted is `ICC.1:2010-12`** (A31/D10 — what changed in `parametricCurveType` Table 68, and whether clause 6.2.3's inverted white-point ratio is new in :2022). **It blocks the single remaining UNVERIFIED row in the whole ambiguity register, and no iccce code path.** Two non-ICC wants, both low priority: **ISO 18619:2015** (paywalled — one question only, whether the CD's mid-range gate survived balloting) and ICC's published **D65→D50 `chad`** values from Annex E.4.2.
+- **The only ICC document still wanted is `ICC.1:2010-12`** (A31/D10 — what changed in `parametricCurveType` Table 68, and whether clause 6.2.3's inverted white-point ratio is new in :2022). **★ UPDATED 13th pass: it now blocks BOTH UNVERIFIED rows — `A31` AND `A47` (an independent printing of Annex D.6.3's Tables D.2–D.5, which would say whether the defective black `X` is a long-standing typo or a 2022 regression). That makes it the single highest-value operator download in the project.** Still no iccce code path. Two non-ICC wants, both low priority: **ISO 18619:2015** (paywalled — one question only, whether the CD's mid-range gate survived balloting) and ICC's published **D65→D50 `chad`** values from Annex E.4.2.
 - **If another ICC document is ever needed, ask Ken to download it** — that is the only route, permanently.
 
 *(Historical, retained — the priority list as it stood before the evening of 2026-08-11. Items 1, 3 and 4 are DONE; item 2 is what remains.)*
