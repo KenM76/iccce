@@ -164,6 +164,9 @@ pub struct MatrixTrc {
     /// well-shaped. Used ONLY by the absolute intent (D.6/D.7);
     /// `None` is fine for every other intent, hence not a build error.
     pub media_white: Option<Xyz>,
+    /// A4c: this profile's `wtpt` disagrees with its own colorant sum
+    /// while carrying no `chad`. See [`MatrixTrc::white_point_note`].
+    pub white_point_inconsistent: bool,
 }
 
 impl MatrixTrc {
@@ -220,12 +223,60 @@ impl MatrixTrc {
             }
         });
 
+        // A4c detection (see `white_point_note`). The colorant sum IS
+        // the profile's adapted media white in a matrix/TRC model
+        // (F.3: device white → the sum of the columns), so comparing
+        // it against `wtpt` costs nothing and is decidable from the
+        // file's own bytes. Threshold 1e-3 per component: far above
+        // s15Fixed16 quantisation (1.5e-5) and authoring rounding
+        // (~2e-4, measured on the HP sRGB profile), far below the
+        // D65-vs-D50 separation this exists to catch (0.26 in Z).
+        let colorant_sum = Xyz {
+            x: r[0] + g[0] + b[0],
+            y: r[1] + g[1] + b[1],
+            z: r[2] + g[2] + b[2],
+        };
+        let has_chad = profile.tags.iter().any(|t| t.sig == Signature(0x6368_6164)); // 'chad'
+        let white_point_inconsistent = media_white.is_some_and(|w| {
+            !has_chad
+                && ((w.x - colorant_sum.x).abs() > 1e-3
+                    || (w.y - colorant_sum.y).abs() > 1e-3
+                    || (w.z - colorant_sum.z).abs() > 1e-3)
+        });
+
         Ok(MatrixTrc {
             matrix,
             matrix_inv,
             trc,
             media_white,
+            white_point_inconsistent,
         })
+    }
+
+    /// A4c disclosure — the residue ICC.1:2001-04 leaves open.
+    ///
+    /// Annex A.3.1.1 (v2) recommends the profile's AUTHOR set `wtpt`
+    /// to the PCS white when the viewer fully adapts, and says
+    /// nothing about what a READER should do with a file whose author
+    /// did not comply. lcms2 substitutes D50 for any v2 display
+    /// profile's `wtpt` (M5) — applying a builder-directed
+    /// recommendation at read time, worth **11.2 ΔE2000** on the stock
+    /// Windows sRGB profile, which stores D65 while its colorants sum
+    /// to D50 with no `chad`.
+    ///
+    /// **iccce uses `wtpt` as stored (NA-007) and DISCLOSES the
+    /// inconsistency instead of choosing silently.** Neither policy is
+    /// authorised by a clause; what the standard leaves undecided,
+    /// this engine surfaces — the report-don't-repair rule applied one
+    /// layer above the parser. `None` when the profile is coherent (or
+    /// carries a `chad`, which explains the difference legitimately).
+    #[must_use]
+    pub fn white_point_note(&self) -> Option<&'static str> {
+        self.white_point_inconsistent.then_some(
+            "mediaWhitePointTag disagrees with the colorant sum and no chromaticAdaptationTag \
+             explains it (A4c): iccce uses wtpt as stored; lcms2 would substitute D50 for a v2 \
+             display profile — a difference of up to ~11 ΔE2000 at the ICC-absolute intent",
+        )
     }
 
     /// Device RGB (each component in [0,1]) → media-relative PCSXYZ.
@@ -373,6 +424,7 @@ mod tests {
             matrix_inv: matrix.inverse().unwrap(),
             trc: [Trc::Gamma(gamma), Trc::Gamma(gamma), Trc::Gamma(gamma)],
             media_white: None,
+            white_point_inconsistent: false,
         }
     }
 
@@ -560,6 +612,58 @@ mod tests {
         let rel = t.convert_with_intent(rgb, Intent::MediaRelative).unwrap();
         assert_eq!(t.convert_with_intent(rgb, Intent::Perceptual).unwrap(), rel);
         assert_eq!(t.convert_with_intent(rgb, Intent::Saturation).unwrap(), rel);
+    }
+
+    /// A4c on a REAL file: the stock Windows sRGB v2 display profile
+    /// stores wtpt = D65 while its colorants sum to D50 and it carries
+    /// no chad — the exact configuration ICC.1:2001-04 A.3.1.1 leaves
+    /// undecided for readers, and the cause of lcms2's 11.2 ΔE2000
+    /// absolute-intent divergence (M5). iccce discloses it.
+    /// Expectation source: the profile's own bytes plus the corpus's
+    /// M5 analysis — not this code.
+    #[test]
+    fn a4c_disclosed_on_the_real_srgb_profile() {
+        let path = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+        let Ok(bytes) = std::fs::read(path) else {
+            eprintln!("skipped: system sRGB profile absent");
+            return;
+        };
+        let profile = Profile::parse(&bytes).unwrap();
+        let m = MatrixTrc::from_profile(&profile).unwrap();
+        // wtpt is D65-ish; colorants sum to D50-ish; no chad.
+        let w = m.media_white.expect("sRGB carries wtpt");
+        assert!(w.z > 1.0, "wtpt Z {} should be D65-like (~1.089)", w.z);
+        let sum = m.matrix.apply([1.0, 1.0, 1.0]);
+        assert!(sum[2] < 0.9, "colorant sum Z {} should be D50-like", sum[2]);
+        assert!(m.white_point_inconsistent);
+        assert!(m.white_point_note().unwrap().contains("A4c"));
+    }
+
+    /// The disclosure must STAY SILENT on a coherent profile — a note
+    /// that fires on everything discloses nothing. The committed
+    /// synthetic fixture is coherent by construction (wtpt = D50 =
+    /// its colorant sum, plus an identity chad).
+    ///
+    /// This test originally used AdobeRGB1998.icc, assuming it
+    /// carried a chad. It does not — and the failure produced a
+    /// finding bigger than the test: a sweep of this machine's
+    /// profiles shows **AdobeRGB1998, AppleRGB, PAL_SECAM, SMPTE-C,
+    /// ewrgb18, ewsrgb and the stock sRGB all store wtpt = D65 with
+    /// colorants summing to D50 and no chad.** The A4c configuration
+    /// is the v2 authoring NORM, not an outlier — which is exactly
+    /// why lcms2 substitutes D50, and why iccce's disclosure will
+    /// fire often and must therefore be worth reading.
+    #[test]
+    fn a4c_silent_on_a_coherent_profile() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/synthetic/v2-rgb-matrix-trc-curv.icc"
+        );
+        let bytes = std::fs::read(path).expect("committed fixture");
+        let profile = Profile::parse(&bytes).unwrap();
+        let m = MatrixTrc::from_profile(&profile).unwrap();
+        assert!(!m.white_point_inconsistent);
+        assert!(m.white_point_note().is_none());
     }
 
     /// A Lab-PCS profile is refused BY NAME for this model (F.3:

@@ -171,6 +171,16 @@ fn cmd_inspect(path: &str) -> ExitCode {
     for m in &profile.malformations {
         println!("malformation: {m}");
     }
+
+    // A4c: a colorimetric inconsistency the PARSER cannot see (it
+    // needs the matrix/TRC model to know what the colorants sum to),
+    // so it is disclosed here rather than as a malformation. Silent
+    // for every profile shape that cannot exhibit it.
+    if let Ok(model) = iccce_cmm::MatrixTrc::from_profile(&profile) {
+        if let Some(note) = model.white_point_note() {
+            println!("note: {note}");
+        }
+    }
     ExitCode::SUCCESS
 }
 
