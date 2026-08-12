@@ -15,6 +15,7 @@ iccce/
     iccce-color/       CIE colorimetry. No ICC, no I/O.
     iccce-cmm/         transforms: build them, evaluate them, cache them.
     iccce-cli/         a scriptable shell for inspection and conversion.
+    iccce-measure/     CGATS/IT8.7 measurement files. No ICC, no maths.
   tools/
     difftest/          out-of-tree differential oracle against lcms2.
     gen-profiles/      synthetic profile generator for fixtures.
@@ -22,6 +23,55 @@ iccce/
     synthetic/         profiles this project authored, byte by byte.
     reference/         rights-cleared real profiles (see LEGAL.md §3).
 ```
+
+**Five crates.** The workspace manifest is the authority for membership
+and it lists all five *(verified 2026-08-12 — `Cargo.toml` read: its
+header block says "Five crates, per docs/ARCHITECTURE.md §1" and
+`[workspace] members` enumerates them)*. **Three of the five —
+`iccce-color`, `iccce-profile`, `iccce-measure` — have an empty
+`[dependencies]` section, and that emptiness is the architecture rather
+than a coincidence.**
+
+### `iccce-measure` — added 2026-08-12, and why it exists before its consumer does
+
+**INVARIANT: `iccce-measure` contains no ICC and no colour maths.** It
+reads the text a spectrophotometer emits — a header of `KEYWORD value`
+properties, a declared field list, a table of measured patches — and
+returns them as declared. Deciding that a column named `LAB_L` means
+CIE `L*` under some observer is the **consumer's** act; a spectral→XYZ
+integration additionally needs colour-matching functions this project
+has not sourced.
+
+It is **Pass 10 pre-work** (profile creation), landed at commit
+**`2a2d616`** on the operator's authorisation of 2026-08-12, and its
+position in the tree is an argument rather than a convenience:
+
+- **A measurement file is not a profile.** Keeping the reader out of
+  `iccce-profile` means a future profiler *and* a future measurement
+  tool share one reader, and means **this crate's tests never need an
+  ICC fixture** — its eight tests are text in, structure out.
+- **It is the half of a profiler that needs no hardware.** `ROADMAP.md`
+  Pass 10's precondition — *a profiler whose output cannot be validated
+  against physical measurement is rule 1 in its worst form* — binds the
+  **fitting** half. Parsing has no such block, so it could be built
+  today and was.
+- **The parser reports; it does not repair** (§3 invariant 2, here
+  applied to measurement data rather than to ICC bytes). A
+  `NUMBER_OF_FIELDS` that disagrees with the `DATA_FORMAT` block is
+  disclosed as an `Issue` and the file stays readable; **nothing is
+  silently corrected**, because the disagreement is exactly the thing a
+  later stage would otherwise attribute to the instrument.
+
+**Lineage, which is a licence fact and not a footnote:** structure and
+keyword vocabulary derive from **lcms2's `cmscgats.c`**, which is MIT —
+the same licence as this project, so it is a permitted lineage on the
+same terms as every other implementation-derived piece of work here
+(`impl_crosscheck` tier). **Argyll CMS is AGPL-3.0 and must never be
+read or cited for this work.** It is the most tempting reference in this
+subject area and it is copyleft; the hazard is recorded at the crate
+site as well as here because the temptation recurs. CGATS.17 itself is
+paywalled and **is not sourced** — where lcms2's reader is more
+permissive than the standard may be, this follows lcms2 and says so.
 
 ### Why `profile` and `color` are separate from `cmm`
 
@@ -3145,3 +3195,231 @@ compatibility promise); a consumer needs a sealed reader, which is
 evidence the split was drawn in the wrong place; or a fifth defect of
 the same shape is found, which would argue for a systematic sweep rather
 than another entry.
+
+---
+
+### DL-030 — ★★★ **the open question of DL-027's family is ANSWERED and it went against us: iccce was NON-CONFORMANT at ISO/CD 18619 4.2.5.4 and lcms2 conformed.** Filed as a decision because rule 7 was written to be capable of this outcome and had never yet produced one
+
+**Date:** 2026-08-12 · **Done by:** `icc-engineer` (commit **`fd34a44`**
+*"bpc: iccce was WRONG at 4.2.5.4 — lcms2 conformed, we did not"*),
+sourced by `icc-spec-librarian` · **Filed by:** `icc-librarian` **from
+`crates/iccce-cmm/src/bpc.rs` read at the tip, not from the dispatch** ·
+**Answers** the question `NUMERIC_CLAIMS.md` §3.18.6 dispatched and
+§7.11 carried as newly-owed item 1 · **Relates to** **DL-027** (the two
+estimators), **DL-020** (refuse rather than guess), and rule 7
+
+#### The decision
+
+> **When the specification settles a disagreement against us, the code
+> changes and the record says which of the two implementations was
+> wrong, by name.** ISO/CD 18619 **4.2.5.4**'s final paragraph reads, in
+> the corpus's verbatim transcription: *"If the mid range is straight
+> (as determined above) then the DestinationBlackPoint **shall be the
+> same as InitialLab**."* **lcms2 (`cmssamp.c` L536) does that. iccce
+> returned `outRamp[first]`. iccce was wrong.**
+
+**What made it wrong rather than divergent** *(verified — `bpc.rs`
+lines 174–199 and 266–273 read)*: `outRamp[first]` occurs in the whole
+of clause 4.2.5 only as `MinL` — a **threshold** and a `yRamp` anchor —
+and in 4.2.5.3's validity test. **It is not a candidate for the black
+point in any branch.** There was no reading of the clause under which
+the shipped behaviour was permitted; this is not a silence iccce filled
+differently, which is what DL-015 and NA-006 are.
+
+#### ★★ Why this belongs in the decision log and not merely in the ledger
+
+**Because it is the first time rule 7 has run in this direction, and a
+rule that has only ever exonerated the project has not been tested.**
+The rule reads *"disagreement with lcms2 is a finding, not a failure"*
+and the danger in it was always the second clause being heard as *"so
+iccce is right"*. `NUMERIC_CLAIMS.md` §3.18.6 anticipated exactly this
+and pre-committed in writing — *"if ISO names lcms2's, iccce is WRONG —
+not divergent — and the engineer changes the code … rule 7 is not a
+licence to assume iccce is right"* — **before the answer existed**.
+That pre-commitment is what made the outcome cheap to accept.
+
+#### The cost, and the one number that must travel with it
+
+**0,0817 ΔE76 on `USWebCoatedSWOP`** — which is **100 % of the two
+implementations' measured disagreement on that arm**
+(`NUMERIC_CLAIMS.md` **NC-142**, `8,166 8×10⁻² ΔE76`, `ΔL* 0,081 67`,
+chroma exactly 0). ★ **The defect was measured before it was found.**
+Pass 5c measured the divergence, could not attribute it, and named the
+one line it had to be; the sourcing then said which side of that line
+was wrong. **A measurement whose attribution is left open is what makes
+a later answer actionable** — had the divergence been filed as *"lcms2
+departs from the standard"*, the correct answer would have had nothing
+to attach to.
+
+#### A corollary the same reading produces, which is NOT a bug fix
+
+The function's **return type widened from `L*` to a full `Lab`**,
+because 4.2.5.2.1 zeroes chroma **only for CMYK**, so on a Gray or RGB
+LUT destination ISO itself yields a **chromatic** `DestinationBlackPoint`
+and the short-circuit is **the only branch that can return one**.
+Neutralising it at the return would have been a second, quieter
+departure. **Cost today: zero** — 4.2.6 ignores `a`/`b` downstream —
+**and the correctness is not zero**, which is the distinction rule 4
+exists to keep visible.
+
+#### What this entry does NOT decide
+
+- **It does not make lcms2 an authority.** lcms2 conformed *here*, at
+  one clause, at one pin. **DL-027** stands: lcms2 has two estimators
+  and a branch §3.5.7's table did not trace.
+- **It does not retire the ISO/CD tier caveat.** 18619 is a **committee
+  draft** in this project's corpus, and every consequence drawn from it
+  inherits that.
+- **It does not claim the corpus caught this.** ★ It did not: the corpus
+  had **not transcribed 4.2.5.4 verbatim**, so nothing in it said
+  `outRamp[first]` was wrong. **The defect shipped, was measured, and
+  was then caught from outside** — a corpus gap and an implementation
+  bug with the same root.
+
+**Revisit if:** a published edition of ISO 18619 changes 4.2.5.4's
+final paragraph; or any further clause of 4.2.5 is transcribed and
+disagrees with what `bpc.rs` now does.
+
+---
+
+### DL-031 — ★★ **an unlabelled test count is not a claim, because the APPARATUS is half the number.** Filed with the day's live instance: three green results on one tree read 129, 36 and 142, and two of them were briefly compared
+
+**Date:** 2026-08-12 · **Occasioned by:** `icc-engineer`, who ran
+`cargo test --workspace` at the tip, got **129**, and momentarily read
+it as a regression against a *"suite green at 142"* carried in commit
+**`d5efd96`**'s message · **Filed by:** `icc-librarian` · **Relates to**
+`NUMERIC_CLAIMS.md` **§1** (evidence classes) and **§1.2** (a count of
+tests declared is not a count of coverage)
+
+#### The rule
+
+> **Every test count is written with the command that produced it, or
+> it is not written.** *"The suite is green at N"* is not a fact about
+> this project; it is a fact about **one invocation of one runner over
+> one member set**, and this repository has **three** runners whose
+> member sets do not overlap.
+
+The three, as of commit `2a2d616` *(reported by `icc-engineer`, who ran
+them; see the ledger for what corroborates each)*:
+
+| Apparatus | Command | Result |
+|---|---|---|
+| **The workspace unit suite** | `cargo test --workspace` at the repository root | **129 passed, 0 failed**, exit 0 |
+| **The harness's own unit suite** | `cargo test` in `tools/difftest` — **deliberately not a workspace member** (DL-001, DL-017), so `--workspace` cannot see it | **36 passed**, exit 0 |
+| **The differential conformance runner** | `cargo run --release` in `tools/difftest` — the oracle, which drives lcms2 | **pass=142 fail=0 skip=3 error=0** |
+
+**142 was never a `cargo test` count.** It is a count of *conformance
+records*, and the number it is comparable to is its own previous run
+(`pass=140 fail=2`), not to 129 and not to 36.
+
+#### ★ Why this is a decision and not a note
+
+**Because the failure mode is silent and arrives late.** A bare number
+in a commit message, a README or a filing survives the session that
+produced it; the reader who next meets it has no way to know which
+runner it came from, and **the two most natural things to do with two
+numbers are to compare them and to infer a trend.** That is precisely
+what happened here — by the engineer, on the same day, on numbers he had
+produced himself. **If it can be misread by its own author within
+hours, it will be misread by anyone else.**
+
+The general form, which is the part worth carrying beyond this project:
+**a count is a measurement, and a measurement without its apparatus is
+not weak evidence — it is uninterpretable.** This is the same rule as
+`NUMERIC_CLAIMS.md` §1's `machine-timing` class (a throughput figure is
+a fact about one machine) and the same rule as §3.19's *"a maximum over
+one population is not a maximum over another"*, applied to integers
+instead of to reals.
+
+#### What follows, concretely
+
+1. **The ledger carries all three numbers with their commands** —
+   `NUMERIC_CLAIMS.md` §3.22, `NC-158` … `NC-160`, in a new evidence
+   class that exists to keep them from being quoted beside a ΔE.
+2. **No document may write "the suite is green" without the command.**
+   Where an older document does, it is corrected by a dated addition
+   rather than by rewriting, so the ambiguity is visible.
+3. **A count of tests is still not a count of coverage** (§1.2). This
+   entry makes counts *interpretable*; it does not make them *strong*.
+
+**Revisit if:** a fourth runner appears (a doc-test target with
+contents, a `gen-profiles` suite, or CI reporting its own aggregate),
+which would make a bare number ambiguous in a new way and is the
+condition under which the table above must grow.
+
+---
+
+### DL-032 — ★★ **a warning that is EXPECTED is documented at the site with the consequence of "fixing" it, because the alternative is that some future agent silences it correctly and ships a defect.** Filed with the near-miss it prevented, on the same day
+
+**Date:** 2026-08-12 · **Occasioned by:** `icc-engineer`, who was about
+to delete `license-file` from three crate manifests to silence a
+`cargo publish` warning and stopped on reading the comment above it ·
+**Filed by:** `icc-librarian` **from the manifests, read at the tip** ·
+**Relates to** **DL-009** (crates.io intent), **DL-024** (a push
+authorises nothing further), and the global documentation-first
+directive
+
+#### The decision
+
+> **Where a build emits a warning the project intends to keep, the
+> manifest or source carries a comment saying (a) that the warning is
+> expected, (b) what the obvious fix would silently break, and (c) the
+> command that verifies the property being protected. A warning with no
+> such comment is an invitation.**
+
+**The live text, verbatim from `crates/iccce-color/Cargo.toml`**
+*(verified — read; `iccce-profile`, `iccce-cmm`, `iccce-cli` and
+`iccce-measure` carry a pointer to it rather than a copy)*:
+
+> `★ EXPECTED WARNING — do not "fix" it by deleting `license-file`.`
+> `cargo publish` prints *"only one of `license` or `license-file` is
+> necessary"* because both are set. Both are set on purpose: `license =
+> "MIT"` (inherited from the workspace) is the SPDX expression crates.io
+> indexes and displays, and `license-file` is what actually puts the
+> licence **TEXT** in the tarball. Removing `license-file` silences the
+> warning and **silently stops shipping the notice** — verify with
+> `cargo package --list -p iccce-color`, which must show `LICENSE`.
+
+#### ★★ What the near-miss actually was, stated precisely
+
+**Not a licensing opinion — a shipped artefact.** `license = "MIT"` is
+metadata; **MIT itself requires the notice text to be included in
+copies.** With `license-file` deleted, `cargo publish` is quiet, the
+crates.io page still says *MIT*, the build still works, and **the
+`.crate` tarball contains no licence text at all.** Nothing downstream
+fails. The defect is invisible at every point where anyone would look
+for it, and it is only detectable by listing the tarball's contents —
+which is why the comment names that exact command.
+
+**This is CLAUDE.md rule 1 in a non-colour register.** A wrong colour
+looks exactly like a right one; **a tarball missing its notice looks
+exactly like one that has it.** The project's whole discipline is built
+for the class of defect that produces no signal, and this is one.
+
+#### Why the entry, when the comment already exists
+
+Because **the comment worked once and comments are load-bearing only
+while they are read.** The event worth recording is not that a warning
+exists; it is that *documentation-first prevented an engineer from
+making a correct-looking change*, and that is the concrete return on a
+directive whose cost is otherwise all up-front. **It is also the
+counter-example to the reasonable-sounding instinct that a clean build
+is an end in itself:** here the clean build **is** the defect.
+
+#### What this entry does NOT decide
+
+- **It does not authorise a publish.** DL-009 is intent; DL-024 is a git
+  push; **neither is a crates.io release**, name availability is still
+  unchecked and `THIRD_PARTY_LICENSES.md` is still owed.
+- **It does not claim the tarball was verified today.** The `cargo
+  package --list` verification is dated **2026-08-12** *in the manifest
+  comment itself* and is `icc-engineer`'s; **no agent re-ran it at this
+  filing** and this librarian has no shell.
+- **It does not generalise to suppressing warnings.** The rule is to
+  **document** an expected warning, not to add `#[allow]` or
+  `--quiet`. A silenced warning teaches nobody anything.
+
+**Revisit if:** cargo stops warning when both keys are set (the comment
+becomes stale and should say so rather than be deleted); or a second
+expected-warning site appears, at which point the pattern is worth a
+short list somewhere rather than one comment per site.

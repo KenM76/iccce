@@ -389,6 +389,67 @@ run, and whether it constitutes this project's first Linux execution is
 > from the standard** — rule 7 says a disagreement is settled from the
 > specification, not from which implementation is ours.
 
+**Updated again 2026-08-12 (same day, latest): ★★★ THE OPEN QUESTION
+ABOVE IS ANSWERED AND IT WENT AGAINST US. `iccce-measure` lands as a
+FIFTH crate. And a test count that looked like a regression turned out
+to be a different instrument.** Three things, and the first is the one
+that changes shipped behaviour.
+
+**★★★ 1. iccce was NON-CONFORMANT at ISO/CD 18619 4.2.5.4; lcms2
+conformed. The code is corrected at `fd34a44`.** The clause's final
+paragraph says the `DestinationBlackPoint` *"shall be the same as
+InitialLab"*; `outRamp[first]` — what iccce returned there — appears in
+the whole of 4.2.5 only as `MinL`, a threshold and a `yRamp` anchor,
+and **is not a candidate for the black point in any branch**. **The
+blockquote above is therefore DISCHARGED, in the direction it named as
+possible.** Cost of the defect: **0,0817 ΔE76** on `USWebCoatedSWOP` —
+**100 % of the `swop` arm's measured divergence** (NC-142), *measured
+before it was found*. A corollary travelled with the fix: the return
+type widened to a full `Lab`, because the short-circuit is the **only**
+branch of 4.2.5 that can return a **chromatic** black (4.2.5.2.1 zeroes
+chroma for CMYK only), so a Gray or RGB LUT destination gets one from
+ISO itself. `ARCHITECTURE.md` gains **DL-030**; `NUMERIC_CLAIMS.md`
+gains **§3.24** and **NC-164**. ★ **Rule 7 has now run in the direction
+it was written to be capable of running in**, and the pre-commitment
+that made that cheap — *"rule 7 is not a licence to assume iccce is
+right"* — was written before the answer existed.
+
+**★★ 2. A FIFTH crate: `iccce-measure`, Pass 10 pre-work.** A
+CGATS/IT8.7 measurement-file reader, landed at **`2a2d616`** on the
+operator's authorisation of 2026-08-12. **INVARIANT: no ICC and no
+colour maths**, so its tests need no ICC fixture and a future profiler
+and a future measurement tool can share it. Zero dependencies. See the
+**Pass 10** section for the full record and `ARCHITECTURE.md` §1 for the
+crate's place in the layout. ★ **It had been in the build and in no
+document**: at the time of this filing `grep -c iccce-measure` over
+`ROADMAP.md`, `ARCHITECTURE.md` and `SESSION_LOG.md` returned **0, 0,
+0** *(verified — re-run as a search over `docs/`, which found the crate
+named only in `Cargo.toml`, `Cargo.lock` and its own two files)*.
+
+**★★ 3. "Suite green at 142" was never a `cargo test` count, and this
+document must never carry a bare one again.** Three green results exist
+on this tree from **three different runners**: `cargo test --workspace`
+→ **129 passed, 0 failed**, exit 0; `cargo test` in `tools/difftest`
+(outside the workspace by design) → **36 passed**; the **conformance
+runner** → **pass=142 fail=0 skip=3 error=0**. The 142 lives in commit
+`d5efd96`'s *message* — **not in any document here** *(verified — the
+string appears in `docs/` only as the CIE standard number 142-2001)* —
+which is precisely why it could not be scoped by a reader who met it.
+`ARCHITECTURE.md` gains **DL-031**: **an unlabelled test count is not a
+claim, because the apparatus is half the number.** `NUMERIC_CLAIMS.md`
+§3.22 carries all three with their commands.
+
+> **★★ AND ONE STANDING CLAIM IS WEAKENED RATHER THAN UPDATED.** The
+> Pass 6 throughput/speedup figure has now been measured **three times
+> on the same machine and the same code** and the readings span
+> **2,7×** on throughput and **12,18×–22,85×** on speedup. **No single
+> figure is supportable and none is quoted below any more.** The honest
+> form is **"12–23× on this machine, load-dependent"**, the break-even
+> moves with it, and a **fourth**, differently-shaped set of figures
+> exists in `TOLERANCES.md` §3.6.2 that this librarian does not own and
+> has flagged rather than reconciled. Full treatment, with every
+> reading and its apparatus: `NUMERIC_CLAIMS.md` **§3.23**.
+
 ---
 
 ## Pass 0 — scaffold and the oracle
@@ -4101,6 +4162,35 @@ short-circuit return **`outRamp[first]`** (iccce) or **`InitialLab`**
 **If ISO names lcms2's, iccce is wrong — not divergent — and the
 engineer changes the code.**
 
+> **★★★ ANSWERED the same day, and it was capable of making a shipped
+> behaviour wrong because it DID.** ISO/CD 18619 4.2.5.4's final
+> paragraph specifies **`InitialLab`**; **lcms2 conformed and iccce did
+> not**; the code is corrected at commit **`fd34a44`** *(verified —
+> `bpc.rs` read at the tip: the straightness branch now returns
+> `initial_lab` unchanged, with the clause quoted verbatim beside it)*.
+> The paragraph above is left standing because **the shape of the
+> question is the record** — it was posed in the direction that could go
+> against us, and it did. `ARCHITECTURE.md` **DL-030**;
+> `NUMERIC_CLAIMS.md` **§3.24**, **NC-164**.
+>
+> **Two dated corrections to the four-kinds list above**, neither of
+> which edits it:
+> - **The remainder is smaller by one dispatched question and larger by
+>   one crate.** `iccce-measure` (commit `2a2d616`) is a **fifth**
+>   workspace member and Pass 10 pre-work — see the Pass 10 section.
+> - **★ Every bare test count in the block above is unusable as
+>   written.** The *"121 `#[test]` declarations across 19 files"* figure
+>   is superseded by **129 across 20 files** *(verified — re-counted in
+>   `crates/`, the increase being `iccce-measure`'s eight)*, and the
+>   `cargo test --workspace` outcome that had no result is now **129
+>   passed, 0 failed, exit 0**. ★ **The declaration count and the pass
+>   count agree exactly, per crate** (cmm 63, profile 33, color 25,
+>   measure 8, cli 0), which corroborates that **no declared test was
+>   skipped or ignored** — and it is still **a count of declarations,
+>   not of coverage** (§1.2). **The `142` in commit `d5efd96`'s message
+>   is a CONFORMANCE-RUNNER record count and is not comparable to
+>   either** — DL-031.
+
 ---
 
 ## Passes added 2026-08-11 by operator decision
@@ -4201,6 +4291,124 @@ construction — which `tools/gen-profiles/` in `ARCHITECTURE.md` §1
 already implies, for fixtures — needs no measurement and was never out of
 scope. The thing that was refused is **profile creation from measurement
 data**. Pass 10 should be sized against that distinction.
+
+### ★★ Pass 10 PRE-WORK landed 2026-08-12: `iccce-measure`, the CGATS/IT8.7 reader. Filed by `icc-librarian`
+
+**Commit `2a2d616`** — *"iccce-measure: CGATS/IT8.7 reader — Pass 10
+pre-work, no hardware needed"*, **authorised by the operator on
+2026-08-12** *(reported by `icc-engineer`; the authorisation is the
+operator's word and this librarian did not observe it)*. **The crate
+exists in the build** *(verified — `Cargo.toml`'s `[workspace] members`
+lists `crates/iccce-measure`, and the crate's own manifest and
+`src/lib.rs` were read at the tip)*.
+
+#### Why pre-work is available at all, when the Pass itself is blocked
+
+**The precondition above blocks exactly one claim** — *"this profile
+describes that printer"* — and that claim belongs to the **fitting**
+half. Everything upstream of it is parsing, colorimetry and fitting
+arithmetic, **none of which needs an instrument**. So the Pass splits
+cleanly:
+
+| Half | Needs hardware? | Status |
+|---|---|---|
+| **Read the measurement file** | **No.** Text in, structure out. | **`iccce-measure`, landed 2026-08-12.** |
+| **Turn measurements into a profile, and validate it** | **Yes**, or a named ground truth that is not iccce. | **Still blocked**, on exactly the terms above. **Nothing here weakens that.** |
+
+★ **This is the distinction the section already drew, used.** *"Writing
+synthetic profile bytes whose intended contents are known by
+construction … needs no measurement and was never out of scope"* — the
+reader is the same argument applied one stage earlier. **It does not
+move the boundary; it builds up to it.**
+
+#### What the crate is
+
+**Purpose:** read the CGATS/IT8.7 text files a spectrophotometer
+produces and a profiler consumes — a header of `KEYWORD value`
+properties, a `BEGIN_DATA_FORMAT` field list, and a table of measured
+patches.
+
+**INVARIANT: no ICC, and no colour maths** *(verified — read; stated in
+both the crate manifest's header and `lib.rs`'s module doc)*. Two
+consequences, and the second is the one that will matter later:
+
+- **Its tests never need an ICC fixture.** Eight `#[test]` declarations,
+  all text-in/structure-out *(verified — counted in `src/lib.rs`)*.
+- **A future profiler and a future measurement tool can share it.** A
+  measurement file is not a profile; had the reader gone into
+  `iccce-profile`, the tool that only wants to *look at a target* would
+  have had to depend on an ICC parser.
+
+**Dependencies: none** *(verified — `[dependencies]` is empty but for a
+comment)*. That makes **three of five** crates with an empty
+dependency section, and per `ARCHITECTURE.md` §1 adding one here is an
+architectural change rather than a convenience.
+
+**Surface, as shipped** *(verified — read)*:
+
+```
+parse(text: &str) -> Result<MeasurementSet, ParseError>
+
+MeasurementSet { properties, fields, rows, issues }
+    .field_index(name) .column(name) .spectral_fields()
+
+Value  ::= Number(f64) | Text(String)
+Issue  ::= FieldCountMismatch { row, expected, actual }
+         | NumberOfFieldsDisagrees { declared, counted }
+         | NumberOfSetsDisagrees   { declared, counted }
+         | UnterminatedBlock       { block }
+         | DataBeforeFormat        { line }
+```
+
+#### ★ The `issues` vector is rule 6, applied to measurement data
+
+**The parser reports; it does not repair.** A `NUMBER_OF_FIELDS` that
+disagrees with the `DATA_FORMAT` block is **disclosed and never
+corrected**; the declared fields win, because they are what the columns
+actually are, and the disagreement is recorded rather than resolved. A
+short row is kept as parsed beside a `FieldCountMismatch`.
+
+**Why this matters more here than in an ICC parser, not less.** A
+malformed profile usually fails visibly somewhere downstream. A
+measurement file with one column too few **fits**: every value is a
+plausible number, the profiler builds, and the error is delivered as
+*colour*. **A silently repaired measurement file is rule 1 arriving
+through the front door** — and the only layer that could have disclosed
+it is this one.
+
+#### Licence lineage, which is the part that must not be got wrong later
+
+- **Derived from lcms2's `cmscgats.c`** for structure and keyword
+  vocabulary. **lcms2 is MIT — the same licence as this project — so it
+  is a permitted lineage**, on the same `impl_crosscheck` terms as every
+  other implementation-derived piece of work here.
+- **★ Argyll CMS is AGPL-3.0 and must NEVER be read or cited for this
+  work.** It is by far the most tempting reference in this subject area.
+  The prohibition is recorded at the crate site *and* here *and* in
+  `ARCHITECTURE.md` §1 because the temptation recurs and a single
+  mention is not a guard.
+- **CGATS.17 itself is paywalled and is NOT sourced.** Where lcms2's
+  reader is more permissive than the standard may be, this follows
+  lcms2 **and says so** — which is a corpus gap, not a resolved
+  question.
+
+#### What this landing does NOT do
+
+- **It does not start Pass 10.** The Pass's precondition — *state how a
+  created profile's output is validated, naming a ground truth that is
+  not iccce* — is **untouched, unaddressed and still the whole
+  difficulty**.
+- **It does not make a colour claim of any kind.** No value in this
+  crate has been compared to anything. Its eight tests are structural,
+  and **no `NUMERIC_CLAIMS.md` row derives from it** — deliberately, as
+  there is nothing yet to grade.
+- **It does not source spectral interpretation.** Turning
+  `SPECTRAL_NM_380 …` into XYZ needs observer colour-matching
+  functions, which are **Pass 1's third and last remainder item** and
+  are not obtained. The crate returns spectral columns as numbers and
+  stops.
+- **It does not imply hardware is nearer.** The blocked half is blocked
+  by the same sentence it was blocked by on 2026-08-11.
 
 ---
 

@@ -81,8 +81,23 @@ right"* and *"this has not changed."* Ordered strongest to weakest as
 | **self-consistency** | Round-trip / compiled-vs-reference / interpolation error where the two sides are both iccce. | The only way to *price* an approximation. Worthless as correctness evidence. |
 | **machine-timing** *(class added 2026-08-12, Pass 6 filing — see §3.13)* | A **wall-clock** measurement: throughput, elapsed time, or a ratio of two elapsed times. One machine, one build profile, one run. **No colour value is in it.** | **Proves nothing whatever about correctness** — it is not weak correctness evidence, it is *not correctness evidence*, and it sits at the bottom of this table only because the table has to end somewhere. It is a fact about hardware, allocator, build flags and one execution, and it is invalidated by a change to any of them. **A speedup ratio additionally states nothing about any other implementation unless that implementation was timed in the same run** — Pass 6's ratio is iccce against *iccce*, and **lcms2 has never been timed by anybody here.** |
 
+| **apparatus-census** *(class added 2026-08-12 — see §3.22)* | A **count of things the apparatus produced**: tests passed, records graded, files enumerated. One command, one runner, one member set, one tip. **No colour value and no wall-clock time is in it.** | **Proves nothing about correctness and nothing about coverage.** It establishes that a named command over a named member set produced a named tally, and **only that**. ★ **Two counts from different runners are not comparable at all** — not "roughly comparable", not "the same to within noise" — because the populations are disjoint (DL-031). A count is also **not an inventory**: counting tests is not counting coverage, counting records is not counting findings, and counting files is not counting anything but files. It sits below `machine-timing` because a timing at least measures the code running, whereas a census measures the harness. |
+
 **A row without a class is not finished**, exactly as in
 `TOLERANCES.md` §1.
+
+> **★★ Why a census class was added rather than leaving counts out of
+> the ledger (2026-08-12).** Because they were already being quoted, and
+> being quoted **without their apparatus**. *"Suite green at 142"* went
+> into a commit message; the next run of a **different** command
+> returned **129** and was briefly read as a regression by the person
+> who had produced both numbers, hours apart (DL-031). §0's argument
+> applies exactly: a bare integer *"is true when written and quietly
+> becomes stale"* — except that a census number is worse than stale, it
+> is **ambiguous from birth**, because nothing in the digit says which
+> runner emitted it. What the class buys is that a count can never
+> appear beside a ΔE as though the two were the same kind of thing, and
+> that **every census row is required to carry the command**.
 
 > **★ Why a timing class was added rather than filing timings outside
 > the ledger (2026-08-12).** Pass 6's done-when has a *time* clause, so
@@ -466,6 +481,27 @@ cheapest end.
 | **Independently checkable without a shell** | **121 `#[test]` declarations across 19 files under `crates/`** *(verified — counted, no result limit; 116 across 19 at §2.9)*. §2.10 reported **121 passed**. ★ **The two numbers agreeing is a coincidence of two different quantities and must not be read as per-test confirmation** — one is a count of declarations in today's tree, the other is a pass count reported from a run at `95c04c1`, and one commit has landed since |
 | **`dechk.obj`** | **Still present at the repository root** *(verified — the tree enumerated today)*. It is the **C probe's object file** from the ΔE94/CMC work — which is now traceable to its cause rather than merely to its commit. **Its TRACKED status and its presence in `origin/master` are §7.10's shell-verified findings and could not be re-verified here**; they are carried as **verified-then, unchecked-now** |
 | **★ What is NOT in this block, and it is the eleventh time** | **No ground-truth row.** Pass 5c is a **reimplementation cross-check**; Pass 6's re-grade is `self-consistency`; ΔE94 and ΔE CMC are **`impl_crosscheck` by construction and say so in their own module doc**, because CIE 116-1995 and BS 6923 are paywalled and **no published worked example was obtained for either**. **NC-001 remains the project's only `published-ground-truth` row, and it is about a metric, not about a transform** |
+
+### 2.12 ★★ The CONFORMANCE DEFECT IN OUR OWN CODE, a fifth crate that had been filed nowhere, and three green results that turn out to be three different instruments. Added 2026-08-12
+
+A **twelfth** provenance block and the **fourth** dated 2026-08-12. It
+is the first block whose headline is **a defect in iccce that the
+specification settled against us**, and the first whose second-largest
+item is **a documentation gap rather than a measurement**: a crate that
+was in the build and in no document.
+
+| | |
+|---|---|
+| **Passes** | **5c's open question, CLOSED** — ISO/CD 18619 4.2.5.4 (`crates/iccce-cmm/src/bpc.rs`). **10 pre-work** — `iccce-measure`, the CGATS/IT8.7 reader (`crates/iccce-measure/`). **6, weakened** — the throughput/speedup claim restated as a range. Plus the apparatus census that occasioned DL-031 |
+| **Date** | **2026-08-12** — the same calendar day as §2.9, §2.10 and §2.11; the project's **second** day |
+| **Commits** *(hashes and subject lines corroborated by `.git/logs/HEAD`, read; **contents unverified except where a file is named as read below**)* | **`fd34a44`** *"bpc: iccce was WRONG at 4.2.5.4 — lcms2 conformed, we did not"*; **`d5efd96`** *"Final filing + suite green at 142: the original scope is complete"*; **`2a2d616`** *"iccce-measure: CGATS/IT8.7 reader — Pass 10 pre-work, no hardware needed"* — **the current tip** *(verified — the last line of `.git/logs/HEAD`)* |
+| **The repository, and exactly what is evidenced** | `.git/logs/HEAD` now holds **55 lines**, all `commit`/`commit (initial)` *(verified — read from line 40 to the end; no `reset`, `rebase`, `amend`, `checkout` or `merge` entry appears in the range read)*. **Three commits have landed since §2.11's tip `5cfee171`.** ★ **This filing did NOT read the refs or the push log**, so **nothing here evidences the tip having been pushed**, and §7.11's "nine pushes, seven unrecorded" is carried forward **unchecked** rather than restated |
+| **★ NO SHELL AT THIS FILING** | The session's tool grant contains no `Bash` tool *(verified — the tool list)*. **Second consecutive filing without one, and the point of §2.11 stands**: shell availability is a property of a session. Every *verified* below was read in the working tree or in `.git/`'s plain-text files |
+| **Who measured** | **`icc-engineer`** — all three runner outcomes, the `iccce bench` figures, and the 4.2.5.4 correction. **`icc-spec-librarian`** — the ISO/CD 18619 4.2.5.4 sourcing that settled the question. **This librarian ran nothing**, and read `bpc.rs`, `Cargo.toml`, `crates/iccce-measure/{Cargo.toml,src/lib.rs}`, `crates/iccce-color/Cargo.toml`, `docs/bench-2026-08-12.txt` and `TOLERANCES.md` §3.6 as the source |
+| **★★ A RUNNER OUTCOME ARRIVED — three of them — and §7.11's item 2 is DISCHARGED** | `cargo test --workspace` → **129 passed, 0 failed**, bare exit 0. `cargo test` in `tools/difftest` → **36 passed**, exit 0. The conformance runner (`cargo run --release` in `tools/difftest`) → **pass=142 fail=0 skip=3 error=0**, **re-run today on current code**. §7.11 asked for *"one `pass=`/`fail=` line, and the `cargo test --workspace` exit code at the current tip"* and got both. **The twenty-four records of §3.18 and §3.19 now have a green run of their own shape** *(reported — see §3.22 for what corroborates it and what does not)* |
+| **★★ Independently checkable without a shell, and this time it is a per-crate match** | **129 `#[test]` declarations across 20 files under `crates/`** *(verified — counted; 121 across 19 at §2.11, the difference being `iccce-measure`'s eight)*, distributed **cmm 63 · profile 33 · color 25 · measure 8 · cli 0**. **The reported pass counts are cmm 63, profile 33, color 25, measure 8, cli 0.** ★ **Every crate agrees exactly.** Unlike §2.11's coincidence of two totals, a **per-crate** agreement across five members is real corroboration that **no declared test was skipped, ignored or filtered out** — and it is **still a count of declarations, not of coverage** (§1.2), and it cannot corroborate that any test *passed*, only that the population is the one expected. Separately: **36 `#[test]` declarations across 6 files in `tools/difftest`** *(verified — counted)*, matching the reported 36 exactly |
+| **★★★ Three claims in the dispatch that live source CONTRADICTED, and they are recorded because the rule that caught them is the reason this role exists** | **(1)** The dispatch stated that *"the manifest header still says `Four crates`"* and asked for that to be flagged as an owed correction. **It does not.** `Cargo.toml`'s header block reads *"Five crates, per docs/ARCHITECTURE.md §1"* and its `[workspace] members` lists all five *(verified — read)*. **Nothing is owed; the manifest was already correct.** **(2)** The dispatch stated that `ARCHITECTURE.md` §1 *"currently says 'Four crates'"*. **It did not say that either** — the string *"Four crates"* appeared nowhere in the file *(verified — searched)*; §1 carried an ASCII tree that **listed four crate directories and omitted the fifth**, which is the same defect but not the same text, and a filing that had corrected the quoted string would have corrected nothing. **(3)** The dispatch stated that *"the previous filing recorded 'suite green at 142'"*. **No filing did.** The string `142` occurs in `docs/` only as the CIE standard number **142-2001** *(verified — searched)*; *"suite green at 142"* is the **commit message** of `d5efd96`. ★ **The correction matters to the finding rather than merely to the record**: the number's ambiguity is worse than a filing's would have been, because it lives in **git history**, where nothing around it names an apparatus and no dated note can be appended to it |
+| **★ What is NOT in this block, and it is the twelfth time** | **No ground-truth row.** The 4.2.5.4 correction is `normative-rule-conformance` against a **committee-draft** transcription; the census rows are `apparatus-census`; the throughput rows are `machine-timing`. **`iccce-measure` produces no row at all** — nothing in it has been compared to anything, deliberately. **NC-001 remains the project's only `published-ground-truth` row** |
 
 ---
 
@@ -3168,6 +3204,285 @@ with `// WIRED 2026-08-12` and the reason at the site)*.
 > implementation, the filing should state WHO CALLS IT** — and if the
 > answer is *"its own tests"*, that is the finding, not a detail.
 
+### 3.22 ★★ The APPARATUS CENSUS — three green results on one tree, from three runners, and the reason all three are written together
+
+**Reported 2026-08-12 by `icc-engineer`, who ran all three at commit
+`2a2d616`.** This librarian ran nothing.
+
+> **★★ THE POINT OF THIS SECTION IS THE ADJACENCY.** Any one of these
+> numbers alone is a trap. **129**, **36** and **142** are three green
+> results describing three disjoint populations, and on the day they
+> were taken two of them were briefly compared and read as a regression
+> — **by the engineer who had produced both**. They are filed in one
+> table, each beside its command, so that a future reader meets them
+> together or not at all. `ARCHITECTURE.md` **DL-031**.
+
+| ID | What | Class | Tolerance | Observed |
+|---|---|---|---|---|
+| **★ NC-158** | **The workspace unit suite** — `cargo test --workspace` at the repository root. Member set: the **five** crates of `ARCHITECTURE.md` §1 | **apparatus-census** | **none — a census is not correctness evidence of any kind (§1)**; the only assertion is the **exit code** | **129 passed, 0 failed**, **bare exit 0**. Per crate: **iccce-cmm 63 · iccce-profile 33 · iccce-color 25 · iccce-measure 8 · iccce-cli 0 · doc-tests 0** |
+| **★ NC-159** | **The harness's own unit suite** — `cargo test` **in `tools/difftest`**, which is **deliberately not a workspace member** (DL-001's oracle isolation, DL-017's permitted path dependency), so **`--workspace` cannot see it and NC-158 does not include it** | **apparatus-census** | **none**; exit code only | **36 passed**, exit 0 |
+| **★★ NC-160** | **The differential conformance runner** — `cargo run --release` in `tools/difftest`. **This is the oracle**: it drives lcms2 and grades every `pass{3,4,4b,4c,5,5b,5c,6,7}` record against `TOLERANCES.md`. **Re-run today on current code** | **apparatus-census** *(of records; each **record** carries its own class in §3)* | **none as a census.** The records it grades carry the tolerances; **the census asserts only `fail=0` and `error=0`** | **pass=142 fail=0 skip=3 error=0** — unchanged from the previous filing's report on the same shape |
+
+#### 3.22.1 ★★ What corroborates these, and precisely what does not
+
+**Checkable without a shell, and it came out unusually well:**
+
+- **129 `#[test]` declarations across 20 files under `crates/`**
+  *(verified — counted)*, distributed **cmm 63 · profile 33 · color 25
+  · measure 8 · cli 0**. ★ **That is the per-crate breakdown of NC-158,
+  exactly, on all five members.**
+- **36 `#[test]` declarations across 6 files in `tools/difftest`**
+  *(verified — counted)*, matching NC-159 exactly.
+
+**What the agreement establishes:** the runner saw the population this
+tree contains — **no declared test was filtered out, `#[ignore]`d,
+`cfg`-ed away or silently skipped**. That is worth having, and it is a
+stronger corroboration than §2.11's, where two *totals* agreed by
+coincidence; **five per-crate figures agreeing is not a coincidence.**
+
+**What it cannot establish, and the distinction is the whole of §1.2:**
+
+- **Not that any test passed.** A declaration count cannot corroborate
+  an outcome. *"129 passed"* is **`icc-engineer`'s report**, and the
+  count corroborates its **denominator** only.
+- **Not coverage.** ★ **A count of tests is not an inventory of what is
+  tested.** `iccce-cli` contributes **0** — a shipped binary with a
+  public surface and no unit test of its own — and NC-158's total is
+  entirely insensitive to that. **A number that cannot fall when a
+  crate has no tests is not measuring testing.**
+- **Not the runner's coverage either.** **NC-160's `skip=3`** is
+  reported and **not enumerated**: nobody has said which three records
+  skipped or why. A skip is the runner declining to grade, which is
+  invisible in `fail=0`.
+
+#### 3.22.2 ★ The three numbers are not on a common scale, stated once so it need not be inferred
+
+**129 counts `#[test]` functions. 36 counts `#[test]` functions in a
+different crate that is not in the workspace. 142 counts
+CONFORMANCE RECORDS** — comparisons against `TOLERANCES.md` rows, each
+of which may involve thousands of probe points and none of which is a
+Rust test function.
+
+**The number 142 has no relationship of any kind to 129.** It is not
+larger, not smaller, not a superset and not a trend. Its only valid
+comparison is **to its own previous run**, which was **`pass=140
+fail=2`** on a shape that no longer exists (§2.11) — so even that
+comparison needs the shape attached.
+
+★ **And the `142` is in a place no dated note can reach.** It is the
+commit message of **`d5efd96`**, *"Final filing + suite green at 142"*.
+**It appears in no document in `docs/`** *(verified — searched; the
+only `142` in `docs/` is the CIE standard number 142-2001)*. Commit
+messages are append-only in the strongest possible sense: **the record
+can be corrected here and the message stays wrong forever.** That is
+the strongest available argument for writing the command down the first
+time.
+
+### 3.23 ★★ Pass 6's throughput and speedup, WEAKENED FROM A FIGURE TO A RANGE — and the range is wider than any single filing suggested
+
+**Occasioned 2026-08-12 by a third measurement of the same binary on the
+same machine.** No code changed between the readings; **only the load
+did** — and, in one reading, the grid.
+
+> **★★ THE CLAIM BEING WEAKENED IS NOT WRONG. IT IS
+> UNDER-SPECIFIED.** Each figure below was correctly measured and
+> honestly reported on the day it was taken. What the accumulation
+> shows is that **the quantity has a spread the size of the claim**, so
+> **no single number can carry it** — and `machine-timing`'s definition
+> already said this would happen (*"a fact about hardware, allocator,
+> build flags and one execution"*). **This section is that class being
+> taken at its word.**
+
+#### 3.23.1 Every reading on record, with its apparatus
+
+| # | Apparatus | Grid | Throughput (compiled) | Reference | Speedup | Where |
+|---|---|---|---|---|---|---|
+| 1 | `iccce bench` CLI, full 300 DPI A4 raster (8 700 867 px), **loaded machine** | 17 | **1,203 Mpix/s** | 0,084 Mpix/s | **14,4×** | **NC-105 / NC-107** — ★ **RETRACTED as a quotable figure** by this section |
+| 2 | `iccce bench` CLI, same raster, **loaded machine** | 17 | **0,820 Mpix/s** | — | **12,18×** | `docs/bench-2026-08-12.txt` |
+| 3 | `iccce bench` CLI, **2 Mpix raster, quiet machine**, ×3 | 17 | **1,477 / 1,466 / 1,475 Mpix/s** | — | **16,00 / 16,01 / 16,19×** | `docs/bench-2026-08-12.txt` |
+| 4 | **The conformance runner's own bench line**, full A4 raster (8 700 867 px), build 12,154 s, convert 3,866 s | **33** | **2,251 Mpix/s** | — | **22,85×** | **This filing** *(reported)* |
+| — | **`tools/difftest`'s Pass 6 apparatus** — a **fourth, differently shaped** set | 17 | **2,4–2,7 Mpix/s** | **0,076–0,091 Mpix/s** | **28–32×** | `TOLERANCES.md` §3.6.2 — ★ **NOT reconciled here; see §3.23.4** |
+
+| ID | What | Class | Tolerance | Observed |
+|---|---|---|---|---|
+| **★★ NC-161** | **The compiled path's throughput, as a RANGE under stated load variance** — `iccce bench` arm only | **machine-timing** | **none — and a range is not a tolerance.** The interval is the observed envelope, not a bound anything is graded against | **0,820 – 2,251 Mpix/s**, a **2,7× spread**, on **one machine, one build, one binary, across two grids**. ★ **The quiet-machine triple agrees to 0,7 %**, so the *instrument* is stable and the *machine* is not |
+| **★★ NC-162** | **The speedup, as a RANGE** — compiled against the in-process reference path. **SUPERSEDES NC-107's `14.4×` as a quotable figure** | **machine-timing** | **none** | **12,18× – 22,85×**. ★ **The honest published form is "12–23× on this machine, load-dependent"** — and the *speedup* is the more transportable of the two numbers, because **both arms suffer the same load**, which is why its spread (1,88×) is smaller than throughput's (2,7×) |
+| **★ NC-163** | **The break-even raster size, as a RANGE** — the point at which compiling repays its build. **Moves with NC-161/NC-162 and with the grid, and SUPERSEDES nothing: it EXTENDS NC-152** | **machine-timing** | **none** | **≈70 000 px** (grid 17, build 1,06 s) → **≈1,19 million px** (grid 33, build ~14 s, NC-152) → **1 258 593 px** (grid 33, build 12,154 s, today). ★ **The two grid-33 figures differ by 5,7 % because the BUILD time differs**, which is the same load variance seen from the other end |
+
+#### 3.23.2 ★★ What must change in the documents, and what must not
+
+**Must not:** NC-105, NC-106 and NC-107 are **not deleted and not
+edited**. Each is a correct measurement of one execution and the record
+of *what was believed when* is the point of an append-only ledger.
+§3.19.1 already scoped them to grid 17; this section additionally
+scopes NC-105 and NC-107 to **one load condition**.
+
+**Must:** ★ **anywhere a single figure is asserted as "the" throughput
+or "the" speedup, it is now a materially incomplete claim.** Found by
+search *(verified — `docs/` searched for the figures)*:
+
+| Where | What it says | Status |
+|---|---|---|
+| `ROADMAP.md` Pass 6 header block | *"**1.20 Mpix/s**, **14.4× the reference path**"* | ★ **Superseded by NC-161/NC-162.** Corrected by a **dated addition** at the head of the document, not by rewriting the block — the block is the record of the Pass's own filing |
+| `SESSION_LOG.md` Pass 6 entry | the same two figures | **Append-only; left exactly as written.** Its own entry already carries §3.13.2's arithmetic gap |
+| `NUMERIC_CLAIMS.md` **NC-105 / NC-107** | the same two figures | **Superseded here, retained there** |
+| `docs/bench-2026-08-12.txt` | *"12.2x-16.2x observed"* and *"quote a RANGE and the load condition, never a point figure"* | ★ **Already correct, and it predicted this section.** Its range is now **wider** (reading 4 was not yet taken) |
+| **`TOLERANCES.md` §3.6.2** | *"2,4–2,7 Mpix/s … **28–32×**, break-even ≈63 000–75 000 px"* | ★★ **FLAGGED, NOT EDITED — `icc-conformance` owns that file** (§3.23.4) |
+| `README.md` | **not checked at this filing** | ★ **Owed** — §7.12 |
+
+#### 3.23.3 ★ Why a range is the honest form and an average is not
+
+An average of these readings would be a number **no execution
+produced**, presented with the authority of one that did. The readings
+are not samples of a stable quantity with noise; they are **samples of
+different conditions** — loaded versus quiet, grid 17 versus 33, a
+2 Mpix raster versus an 8,7 Mpix one — and a mean over conditions
+nobody enumerated is exactly the *"plausible-looking result"* rule 1
+warns about, arriving in a unit where nobody thinks to check.
+
+**The range, with its conditions named, is the whole of what is known.**
+
+#### 3.23.4 ★★ The FOURTH set of figures, flagged and deliberately not reconciled
+
+`TOLERANCES.md` §3.6.2 records **2,4–2,7 Mpix/s compiled against
+0,076–0,091 Mpix/s reference, 28–32×, break-even ≈63 000–75 000 px**,
+with *"the run-to-run spread across four invocations in one session was
+~10 %"* *(verified — read)*. **Its apparatus is `tools/difftest/src/pass6.rs`,
+not the `iccce bench` CLI**, and its compiled throughput is roughly
+**double** the CLI's at what appears to be the same grid.
+
+**Three things are true and this librarian can establish none of the
+fourth:**
+
+1. **The numbers are not mine to change.** `TOLERANCES.md` is
+   `icc-conformance`'s. **Flagged, not edited** — and this filing does
+   **not** assert that they are wrong.
+2. **They are not in NC-161/NC-162's ranges**, so quoting *"12–23×"*
+   alongside *"28–32×"* would be quoting two incompatible claims about
+   one program.
+3. **The discrepancy has a shape worth naming:** a ratio near **2×** on
+   the compiled arm with a **similar** reference arm is what one would
+   expect if the two harnesses time **different work** — for example
+   with or without the per-pixel buffer marshalling the CLI does. ★
+   **That is a HYPOTHESIS, stated so somebody can test it, and it is
+   labelled as one.** Nobody has run the comparison.
+
+★ **Until it is resolved, no document may quote a single speedup figure
+at all**, because the project currently holds **two ranges that do not
+overlap** and does not know why. **That is the most useful sentence in
+this section.**
+
+#### 3.23.5 What §3.23 does NOT claim
+
+- **That lcms2 is slower than iccce by any factor.** ★ **lcms2 has
+  never been timed by anybody here**, in any Pass. Every ratio above is
+  **iccce against iccce**.
+- **That any figure describes another machine.** `machine-timing`'s
+  definition applies at full strength: a different CPU, allocator,
+  build profile or thermal state **retires every row above**.
+- **That the spread is understood.** *"Load"* is the reported cause of
+  readings 1–3's spread and it is plausible; **nothing measured it**.
+- **That correctness is affected.** No row here is correctness evidence
+  of any kind, and the compiled path's **error** (NC-145's
+  `1,677 3×10⁻¹` ΔE2000 at the shipped grid) is a separate, graded,
+  machine-independent claim.
+
+### 3.24 ★★★ The 4.2.5.4 CONFORMANCE DEFECT — in iccce, not in lcms2. **The ledger's first row recording that this project's shipped code did not conform, and it was measured before it was found**
+
+**Corrected 2026-08-12 at commit `fd34a44`** — *"bpc: iccce was WRONG at
+4.2.5.4 — lcms2 conformed, we did not"*. Sourced by
+`icc-spec-librarian`; fixed by `icc-engineer`; **filed from
+`crates/iccce-cmm/src/bpc.rs` read at the tip** *(verified — lines
+174–199 and 251–273)*.
+
+> **★★★ THIS CLOSES §3.18.6 AND §7.11's NEWLY-OWED ITEM 1, IN THE
+> DIRECTION THEY NAMED AS POSSIBLE.** §3.18.6 asked *"does ISO/CD 18619
+> 4.2.5.4 specify `outRamp[first]`, or the `InitialLab` behaviour lcms2
+> implements?"* and pre-committed: *"**if ISO names lcms2's, iccce is
+> WRONG — not divergent — and the engineer changes the code**"*. **ISO
+> names lcms2's.** The clause's final paragraph, verbatim: *"If the mid
+> range is straight (as determined above) then the DestinationBlackPoint
+> **shall be the same as InitialLab**."* 4.2.5.1's control-flow summary
+> says it a second time.
+
+| ID | What | Class | Tolerance | Observed |
+|---|---|---|---|---|
+| **★★★ NC-164** | **The straightness short-circuit returns `InitialLab`, the whole triple, unchanged** — ISO/CD 18619 **4.2.5.4** final paragraph, transcribed verbatim in the corpus and quoted at the site. **`outRamp[first]`, which iccce returned, appears in the whole of clause 4.2.5 only as `MinL`** — a threshold and a `yRamp` anchor — **and in 4.2.5.3's validity test; it is not a black-point candidate in any branch** | **normative-rule-conformance** *(inheriting the transcription risk of §1's definition, **and additionally the risk that 18619 is a COMMITTEE DRAFT**)* | **behavioural, 0/1** — the branch returns `initial_lab` or it does not | **conforms as of `fd34a44`** *(verified — `bpc.rs` read: the branch is `return initial_lab;`, with the clause quoted immediately above it)*. **Before `fd34a44` it did not** |
+| **★★ NC-164a** | **The cost of the defect, measured BEFORE it was found** | **implementation-cross-check** *(the figure is **NC-142's**, re-attributed rather than re-measured)* | **∞ — REPORTED** | **8,166 8×10⁻² ΔE76** on `USWebCoatedSWOP` (`ΔL* 0,081 67`, chroma **exactly 0**) — ★ **100 % of the two implementations' divergence on that arm.** It is now attributed: **the whole of it was iccce's defect** |
+
+#### 3.24.1 ★★★ Re-attribution of NC-142, stated as a re-basing rather than an edit
+
+**NC-142 is not edited.** Its number was and is correct. What changes is
+the sentence beside it:
+
+| | Before | Now |
+|---|---|---|
+| **NC-142's `swop` figure** | *"a measured difference whose **ATTRIBUTION IS OPEN**"* (§3.18.6) | **Attributed: iccce was non-conformant; lcms2 conformed. The divergence was our defect in its entirety** |
+| **What may be said about lcms2** | *"no document may describe this difference as lcms2 departing from the standard"* | **The prohibition is discharged — and it resolved the other way.** lcms2 is the one that conformed |
+
+★ **This is why §3.18.6 was worth writing.** A section that had filed
+the divergence as a *finding against lcms2* would have had to be
+retracted; a section that filed it as *a measured difference with one
+identified line and no attribution* needed only a sentence added. **The
+measurement was usable precisely because its interpretation was
+withheld.**
+
+#### 3.24.2 ★★ The corollary that came with the fix, which is NOT a bug fix
+
+**The function's return type widened from `L*` to a full `Lab`.** The
+reason is a second reading of the same clause family: **4.2.5.2.1 zeroes
+chroma only for CMYK**, so on a **Gray or RGB** LUT destination ISO
+itself yields a **chromatic** `DestinationBlackPoint` — and the
+short-circuit is **the only branch of 4.2.5 that can return one**.
+Neutralising at the return would have been *a second, quieter
+departure* *(the phrase is the site's own; verified — read)*.
+
+**Cost today: zero.** 4.2.6 ignores `a`/`b` downstream. ★ **And the
+correctness is not zero**, which is exactly the distinction rule 4
+exists to hold open: a departure whose current price is nil is still a
+departure, and the price changes the day something consumes the chroma.
+
+#### 3.24.3 ★★ What this says about the corpus, and it is not flattering
+
+**The corpus did not catch this, and could not have.** 4.2.5.4 had
+**not been transcribed verbatim**, so nothing in
+`D:\Dev\Rag-Specialized\ICC_Spec\` said `outRamp[first]` was wrong. The
+sequence was:
+
+1. **The defect shipped** (Pass 5's `bpc.rs`), sourced against a corpus
+   that was silent on the point.
+2. **Pass 5c measured its consequence** — 8,167×10⁻² ΔE76 — **without
+   being able to attribute it**, and named the single line it had to be
+   (§3.18.6).
+3. **The question was dispatched outward**, and the answer required
+   going back to the document rather than to the corpus.
+
+★ **A corpus gap and an implementation bug with the same root.** The
+lesson is not *"transcribe more"* — it is that **the measurement is
+what made the gap findable**: nobody would have re-read 4.2.5.4 if a
+number had not been sitting there unexplained.
+
+#### 3.24.4 What §3.24 does NOT claim
+
+- **That lcms2 is an authority.** It conformed **here**, at **one
+  clause**, at **one pin**. **DL-027** stands unchanged: lcms2 has two
+  black-point estimators and a branch this project's first reading did
+  not trace.
+- **That the corrected code is verified.** ★ **NC-164 is a
+  behavioural row read from source, not a differential run.** The
+  runner's `pass=142 fail=0` (NC-160) was taken on the corrected code
+  *(reported)*, but **no record in it grades the short-circuit's return
+  value against the clause** — the rows that touch this area
+  (`pass5c/…`) grade the *branch selection* and the divergence, and
+  **NC-142's 8,167×10⁻² should now be expected to COLLAPSE**, which
+  **nobody has re-measured and this filing does not assert**.
+- **That the ISO/CD tier caveat is retired.** 18619 is a **committee
+  draft** in this project's corpus and every consequence drawn from it
+  inherits that, including this one.
+- **That other clauses of 4.2.5 have been re-checked.** One paragraph
+  was sourced and one branch corrected. **Nothing swept the rest**, and
+  §4.6's known ISO internal contradiction is untouched.
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -3725,6 +4040,39 @@ moment it exists, not the moment a Pass measures it.)*
 > binary** (**NC-157**) — it had **no caller at all** until commit
 > `c268261`, which is why this row could say *"nothing consumes it yet"*
 > for two filings and be right.
+
+> **★★★ THIRD dated note, 2026-08-12 (later the same day) — item (3)
+> above is ANSWERED, and this entry CHANGES SHAPE exactly as it said it
+> would.** ISO/CD 18619 **4.2.5.4** specifies **`InitialLab`**. **iccce
+> was non-conformant and lcms2 conformed**; corrected at commit
+> **`fd34a44`** *(verified — `bpc.rs` read at the tip)*. See **§3.24**,
+> **NC-164**, and `ARCHITECTURE.md` **DL-030**.
+>
+> **What this does to NA-009, precisely:**
+>
+> - **The `swop` arm's 8,167×10⁻² ΔE76 was never an approximation cost
+>   at all. It was a DEFECT**, and it is re-attributed to iccce in
+>   full. **A named approximation's register must not carry a bug as
+>   though it were a priced departure** — that is the failure mode this
+>   note exists to prevent, and the entry above pre-committed to
+>   catching it.
+> - **NA-009's actual cost is therefore UNMEASURED AGAIN**, and more
+>   honestly so than before: the number that had been standing in for
+>   it belonged to a different phenomenon. ★ **It should now be
+>   expected to COLLAPSE toward zero on the `swop` arm** — both
+>   implementations returning `InitialLab` from the same branch — **and
+>   nobody has re-measured it.** Owed, §7.12.
+> - **The synthetic RGB arm's 5,000 000 ΔE76 is UNTOUCHED by this**, and
+>   the reason is DL-027: that arm diverges through the **estimator
+>   selection** (`BlackPointAsDarkerColorant` keeping chroma), not
+>   through the short-circuit's return value. **One correction did not
+>   fix both arms, and it was never going to** — which is itself
+>   evidence the two-arm design was right.
+> - **The subset boundary moved slightly**: the corrected function
+>   returns a full `Lab`, so a Gray or RGB LUT destination can now
+>   receive the **chromatic** black ISO specifies (§3.24.2). **Cost
+>   today zero** — 4.2.6 ignores `a`/`b` — **and it is still a change to
+>   what this register describes.**
 
 ### NA-010 — the fixed v4 perceptual black follows **the implementations' triple**, not ICC.1 Table 16's printed decimals. A deviation from printed spec text whose cost is **corpus-derived, not measured here**
 
@@ -4690,6 +5038,73 @@ as **verified-then, unchecked-now**, per §7.10 item 8's own protocol.
    asked for it and **§3.18 is it**. Recorded here so the harness's own
    owed-list can be closed by whoever next reads it.
 
+### 7.12 Status of §7 … §7.11, re-checked 2026-08-12 at the **4.2.5.4 correction + `iccce-measure`** filing
+
+No list above is edited. **This is the fourth status pass of the same
+calendar day and the fifteenth filing overall.** ★ **It is the second
+consecutive filing taken WITHOUT a shell**, so every item §7.10 settled
+by running a command remains **verified-then, unchecked-now**, and
+§7.11's own unchecked items are carried without being restated as
+though they had been re-examined.
+
+| Item | Status now |
+|---|---|
+| §7.11 newly-owed 1 — **ISO/CD 18619 4.2.5.4's short-circuit return value** | **★★★ DISCHARGED, AND IT WENT AGAINST US.** ISO specifies **`InitialLab`**; **iccce was non-conformant and lcms2 conformed**; corrected at **`fd34a44`** *(verified — `bpc.rs` read)*. **§3.24**, **NC-164**, **DL-030**, and a third dated note on **NA-009**. ★ **The prohibition it carried is discharged in the opposite direction to the one a careless reader would have assumed**: it was never available to say lcms2 departed from the standard, and now it is settled that **we** did |
+| §7.11 newly-owed 2 — **a runner outcome for the final shape of `pass5c` and `pass6`, and a `cargo test --workspace` exit code** | **★★ DISCHARGED — and it arrived as THREE numbers from three runners, which is the finding.** `pass=142 fail=0 skip=3 error=0`; `cargo test --workspace` **129 passed, 0 failed, exit 0**; `tools/difftest` unit suite **36 passed**. **§3.22**, **NC-158 … NC-160**, **DL-031**. ★ **`skip=3` is reported and NOT enumerated** — see the new owed list |
+| §7.9 item 1 — **the raw `iccce bench` output** | **★★ DISCHARGED, and it did more than close the item.** `docs/bench-2026-08-12.txt` carries the full twelve-line output *(verified — read)* **plus a variance note the item did not ask for**, which is what makes **§3.23** possible. ★ **The file predicted this filing**: *"quote a RANGE and the load condition, never a point figure"* |
+| §7.9 items 4–5 — **the spot-colour cross-check against stored `nDeviceCoords`; a spot into a LUT/gray destination; a PCSXYZ `ncl2` fixture** | **Still owed, untouched, FOURTH filing.** ★ **The `nDeviceCoords` comparison remains the cheapest genuine cross-check available anywhere in this project** and nothing has been done about it on any of the four |
+| §7.11 newly-owed 3 — **the A41 constant's error, measured** (`L* ≈ 3,1` against a real `L* 20`) | **Still owed, untouched.** The fixture exists; the measurement does not |
+| §7.11 newly-owed 4 — **the CI evidence** (a run URL or pasted summary; and whether Linux was among the jobs) | **Still owed, untouched.** ★ **Three runner outcomes arrived at this filing and none of them is CI.** The Linux debt is undischarged and the caveat *"no CI run has been observed by this librarian"* still holds |
+| §7.10 item 1 — **`dechk.obj` in the public repository** | **Carried, `unverified-this-filing`.** ★ **The repository root was NOT enumerated at this filing** — this librarian read named files only — so **not even its presence is re-confirmed here**, let alone its tracked status. Weaker than §7.11's carry, and said so rather than repeated |
+| §7.10 item 2 / §7.11 — **pushes without a recorded go-ahead (nine at the last count)** | **Carried, `unverified-this-filing`.** **The push log was not read at this filing**, so the count is neither confirmed nor updated, and **nothing here evidences the current tip having been pushed at all**. Rule 9 and **DL-024** are unchanged: publishing is the operator's act |
+| §7.10 item 3 — **commits sweeping in other agents' unfinished work** | **★ No new instance observed — and nothing was checked.** Commit *contents* have never been verified by this librarian in any filing. The **three** recorded instances stand |
+| §7.10 item 4 — **wire the three scratch probes into the harness** | **Still owed, untouched** *(not re-read)* |
+| §7.10 item 5 — **`cargo fmt --check` in `tools/difftest`** | **Carried, `unverified-this-filing`.** ★ **The structural point sharpens with NC-159**: `tools/difftest` now demonstrably has its own green unit suite (36), and rule 10's gate **still cannot see it**, because the crate is deliberately outside the workspace. **Two runners, one gate** |
+| §7.10 item 6 — **the PCSLAB gray fixture (NA-008's second arm)** | **Still unwritten.** ★ **NA-008's cost remains the oldest UNMEASURED entry in §4** |
+| §7.10 item 7 / **the DL-014 citation audit** | **★ Still owed, TENTH filing** — and it acquires a new, cheap surface at this one: **§3.24 cites ISO/CD 18619 4.2.5.4 verbatim**, and the audit should confirm the corpus now carries that paragraph at the tier the citation implies, since **§3.24.3 records that it did not before** |
+| §7.1 item 4 — **a ground-truth row for chromatic adaptation** | **Still owed. Still not due** *(no adaptation code changed; not re-grepped)* |
+| §7.1 item 6 / §7.9 — **a Linux run** | **Still owed. Nothing, by anyone, ever.** Unchanged by three green runners on Windows |
+| **`published-ground-truth` for any transform** | **★★ UNCHANGED, TENTH consecutive filing.** ★ **And this filing is the sharpest illustration of the gap yet available**: a clause of a **committee draft** was the sole arbiter of a defect in shipped colour code, and it was right. **`IEC 61966-2-1` is still the cheapest route to a real ground-truth row and still nobody has dispatched for it** |
+
+**Newly owed as of this filing:**
+
+1. **★★ `icc-conformance` — RE-MEASURE the `swop` arm's black-point
+   divergence on corrected code.** **NC-142's 8,166 8×10⁻² ΔE76 should
+   now COLLAPSE**, both implementations returning `InitialLab` from the
+   same branch. **Nobody has re-run it, and §3.24 deliberately does not
+   assert the collapse.** ★ **Until it is measured, NA-009's cost is
+   UNMEASURED — the number that stood in for it has been re-attributed
+   to a defect.** This is the highest-value item on the list.
+2. **★★ Reconcile the TWO NON-OVERLAPPING SPEEDUP RANGES.** `iccce
+   bench` gives **12–23×** (NC-162); `TOLERANCES.md` §3.6.2 gives
+   **28–32×** on the `tools/difftest/src/pass6.rs` apparatus. **The
+   project holds two ranges that do not overlap and does not know
+   why.** A hypothesis is offered in §3.23.4 (the two harnesses may time
+   different work) and **is labelled a hypothesis**. **Until it is
+   settled, no document may quote a single speedup figure.**
+3. **★ Enumerate NC-160's `skip=3`.** Which three records skipped, and
+   why. **A skip is the runner declining to grade, and it is invisible
+   in `fail=0`** — the one place a green census can hide something.
+4. **★ Sweep `README.md` for a single-figure throughput or speedup
+   claim.** §3.23.2 checked `docs/` and **did not check `README.md`**,
+   which is the **user-facing** surface and therefore the one where an
+   unsupportable number does the most damage. *(Claim-bearing copy: it
+   is a claim, and it gets verified.)*
+5. **★ A `TOLERANCES.md` §5 row for the corrected NA-009**, and a
+   `TOLERANCES.md` row anywhere for **NC-164**. `icc-conformance` owns
+   that file; this ledger has recorded the facts and edited nothing.
+6. **★★ A regression test for the 4.2.5.4 branch, graded against the
+   clause.** **NC-164 is a behavioural row READ FROM SOURCE, not run** —
+   the corrected line has no test asserting that the short-circuit
+   returns `initial_lab` unchanged. ★ **The defect shipped once through
+   exactly this gap**, and `iccce-cmm`'s 63 tests did not catch it.
+7. **★ Nothing is owed for the manifest.** Recorded as a numbered item
+   because the dispatch **asked for an owed correction that does not
+   exist**: `Cargo.toml` already reads *"Five crates"* and lists all
+   five *(verified — read)*. **The entry exists so nobody files the
+   correction twice**, and as the fourth instance in this project's
+   short history of **the dispatch and the tree disagreeing** (§2.12).
+
 ---
 
 ## 8. Related
@@ -4765,6 +5180,22 @@ as **verified-then, unchecked-now**, per §7.10 item 8's own protocol.
   `pub(crate)`; `bpc.rs`'s ISO/CD 18619 surface stays public), filed
   with the four pre-publication soundness defects including the
   **stale-inverse hazard on a public field** that rule 1 makes invisible.
+  **DL-030** *(added 2026-08-12)* — ★★★ **iccce was NON-CONFORMANT at
+  ISO/CD 18619 4.2.5.4 and lcms2 conformed**; the first time rule 7 has
+  run in the direction it was written to be capable of running in, filed
+  with the pre-commitment (§3.18.6) that made the outcome cheap to
+  accept and with the corollary that widened the return type
+  (**§3.24**, **NC-164**). **DL-031** *(added 2026-08-12)* — **an
+  unlabelled test count is not a claim, because the APPARATUS is half
+  the number**; filed with the day's three green results (**129**, **36**,
+  **142**) from three runners, two of which were briefly compared by the
+  engineer who produced both (**§3.22**, **NC-158 … NC-160**, and §1's
+  new `apparatus-census` class). **DL-032** *(added 2026-08-12)* — **an
+  EXPECTED warning is documented at the site with what "fixing" it would
+  break**, filed with the near-miss it prevented on the same day:
+  deleting `license-file` to silence a cargo warning would have shipped
+  a tarball with **no MIT notice text**, invisibly. ★ **Rule 1 in a
+  non-colour register — the clean build IS the defect.**
 - `tools/difftest/README.md` — the oracle, its pin and its licence (§2–§3),
   the smoke record (§8), the harness and its one registered check (§11),
   and **§12, the legacy-Lab experiment and the BPC finding** — the

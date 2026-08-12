@@ -138,8 +138,32 @@ looking like evidence.**
     `unverified-this-filing` **with the reason** — a held directory and a
     missing shell are different reasons with different fixes.
 
+11. **★★★ THE DISPATCH NAMED A STRING TO CORRECT THAT DID NOT EXIST —
+    twice in one filing (4.2.5.4 / `iccce-measure` filing,
+    2026-08-12).** Three claims in one dispatch failed against live
+    source. (a) *"The manifest header still says `Four crates` — flag it
+    as an owed correction"*: `Cargo.toml` **already read "Five crates"**
+    and listed all five, so **nothing was owed**. (b) *"`ARCHITECTURE.md`
+    §1 currently says `Four crates`"*: the string appeared **nowhere in
+    the file** — §1 carried an **ASCII tree that listed four directories
+    and omitted the fifth**. Same defect, different text, and **a filing
+    that corrected the quoted string would have corrected nothing.**
+    (c) *"The previous filing recorded 'suite green at 142'"*: **no
+    filing did** — the phrase is a **commit message** (`d5efd96`), and
+    the only `142` in `docs/` is the CIE standard number 142-2001. ★
+    **The third correction improved the finding, not just the record**:
+    the ambiguous number lives in git history, where nothing names an
+    apparatus and **no dated note can ever be appended**.
+    **Generalisation: when a dispatch says "document X says S, fix it",
+    search for S before editing.** A dispatch describing a defect
+    accurately can still quote the text wrongly, and the quoted text is
+    the part an edit acts on.
+
 **How to apply.**
 
+- ★ **A dispatch's quoted string is a claim about a file — search for
+  it.** "Change S to T" is two claims: that S is wrong, and that S is
+  there. The second fails more often than the first.
 - **Re-verify every carried-forward prediction on the Pass that was
   predicted about.** A "what Pass N inherits" annotation is written
   before Pass N exists; the day it exists, it is a testable claim.

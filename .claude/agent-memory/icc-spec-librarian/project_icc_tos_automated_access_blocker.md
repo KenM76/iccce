@@ -5,7 +5,13 @@ metadata:
   type: project
 ---
 
-**Rule: never fetch anything from `color.org` or `archive.color.org` with curl / WebFetch / any agent tool.** Report the constraint rather than routing around it.
+**Rule: never fetch anything from `color.org` or `archive.color.org` with curl / WebFetch / any agent tool.** Report the constraint rather than routing around it. **This includes `registry.color.org`** — checked and declined 2026-08-12 when the ICC profile registry appeared in search results for `PSOcoated_v3`; **ECI was used instead and served the same profile.**
+
+**★★ THE BAR DOES NOT GENERALISE, and assuming it did would have cost this corpus the whole CIE data-table ingest.** Checked 2026-08-12: **`cie.co.at` has no prose ToS at all** (`/terms`, `/terms-of-use`, `/legal-notice`, `/imprint`, `/copyright`, `/privacy-policy` — **all HTTP 404**), its `robots.txt` disallows only Drupal internals, and its data tables carry **CC BY-SA 4.0** stated per-file. **`eci.org`'s `robots.txt` is `User-agent: *` / `Disallow:` — fully permissive.** Both were agent-retrieved. **Check each site's own terms; do not extrapolate from ICC's.**
+
+**★ And one site bars for the OPPOSITE reason — `fogra.org`.** Its prose T&C and legal notice are **silent** on downloads, reuse and robots, but its **`robots.txt` disallows `/fileadmin/`** and **every characterisation-data link points at `/fileadmin/files/7_downloads/…`**. **Do not agent-fetch it; ask Ken for a browser download.** *(Wanted, if ever needed: `F51-52.zip` and `FOGRA39_to_FOGRA60_v2.zip` from that path — but see [[measurement-profiling-sourcing-state]] first, because FOGRA51 is already held, embedded in an ECI profile's `targ` tag.)*
+
+**The pair is the standing rule: at `color.org` the prose barred while robots permitted; at `fogra.org` robots bars while the prose is silent. The restrictive signal governs in both. "One of the two permits it" is not the test.**
 
 **Why:** the ToS (Effective 2026-01-01, checked 2026-08-11) prohibits "using any robot, spider, or other automated device to access the Services for any purpose, including **monitoring, copying, or training artificial intelligence or machine learning models**, without prior written consent from ICC." The clause names AI/ML explicitly, so it is not a strained reading of a generic anti-scraping term. Recorded deliberately as a conflicting signal: `www.color.org/robots.txt` does *not* disallow the specification index and `archive.color.org` serves no robots.txt at all — **the machine-readable permission and the prose contract point opposite ways, and the prose contract was taken as binding.**
 

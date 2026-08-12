@@ -1,6 +1,8 @@
 # Agent memory — icc-spec-librarian
 
-- [ICC ToS blocks automated access](project_icc_tos_automated_access_blocker.md) — never agent-fetch color.org; **FIVE documents are now in `_sources/` with FOUR different licences; only ICC.1:2010-12 is still wanted**
+- [ICC ToS blocks automated access](project_icc_tos_automated_access_blocker.md) — never agent-fetch color.org (incl. `registry.color.org`); **the bar does NOT generalise — cie.co.at and eci.org are permissive; fogra.org bars via robots.txt instead**
+- [Pass 10 / measurement sourcing state](reference_measurement_profiling_sourcing_state.md) — **FOGRA51 is EMBEDDED in `PSOcoated_v3.icc`'s `targ` tag**; CIE tables held+checksum-verified; **Argyll is AGPL — BARRED**; industry D50 Z is `0,82521`, not ICC's `0,8249`
+- [Don't transcribe numeric tables; write incrementally](feedback_dont_transcribe_numeric_tables.md) — download into `_sources/` and POINT at it with spot-checks; write each finding to disk as established — a dead run lost everything it held in context
 - [ICC_Spec corpus sourcing route](reference_icc_spec_corpus_sourcing_route.md) — DemoIccMAX (**renamed `iccDEV`**; code search is broken for it, use the contents API) + lcms2 on GitHub; plus Sharma ΔE2000 ground truth
 - [ICC PDF drops minus signs](reference_icc_pdf_symbol_font_sign_loss.md) — Symbol-font glyphs land in U+F0xx and every extractor silently discards them; exhaustive map + which engine per structure; Read tool cannot render PDF pages here
 - [ICC-absolute: clause 6.2.3 is backwards](reference_icc_absolute_intent_clause_trap.md) — the prose inverts the media-white ratio; implement Eq (1)–(6); `chad` is never a render-time step
