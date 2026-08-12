@@ -216,6 +216,48 @@ drops the minus sign**, turning "−128,0" into "128,0". Any future
 extraction from this PDF must map the private-use range before reading
 numbers out of it.
 
+### 2.5 ★ Option (1) exercised a second time — four more operator retrievals, 2026-08-11 evening
+
+**Ken retrieved four further documents himself, in a browser, on the evening of
+2026-08-11**, into `D:\Dev\Rag-Specialized\ICC_Spec\_sources\`. **No agent
+fetched any of them, and none may** — §2.2's permanent bar on agent retrieval
+from `color.org` / `archive.color.org` is unchanged. One provenance line per
+document, with the licence terms as they actually read:
+
+| File (in `_sources\`) | Bytes / mtime | What it is, per its own title page | Licence / reproduction terms **as printed in the document** |
+|---|---|---|---|
+| **`ICC.1-2001-04.pdf`** | 1 203 813 · 2026-08-11 20:12 | *Spec ICC.1:2001-04, "File Format for Color Profiles"*, © 2001 International Color Consortium, 102 pages, profile version **2.4.0** (`02400000h`). Producer `Acrobat Distiller 4.05`, creator `FrameMaker 6.0` | **Same ICC terms as §2.1** — obtained from `color.org`, which grants no reproduction right. **Summarise-and-cite; never redistribute.** Its Annex F item 14 records that it is **not an International Standard**, which is why its `should`/`shall` carry no defined verbal-form hierarchy |
+| **`AdobeBPC.pdf`** | 186 062 · 2026-08-11 20:16 | *"Adobe Systems' Implementation of Black Point Compensation"*, **© 2006 Adobe Systems Incorporated**, 12 pages. **Hosted on `www.color.org/adobebpc.pdf`, not on `adobe.com`** | **★ TWO SEPARATE GRANTS, and they must not be conflated.** (a) **Reproduction is PROHIBITED**: *"No part of this publication … may be reproduced, stored in a retrieval system, or transmitted, in any form or by any means … without the prior written permission of Adobe Systems Incorporated."* (b) **Implementation is EXPLICITLY INVITED and patent-free**: *"Adobe has no patents on the algorithm described herein or on its use in color transforms"*, and non-licensees *"may claim, if true, that their products are compatible with the Adobe Black Point Compensation described in this paper"*. **⟹ iccce may implement the algorithm and say so; iccce may not carry the document's text.** |
+| **`BlackPointCompensation.pdf`** | 340 916 · 2026-08-11 20:17 | **★ NOT ICC WP40, as had been presumed.** It is **ISO/CD 18619**, *"Image technology colour management — Black point compensation"*, `ISO TC 130/WG7 N 063`, dated `2013-05-2`, **document stage (30) COMMITTEE DRAFT**, © ISO 2013, 21 pages. Distributed by ICC as *"the final approved ICC version of ISO 18619 … as prepared by the ICC and TC130 in WG7"* | **© ISO 2013.** *"neither this document nor any extract from it may be reproduced, stored or transmitted in any form for any other purpose without prior written permission from ISO"* (reproduction permitted only for participants in the ISO standards-development process). **Also a citation constraint, not just a licence one:** *"This document is not an ISO International Standard … may not be referred to as an International Standard."* **⟹ cite as "ISO/CD 18619:2013 clause 4.2.x", never as "ISO 18619"; summarise-and-cite only.** |
+| **`PDF20_AN001-BPC.pdf`** | 173 159 · 2026-08-11 20:18 | *PDF 2.0 Application Note 001: Black Point Compensation*, PDF Association PDF Technical Working Group, 2018-09-17, 5 pages. Authors Martin Bailey (Global Graphics), Peter Wyatt | **★ CC-BY-4.0** — *"This work is licensed under the Creative Commons Attribution 4.0 International License."* **The only one of the four that may be quoted at length and redistributed**, with attribution. Its own scope line: *"It provides interpretation of the existing specifications; it does not change the text of those specifications."* |
+
+**What these four change for iccce.** BPC's *estimation* step can now be
+implemented against **ISO/CD 18619:2013 clause 4.2** rather than by copying
+lcms2, and the doc comments may say so. The v2 `wtpt` question that carried an
+11,2 ΔE2000 policy is answered. **And one shipped policy was checked and held:
+iccce never forces BPC on (`DL-022`), and neither BPC document authorises the
+forcing lcms2 attributes to Adobe.**
+
+**What they do NOT change.** §2.4's four standing rules apply unchanged to all
+four files: reproduction is not licensed (except for the CC-BY one), the corpus
+stays private and uncommitted on local `D:\` only, **the `_sources\` PDFs are
+never committed and never copied out**, and facts — offsets, encodings,
+constants, equations — remain freely transcribable with a citation while the
+prose around them does not.
+
+**Tool limitation, reported rather than worked around (unchanged from §2.4):**
+`pdftoppm` is still not installed for the agent, so **no page of any of these
+four was read as an image.** All figures in `AdobeBPC.pdf` (Figures 1–6) and in
+`ISO/CD 18619` (Figures 1–3, A.1–A.3) were **not seen**; the corpus records that
+scope limit and states that no claim it makes depends on a figure. Text
+extraction used `pypdf` 6.7.0 and poppler `pdftotext -layout`, with every
+load-bearing passage read in both. **A second extraction hazard was found, and it
+INVERTS §2.4's:** for these documents poppler is the *weaker* engine — it
+replaces every non-Latin-1 glyph with `U+FFFD` (20 occurrences in `AdobeBPC.pdf`,
+49 in the ISO draft), losing `≤`, `×` and the `U+2013` en-dash minus signs that
+`pypdf` recovers correctly. **`ICC.1-2001-04.pdf` does not have the ICC.1:2022
+Symbol-font problem at all.**
+
 ## 3. Profiles as test fixtures
 
 **A profile is a copyrighted work.** Most vendor profiles ship under
