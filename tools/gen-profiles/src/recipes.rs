@@ -1093,6 +1093,322 @@ fn v4_rgb_mab_chromatic_black() -> Vec<u8> {
 }
 
 // ===========================================================================
+// (h) Well-formed: v4 RGB mAB/mBA whose B2A HAS A FLOOR, so that ISO/CD 18619
+//     4.2.5.4's InitialLab and outRamp[first] ARE DIFFERENT NUMBERS
+// ===========================================================================
+
+/// ## Why this fixture exists — the sibling's blind spot, made visible
+///
+/// [`v4_rgb_mab_chromatic_black`] carries a warning (FINDING **GP-002**,
+/// `tools/gen-profiles/README.md` §4.1): on that fixture ISO/CD 18619
+/// **4.2.5.4**'s two candidate return values — `InitialLab` (4.2.2.2's darkest
+/// device **vertex**, neutralised by 4.2.3) and `outRamp[first]` (the floor of
+/// the monotonised round-trip ramp) — **are both `L* 20`**. iccce returned the
+/// wrong one of the two for two sessions; the correction (`fd34a44`) moved the
+/// `USWebCoatedSWOP` arm by **4,717 441 `L*`** and moved that fixture by
+/// **exactly zero**.
+///
+/// The consequence, measured rather than feared: **a full reversion of that
+/// correction turns no row of `tools/difftest` red, on any machine.** The only
+/// arm whose *numbers* move is `pass5c/swop/*`, and `USWebCoatedSWOP.icc` is
+/// `docs/LEGAL.md` §3 category **(c)** — never committed, absent on any machine
+/// without the Windows colour directory, where those rows skip. (The clause is
+/// not undefended: `crates/iccce-cmm/src/bpc.rs`'s own unit tests
+/// `straight_midrange_short_circuits_at_relative_only` and
+/// `straight_midrange_carries_chromatic_initial_lab_whole` do fail on a
+/// reversion. What had no committed instrument was the clause exercised
+/// **through a parsed profile**, which is where a wiring defect lives.)
+///
+/// **This recipe is that instrument.** It is the construction the sibling's own
+/// doc comment prescribed and deliberately declined to apply to itself:
+///
+/// > a `B2A` whose dark clamp cannot reach the darkest vertex — a floor on `G`
+/// > for **every** input, not only out-of-gamut ones, which lifts the
+/// > round-trip floor above `SYNTH_BLACK_L` while leaving `A2B(0,0,0)` alone.
+/// > It belongs in a **new** recipe, not in this one.
+///
+/// It is a new recipe for the reason stated there: regenerating the sibling
+/// would move `NUMERIC_CLAIMS.md` NC-166's companion device figure and several
+/// filed statements that are true of *those* bytes. Nothing about the sibling
+/// changes; this fixture differs from it in **exactly one structural property**
+/// (the `B2A` floor) plus a deliberate change of every shared constant, so a
+/// disagreement between the two arms is attributable to the floor and to
+/// nothing else.
+///
+/// ## ★★ GP-002 generalised: every conceptually distinct quantity gets a
+/// distinct value
+///
+/// This is the first fixture authored under that rule, so the rule is spelled
+/// out here rather than left as arithmetic a maintainer could undo by
+/// "simplifying".
+///
+/// The four quantities that a black-point defect can confuse, and what each is
+/// on this fixture:
+///
+/// | quantity | where it comes from | value here | why THIS value |
+/// |---|---|---|---|
+/// | `InitialLab` (ISO 4.2.2.2 → 4.2.3) | `A2B1` at the darkest device vertex `(0,0,0)`, neutralised | `Lab(12,5 · 0 · 0)` | [`FLOORED_BLACK_L`] — **not** the sibling's 20, so a number quoted without its arm is obviously wrong rather than plausibly right |
+/// | lcms2's `InitialLab` (`BlackPointAsDarkerColorant`) | the same vertex through the same `A2B1`, **chroma retained** | `Lab(12,5 · 6 · −8)` | [`FLOORED_BLACK_A`]/[`FLOORED_BLACK_B`], chroma **10,0** — twice the sibling's 5,0, and a different `a*`/`b*` pair, so the two arms' chroma findings cannot be read for one another |
+/// | `outRamp[first]` (the rival return value) | the floor of the round trip `A2B1(B2A1(·))` | `Lab(37,5 · 0 · 0)` | [`FLOORED_ROUNDTRIP_L`] — **25,0 `L*` above `InitialLab`**, a quarter of the whole lightness range, so a defect that returns it is not a rounding argument |
+/// | the returned `DestinationBlackPoint` | 4.2.5.4, *"shall be the same as InitialLab"* | `Lab(12,5 · 0 · 0)` | it **is** `InitialLab` — the clause states an identity, and that identity is the thing being graded |
+///
+/// The pairwise separations are **25,0** (`InitialLab` ↔ `outRamp[first]`),
+/// **10,0** (`InitialLab` ↔ lcms2's), and **26,93** (`outRamp[first]` ↔
+/// lcms2's) ΔE76 — three distinct, non-zero distances, so no two of the four
+/// quantities can be substituted for one another without a graded row moving.
+///
+/// **What this fixture still cannot separate, stated rather than hoped.**
+/// lcms2's black and ISO's `InitialLab` share their `L*` **by construction and
+/// unavoidably on an RGB fixture**: `BlackPointAsDarkerColorant` transforms the
+/// space's darkest colorant through the profile's `A2B` at the caller's intent,
+/// which is the same tag, the same vertex and the same arithmetic ISO 4.2.2.2
+/// uses. Only the chroma can differ, and it does (10,0). Separating their `L*`
+/// needs a *different* mechanism, and two exist, neither built:
+///
+/// 1. an **inverse-polarity** fixture (device `(1,1,1)` darker than `(0,0,0)`):
+///    ISO 4.2.2.2 NOTE 2 says its search survives that and Adobe's fixed device
+///    black does not — and lcms2 uses a fixed `_cmsEndPointsBySpace` constant,
+///    so the two would return *opposite ends of the device range*;
+/// 2. a fixture whose darkest vertex is **lighter than `L* 95`**, which reaches
+///    lcms2's otherwise-unexercised `if (Lab.L > 95) Lab.L = 0;` rule
+///    (`cmssamp.c`, `BlackPointAsDarkerColorant`) while ISO 4.2.3 clips to 50 —
+///    an 50-`L*` divergence from one `if`.
+///
+/// Both are owed instruments, not defects of this one.
+///
+/// ## The colour model
+///
+/// `A2B` is the sibling's shape with this fixture's constants — affine, no
+/// cross terms, therefore reproduced **exactly** by multilinear interpolation at
+/// any grid size, which is what makes a fixture an instrument rather than a
+/// sample:
+///
+/// ```text
+/// L* = 12,5 + 87,5·G
+/// a* =  6·(1 − G) + 60·(R − G)
+/// b* = −8·(1 − G) + 60·(B − G)
+/// ```
+///
+/// `B2A` is its exact inverse **with a floor on `G`**:
+///
+/// ```text
+/// G = max(G_FLOOR, (L* − 12,5) / 87,5)          ← the whole point
+/// R = G + (a* − 6·(1 − G)) / 60
+/// B = G + (b* + 8·(1 − G)) / 60
+/// ```
+///
+/// ## Why the floor is on `G`, and why it is a floor for EVERY input
+///
+/// `L*` depends on `G` alone, so flooring `G` floors the round trip's `L*` and
+/// touches nothing else. It applies to every input rather than only to
+/// out-of-gamut ones because a clamp that fires only below the vertex would be
+/// *indistinguishable from ordinary gamut clipping*: the sibling already clamps
+/// dark out-of-gamut inputs onto the darkest vertex, and that is exactly why its
+/// round-trip floor **equals** the vertex. The floor has to be a property of the
+/// table, not of the input.
+///
+/// **`A2B(0,0,0)` is left alone** — the floor is on the `B2A` side only — so the
+/// darkest vertex, and therefore `InitialLab`, is unchanged at `L* 12,5` while
+/// the round trip cannot produce anything below `L* 37,5`. That asymmetry is the
+/// separation.
+///
+/// ## What a conformant consumer must produce
+///
+/// * `A2B1` at device `(0,0,0)` is `Lab(12,5 · 6 · −8)` to encoding precision
+///   (6.3.4.2's general 16-bit PCSLAB encoding: `L*` quantum `100/65 535 =
+///   1,526×10⁻³`, `a*`/`b*` quantum `255/65 535 = 3,891×10⁻³`, so half a quantum
+///   either way). Note `12,5` is **not** exactly encodable — `12,5 × 655,35 =
+///   8 191,875` — and decodes to `12,500 190 7`; every claim about this fixture
+///   is stated to encoding precision for that reason, exactly as the sibling's
+///   are.
+/// * `A2B1(B2A1(Lab(0 · 0 · 0)))` has `L* = 37,5` to the same precision, and no
+///   input whatever produces a smaller `L*` through the round trip.
+/// * The mid-range round trip is the **identity** above the floor, so both
+///   ISO/CD 18619 4.2.5.4's straightness test and lcms2's (`cmssamp.c` L521–545)
+///   fire and neither implementation fits a quadratic. That is deliberate: the
+///   fixture isolates *what the short-circuit returns*, which is the whole of
+///   the question. (The straightness gate compares only samples whose **input**
+///   `L*` exceeds `MinL + 0,2·(MaxL − MinL)` = `37,5 + 12,5` = **50**, and above
+///   50 the round trip is exact, so the gate is satisfied with enormous margin
+///   rather than marginally.)
+/// * `mAB `/`mBA ` shapes and the `A, CLUT, B` combination are the sibling's;
+///   see its doc comment for the clause references. Being square, this fixture
+///   **cannot** catch GP-001 either.
+///
+/// ## Where the exactness stops, stated
+///
+/// The `B2A` clamps `R` and `B` to the unit cube, and at the extreme `a*`/`b*`
+/// grid nodes that clamp bites — so the stored table has a kink there and
+/// interpolation across it is not the affine model. It cannot affect anything
+/// measured: every graded quantity here is a function of `L*` alone, and `L*`
+/// depends only on `G`, which never clamps (it lives in `[G_FLOOR, 1]`). The
+/// same caveat is true of the sibling and is recorded there.
+///
+/// The `G` floor is `25/87,5 = 2/7 = 0,285 714 …`, which is **not** exactly
+/// representable as a `u16` fraction (`2/7 × 65 535 = 18 724,29`), so the stored
+/// floor decodes to `0,285 710` and the realised round-trip floor is `L* ≈
+/// 37,499 6`. Nothing depends on that: `outRamp[first]` is read at the `L*`
+/// axis's **node 0** (no interpolation in `L*`), and its role is to be **far**
+/// from `InitialLab`, not to be exact.
+const FLOORED_BLACK_L: f64 = 12.5;
+/// See [`FLOORED_BLACK_L`]'s table. `+6`/`−8` give chroma **10,0**, deliberately
+/// twice the sibling's 5,0 and a different pair, so the two arms' chroma numbers
+/// are not interchangeable in a report.
+const FLOORED_BLACK_A: f64 = 6.0;
+/// See [`FLOORED_BLACK_A`].
+const FLOORED_BLACK_B: f64 = -8.0;
+/// The `L*` the round trip cannot go below — **25,0 above [`FLOORED_BLACK_L`]**.
+/// A quarter of the lightness range, chosen so that a defect returning
+/// `outRamp[first]` instead of `InitialLab` is four orders above any encoding or
+/// interpolation argument that could excuse it.
+const FLOORED_ROUNDTRIP_L: f64 = 37.5;
+
+/// The floor on `G`, derived from [`FLOORED_ROUNDTRIP_L`] rather than typed, so
+/// the two cannot drift apart.
+fn g_floor() -> f64 {
+    (FLOORED_ROUNDTRIP_L - FLOORED_BLACK_L) / (100.0 - FLOORED_BLACK_L)
+}
+
+/// `A2B` for [`v4_rgb_mab_floored_b2a`] — device RGB in `0..1` to `L*a*b*`.
+/// Affine in each channel separately; see [`FLOORED_BLACK_L`] for the shape and
+/// the reasoning.
+fn rgb_to_lab_floored(r: f64, g: f64, b: f64) -> (f64, f64, f64) {
+    let l = FLOORED_BLACK_L + (100.0 - FLOORED_BLACK_L) * g;
+    let a_star = FLOORED_BLACK_A * (1.0 - g) + 60.0 * (r - g);
+    let b_star = FLOORED_BLACK_B * (1.0 - g) + 60.0 * (b - g);
+    (
+        l.clamp(0.0, 100.0),
+        a_star.clamp(-128.0, 127.0),
+        b_star.clamp(-128.0, 127.0),
+    )
+}
+
+/// `B2A` for [`v4_rgb_mab_floored_b2a`] — the exact inverse of
+/// [`rgb_to_lab_floored`] **with `G` floored at [`g_floor`] for every input**.
+///
+/// The `max` is the entire difference between this fixture and its sibling, and
+/// it is on the line it is on for a reason: it is applied to `G` **before** `R`
+/// and `B` are derived, so the returned triple is a consistent device colour
+/// (the one the floored `G` implies) rather than the unfloored triple with one
+/// channel raised. A consumer's round trip therefore lands on the model's own
+/// image of that device colour and the ramp stays exactly `max(L_floor, L*)`.
+fn lab_to_rgb_floored(l: f64, a_star: f64, b_star: f64) -> (f64, f64, f64) {
+    let g = ((l - FLOORED_BLACK_L) / (100.0 - FLOORED_BLACK_L)).max(g_floor());
+    let r = g + (a_star - FLOORED_BLACK_A * (1.0 - g)) / 60.0;
+    let b = g + (b_star - FLOORED_BLACK_B * (1.0 - g)) / 60.0;
+    (r.clamp(0.0, 1.0), g.clamp(0.0, 1.0), b.clamp(0.0, 1.0))
+}
+
+/// v4.4 RGB Output profile, `mAB `/`mBA `, whose `B2A` has a floor on `G`.
+/// See [`FLOORED_BLACK_L`] for the whole rationale.
+///
+/// The grid is 9 per axis in both directions — the sibling's, deliberately, so
+/// that the two fixtures differ in the floor and in their constants and in
+/// nothing structural. The model is multi-affine and multilinear interpolation
+/// reproduces it exactly at any size; the floor introduces one kink, at
+/// `L* = 37,5`, and the kink's position does not need to fall on a node because
+/// the only ramp value anything grades — `outRamp[first]` — is read at `L*`
+/// node 0.
+fn v4_rgb_mab_floored_b2a() -> Vec<u8> {
+    const N: usize = 9;
+
+    // --- A2B: RGB -> Lab (NO floor; the darkest vertex must be untouched) ----
+    let mut a2b_clut = Vec::with_capacity(N * N * N * 3);
+    for ri in 0..N {
+        for gi in 0..N {
+            for bi in 0..N {
+                let (l, a_star, b_star) =
+                    rgb_to_lab_floored(frac(ri, N), frac(gi, N), frac(bi, N));
+                a2b_clut.push(general_lab_l(l));
+                a2b_clut.push(general_lab_ab(a_star));
+                a2b_clut.push(general_lab_ab(b_star));
+            }
+        }
+    }
+    let (b_n, _m_n, a_n) = tags::spec_curve_counts(LutAbKind::AToB, 3, 3);
+    let a2b = LutAb {
+        kind: LutAbKind::AToB,
+        input_chan: 3,
+        output_chan: 3,
+        b_curves: vec![tags::curv_identity(); usize::from(b_n)],
+        matrix: None,
+        m_curves: Vec::new(),
+        clut: Some(AbClut {
+            grid_points: grid(&[N as u8, N as u8, N as u8]),
+            precision: 2,
+            data: a2b_clut,
+        }),
+        a_curves: vec![tags::curv_identity(); usize::from(a_n)],
+    };
+
+    // --- B2A: Lab -> RGB, WITH the floor ------------------------------------
+    // The CLUT's input axes are the ENCODED PCSLAB axes: node (li, ai, bi)
+    // stands for L* = 100·li/(N−1), a* = b* = −128 + 255·ai/(N−1). Same reading
+    // of 6.3.4.2 as the sibling, and getting it wrong is the same classic
+    // authoring error.
+    let mut b2a_clut = Vec::with_capacity(N * N * N * 3);
+    for li in 0..N {
+        for ai in 0..N {
+            for bi in 0..N {
+                let l = 100.0 * frac(li, N);
+                let a_star = -128.0 + 255.0 * frac(ai, N);
+                let b_star = -128.0 + 255.0 * frac(bi, N);
+                let (r, g, b) = lab_to_rgb_floored(l, a_star, b_star);
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "each value is clamped to 0..1 above, so ×65535 is 0..=65535"
+                )]
+                {
+                    b2a_clut.push((r * 65535.0).round() as u16);
+                    b2a_clut.push((g * 65535.0).round() as u16);
+                    b2a_clut.push((b * 65535.0).round() as u16);
+                }
+            }
+        }
+    }
+    let (b_n, _m_n, a_n) = tags::spec_curve_counts(LutAbKind::BToA, 3, 3);
+    let b2a = LutAb {
+        kind: LutAbKind::BToA,
+        input_chan: 3,
+        output_chan: 3,
+        b_curves: vec![tags::curv_identity(); usize::from(b_n)],
+        matrix: None,
+        m_curves: Vec::new(),
+        clut: Some(AbClut {
+            grid_points: grid(&[N as u8, N as u8, N as u8]),
+            precision: 2,
+            data: b2a_clut,
+        }),
+        a_curves: vec![tags::curv_identity(); usize::from(a_n)],
+    };
+
+    let mut tags_ = v4_meta(
+        "iccce synthetic v4 RGB, mAB/mBA, B2A floored so InitialLab (L* 12.5) and \
+         outRamp[first] (L* 37.5) differ",
+    );
+    tags_.push(wtpt());
+    // Perceptual and media-relative share tables, as in the sibling: the
+    // fixture is about which QUANTITY an estimator returns, and a second colour
+    // model would give a divergence somewhere else to be attributed to.
+    let a2b_bytes = a2b.encode();
+    let b2a_bytes = b2a.encode();
+    tags_.push(Tag::own(b"A2B0", a2b_bytes.clone()));
+    tags_.push(Tag::own(b"A2B1", a2b_bytes));
+    tags_.push(Tag::own(b"B2A0", b2a_bytes.clone()));
+    tags_.push(Tag::own(b"B2A1", b2a_bytes));
+    ProfileSpec {
+        version: 0x0440_0000,
+        class: *b"prtr",
+        color_space: *b"RGB ",
+        pcs: *b"Lab ",
+        rendering_intent: 1,
+        tags: tags_,
+    }
+    .assemble()
+}
+
+// ===========================================================================
 // (f) Well-formed: ncl2 named-colour profile
 // ===========================================================================
 
@@ -1736,6 +2052,36 @@ pub fn all() -> Vec<Recipe> {
                      lcms2's BlackPointAsDarkerColorant branch at all. A fixture with the two values \
                      DISTINCT would be a NEW recipe, not an edit to this one.",
             build: v4_rgb_mab_chromatic_black,
+        },
+        Recipe {
+            name: "v4-rgb-mab-floored-b2a",
+            category: WellFormed,
+            covers: "ISO/CD 18619 4.2.5.4's two candidate return values made DISTINCT: a B2A with a floor on G for every input, so the round-trip floor sits 25.0 L* above the darkest vertex",
+            what: "v4.4.0.0 prtr RGB, Lab PCS, A2B0/A2B1 as mAB and B2A0/B2A1 as mBA (3->3, 9x9x9 grids, general PCSLAB encoding). Device black maps to Lab(12.5 6 -8), chroma 10.0; device white to Lab(100 0 0). A2B is affine; B2A is its exact closed-form inverse EXCEPT that G is floored at 25/87.5 = 2/7 for EVERY input, so no round trip can return an L* below 37.5 while A2B(0,0,0) is untouched at 12.5",
+            expect: "parses; 0 malformations; lutAToB in=3 out=3 B=3 M=0 A=3 grid=9x9x9 matrix=absent; \
+                     lutBToA in=3 out=3 B=3 M=0 A=3. A2B1 at device (0,0,0) is Lab(12.5 6 -8) to encoding \
+                     precision (12.5 is NOT exactly encodable and decodes to 12.5001907). \
+                     \u{2605} THE POINT OF THE FIXTURE: ISO/CD 18619 4.2.5.4 says the DestinationBlackPoint \
+                     of a straight-midrange round trip 'shall be the same as InitialLab'. The two \
+                     quantities a defect can confuse are InitialLab (L* 12.5, the neutralised darkest \
+                     vertex) and outRamp[first] (L* 37.5, the floor of the round-trip ramp), and HERE THEY \
+                     ARE 25.0 L* APART - on the sibling v4-rgb-mab-chromatic-black they are both L* 20 and \
+                     the question is invisible (FINDING GP-002). A consumer that returns outRamp[first] \
+                     here is wrong by 25.0 L*, which is four orders above any encoding or interpolation \
+                     argument. \
+                     \u{2605}\u{2605} EVERY CONCEPTUALLY DISTINCT QUANTITY HAS A DISTINCT VALUE, ON PURPOSE \
+                     (the GP-002 generalisation): InitialLab Lab(12.5 0 0), lcms2's chroma-retaining \
+                     InitialLab Lab(12.5 6 -8), outRamp[first] Lab(37.5 0 0) - pairwise separations 10.0, \
+                     25.0 and 26.93 dE76, none zero. The constants differ from the sibling's in every \
+                     position (12.5 not 20; chroma 10.0 not 5.0) so that a number quoted without its arm \
+                     is obviously wrong rather than plausibly right. DO NOT 'simplify' these to match the \
+                     sibling and do not put the floor into the sibling: that would re-collapse the \
+                     distinction this fixture exists to hold open, and would move NC-166's filed figures. \
+                     What it still CANNOT separate is lcms2's black's L* from InitialLab's - \
+                     BlackPointAsDarkerColorant reads the same vertex through the same A2B, so only the \
+                     chroma can differ. See the recipe doc for the two owed instruments that would \
+                     (inverse polarity; a vertex lighter than L* 95).",
+            build: v4_rgb_mab_floored_b2a,
         },
         Recipe {
             name: "v2-ncl2-named",

@@ -1247,6 +1247,112 @@ pub fn analyse(
 /// experiment can discriminate; at or above 1 every §A row sits inside its own
 /// uncertainty and this section is void rather than merely worse — exactly
 /// Q1's wording, exactly Q1's number.
+/// ★★ **Is the destination black point observable in device space on this
+/// fixture at all?** Declared per arm, in this table, rather than inferred at
+/// run time.
+///
+/// ## The measurement that made this necessary
+///
+/// §B's whole method is: push a candidate black through `B2A1`, compare the
+/// device values against what `transicc` emits, and convert the residual back to
+/// `L*` through `d(device)/d(L*)` measured on the same table. **That conversion
+/// presupposes the derivative is non-zero**, and on the `floored` arm it is
+/// **structurally zero by construction**: that fixture's `B2A` floors `G` for
+/// every input, so every `Lab` with `L* ≤ 37,5` maps to the *same* device value
+/// and one `L*` of black-point error moves the device output by nothing. The
+/// first run measured `d(device)/d(L*) = 1,11×10⁻¹⁶` and the row reported an
+/// `L*` bound of `3,8×10¹⁰` — correctly. §B is **void** on that arm and the
+/// apparatus row is what said so.
+///
+/// ## Why a declared table and not a run-time test
+///
+/// Switching a row from graded to reported because a measured quantity came out
+/// small is the auto-widening this whole document family exists to prevent: a
+/// genuine sensitivity collapse on `swop` would silently disable the row that
+/// would have caught it. So the *decision* is authored here, reviewable in a
+/// diff, and the *measurement* is graded against it by
+/// `apparatus/black-is-device-observable-as-declared`. Neither can drift without
+/// a row moving.
+///
+/// The cutoff is [`OBSERVABLE_FLOOR`], and the margins are not close: `swop`
+/// measures `1,7×10⁻²`, `synthetic` `8,1×10⁻³`, `floored` `1,1×10⁻¹⁶`.
+pub const DEVICE_OBSERVABLE: &[(&str, bool)] = &[
+    // A real ink set: B2A1 is a genuine gamut mapping and moving the black's
+    // L* moves the CMYK it separates to.
+    ("swop", true),
+    // The affine RGB model with an EXACT inverse: dL*/dG is 80 and dG/dL* is
+    // 1/80 everywhere, so the black is as observable as anything in the file.
+    ("synthetic", true),
+    // ★ FALSE BY DESIGN. The floor is the fixture's whole purpose and it makes
+    // the black unobservable in device space below L* 37.5. That is not a
+    // defect of the fixture: the fixture is for §C, which measures the returned
+    // Lab directly and needs no device observability at all.
+    ("floored", false),
+];
+
+/// The cutoff for "observable", in normalised device units per `L*`.
+///
+/// **Derived from the shipped surface, not chosen.** `iccce transform` prints
+/// device values to six decimals, so one printed lsb is `10⁻⁶` — the same
+/// constant [`SHIPPED_MATCHES_LIBRARY`] rests on. A sensitivity below it means
+/// a whole `L*` of black-point error moves the printed output by less than one
+/// printed digit, which is the operational definition of unobservable at the
+/// only surface a user sees.
+pub const OBSERVABLE_FLOOR: f64 = 1e-6;
+
+/// Look up [`DEVICE_OBSERVABLE`]. An arm absent from the table is treated as
+/// observable, because that is the assumption §B was written under and a new arm
+/// should have to *declare* the exception rather than acquire it by omission.
+#[must_use]
+pub fn declared_observable(arm: &str) -> bool {
+    DEVICE_OBSERVABLE
+        .iter()
+        .find(|(a, _)| *a == arm)
+        .is_none_or(|(_, o)| *o)
+}
+
+/// **§B, the precondition.** Does the measured `d(device)/d(L*)` agree with
+/// [`DEVICE_OBSERVABLE`]'s declaration for this arm?
+///
+/// `0/1`, graded at exactly zero. This is the row that keeps the declaration
+/// honest in **both** directions: an arm declared observable whose sensitivity
+/// collapsed would fail here rather than quietly producing an enormous `L*`
+/// bound, and an arm declared unobservable that became observable would fail
+/// here rather than quietly keeping a reported row that could now be graded.
+pub const OBSERVABILITY_AS_DECLARED: Tolerance = Tolerance::new(
+    0.0,
+    "0 if the measured d(device)/d(L*) on this arm's B2A1 agrees with DEVICE_OBSERVABLE's declared \
+     value for the arm, 1 otherwise; the cutoff is 1e-6 normalised device per L*, which is the \
+     CLI's own printed lsb - one whole L* of black-point error moving the printed output by less \
+     than one printed digit. GRADED AT EXACTLY ZERO because the declaration is authored in a table \
+     and the measurement either agrees with it or does not; there is no intermediate state to \
+     tolerate. The margins are ten orders wide in one direction and four in the other (swop \
+     1.7e-2, synthetic 8.1e-3, floored 1.1e-16), so this is not a marginal test - it exists so \
+     that a fixture cannot acquire OR lose device observability without a row moving",
+);
+
+/// **§B on an arm where the black is not observable in device space.** Reported,
+/// with the reason, rather than graded.
+///
+/// This is **not** a widened [`APPARATUS_RATIO`]. The constant `1.0` is
+/// unchanged and still applies wherever the conversion it depends on exists; on
+/// the `floored` arm the conversion does not exist, because `d(device)/d(L*)` is
+/// zero by the fixture's construction. Grading a ratio whose denominator is a
+/// division by a structural zero would be arithmetic, not evidence — the same
+/// judgement the `ATTRIBUTION` row makes about incommensurable units and Pass 6
+/// row R5 made about populations.
+pub const APPARATUS_VOID_UNOBSERVABLE: Tolerance = Tolerance::new(
+    f64::INFINITY,
+    "REPORTED, NOT GRADED, and the reason is structural rather than convenient: this arm's fixture \
+     floors its B2A, so d(device)/d(L*) is ZERO BY CONSTRUCTION and section B's device residual \
+     carries no information about a black point's L* at all. The APPARATUS_RATIO constant 1.0 is \
+     NOT widened - it is unchanged and still applies on every arm where the conversion it needs \
+     exists. Which arms those are is declared in DEVICE_OBSERVABLE and graded by \
+     apparatus/black-is-device-observable-as-declared, so this row cannot become reported by \
+     accident. What section B is void FOR here is the L* bound; the device rows below still \
+     compare real device values and still discriminate, on this fixture through the CHROMA path",
+);
+
 pub const APPARATUS_RATIO: Tolerance = Tolerance::new(
     1.0,
     "DELIBERATELY THE SAME CONSTANT AS PASS 5b ROW Q1, and the same derivation: an error bar is \
@@ -1435,6 +1541,53 @@ pub const REPORTED: Tolerance = Tolerance::new(
     "REPORTED, NOT GRADED - recorded so the number is on file next to the ones that are graded",
 );
 
+/// ★★ **`estimators/black-points-in-lab` stays `REPORTED`, and the question is
+/// worth answering in full because the answer generalises.**
+///
+/// The engineer asked, on 2026-08-12: the row named for the whole Pass 5c
+/// finding is `UNGRADED` with tolerance `∞`, so the apparatus now says it has no
+/// power. Does the `4,717 441` separation supply the derivation basis for a real
+/// tolerance?
+///
+/// **No — and the reason is that a separation is a derivation basis for a
+/// FIXTURE, not for a tolerance.**
+///
+/// 1. **There is nothing for a tolerance on this row to mean.** The row observes
+///    the distance between two implementations' *destination black point*
+///    estimates. Since `fd34a44` both sides return a quantity their own document
+///    calls `InitialLab`, and the two documents mean different things by the
+///    name: ISO/CD 18619 4.2.2.2's darkest device vertex, and lcms2's perceptual
+///    round trip. **No clause requires them to agree**, and grading their
+///    difference would be grading iccce against lcms2's reading of a document
+///    iccce does not implement — exactly what `CLAUDE.md` rule 7 forbids and
+///    what `TOLERANCES.md` §1 means by a weak claim quoted as a strong one.
+/// 2. **A bound derived from the separation would be a number tuned to one
+///    known defect.** Any value below `4,717 441` would have failed the
+///    pre-`fd34a44` build and any value above it would not; nothing else
+///    constrains it. And it could not be one number: the three arms observe
+///    `4,799`, `5,000` and `10,000`, so it would have to be three constants,
+///    each fitted to its own fixture. That is the shape of a tolerance somebody
+///    moved until the suite went green, arrived at from the other end.
+/// 3. **The defect it would have caught is now caught by a row with a real
+///    derivation.** [`CLAUSE_4254`] grades the same regression at half a PCSLAB
+///    quantum against a constant in `recipes.rs`, with no free parameter, and
+///    the proof-of-power run showed it failing at `2,500 019×10¹` against
+///    `7,629×10⁻⁴` while everything else stayed green.
+///
+/// So the shape the engineer questioned — *the row named for the finding has no
+/// power; the power lives elsewhere* — **is right, and is now demonstrably
+/// right rather than merely tolerated.** What the separation did was tell us the
+/// power was in the wrong place. The correct response to that was to build an
+/// instrument with a derivable bound, not to attach a tuned bound to a row whose
+/// quantity no standard constrains.
+///
+/// **The generalisation, for the next time this question comes up:** a large
+/// separation on an `UNGRADED` row is a request for a *fixture and a graded row
+/// elsewhere*, not a licence to grade that row. Ask what clause the number would
+/// be graded against; if the answer is "none, but it would have caught the bug",
+/// the bound is fitted to the bug.
+const _WHY_THE_ESTIMATOR_ROW_IS_NOT_GRADED: () = ();
+
 // ===========================================================================
 // Records
 // ===========================================================================
@@ -1473,12 +1626,53 @@ pub fn records(a: &Analysis) -> Vec<Record> {
         a.sensitivity,
         a.dev_scale,
     );
+    let observable_declared = declared_observable(arm);
+    let observable_measured = a.sensitivity > OBSERVABLE_FLOOR;
     let mut out = vec![
+        Record::graded(
+            format!("pass5c/{arm}/apparatus/black-is-device-observable-as-declared"),
+            Kind::SelfConsistency,
+            Metric::AbsMaxComponent,
+            OBSERVABILITY_AS_DECLARED,
+            if observable_measured == observable_declared {
+                0.0
+            } else {
+                1.0
+            },
+            "the measured d(device)/d(L*) on this arm's B2A1 against DEVICE_OBSERVABLE's declared \
+             value. Section B converts a device residual into an L* bound by dividing by this \
+             derivative, which presupposes it is non-zero; the `floored` fixture makes it ZERO BY \
+             CONSTRUCTION and is declared so. The declaration is authored in a table rather than \
+             inferred at run time, because a row that switched itself from graded to reported \
+             whenever a measured quantity came out small would disable exactly the check that \
+             would have caught a real collapse",
+            format!(
+                "{ctx} | measured d(device)/d(L*) = {:.6e}, cutoff {:.0e} (the CLI's own printed \
+                 lsb) -> observable={observable_measured}; DEVICE_OBSERVABLE declares \
+                 {observable_declared}",
+                a.sensitivity, OBSERVABLE_FLOOR,
+            ),
+        )
+        // A 0/1 indicator: the two candidate observations are 0 and 1, one
+        // apart, whichever this build produces. See the sibling comment on the
+        // quadratic row and `Separation::against`'s doc comment.
+        .with_separation(Separation::against_distance(
+            "the opposite declaration for this arm in DEVICE_OBSERVABLE - i.e. an arm whose \
+             fixture makes the black unobservable being graded as though section B's L* bound \
+             meant something, or an observable arm's bound being silently reported",
+            1.0,
+            1.0,
+            SepUnits::SameAsMetric,
+        )),
         Record::graded(
             format!("pass5c/{arm}/apparatus/error-bar-is-smaller-than-the-effect"),
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            APPARATUS_RATIO,
+            if observable_declared {
+                APPARATUS_RATIO
+            } else {
+                APPARATUS_VOID_UNOBSERVABLE
+            },
             if a.estimator_divergence_de76() > 0.0 {
                 a.l_star_bound() / a.estimator_divergence_de76()
             } else {
@@ -1584,16 +1778,18 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.divergence_lightness(),
             ),
         )
-        .with_separation(Separation::against(
+        // `against_distance` with a stated 1.0, not `against`: this is a 0/1
+        // INDICATOR, so the two candidate observations are 0 and 1 and their
+        // distance is 1 whichever one this build produces. Deriving it as
+        // |observed − alt| would print ZERO-SEPARATION on exactly the run where
+        // the indicator fired — see `Separation::against`'s doc comment for the
+        // measured instance of that.
+        .with_separation(Separation::against_distance(
             "the quadratic-fit path: Pass 5b section 17.3 asserted this configuration was \
              'precisely lcms2's method-4 (quadratic-fit) territory', which is indicator 1 - a \
              build in which either side stopped short-circuiting would land there",
             1.0,
-            if a.lcms2.nearly_straight && a.lcms2.n_shadow == 0 {
-                0.0
-            } else {
-                1.0
-            },
+            1.0,
             SepUnits::SameAsMetric,
         )),
         Record::graded(
@@ -1622,7 +1818,17 @@ pub fn records(a: &Analysis) -> Vec<Record> {
              now return a quantity their own document calls InitialLab; the entire remaining \
              divergence is that ISO/CD 18619 4.2.2.2 and lcms2's cmsDetectBlackPoint mean \
              different things by that name. This is a cross-check, NOT ground truth: no \
-             published value exists for either black point",
+             published value exists for either black point. \
+             WHERE THIS QUESTION'S POWER ACTUALLY LIVES, since this row is REPORTED and its \
+             separation therefore reads UNGRADED: row \
+             CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first on the `floored` arm, which \
+             grades the same regression against an AUTHORED constant at half a PCSLAB quantum and \
+             was shown to fail under an injected reversion while everything else stayed green. \
+             This row stays REPORTED deliberately - no clause requires two implementations of two \
+             different documents to agree, so any bound here would be one fitted to the single \
+             defect it was meant to catch, and would have to be three different constants for the \
+             three arms. See _WHY_THE_ESTIMATOR_ROW_IS_NOT_GRADED in this file for the argument in \
+             full",
             format!(
                 "{ctx} | ISO L*={:.6} vs lcms2 L*={:.6}: dL*={:.6}, chroma term {:.3e}, total \
                  {:.6} dE76. Pass 5b row Q2 reported 0.858170 for this quantity - 10.5x larger - \
@@ -1841,10 +2047,20 @@ pub fn records(a: &Analysis) -> Vec<Record> {
 fn specs(arm: &str) -> Vec<(String, Kind, Metric, Tolerance)> {
     vec![
         (
+            format!("pass5c/{arm}/apparatus/black-is-device-observable-as-declared"),
+            Kind::SelfConsistency,
+            Metric::AbsMaxComponent,
+            OBSERVABILITY_AS_DECLARED,
+        ),
+        (
             format!("pass5c/{arm}/apparatus/error-bar-is-smaller-than-the-effect"),
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            APPARATUS_RATIO,
+            if declared_observable(arm) {
+                APPARATUS_RATIO
+            } else {
+                APPARATUS_VOID_UNOBSERVABLE
+            },
         ),
         (
             format!("pass5c/{arm}/FINDING/divergence-chroma-follows-lcms2-BRANCH"),
@@ -1931,9 +2147,29 @@ pub fn unavailable_records(arm: &str, u: &Unavailable) -> Vec<Record> {
 /// colour space — which is a fact about lcms2's dispatch and not about black
 /// points at all.
 ///
-/// The synthetic arm **skips** rather than errors when the fixture is absent,
-/// like every other row in this suite that needs a file; it is committed, so
+/// ## The third arm, added 2026-08-12, and why it is a third fixture rather
+/// than an edit to the second
+///
+/// | arm | destination | what only it can see |
+/// |---|---|---|
+/// | `swop` | `USWebCoatedSWOP.icc`, v2 CMYK `prtr` — **category (c)** | the `BlackPointUsingPerceptualBlack` branch on a real ink set |
+/// | `synthetic` | `v4-rgb-mab-chromatic-black.icc` | the `BlackPointAsDarkerColorant` branch, i.e. lcms2 **retaining** a black's chroma |
+/// | `floored` | `v4-rgb-mab-floored-b2a.icc` | **4.2.5.4's two candidate return values, as two different numbers** |
+///
+/// The second and third differ in exactly one structural property — the third's
+/// `B2A` floors `G` for every input, so the round trip cannot reach the darkest
+/// vertex — plus a deliberate change of every shared constant so that a figure
+/// quoted without its arm is obviously wrong rather than plausibly right.
+/// Regenerating the second instead would have moved `NUMERIC_CLAIMS.md` NC-166's
+/// companion figure and several statements that are true of *those* bytes.
+///
+/// The synthetic arms **skip** rather than error when a fixture is absent, like
+/// every other row in this suite that needs a file; they are committed, so
 /// absence means a checkout without `fixtures/`.
+///
+/// ★ §C's rows are emitted **outside** `analyse` — see [`clause_records`] —
+/// because they need no oracle, no system profile and no shipped binary, and a
+/// derived expectation must not be hostage to any of the three.
 #[must_use]
 pub fn run(oracle: &crate::Oracle) -> (Option<Analysis>, Vec<Record>) {
     let mut records_out = Vec::new();
@@ -1941,6 +2177,7 @@ pub fn run(oracle: &crate::Oracle) -> (Option<Analysis>, Vec<Record>) {
     for (arm, path) in [
         ("swop", PathBuf::from(SWOP)),
         ("synthetic", synthetic_fixture()),
+        ("floored", floored_fixture()),
     ] {
         match analyse(oracle, arm, &path) {
             Ok(a) => {
@@ -1950,6 +2187,17 @@ pub fn run(oracle: &crate::Oracle) -> (Option<Analysis>, Vec<Record>) {
                 }
             }
             Err(u) => records_out.extend(unavailable_records(arm, &u)),
+        }
+        // §C, unconditionally, for every arm whose fixture this project
+        // authored. `swop` has no authored constant and therefore no derived
+        // expectation available; that is stated by its absence from `AUTHORED`
+        // rather than by a weaker row wearing the same name.
+        if let Some((_, authored)) = AUTHORED.iter().find(|(a, _)| *a == arm) {
+            let fixture_path = match arm {
+                "synthetic" => synthetic_fixture(),
+                _ => floored_fixture(),
+            };
+            records_out.extend(clause_records(arm, &fixture_path, *authored));
         }
     }
     (first, records_out)
@@ -1965,4 +2213,584 @@ pub fn run(oracle: &crate::Oracle) -> (Option<Analysis>, Vec<Record>) {
 pub fn synthetic_fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/synthetic/v4-rgb-mab-chromatic-black.icc")
+}
+
+/// `fixtures/synthetic/v4-rgb-mab-floored-b2a.icc` — the third arm's fixture,
+/// same category (a), added 2026-08-12. See [`AUTHORED`] for what it is for.
+#[must_use]
+pub fn floored_fixture() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/synthetic/v4-rgb-mab-floored-b2a.icc")
+}
+
+// ===========================================================================
+// §C — ISO/CD 18619 4.2.5.4 graded against an AUTHORED constant, with no
+//      oracle, no system profile and no network in the loop
+// ===========================================================================
+
+/// What a **synthetic** fixture's generator authored into its bytes, transcribed
+/// here so that an expectation exists which did not come from any
+/// implementation.
+///
+/// ## Why this struct is literals and why that is safe
+///
+/// `TOLERANCES.md` §3.5.8.6 records four claim-bearing literals in this crate
+/// that went false inside a day, and the rule that came out of it — *interpolate,
+/// never type*. These numbers are the exception, and the exception has a
+/// mechanism behind it rather than a preference:
+///
+/// * they are not **measurements**, they are the fixture's *design*, fixed in
+///   `tools/gen-profiles/src/recipes.rs` as named constants;
+/// * `gen-profiles verify` proves the committed bytes are the ones that
+///   generator produces, byte for byte, so the only way for these to drift is
+///   for somebody to change the recipe **and** regenerate — at which point this
+///   row fails loudly, which is the behaviour wanted;
+/// * a value computed from the fixture would be an expectation derived from the
+///   thing under test, which is precisely what `CLAUDE.md` rule 3 forbids.
+///
+/// So the direction of the coupling matters: a *measured* number typed into
+/// prose rots silently; a *design* number typed into an assertion fails loudly.
+#[derive(Debug, Clone, Copy)]
+pub struct Authored {
+    /// The recipe that produced the bytes, for the failure message.
+    pub recipe: &'static str,
+    /// `A2B1` at the darkest device vertex, as the generator wrote it —
+    /// **before** ISO/CD 18619 4.2.3 neutralises it.
+    pub black: Lab,
+    /// The `L*` floor the round trip `A2B1(B2A1(·))` cannot go below, as
+    /// authored: `outRamp[first]`, the rival return value of 4.2.5.4.
+    pub roundtrip_floor_l: f64,
+}
+
+impl Authored {
+    /// ISO/CD 18619 **4.2.3**: the initial black point is *always* neutral,
+    /// `L*` clipped at 50. Applied here to the authored device black, so the
+    /// expectation is `clause(authored bytes)` with no implementation in it.
+    #[must_use]
+    pub fn initial_lab(&self) -> Lab {
+        Lab {
+            l: if self.black.l > 50.0 {
+                50.0
+            } else {
+                self.black.l
+            },
+            a: 0.0,
+            b: 0.0,
+        }
+    }
+    /// The separation the fixture was **designed** to have between 4.2.5.4's two
+    /// candidate return values, in `L*`.
+    #[must_use]
+    pub fn designed_separation_l(&self) -> f64 {
+        (self.roundtrip_floor_l - self.initial_lab().l).abs()
+    }
+}
+
+/// The two synthetic arms' authored constants, transcribed from
+/// `tools/gen-profiles/src/recipes.rs`.
+///
+/// ★ **The pair is the point.** The same two rows run on both fixtures and
+/// reach opposite verdicts about their own power: the sibling's candidates are
+/// the same number (`ZERO-SEPARATION`, and it would stay green through a full
+/// reversion of `fd34a44`), the floored one's are `25 L*` apart. A reader who
+/// sees only the second learns nothing about what a fixture has to do to be an
+/// instrument; a reader who sees both learns it from one screen.
+pub const AUTHORED: &[(&str, Authored)] = &[
+    (
+        "synthetic",
+        Authored {
+            recipe: "v4-rgb-mab-chromatic-black",
+            // SYNTH_BLACK_L / _A / _B in recipes.rs.
+            black: Lab {
+                l: 20.0,
+                a: 4.0,
+                b: -3.0,
+            },
+            // ★ EQUAL to the neutralised black's L*, and that is the finding
+            // GP-002 records: the model is affine, the B2A is its exact
+            // inverse, and the black IS the darkest vertex, so the round trip's
+            // floor cannot be anywhere else.
+            roundtrip_floor_l: 20.0,
+        },
+    ),
+    (
+        "floored",
+        Authored {
+            recipe: "v4-rgb-mab-floored-b2a",
+            // FLOORED_BLACK_L / _A / _B in recipes.rs.
+            black: Lab {
+                l: 12.5,
+                a: 6.0,
+                b: -8.0,
+            },
+            // FLOORED_ROUNDTRIP_L — 25.0 above the black, by construction.
+            roundtrip_floor_l: 37.5,
+        },
+    ),
+];
+
+/// The general 16-bit PCSLAB `L*` quantum of ICC.1:2022 **6.3.4.2**:
+/// `L* = 100 × value / 65 535`, so one code is `1,525 9×10⁻³` `L*`.
+const PCSLAB_L_QUANTUM: f64 = 100.0 / 65535.0;
+
+/// **§C, the clause.** `estimate_lut_destination_black` on a fixture whose
+/// darkest vertex the generator authored, against that authored constant
+/// neutralised by ISO/CD 18619 4.2.3.
+///
+/// ## What makes this a [`Kind::DerivedExpectation`] and not a cross-check
+///
+/// The expected value is `4.2.3(the number in recipes.rs)`. No implementation
+/// produced it, lcms2 is not consulted, and neither is any system profile — the
+/// row runs on a bare checkout with a fixture and nothing else. That is the
+/// property the row exists for; see [`clause_records`].
+///
+/// ## The tolerance, derived
+///
+/// `A2B1` at device `(0,0,0)` is a **CLUT corner**: the `A` curves are the
+/// identity, the lookup lands on node `(0,0,0)`, and no interpolation happens.
+/// So the only departure from the authored constant is the generator's own
+/// round-to-nearest when it encoded that constant into 6.3.4.2's general 16-bit
+/// PCSLAB form — **half a quantum, `0,5 × 100/65 535 = 7,629×10⁻⁴`, and nothing
+/// else.** There is no free parameter: no interpolation term because there is no
+/// interpolation, no oracle term because there is no oracle, and the chroma
+/// terms are exactly zero because 4.2.3 assigns `0` literally on one side and
+/// the generator wrote `0` on the other.
+///
+/// It cannot absorb the rival return value; **how far it is from being able to
+/// is this row's emitted candidate separation**, not a number in this sentence
+/// (§3.5.8.6).
+pub const CLAUSE_4254: Tolerance = Tolerance::new(
+    0.5 * PCSLAB_L_QUANTUM,
+    "HALF ONE PCSLAB L* QUANTUM, and nothing else. The expectation is the fixture's AUTHORED device \
+     black (a named constant in tools/gen-profiles/src/recipes.rs) put through ISO/CD 18619 4.2.3, \
+     so no implementation's output is in it. A2B1 at device (0,0,0) is a CLUT CORNER read through \
+     identity curves - no interpolation happens - so the only departure available is the \
+     generator's round-to-nearest into the general 16-bit PCSLAB encoding of ICC.1:2022 6.3.4.2, \
+     whose quantum is 100/65535 = 1.5259e-3 L*. Half of that is 7.6294e-4. The chroma terms are \
+     EXACTLY zero on both sides: 4.2.3 assigns neutral literally and the estimator carries \
+     InitialLab through without arithmetic. There is no free parameter in this number and no room \
+     to widen it without saying which of the three sentences above is false",
+);
+
+/// **§C, the fixture's own power.** The separation this fixture actually has
+/// between 4.2.5.4's two candidate return values, against the separation its
+/// recipe was **designed** to give it.
+///
+/// ## Why a fixture needs a graded row of its own
+///
+/// GP-002 is the whole reason: `v4-rgb-mab-chromatic-black`'s two candidates
+/// collapsed to one number, not by an authoring mistake but as a *consequence*
+/// of three properties each chosen for a good reason. A future edit to
+/// `v4-rgb-mab-floored-b2a` — removing the floor as "an odd special case",
+/// making the `B2A` a clean inverse again, moving a constant to match the
+/// sibling — would re-collapse it in exactly the same way, and every row above
+/// would stay green while the suite silently stopped being able to see the
+/// defect it was built for. **The separation mechanism can report that a row is
+/// blind; only a graded row can stop it becoming blind.**
+///
+/// ## The tolerance, derived
+///
+/// Three named half-quanta, one for each encoding the number passes through:
+///
+/// 1. `InitialLab`'s own encode into general PCSLAB `L*` — `0,5 × 100/65 535`;
+/// 2. the round-trip floor's, which is read out of the same encoding (from two
+///    interpolated `A2B` nodes, each within half a quantum, so their convex
+///    combination is too) — `0,5 × 100/65 535`;
+/// 3. the `B2A`'s stored `G` floor, a `u16` device code whose half-quantum is
+///    `0,5/65 535` in `G`; converting to `L*` needs the model's `dL*/dG`, and
+///    the bound uses **100** — the whole lightness range — rather than the
+///    fixture's own `87,5`, because a fixture-specific slope in a tolerance is
+///    a thing that goes stale when a constant moves.
+///
+/// Sum: `1,5 × 100/65 535 = 2,289×10⁻³`. Conservative in the only direction
+/// that matters — the direction that can only make the row harder to pass.
+pub const FIXTURE_SEPARATION_AS_DESIGNED: Tolerance = Tolerance::new(
+    1.5 * PCSLAB_L_QUANTUM,
+    "the separation the fixture HAS between 4.2.5.4's two candidate return values, against the \
+     separation its recipe was DESIGNED to give it. THREE named half-quanta, one per encoding the \
+     number passes through: InitialLab's own encode into general PCSLAB L* (0.5 x 100/65535), the \
+     round-trip floor's read back out of two interpolated A2B nodes each within half a quantum \
+     (0.5 x 100/65535), and the B2A's stored u16 G floor converted to L* through the model's \
+     dL*/dG - bounded by 100, the WHOLE lightness range, rather than this fixture's own 87.5, \
+     because a fixture-specific slope inside a tolerance goes stale when a constant moves. Sum \
+     1.5 x 100/65535 = 2.2888e-3. THIS ROW EXISTS BECAUSE THE SEPARATION MECHANISM CAN REPORT THAT \
+     A ROW IS BLIND BUT CANNOT STOP IT BECOMING BLIND: GP-002 collapsed the sibling fixture's two \
+     candidates as a CONSEQUENCE of three separately reasonable properties, and the same edit here \
+     - dropping the floor, restoring a clean inverse, matching the sibling's constants - would \
+     silently remove this arm's whole power while every other row stayed green",
+);
+
+/// ISO/CD 18619 4.2.5.2.2 + 4.2.5.2.3, reimplemented here for one purpose:
+/// to state `outRamp[first]` — **the rival return value** — independently of
+/// the code being graded.
+///
+/// It is a deliberate duplication of twelve lines of `iccce_cmm::bpc`. Calling
+/// that crate for the rival would mean a build in which the estimator is broken
+/// reports its own broken rival, and the separation would move in lockstep with
+/// the observation it is supposed to bound. A harness must be able to say how
+/// far away the wrong answer is **while the library is giving the wrong
+/// answer**; that is the entire use of the number.
+#[must_use]
+pub fn iso_out_ramp_first(initial_lab: Lab, bt: impl Fn(Lab) -> Lab) -> f64 {
+    const N: usize = 256;
+    let ka = initial_lab.a.clamp(-50.0, 50.0);
+    let kb = initial_lab.b.clamp(-50.0, 50.0);
+    let mut out = [0.0f64; N];
+    for (i, slot) in out.iter_mut().enumerate() {
+        #[allow(clippy::cast_precision_loss)]
+        let t = i as f64 / (N - 1) as f64;
+        *slot = bt(Lab {
+            l: t * 100.0,
+            a: ka * (1.0 - t),
+            b: kb * (1.0 - t),
+        })
+        .l;
+    }
+    // 4.2.5.2.3's downward monotonic pass, index 0 INCLUDED (lcms2's own loop
+    // stops at 1; that difference is measured by §A's `min_l_lcms2`).
+    for i in (0..N - 1).rev() {
+        out[i] = out[i].min(out[i + 1]);
+    }
+    out[0]
+}
+
+/// §C's two records, for one synthetic arm.
+///
+/// ## ★★ Why this does not go through [`analyse`]
+///
+/// `analyse` needs three things this does not: the **system sRGB profile**
+/// (`LEGAL.md` §3 category (c) — absent on any machine without the Windows
+/// colour directory), the **`transicc` oracle** (a vendored build, not
+/// committed), and the **shipped `iccce` binary** (a release build). Any one of
+/// them missing skips the whole arm, which is correct for a cross-check and
+/// wrong for this.
+///
+/// These two rows are `DerivedExpectation`: their expectation is a constant in
+/// `recipes.rs` and a clause in ISO/CD 18619, and **a ground-truth row must not
+/// be hostage to an oracle**. So they take a separate path that needs the
+/// committed fixture and nothing else, and they are the rows that make a
+/// 4.2.5.4 regression visible on a bare checkout.
+///
+/// The measured position that made this necessary, recorded here because it is
+/// the reason the function exists: as of `e26d9ba`, **a full reversion of
+/// `fd34a44` turned no row of this suite red on any machine.** `pass5c/swop/*`
+/// moved its reported numbers and stayed green; `pass5c/synthetic/*` did not
+/// move at all. (The clause was not undefended — `iccce_cmm::bpc`'s own unit
+/// tests fail on that reversion — but nothing exercised it through a parsed
+/// profile, which is where a wiring defect between `Chain` and the estimator
+/// would live.)
+#[must_use]
+pub fn clause_records(arm: &'static str, path: &Path, authored: Authored) -> Vec<Record> {
+    let source = format!(
+        "ISO/CD 18619 4.2.3 + 4.2.5.4 applied to the AUTHORED constants of \
+         tools/gen-profiles/src/recipes.rs recipe `{}`. No lcms2, no system profile, no oracle",
+        authored.recipe
+    );
+    let f = match Fixture::open(path) {
+        Ok(f) => f,
+        Err(e) => {
+            let reason = format!("{}: {e}", path.display());
+            return clause_specs(arm)
+                .into_iter()
+                .map(|(id, kind, metric, tol)| {
+                    Record::skipped(id, kind, metric, tol, source.clone(), reason.clone())
+                })
+                .collect();
+        }
+    };
+
+    // The full ISO chain, as the library implements it: 4.2.2.2's vertex
+    // search, 4.2.3's neutralise-and-clip, 4.2.5's estimate.
+    let darkest = darkest_vertex(f.channels, |d| f.a2b1_lab(d));
+    let darkest_lab = f.a2b1_lab(&darkest);
+    let initial = neutralise_and_clip(darkest_lab.l);
+    let returned = estimate_lut_destination_black(
+        initial,
+        EstimationIntent::RelativeColorimetric,
+        |lab| f.bt_rel(lab),
+    );
+    // The rival, computed by this file rather than by the crate under test.
+    let ramp_first = iso_out_ramp_first(initial, |lab| f.bt_rel(lab));
+
+    let expected = authored.initial_lab();
+    let observed = (returned.l - expected.l)
+        .abs()
+        .max((returned.a - expected.a).abs())
+        .max((returned.b - expected.b).abs());
+    // What this row would have observed had 4.2.5.4 returned outRamp[first] —
+    // the value `bpc.rs` returned until commit fd34a44. Neutral, because 4.2.3
+    // neutralises and the ramp carries no chroma of its own on either fixture.
+    let alt_observed = (ramp_first - expected.l)
+        .abs()
+        .max(expected.a.abs())
+        .max(expected.b.abs());
+
+    let ctx = format!(
+        "arm={arm} | fixture {} ({}) | AUTHORED device black Lab({:.4} {:.4} {:.4}) -> 4.2.3 \
+         InitialLab Lab({:.6} {:.6} {:.6}) | MEASURED darkest vertex {darkest:?} -> Lab({:.6} \
+         {:.6} {:.6}) -> InitialLab Lab({:.6} {:.6} {:.6}) | 4.2.5 RETURNED Lab({:.6} {:.6} \
+         {:.6}) | outRamp[first] (the rival, computed IN THIS FILE) L*={:.6} | authored floor \
+         L*={:.4}",
+        f.describe,
+        authored.recipe,
+        authored.black.l,
+        authored.black.a,
+        authored.black.b,
+        expected.l,
+        expected.a,
+        expected.b,
+        darkest_lab.l,
+        darkest_lab.a,
+        darkest_lab.b,
+        initial.l,
+        initial.a,
+        initial.b,
+        returned.l,
+        returned.a,
+        returned.b,
+        ramp_first,
+        authored.roundtrip_floor_l,
+    );
+
+    vec![
+        Record::graded(
+            format!("pass5c/{arm}/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first"),
+            Kind::DerivedExpectation,
+            Metric::AbsMaxComponent,
+            CLAUSE_4254,
+            observed,
+            "ISO/CD 18619 4.2.5.4 final paragraph, VERBATIM: 'If the mid range is nearly straight \
+             then the DestinationBlackPoint shall be the same as InitialLab.' Graded against the \
+             fixture's AUTHORED device black neutralised by 4.2.3 - a constant in recipes.rs and a \
+             clause, with no implementation's output in the expectation and no oracle, no system \
+             profile and no network in the loop. It runs on a bare checkout. iccce returned \
+             outRamp[first] here until commit fd34a44 and NO ROW OF THIS SUITE WENT RED; this is \
+             the row that would have",
+            format!(
+                "{ctx} | expected Lab({:.6} {:.6} {:.6}), returned Lab({:.6} {:.6} {:.6}), max \
+                 component {:.6e} against a bound of {:.6e}",
+                expected.l,
+                expected.a,
+                expected.b,
+                returned.l,
+                returned.a,
+                returned.b,
+                observed,
+                CLAUSE_4254.value,
+            ),
+        )
+        // ★★ `against_distance`, NOT `against`, and the reason was measured
+        // rather than foreseen.
+        //
+        // `Separation::against` derives the distance as |observed −
+        // alt_observed|. On this row the alternative is *the code returning the
+        // other candidate*, so when the defect is actually present `observed`
+        // BECOMES `alt_observed` and that derived distance is exactly zero. The
+        // proof-of-power run on 2026-08-12 showed it: with the pre-fd34a44
+        // behaviour injected, this row failed at 2.500019e1 — correctly — and
+        // reported `ZERO-SEPARATION`, i.e. the mechanism disclaimed its own
+        // power on the one run where it had just demonstrated it.
+        //
+        // The distance that means something here is a property of the FIXTURE,
+        // not of the run: how far apart the two candidate black points are.
+        // That is `|InitialLab − outRamp[first]|`, and it is 25 L* whichever one
+        // the library returns.
+        .with_separation(Separation::against_distance(
+            "outRamp[first] - the floor of the monotonised round-trip ramp, which is what \
+             bpc.rs's 4.2.5.4 short-circuit returned until commit fd34a44 and which has no \
+             textual support in any branch of ISO/CD 18619 4.2.5. Computed by \
+             pass5c::iso_out_ramp_first, NOT by the crate under test, so this number stays \
+             right while the library is wrong",
+            alt_observed,
+            (ramp_first - expected.l).abs(),
+            SepUnits::SameAsMetric,
+        )),
+        Record::graded(
+            format!("pass5c/{arm}/FIXTURE/candidates-are-separated-as-designed"),
+            Kind::DerivedExpectation,
+            Metric::AbsMaxComponent,
+            FIXTURE_SEPARATION_AS_DESIGNED,
+            ((ramp_first - initial.l).abs() - authored.designed_separation_l()).abs(),
+            "the fixture's OWN power, graded. How far apart 4.2.5.4's two candidate return values \
+             actually are in these bytes, against how far apart the recipe was written to put \
+             them. On `synthetic` the designed separation is ZERO and this row records that the \
+             collapse is by construction (GP-002) rather than by accident; on `floored` it is \
+             25.0 L* and this row is what stops a later 'simplification' of the recipe from \
+             silently returning the arm to zero power while every other row stays green",
+            format!(
+                "{ctx} | measured separation {:.6} L*, designed {:.4} L*, difference {:.6e} \
+                 against a bound of {:.6e}",
+                (ramp_first - initial.l).abs(),
+                authored.designed_separation_l(),
+                ((ramp_first - initial.l).abs() - authored.designed_separation_l()).abs(),
+                FIXTURE_SEPARATION_AS_DESIGNED.value,
+            ),
+        )
+        .with_separation(Separation::none(
+            "both sides are the fixture's own bytes measured against the recipe that wrote them. \
+             There is no rival READING of a separation - the alternative to 'the fixture has the \
+             power it was designed to have' is not another value this row could have observed, it \
+             is the row FAILING, which is what it is for. The rival candidate that matters is \
+             named on the CLAUSE row above, where it belongs",
+        )),
+    ]
+}
+
+fn clause_specs(arm: &str) -> Vec<(String, Kind, Metric, Tolerance)> {
+    vec![
+        (
+            format!("pass5c/{arm}/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first"),
+            Kind::DerivedExpectation,
+            Metric::AbsMaxComponent,
+            CLAUSE_4254,
+        ),
+        (
+            format!("pass5c/{arm}/FIXTURE/candidates-are-separated-as-designed"),
+            Kind::DerivedExpectation,
+            Metric::AbsMaxComponent,
+            FIXTURE_SEPARATION_AS_DESIGNED,
+        ),
+    ]
+}
+
+// ===========================================================================
+// Tests
+// ===========================================================================
+//
+// ★ These exist because of what commit `2835d23` established — the tests in
+// `tools/` now gate CI — and because of what §C is FOR. The `CLAUSE` row runs
+// in the difftest runner; these run in `cargo test`, on the same committed
+// fixture, with no oracle and no system profile. Between them a 4.2.5.4
+// regression has to get past two independent surfaces.
+//
+// They assert on OUTCOMES computed from the committed bytes, never on the shape
+// of the code that computes them.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// ★★ The fixture's whole purpose, asserted directly: on
+    /// `v4-rgb-mab-floored-b2a`, ISO/CD 18619 4.2.5.4's two candidate return
+    /// values must be **far apart**.
+    ///
+    /// If this ever fails, the fixture has been "simplified" and every row
+    /// measured with it has silently lost its power — which is exactly how
+    /// FINDING GP-002 happened to the sibling fixture, as a consequence of
+    /// three separately reasonable properties rather than as a mistake.
+    ///
+    /// The margin asserted is `20 L*` against an authored `25 L*`: loose enough
+    /// that encoding and interpolation cannot reach it, tight enough that no
+    /// plausible collapse survives it. It is deliberately **not** the graded
+    /// row's `2,289×10⁻³` — that row grades the separation against its design
+    /// and belongs in the runner; this one asserts the property a maintainer
+    /// could destroy, and a test that duplicated the tolerance would just be
+    /// the same row twice.
+    #[test]
+    fn the_floored_fixture_separates_4254s_two_candidates() {
+        let path = floored_fixture();
+        assert!(
+            path.is_file(),
+            "the committed fixture is missing: {}",
+            path.display()
+        );
+        let f = Fixture::open(&path).expect("the committed fixture parses");
+        let darkest = darkest_vertex(f.channels, |d| f.a2b1_lab(d));
+        let initial = neutralise_and_clip(f.a2b1_lab(&darkest).l);
+        let ramp_first = iso_out_ramp_first(initial, |lab| f.bt_rel(lab));
+        assert!(
+            (ramp_first - initial.l).abs() > 20.0,
+            "v4-rgb-mab-floored-b2a exists SO THAT InitialLab and outRamp[first] are different \
+             numbers; they are now L*={} and L*={}, {} apart. If the B2A's G floor has been \
+             removed or the constants moved, pass5c's CLAUSE row has lost its power and no other \
+             row will say so",
+            initial.l,
+            ramp_first,
+            (ramp_first - initial.l).abs()
+        );
+    }
+
+    /// ISO/CD 18619 **4.2.5.4** through a parsed profile: *"the
+    /// DestinationBlackPoint shall be the same as InitialLab"*.
+    ///
+    /// `iccce_cmm::bpc`'s own unit tests already assert this on a synthetic
+    /// closure and they are what caught the injected reversion on 2026-08-12.
+    /// What they cannot reach is the clause exercised through the **parse → LUT
+    /// model → estimator** path, which is where a wiring defect lives — and on
+    /// a fixture where returning the wrong candidate is a **25 `L*`** error
+    /// rather than a no-op.
+    ///
+    /// The expectation is the AUTHORED constant from `recipes.rs`, not a value
+    /// read back from the fixture, so nothing in the chain under test supplies
+    /// its own expectation. Bound: half one general-PCSLAB `L*` quantum, the
+    /// same derivation as [`CLAUSE_4254`], because `A2B1(0,0,0)` is a CLUT
+    /// corner and no interpolation happens.
+    #[test]
+    fn clause_4254_returns_initial_lab_through_a_parsed_profile() {
+        for (arm, authored) in AUTHORED {
+            let path = match *arm {
+                "synthetic" => synthetic_fixture(),
+                _ => floored_fixture(),
+            };
+            if !path.is_file() {
+                eprintln!("SKIP {arm}: {} absent", path.display());
+                continue;
+            }
+            let f = Fixture::open(&path).expect("committed fixture parses");
+            let darkest = darkest_vertex(f.channels, |d| f.a2b1_lab(d));
+            let initial = neutralise_and_clip(f.a2b1_lab(&darkest).l);
+            let got = estimate_lut_destination_black(
+                initial,
+                EstimationIntent::RelativeColorimetric,
+                |lab| f.bt_rel(lab),
+            );
+            let want = authored.initial_lab();
+            let err = (got.l - want.l)
+                .abs()
+                .max((got.a - want.a).abs())
+                .max((got.b - want.b).abs());
+            assert!(
+                err <= CLAUSE_4254.value,
+                "arm {arm} ({}): 4.2.5.4 must return InitialLab. Expected the AUTHORED black \
+                 neutralised by 4.2.3, Lab({} {} {}); got Lab({} {} {}); max component {err:e} \
+                 against a bound of {:e}. The rival return value outRamp[first] would land at \
+                 L*={}",
+                authored.recipe,
+                want.l,
+                want.a,
+                want.b,
+                got.l,
+                got.a,
+                got.b,
+                CLAUSE_4254.value,
+                iso_out_ramp_first(initial, |lab| f.bt_rel(lab)),
+            );
+        }
+    }
+
+    /// Every arm named in [`DEVICE_OBSERVABLE`] must correspond to an arm the
+    /// runner actually drives, and vice versa.
+    ///
+    /// A declaration table whose keys have drifted from the arm names is worse
+    /// than no table: [`declared_observable`] treats an unknown arm as
+    /// observable — the safe default for a *new* arm — so a renamed arm would
+    /// silently reacquire a graded row whose conversion does not exist, and
+    /// nothing downstream would say so.
+    #[test]
+    fn the_observability_table_covers_exactly_the_arms_that_exist() {
+        let arms = ["swop", "synthetic", "floored"];
+        for (a, _) in DEVICE_OBSERVABLE {
+            assert!(
+                arms.contains(a),
+                "DEVICE_OBSERVABLE names an arm `{a}` that run() does not drive"
+            );
+        }
+        for a in arms {
+            assert!(
+                DEVICE_OBSERVABLE.iter().any(|(k, _)| *k == a),
+                "run() drives arm `{a}` with no line in DEVICE_OBSERVABLE; it would default to \
+                 observable, which is right for a new arm and wrong for a renamed one"
+            );
+        }
+    }
 }

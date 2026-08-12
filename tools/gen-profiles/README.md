@@ -165,6 +165,7 @@ completely differently:
 |---|---|---|---|---|
 | `swop` | `USWebCoatedSWOP.icc` (vendor, category (c)) | `L* 11,772 365` | `L* 16,489 806` | **4,717 441 `L*`** — the whole finding |
 | `synthetic` | `v4-rgb-mab-chromatic-black.icc` (**this corpus**) | `L* 20` | **`L* 20`** | **exactly zero** |
+| `floored` | `v4-rgb-mab-floored-b2a.icc` (**added below, 2026-08-12**) | `L* 12,5` | `L* 37,5` | **25,0 `L*`** — authored to be |
 
 **The authored fixture could not see the defect, could not see the fix, and
 would not see a regression.** Its reported figure (`5,000 000 ΔE76`) is
@@ -217,13 +218,6 @@ exercise lcms2's `BlackPointAsDarkerColorant` branch at all**, and its zero
 power is confined to one quantity. It must not be deleted as "the arm that
 proves nothing".
 
-★ **The load-bearing detector for a 4.2.5.4 regression is the VENDOR profile,
-and it is category (c) — never committed, absent on any machine without the
-Windows colour directory.** On such a machine `pass5c/swop/*` **skips**, and
-every remaining Pass 5c row would stay green through a full reversion of commit
-`fd34a44`. Anyone pruning fixtures, or reading a green CI run on a Linux runner,
-must know that.
-
 #### How this is now visible without reading this document
 
 `tools/difftest` emits a **candidate separation** on every record
@@ -233,6 +227,76 @@ rival reading, and the distance to it. The synthetic arm's row prints
 `separation` line names the id. The hole is now a number in the report rather
 than a paragraph in a README — which is the only form in which it will be
 noticed by whoever is not reading this.
+
+#### ★★ 2026-08-12, later the same day — the hole is CLOSED, and closing it revised two claims made above
+
+**`v4-rgb-mab-floored-b2a.icc` is the instrument.** It is the construction §4.1
+prescribed and declined to apply to the existing fixture — a `B2A` with a floor
+on `G` for **every** input, which lifts the round-trip floor to `L* 37,5` while
+leaving `A2B(0,0,0)` at `L* 12,5` — so the two quantities 4.2.5.4 distinguishes
+sit **25,0 `L*` apart** in committed, regenerable bytes. It is a **new recipe**;
+`v4-rgb-mab-chromatic-black.icc` is unchanged to the byte, and the corollary
+above ("keep the round value and add a second fixture") is what was followed.
+
+It is graded by two rows in `tools/difftest/src/pass5c.rs`, both
+`derived-expectation`, both needing **only the committed fixture** — no oracle,
+no system profile, no shipped binary:
+
+| row | what it grades | bound | why that bound |
+|---|---|---|---|
+| `pass5c/<arm>/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first` | the returned black against the fixture's **authored** device black neutralised by 4.2.3 | `7,629×10⁻⁴` | half one general-PCSLAB `L*` quantum; `A2B1(0,0,0)` is a CLUT **corner**, so no interpolation term exists |
+| `pass5c/<arm>/FIXTURE/candidates-are-separated-as-designed` | the fixture's **own** separation against the separation its recipe was written to give it | `2,289×10⁻³` | three named half-quanta, one per encoding the number passes through |
+
+The second row is the one this finding really demands. **The separation mechanism
+can report that a row is blind; only a graded row can stop it becoming blind** —
+and GP-002's whole lesson is that the collapse arrives as a *consequence* of
+reasonable-looking edits, not as a mistake anyone makes on purpose.
+
+**Proof of power, run rather than asserted.** In a detached worktree at the same
+HEAD, with the pre-`fd34a44` return value injected into `bpc.rs` **and** both
+category (c) profile paths repointed at a non-existent drive to simulate a clean
+machine: all **27** `pass5c` rows that need a system profile skipped, and
+
+```text
+pass5c/floored/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first
+    FAIL   observed 2.500019e1   tolerance 7.629511e-4   sep 2.500019e1   DISCRIMINATING
+```
+
+was the **only** failure in the suite. `pass5c/synthetic/CLAUSE/…` stayed green
+at `0.000000e0` with `ZERO-SEPARATION` beside it, which is this finding
+demonstrating itself live on the same run.
+
+**Two claims made above are hereby corrected.**
+
+1. ~~"The load-bearing detector for a 4.2.5.4 regression is the VENDOR
+   profile."~~ **It was not load-bearing either.** Measured on the same run: a
+   full reversion of `fd34a44` moved `pass5c/swop/*`'s *reported* numbers and
+   turned **no row of the suite red on any machine** — the swop arm's graded
+   rows all have their power elsewhere (`apparatus` at `5,18×10⁻³` against a
+   bound of 1, `validation` at `4,26×10⁻²` against 1), and the row that carries
+   the finding is `REPORTED`. "Differential" and "load-bearing" are different
+   properties and this document ran them together.
+2. ~~"every remaining Pass 5c row would stay green through a full reversion"~~ is
+   true and was **misleading about the repository**. `cargo test -p iccce-cmm`
+   fails on that reversion — `straight_midrange_short_circuits_at_relative_only`
+   and `straight_midrange_carries_chromatic_initial_lab_whole`, verified by
+   running them against the injected defect. The clause was defended **as a
+   function**, on a synthetic closure, all along. What had no instrument was the
+   clause exercised **through a parsed profile**, which is where a wiring defect
+   between `Chain` and the estimator would live and where a unit test cannot
+   reach. That is the gap the new fixture closes, and it is a narrower and more
+   honest claim than the one this section made.
+
+#### What must not happen to the corpus because of this
+
+`v4-rgb-mab-chromatic-black.icc` is **still the only fixture in reach that can
+exercise lcms2's `BlackPointAsDarkerColorant` branch at all**, and its zero
+power is confined to one quantity. It must not be deleted as "the arm that
+proves nothing", and the floor must not be moved *into* it — that would
+re-collapse the distinction and move `NUMERIC_CLAIMS.md` NC-166's filed figures.
+The two fixtures differ in exactly one structural property and in every shared
+constant, on purpose: a black-point figure quoted without its arm should be
+obviously wrong rather than plausibly right.
 
 ---
 

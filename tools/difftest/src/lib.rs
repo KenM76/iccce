@@ -1378,6 +1378,30 @@ pub enum Separation {
 impl Separation {
     /// The common case: two scalar candidate observations, distance is their
     /// difference.
+    ///
+    /// ## ★★ When this is the WRONG constructor, measured 2026-08-12
+    ///
+    /// **If the alternative is "the code under test returns the other
+    /// candidate", do not use this — use [`Separation::against_distance`].**
+    ///
+    /// The distance here is derived as `|observed − alt_observed|`, which is
+    /// correct while the code is right and **collapses to exactly zero the
+    /// moment the code is wrong in the way the row is watching for**: `observed`
+    /// *becomes* `alt_observed`. The row then fails, correctly, and simultaneously
+    /// reports `ZERO-SEPARATION` — the mechanism disclaiming its power on the one
+    /// run where it has just demonstrated it.
+    ///
+    /// This is not hypothetical. The proof-of-power run for
+    /// `pass5c/floored/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first`
+    /// injected the pre-`fd34a44` defect: the row failed at `2,500 019×10¹`
+    /// against a `7,63×10⁻⁴` bound and printed `ZERO-SEPARATION` beside it.
+    ///
+    /// The test: **ask whether the distance is a property of the run or of the
+    /// fixture.** A separation between two *candidate answers* is a property of
+    /// the fixture and must be supplied, not derived — it is 25 `L*` whichever
+    /// answer the library happens to return today. `against` is right only where
+    /// the alternative is a different *reading applied to the same observation*,
+    /// so that the two observations genuinely coexist.
     pub fn against(
         alternative: impl Into<String>,
         alt_observed: f64,

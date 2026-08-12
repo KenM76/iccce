@@ -48,6 +48,19 @@ separation.
   not out of 145. Pass 4c is the obvious next candidate — its §A was built so
   lcms2's `wtpt` substitution *cannot* fire, and "it fired" is a named
   alternative with a computable value.
+  ★ **DONE 2026-08-12: 41 of 160** (`pass=157 fail=0 skip=3`;
+  `unstated=119 no-named-alternative=12 incommensurate=3 ungraded=8
+  zero-separation=2 blind=0 discriminating=16`). Pass 4c: **4 `Measured`, 6
+  `no-named-alternative` with reasons** — the named candidate came out at
+  `2.05576e-1` against a `5e-4` tolerance, `DISCRIMINATING` 411×. Two rules the
+  Pass 4c pass produced: **a rival TOLERANCE is not a rival CANDIDATE** (the
+  sensitivity-floor row's only "alternative" is a different floor, which belongs
+  in `why`), and where several real rivals exist, **name the one that most
+  threatens the row and enumerate the others in its text** — picking the
+  flattering one is the tuning the mechanism exists to prevent.
+- ★★ **`Separation::against` is unsafe when the alternative is "the code
+  returns the other candidate"** — see
+  [[project-prove-the-arm-by-injecting-the-defect]] §1.
 - **It cannot generate alternatives.** The 4.2.5.4 rival was identifiable only
   because somebody read the clause and saw two candidate return values.
 

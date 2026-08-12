@@ -158,6 +158,54 @@ they are well separated. **A few real separations with the rest honestly marked
 is the design**; a scheme that invented one for every row would be a worse
 document than this one.
 
+#### 1.1.1 Coverage as of the second run — 2026-08-12, later
+
+**41 of 160 emitted rows carry a stated separation** — Pass 5c's 30 (three arms
+now, §3.5.9) and Pass 4c's 10, plus one more from the third arm's fixture row.
+Run: `pass=157 fail=0 skip=3 error=0`;
+`unstated=119 no-named-alternative=12 incommensurate=3 ungraded=8
+zero-separation=2 blind=0 discriminating=16 sep-broken=0`.
+
+The 119 `UNSTATED` remain the honest absence. Of the 10 Pass 4c rows, **four
+carry a named rival and six do not** — and the six are
+`no-named-alternative` **with their reason**, which is the state this mechanism
+exists to distinguish from "nobody looked". Two examples of a reason worth
+having: the media-relative floor rows say *lcms2 consults the media white point
+only for the ICC-absolute adjustment, so the predicate whose three readings this
+module prices is never evaluated at that intent*; the sensitivity-floor row says
+*the only alternative one could name is a different floor, and that is a
+tolerance question, not a value the row could have observed.* **Conflating a
+rival tolerance with a rival candidate is how a separation quietly becomes a
+second, undocumented gate.**
+
+#### 1.1.2 ★★ `Separation::against` derives a distance that COLLAPSES when the defect is present
+
+Found by running the mechanism against an injected defect rather than by review,
+2026-08-12.
+
+`Separation::against(alternative, alt_observed, observed, units)` derives the
+distance as `|observed − alt_observed|`. That is right when the alternative is a
+different *reading applied to the same observation*, so that the two values
+genuinely coexist. It is **wrong** when the alternative is *"the code under test
+returns the other candidate"* — because then, on the run where the code actually
+does return the other candidate, `observed` **becomes** `alt_observed` and the
+derived distance is exactly zero.
+
+Measured instance: with the pre-`fd34a44` behaviour injected,
+`pass5c/floored/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first` failed at
+`2,500 019×10¹` against a `7,629×10⁻⁴` bound — **and printed `ZERO-SEPARATION`
+beside it.** The mechanism disclaimed its own power on the one run where it had
+just demonstrated it.
+
+**The test to apply before choosing a constructor: is the distance a property of
+the RUN or of the FIXTURE?** A distance between two candidate *answers* is a
+property of the fixture — 25 `L*` whichever answer the library returns today —
+and must be supplied through `Separation::against_distance`, not derived. Three
+rows were corrected under this rule (the clause row above and two `0/1`
+indicator rows, whose candidate observations are `0` and `1` and are therefore
+always one apart); the hazard is now recorded on `Separation::against`'s own doc
+comment, which is where the next person will meet it.
+
 ---
 
 ## 2. The perceptual anchor
@@ -677,6 +725,43 @@ has already had once (DL-011 predicted a divergence, DL-012 measured it
   (729 points, 9×9×9 on the 8-bit lattice), one machine, one pin, Windows/MSVC,
   one run, no repetition.
 
+#### 3.4.5.1 ★ Candidate separations — all ten rows, 2026-08-12
+
+Added by `icc-conformance` when §1.1's mechanism was extended past Pass 5c.
+Every Pass 4c row now states one; **four are `Measured` and six are
+`no-named-alternative` with their reason**, and the six are the more instructive
+half.
+
+**Three live readings of one predicate**, all of which this project has met, are
+now priced by the two precondition rows instead of being argued in prose:
+
+| reading | source | count on §A's pair | on §B's |
+|---|---|---|---|
+| `version < 0x4000000 AND class == 'mntr'` | `cmsio1.c` at the pin — what the **code** does | **0** | **1** |
+| `class == 'mntr'` | **`ICC.1:2022` 9.2.36** — what the **standard** says, no version gate | 1 | 1 |
+| `version < 0x4000000 OR class == 'mntr'` | the single-character misreading | 2 | 2 |
+
+`Separation` holds **one** alternative, so each row names **the reading that is
+the strongest threat to its own claim** and enumerates the others in the
+alternative's text. That is not a convenience: on §A the class-only reading is
+the threat (count 1 → the precondition fails → every number in the section is
+measuring the policy again), while on §B it gives the *same* observation and the
+threat is the disjunction instead. **Naming the rival that happens to flatter a
+row is the tuning this mechanism exists to prevent**, so the choice is made on
+threat and stated on the row.
+
+| row | separation | verdict |
+|---|---|---|
+| `…/precondition-neither-profile-trips-lcms2-wtpt-gate` | class-only reading → count **1**; distance **1,0** against a tolerance of 0 | `DISCRIMINATING` |
+| **`…/absolute/device-vs-lcms2`** — ★ the row the brief named | **the substitution having fired**, value **`2,055 76×10⁻¹`** = the counterfactual row's own number, which on this pair is **exact, not modelled**; distance `2,054 87×10⁻¹` against a tolerance of `5×10⁻⁴` | `DISCRIMINATING`, **411×** |
+| `…/absolute/device-mean` | the same alternative reduced as a **mean** over the same 729 points (`1,175 27×10⁻¹`) — borrowing the max's counterfactual here would be Pass 6 row R4's population error | `UNGRADED` (tolerance ∞) |
+| `…/absolute/counterfactual-wtpt-substituted` | the substitution firing on the **source** instead: **exactly 0**, because the source's stored `wtpt` already **is** D50. *That asymmetry is why this counterfactual is exact rather than modelled*, now stated on the row instead of in a paragraph | `UNGRADED` |
+| `…/srgb-to-swop/precondition-source-DOES-trip-…` | the disjunction → count **2**; distance **1,0** | `DISCRIMINATING` |
+| `…/srgb-to-swop/absolute/device-vs-lcms2` | **lcms2 *not* substituting** → the media-relative floor `1,29×10⁻⁴` measured on the same pair and grid in the same run. §A's separation mirrored | `UNGRADED` |
+| both `media-relative/device-vs-lcms2` rows | **none** — lcms2 consults the media white point *only* for the ICC-absolute adjustment, so at this intent the predicate is never evaluated; and NA-006 is structurally zero here too. What is left is quantisation, and **quantisation has one value, not two** | `NO-NAMED-ALTERNATIVE` |
+| `…/absolute/sensitivity-floor` | **none** — the only alternative nameable is a different **floor**, and that is a *tolerance* question answered in the row's `why` from Pass 4b's accepted 99×/139×/191× band. **Conflating a rival tolerance with a rival candidate is how a separation becomes a second, undocumented gate** | `NO-NAMED-ALTERNATIVE` |
+| `…/degeneracy-guard-unmoved-fraction` | **none** — the `10⁻⁹` is a numerical-zero threshold, not an interpretation; and the null it guards against is the **hypothesis the row tests**, not a value it could have observed | `NO-NAMED-ALTERNATIVE` |
+
 ### 3.5 Pass 5 — black point compensation
 
 **Filled 2026-08-11 (after Pass 4b) by `icc-conformance`** from comparisons
@@ -1164,6 +1249,162 @@ written into the prose next to the code that computes it.** A stale comment
 misleads a reader; a stale string in an emitted conformance record misleads the
 evidence.
 
+### 3.5.9 ★★ Pass 5c's third arm — the 4.2.5.4 clause, graded against an AUTHORED constant on a COMMITTED fixture
+
+**Added 2026-08-12 by `icc-conformance`.** Apparatus:
+`tools/difftest/src/pass5c.rs` §C; fixture recipe
+`tools/gen-profiles/src/recipes.rs` → `v4-rgb-mab-floored-b2a`; the finding that
+prompted it is `tools/gen-profiles/README.md` §4.1 (GP-002).
+
+#### 3.5.9.1 What was actually wrong, measured before anything was built
+
+The brief was that a 4.2.5.4 regression was invisible on a machine without the
+Windows colour directory. **The measurement is worse than that and also
+narrower**, and both halves matter:
+
+- **Worse.** A full reversion of `fd34a44`, injected into `bpc.rs` in a detached
+  worktree at the same HEAD, turned **no row of `tools/difftest` red on any
+  machine.** The `swop` arm's numbers moved; none of its graded rows crossed a
+  bound (`apparatus` `5,18×10⁻³` against 1, `validation` `4,26×10⁻²` against 1),
+  because the row that carries the finding —
+  `estimators/black-points-in-lab` — is `REPORTED`. "The arm is differential"
+  and "the arm is load-bearing" are different properties.
+- **Narrower.** `cargo test -p iccce-cmm` **does** fail on that reversion:
+  `straight_midrange_short_circuits_at_relative_only` and
+  `straight_midrange_carries_chromatic_initial_lab_whole`, verified by running
+  them against the injected defect. The clause was defended *as a function*, on
+  a synthetic closure, the whole time. What had **no** committed instrument was
+  the clause exercised **through a parsed profile** — which is where a wiring
+  defect between `Chain::estimate_dst_black` and the estimator would live, and
+  where a unit test on a closure cannot reach.
+
+#### 3.5.9.2 The fixture, and the rule it is the first application of
+
+`fixtures/synthetic/v4-rgb-mab-floored-b2a.icc` — `LEGAL.md` §3 category (a),
+18 656 bytes, `gen-profiles verify` reports **40 identical, 0 not identical**
+(the 39 existing fixtures are unchanged to the byte).
+
+It is the sibling `v4-rgb-mab-chromatic-black` with **one** structural
+difference: its `B2A` floors `G` at `25/87,5` for *every* input, not only
+out-of-gamut ones, which lifts the round-trip floor to `L* 37,5` while leaving
+`A2B(0,0,0)` alone at `L* 12,5`. That asymmetry **is** the separation.
+
+**The GP-002 generalisation — every conceptually distinct quantity gets a
+distinct value** — is applied deliberately and for the first time:
+
+| quantity | value | why this one |
+|---|---|---|
+| `InitialLab` (4.2.2.2 → 4.2.3) | `Lab(12,5 · 0 · 0)` | **not** the sibling's 20, so a figure quoted without its arm is obviously wrong rather than plausibly right |
+| lcms2's chroma-retaining `InitialLab` | `Lab(12,5 · 6 · −8)`, chroma **10,0** | twice the sibling's 5,0 and a different `a*`/`b*` pair |
+| `outRamp[first]` — the rival return value | `Lab(37,5 · 0 · 0)` | **25,0 `L*`** away: a quarter of the lightness range, four orders above any encoding argument |
+| the returned `DestinationBlackPoint` | `= InitialLab` | 4.2.5.4 states an **identity**, and that identity is what is graded |
+
+Pairwise separations `10,0 / 25,0 / 26,93` ΔE76 — three distinct, non-zero
+distances, so no two of the four can be substituted without a row moving.
+
+**What it still cannot separate, stated rather than hoped.** lcms2's black and
+ISO's `InitialLab` share their `L*` **unavoidably on an RGB fixture**:
+`BlackPointAsDarkerColorant` reads the same vertex through the same `A2B`, so
+only the chroma can differ. Two instruments would separate them and neither
+exists — an **inverse-polarity** fixture (ISO 4.2.2.2 NOTE 2: ISO searches,
+lcms2 uses a fixed `_cmsEndPointsBySpace` constant, so they would return
+opposite ends of the device range), and a fixture whose darkest vertex is
+**lighter than `L* 95`**, which reaches lcms2's otherwise-unexercised
+`if (Lab.L > 95) Lab.L = 0;` while ISO 4.2.3 clips to 50.
+
+#### 3.5.9.3 The two new tolerances, derived
+
+| row | bound | derivation |
+|---|---|---|
+| `pass5c/<arm>/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first` | **`7,629 5×10⁻⁴`** | half **one** general-PCSLAB `L*` quantum (`100/65 535`). `A2B1` at device `(0,0,0)` is a CLUT **corner** read through identity curves — *no interpolation happens*, so no interpolation term exists; no oracle term, because no oracle is consulted; the chroma terms are exactly zero because 4.2.3 assigns neutral literally and the estimator carries `InitialLab` through without arithmetic. **No free parameter.** Observed `1,907×10⁻⁴` — the generator's own rounding of `12,5`, which is not exactly encodable and decodes to `12,500 190 7` |
+| `pass5c/<arm>/FIXTURE/candidates-are-separated-as-designed` | **`2,288 9×10⁻³`** | **three** named half-quanta, one per encoding the number passes through: `InitialLab`'s encode; the round-trip floor's, read back out of two interpolated `A2B` nodes each within half a quantum; and the `B2A`'s stored `u16` `G` floor converted to `L*` through `dL*/dG`, bounded by **100** — the whole range — rather than this fixture's `87,5`, because a fixture-specific slope inside a tolerance goes stale when a constant moves. Observed `5,821×10⁻⁹` |
+
+Both are `derived-expectation`, not `cross-check`: the expected value is a named
+constant in `recipes.rs` put through a clause. **They run on a bare checkout** —
+no oracle, no system profile, no shipped binary — which is deliberate and is the
+point: a derived expectation must not be hostage to an oracle. They are emitted
+outside `analyse` for exactly that reason.
+
+The second row is the one GP-002 demands. **The separation mechanism can report
+that a row is blind; only a graded row can stop it becoming blind**, and the
+collapse arrives as a consequence of reasonable-looking edits rather than as a
+mistake anyone makes on purpose.
+
+#### 3.5.9.4 Proof of power — run, not asserted
+
+Detached worktree at the same HEAD; the pre-`fd34a44` return value injected into
+`bpc.rs`; **both** category (c) profile constants repointed at a non-existent
+drive to simulate a clean machine.
+
+```text
+summary      pass=129   fail=1   skip=30   error=0
+pass5c rows skipped for want of a system profile: 27
+
+pass5c/floored/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first
+    FAIL  observed 2.500019e1  tolerance 7.629511e-4  sep 2.500019e1  DISCRIMINATING
+pass5c/synthetic/CLAUSE/4.2.5.4-returns-InitialLab-not-outRamp-first
+    PASS  observed 0.000000e0  tolerance 7.629511e-4  sep 0.000000e0  ZERO-SEPARATION
+```
+
+The failing row was the **only** failure in the suite. The sibling arm's
+identical row stayed green with `ZERO-SEPARATION` beside it — GP-002
+demonstrating itself on the same run rather than being asserted in a README.
+
+#### 3.5.9.5 ★ A third arm made §B's own precondition explicit, and the apparatus row caught it
+
+On the first run of the third arm,
+`pass5c/floored/apparatus/error-bar-is-smaller-than-the-effect` **failed at
+`3,775×10⁹`** against its bound of 1. The row was right. §B converts a device
+residual into an `L*` bound by dividing by `d(device)/d(L*)` measured on `B2A1`,
+and on this fixture that derivative is **zero by construction** — the floor makes
+every `Lab` below `L* 37,5` map to one device value. Measured: `1,11×10⁻¹⁶`.
+**§B is void on that arm**, and the row whose whole job is to say when §B is void
+said so on its first exposure to a fixture that made it true.
+
+The response was **not** to widen `APPARATUS_RATIO`. Its constant `1.0` is
+unchanged and still applies wherever the conversion it depends on exists. What
+was added is a **declaration**:
+
+- `DEVICE_OBSERVABLE` — a table, one line per arm, saying whether that fixture
+  makes the destination black observable in device space. `swop` true,
+  `synthetic` true, `floored` **false by design**. Authored, reviewable in a
+  diff, *not inferred at run time* — a row that demoted itself from graded to
+  reported whenever a measured quantity came out small would disable exactly the
+  check that would catch a real collapse.
+- `pass5c/<arm>/apparatus/black-is-device-observable-as-declared` — graded at
+  **exactly 0/1**, the measurement against the declaration, so the table cannot
+  drift from reality in either direction. Cutoff `10⁻⁶` normalised device per
+  `L*`, **derived from the shipped surface**: the CLI prints six decimals, so
+  below that one whole `L*` of black-point error moves the printed output by
+  less than one printed digit. Margins are not close — `swop` `1,7×10⁻²`,
+  `synthetic` `8,1×10⁻³`, `floored` `1,1×10⁻¹⁶`.
+
+#### 3.5.9.6 ★ Why `estimators/black-points-in-lab` stays `REPORTED`
+
+Asked directly: the row named for the whole finding is `UNGRADED`, and a
+`4,717 441` separation now exists — does that supply the derivation basis for a
+real tolerance? **No.**
+
+1. **There is nothing for a bound on that row to mean.** Since `fd34a44` both
+   sides return a quantity their own document calls `InitialLab`, and the two
+   documents mean different things by the name. **No clause requires them to
+   agree**; grading their difference is grading iccce against lcms2's reading of
+   a document iccce does not implement, which §1 and `CLAUDE.md` rule 7 both
+   forbid.
+2. **A bound derived from the separation is a bound fitted to one known
+   defect.** Anything below `4,717 441` would have failed the pre-`fd34a44`
+   build and anything above would not; nothing else constrains it. And it could
+   not be *one* number — the three arms observe `4,799`, `5,000` and `10,000`,
+   so it would be three constants each fitted to its own fixture. That is a
+   tuned tolerance arrived at from the other end.
+3. **The defect it would have caught now has a row with a real derivation** —
+   §3.5.9.3, proved in §3.5.9.4.
+
+**The generalisation:** a large separation on an `UNGRADED` row is a request for
+**a fixture and a graded row elsewhere**, not a licence to grade that row. Ask
+what clause the number would be graded against; if the answer is *"none, but it
+would have caught the bug"*, the bound is fitted to the bug.
+
 ### 3.6 Pass 6 — performance, and the price of speed
 
 **Filled 2026-08-12 by `icc-conformance`** from comparisons actually run.
@@ -1390,6 +1631,9 @@ drifting one justification at a time.
 | 2026-08-12 (later still) | **§3.6 row R3's justification** — the grid-dependence clause | *"**GRID-DEPENDENT**: the quantity is `O(h^1,32)` here, so the bound belongs to **grid 17** and to nothing else"* | *"grid-dependent in its **applicability**, not in its **derivation**"* — the derivation population contains no compiled grid at all; the applicable grid is **33** since `189e732` | `icc-conformance` | **★ A CONFLATION, NOT A STALE NUMBER — and the difference is why the row is worth writing.** `COMPILED_DE` is Pass 4's iccce-vs-lcms2 maximum over 341 CMYK points, and **Pass 4 never builds a `CompiledTransform`** — there is no grid in the bound to become stale, which is exactly why it survived the shipped default moving 17→33 untouched. What the grid governs is whether an *observation* may be compared to it, since the graded quantity is `O(h^1,32)`. Writing that as *"the bound belongs to grid 17"* invited the reading that the tolerance had a derivation population out of step with the shipped product; **it did not, and the corrected wording is what makes that checkable.** The row title now names the shipped default rather than freezing a number into it. |
 | 2026-08-12 (later still) | **§3.6.2's throughput bullet** — re-filed as **§3.6.3** | *"2,4–2,7 Mpix/s compiled vs 0,076–0,091 reference (**28–32×**, break-even **≈63 000–75 000 px**) … spread across four invocations ~10 %"* | **break-even ≈1,3×10⁶ px AT GRID 33**, with the grid mandatory; **the speedup is WITHDRAWN as a documented figure** | `icc-conformance` | **★★ TWO DEFECTS WITH DIFFERENT CAUSES IN ONE SENTENCE, AND ONLY ONE OF THEM IS "OUT OF DATE".** **(a)** The break-even was measured at the old default grid of **17**. `N = build ÷ (1/ref − 1/comp)` puts `build` in the numerator, and `build` is the only term the grid moves: measured over ten invocations, the two throughputs are indistinguishable at 17 and 33, while build goes **0,838 s → 12,444 s (14,8×)** and break-even goes **85 900 px → 1 273 800 px (14,8×)** — agreeing to three figures. **A break-even without a grid is like a tolerance without units**, and it is now stated with one. **(b)** The speedup was never reproducible. Ten invocations in **one session, one machine, one binary** span **12,44×–25,27×** (2,03×); across the day's sessions, **12,4×–32×**. The recorded "~10 % run-to-run spread" understated the variance by an order of magnitude, because it was a four-sample range from one sitting quoted as a property of the machine. **A wall-clock ratio on a loaded desktop is not a claim this project can carry**; the break-even is, and it is structurally the stabler statistic — since `1/comp ≪ 1/ref`, `N ≈ build × ref_rate` and the noisy arm barely enters (the compiled rate spanned 2,08× over the five grid-33 runs while the break-even computed from those same runs spanned 1,13×). **(c)** The reference arm's recorded 0,076–0,091 band does not contain today's 0,092–0,099 — but the reference arm is the **tightest** quantity measured (±4 % against the compiled arm's ±35 %), so that is the same error as (b) and not evidence of instability. |
 | 2026-08-12 (third filing) | **§5 NA-009 (new row, not a change)**; **§1.1 (new subsection)**; and **two justification STRINGS** in `tools/difftest/src/pass5c.rs` — `NEUTRAL_EXACT` and `SHIPPED_MATCHES_LIBRARY` | NA-009 absent from this table; `NEUTRAL_EXACT` asserted *"0,834 on USWebCoatedSWOP, 5,0 on the synthetic RGB fixture"*; `SHIPPED_MATCHES_LIBRARY` asserted *"the two candidate blacks are `2,46×10⁻³` apart, **three orders** above the bound"* | NA-009 registered with its measured cost; both strings now point at the row's **emitted candidate separation** instead of naming a figure | `icc-conformance` | **★★ NO TOLERANCE VALUE MOVED — `0,0` and `1×10⁻⁶` are unchanged, and the whole row is about what the justifications SAY.** The mechanism of §1.1 computes what those sentences asserted, and on its first run it caught a **fourth** stale literal to set beside §3.5.8.6's three: `2,46×10⁻³` was the **pre-`fd34a44`** device separation and the live value is `9,574×10⁻³`, so the claim was understated by 4× and the *"three orders"* was wrong by one. **The argument was never harmed — only the number was** (the separation is ~9 600× the bound, not ~2 500×), which is exactly why a claim-bearing figure the apparatus can compute must be interpolated and not typed. The `0,834`/`5,0` pair was still true and was replaced anyway: both are properties of *which fixture is loaded*, so a third arm would have falsified the sentence without touching it. |
+| 2026-08-12 (fourth filing) | **§3.5.9, two new rows** (`CLAUSE/4.2.5.4-…` at `7,629 5×10⁻⁴` and `FIXTURE/candidates-are-separated-as-designed` at `2,288 9×10⁻³`) — **first filling, not a change**; plus a **third Pass 5c arm** and a new fixture `v4-rgb-mab-floored-b2a.icc` | ISO/CD 18619 4.2.5.4 had **no committed instrument in this suite**: a full reversion of `fd34a44` turned no row red on any machine | the reversion now fails exactly one row, on a **committed** fixture, with no oracle or system profile in the loop | `icc-conformance` | **★★★ THE FIRST TOLERANCE IN THIS DOCUMENT WHOSE DERIVATION HAS NO TERM IN IT AT ALL BEYOND ONE ENCODING QUANTUM — because the fixture was authored to remove the others.** `A2B1` at device `(0,0,0)` is a CLUT **corner** read through identity curves, so there is no interpolation term; no oracle is consulted, so there is no oracle term; 4.2.3 assigns neutral **literally**, so the chroma terms are exactly zero. What is left is the generator's own round-to-nearest into 6.3.4.2's general PCSLAB encoding — **half of `100/65 535`**, and nothing else. **The expectation is a named constant in `recipes.rs` put through a clause, so this is `derived-expectation` and not a cross-check**, and it deliberately runs outside `analyse`: *a derived expectation must not be hostage to an oracle.* **Three things about how, because each would otherwise look like tuning. (1) The power was PROVEN, not asserted** — §3.5.9.4: the pre-`fd34a44` return value injected in a detached worktree, both category (c) paths repointed at a non-existent drive, 27 `pass5c` rows skipped, and the new row the **only** failure at `2,500 019×10¹`. **(2) A failing row was NOT fixed by widening it.** The third arm made `apparatus/error-bar-is-smaller-than-the-effect` fail at `3,775×10⁹`, and it was **right**: the fixture's floor makes `d(device)/d(L*)` zero by construction and §B is void on that arm. `APPARATUS_RATIO` stays at `1.0` and still applies everywhere the conversion it needs exists; what was added is an **authored table** (`DEVICE_OBSERVABLE`) plus a row grading the measurement against the declaration, so the exemption cannot be acquired by a quantity coming out small. **(3) The brief's premise was corrected in both directions** — the clause was **not** undefended (`cargo test -p iccce-cmm` fails on the reversion, two tests, verified), and the vendor arm was **not** load-bearing either (its numbers moved and no row crossed a bound). What had no instrument was the clause exercised **through a parsed profile**. |
+| 2026-08-12 (fourth filing) | **§3.4.5.1** — candidate separations on all ten Pass 4c rows; and **§1.1.2**, a defect in the separation mechanism itself | Pass 4c rows all `UNSTATED`; `Separation::against` used wherever two candidate observations existed | four rows `Measured`, six `no-named-alternative` **with reasons**; three rows moved to `against_distance` | `icc-conformance` | **★★ NO TOLERANCE MOVED; A MECHANISM WAS FOUND TO LIE IN ONE PLACE.** `Separation::against` derives its distance as `\|observed − alt_observed\|`, which **collapses to exactly zero on the run where the code actually returns the alternative** — measured: the new clause row failed at `2,500 019×10¹` and printed `ZERO-SEPARATION` beside it, the mechanism disclaiming its power on the one run where it had just demonstrated it. The test now recorded on the constructor's own doc comment: **is the distance a property of the RUN or of the FIXTURE?** Three rows corrected (one clause row, two `0/1` indicators whose candidates are always one apart). On Pass 4c the notable half is the **six** honest absences: the media-relative floors have no rival because lcms2 consults the media white point only for the ICC-absolute adjustment; the sensitivity-floor row has none because *the only alternative nameable is a different floor, and that is a tolerance question* — **conflating a rival tolerance with a rival candidate is how a separation becomes a second, undocumented gate.** Each precondition row names the reading that is **the strongest threat to its own claim** and enumerates the other two, because naming the rival that flatters a row is the tuning this mechanism exists to prevent. |
+| 2026-08-12 (fourth filing) | **§3.5.8 row T6 / `estimators/black-points-in-lab`** — asked whether the `4,717 441` separation now justifies a real tolerance | `∞` — REPORTED, NOT GRADED | **`∞` — unchanged, and now argued rather than defaulted** (§3.5.9.6) | `icc-conformance` | **★ A TOLERANCE THAT WAS ASKED FOR, CONSIDERED, AND DECLINED — recorded because a declined change is evidence about the budget too.** Three reasons. **(1) There is nothing for a bound to mean**: since `fd34a44` both sides return a quantity their own document calls `InitialLab` and the two documents mean different things by the name; **no clause requires them to agree**, so grading the difference grades iccce against lcms2's reading of a document iccce does not implement. **(2) A bound derived from the separation is a bound fitted to one known defect** — anything below `4,717 441` would have failed the pre-`fd34a44` build and anything above would not, and it could not be one number: the three arms observe `4,799`, `5,000` and `10,000`. **(3) The defect now has a row with a real derivation** (§3.5.9.3). **The generalisation: a large separation on an `UNGRADED` row is a request for a fixture and a graded row elsewhere, not a licence to grade that row.** Ask what clause the number would be graded against; if the answer is *"none, but it would have caught the bug"*, the bound is fitted to the bug. |
 
 ---
 

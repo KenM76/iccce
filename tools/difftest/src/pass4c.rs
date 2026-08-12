@@ -386,8 +386,19 @@ pub struct AbsAnalysis {
     /// stored `wtpt`, built from the parsed headers rather than from these
     /// doc comments.
     pub structure: String,
-    /// How many of the two profiles satisfy lcms2's substitution predicate.
+    /// How many of the two profiles satisfy lcms2's substitution predicate,
+    /// read as the **conjunction** the source actually contains.
     pub gate_count: f64,
+    /// ★ The same count under the reading of ICC.1:2022 **9.2.36** — class
+    /// only, **no version gate** — which is what the *standard* says and what a
+    /// careful reader transcribing the specification rather than the code would
+    /// have implemented. Carried so the precondition row can state what it
+    /// would have observed under that reading instead of asserting that it
+    /// does not matter. See [`section_a_records`]'s separation.
+    pub gate_count_class_only: f64,
+    /// The same count with lcms2's `&&` read as `||`. The third live reading,
+    /// and the one §B is sensitive to.
+    pub gate_count_disjunction: f64,
     /// iccce vs lcms2 at ICC-absolute, max over components and rows,
     /// normalised device units.
     pub abs_max: f64,
@@ -400,6 +411,11 @@ pub struct AbsAnalysis {
     /// counterfactual; in §B it is only the size of the absolute effect on
     /// one side, and §B's records say so.
     pub counterfactual: f64,
+    /// The same reduction as a **mean**, so the mean row can state its own
+    /// separation in its own metric instead of borrowing the max's. Quoting a
+    /// max's counterfactual on a mean row would be the population error Pass 6
+    /// row R4 records.
+    pub counterfactual_mean: f64,
     /// Fraction of grid points the absolute scaling did not move.
     pub unmoved_fraction: f64,
     /// Index into [`rgb_grid`] of the worst absolute-intent point, with both
@@ -467,6 +483,17 @@ fn trips_lcms2_wtpt_gate(p: &Profile) -> bool {
     p.header.version.raw < 0x0400_0000 && p.header.device_class.0 == DISPLAY_CLASS
 }
 
+/// The **class** half of the predicate on its own — ICC.1:2022 **9.2.36**'s
+/// reading, which is class-gated with no version gate at all.
+///
+/// Split out rather than inlined because it is the difference between the two
+/// readings the precondition rows price against each other, and a rival that
+/// exists only inside an expression is a rival nobody can find.
+fn is_display_class(p: &Profile) -> bool {
+    const DISPLAY_CLASS: u32 = 0x6D6E_7472; // 'mntr'
+    p.header.device_class.0 == DISPLAY_CLASS
+}
+
 /// Format a profile's `wtpt` for the structure line, or say it is absent.
 /// Read from the file, never from this module's prose.
 fn wtpt_of(p: &Profile) -> String {
@@ -518,6 +545,20 @@ fn analyse(oracle: &Oracle, src_path: &Path, dst_path: &Path) -> Result<AbsAnaly
     // says so on its own face rather than in a footnote.
     let gate_count = f64::from(u8::from(trips_lcms2_wtpt_gate(&src)))
         + f64::from(u8::from(trips_lcms2_wtpt_gate(&dst)));
+    // ★ The same count under the two OTHER live readings of the same
+    // predicate, computed here so the precondition rows can PRICE them rather
+    // than assert that the conjunction reading is obviously the right one.
+    // Neither is hypothetical: `class only` is ICC.1:2022 9.2.36 as the
+    // spec-librarian returned it (v4's clause is class-gated with NO version
+    // gate), and the disjunction is the single-character misreading of
+    // `cmsio1.c` that this whole section's fixture pair is chosen to defeat.
+    let gate_count_class_only = f64::from(u8::from(is_display_class(&src)))
+        + f64::from(u8::from(is_display_class(&dst)));
+    let gate_count_disjunction = f64::from(u8::from(
+        is_display_class(&src) || src.header.version.raw < 0x0400_0000,
+    )) + f64::from(u8::from(
+        is_display_class(&dst) || dst.header.version.raw < 0x0400_0000,
+    ));
 
     let structure = format!(
         "src v{:08X} {} {}->{} wtpt={} gate={} | dst v{:08X} {} {}->{} wtpt={} gate={}",
@@ -608,7 +649,7 @@ fn analyse(oracle: &Oracle, src_path: &Path, dst_path: &Path) -> Result<AbsAnaly
 
     let (abs_max, abs_mean, worst_index) = reduce(&abs_mine, &abs_theirs);
     let (rel_max, rel_mean, _) = reduce(&rel_mine, &rel_theirs);
-    let (counterfactual, _, _) = reduce(&abs_mine, &rel_mine);
+    let (counterfactual, counterfactual_mean, _) = reduce(&abs_mine, &rel_mine);
 
     let unmoved = abs_mine
         .iter()
@@ -625,11 +666,14 @@ fn analyse(oracle: &Oracle, src_path: &Path, dst_path: &Path) -> Result<AbsAnaly
     Ok(AbsAnalysis {
         structure,
         gate_count,
+        gate_count_class_only,
+        gate_count_disjunction,
         abs_max,
         abs_mean,
         rel_max,
         rel_mean,
         counterfactual,
+        counterfactual_mean,
         unmoved_fraction: unmoved as f64 / grid.len() as f64,
         worst_index,
         worst_iccce: abs_mine[worst_index].clone(),
@@ -668,13 +712,12 @@ fn pass_or_fail(
         tolerance: tol,
         source: source.to_string(),
         detail,
-        // No candidate separation has been considered for any Pass 4c row.
-        // `Separation::Unstated` is the honest state and it prints as
-        // `UNSTATED`, so this omission is countable on the `separation` line
-        // rather than invisible. Pass 4c is a good candidate for one — its §A
-        // was built so lcms2's `wtpt` substitution CANNOT fire, and "the
-        // substitution fired" is precisely a named alternative reading — but it
-        // has not been derived and must not be invented here.
+        // The default is `Unstated` and every caller in this module now
+        // overrides it with `.with_separation(...)` — four `Measured` and three
+        // `NoNamedAlternative`, each with its reason. The default stays
+        // `Unstated` rather than becoming a required argument for the reason
+        // `Record::with_separation` documents: a required argument would have
+        // produced a corpus of invented rivals, which is worse than none.
         separation: crate::Separation::Unstated,
         outcome,
     }
@@ -692,6 +735,32 @@ const REPORTED: Tolerance = Tolerance::new(
 );
 
 /// §A's records — the confound-free pair.
+///
+/// ## ★ Candidate separations, added 2026-08-12
+///
+/// Four of these seven rows carry one and three do not, and the three are
+/// [`crate::Separation::NoNamedAlternative`] with their reason rather than
+/// `UNSTATED`: somebody looked. The rule applied throughout is the engineer's —
+/// *a named alternative a reader cannot go and check is worse than none* — so
+/// the alternatives here are all readings of a specific line of source or a
+/// specific clause, and every value is computed in the run.
+///
+/// **Three live readings of one predicate** are priced by the two precondition
+/// rows, because there genuinely are three and this project has met all of them:
+///
+/// | reading | source | count on §A's pair | count on §B's |
+/// |---|---|---|---|
+/// | `version < 0x4000000 AND class == 'mntr'` | `cmsio1.c` at the pin — what the code does | **0** | **1** |
+/// | `class == 'mntr'` | **ICC.1:2022 9.2.36** — what the *standard* says (no version gate) | 1 | 1 |
+/// | `version < 0x4000000 OR class == 'mntr'` | the single-character misreading | 2 | 2 |
+///
+/// Each row names the reading that is the **strongest threat to its own claim**
+/// and enumerates the others in the alternative's text, because `Separation`
+/// holds one alternative and picking the flattering one would be the tuning this
+/// whole mechanism exists to prevent. On §A the threat is the class-only
+/// reading: under it the count is 1, the precondition fails, and every number in
+/// the section is measuring the policy again. On §B the class-only reading gives
+/// the *same* observation, so the threat there is the disjunction.
 fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
     let n = rgb_grid().len();
     let src = "both sides computed in this run; no expectation is transcribed from anywhere. \
@@ -705,11 +774,28 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
             "cmsio1.c _cmsReadMediaWhitePoint at pin 21c582a, transcribed; evaluated against the \
              parsed headers of the two files opened in this run",
             format!(
-                "count over 2 profiles of (version < 0x4000000 AND class == 'mntr'): {}",
-                a.structure
+                "count over 2 profiles of (version < 0x4000000 AND class == 'mntr'): {} | the \
+                 same count under the other two live readings: class-only (ICC.1:2022 9.2.36) = \
+                 {:.0}, disjunction = {:.0}",
+                a.structure, a.gate_count_class_only, a.gate_count_disjunction
             ),
             a.gate_count,
-        ),
+        )
+        .with_separation(crate::Separation::against(
+            "the predicate read as ICC.1:2022 9.2.36 says it - CLASS ONLY, no version gate. That \
+             is not a hypothetical misreading: it is what the STANDARD says, and the \
+             spec-librarian's dispatch found that lcms2's predicate reproduces no clause in \
+             either edition (v4's 9.2.36 is class-gated with no version gate; v2's A.3.1.1 is \
+             gated on the adaptation condition and not on class at all). A harness that had \
+             transcribed the specification instead of the code would count the v4 'mntr' SOURCE \
+             as tripping, this precondition would fail, and section A's whole claim of a \
+             structurally absent confound would be false. The third reading, the '&&' misread as \
+             '||', would count 2 - further still, and it is what the fixture pair is chosen to \
+             defeat, each profile failing a DIFFERENT half",
+            a.gate_count_class_only,
+            a.gate_count,
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/absolute/device-vs-lcms2",
             Kind::CrossCheck,
@@ -724,7 +810,24 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
                  too. The source has no CLUT"
             ),
             a.abs_max,
-        ),
+        )
+        // ★ THE ROW THE ENGINEER NAMED. Its whole claim is that a known
+        // divergence CANNOT fire on this pair, and the value it would have
+        // observed if it had is not a guess: it is the counterfactual row's
+        // number, which is EXACT here rather than modelled, because the
+        // source's stored wtpt IS D50 and substituting D50 for the
+        // destination's collapses the 6.3.2.2 diagonal to identity.
+        .with_separation(crate::Separation::against(
+            "lcms2's wtpt substitution HAVING FIRED on the destination - i.e. the NC-053 policy \
+             difference reaching this pair. The value is the counterfactual row's, which on this \
+             pair is EXACT and not modelled: the source's stored wtpt IS D50, so substituting D50 \
+             for the DESTINATION's wtpt collapses the whole 6.3.2.2 scaling diagonal to identity, \
+             and lcms2's absolute output would then BE its media-relative output. A reader can \
+             check it against row absolute/counterfactual-wtpt-substituted in the same run",
+            a.counterfactual,
+            a.abs_max,
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/absolute/device-mean",
             Kind::CrossCheck,
@@ -733,7 +836,19 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
             src,
             format!("mean over {n} points; reported beside the max, never instead of it"),
             a.abs_mean,
-        ),
+        )
+        // The same alternative as the max row, but priced as a MEAN over the
+        // same grid. Borrowing the max's counterfactual here would be Pass 6
+        // row R4's population error - two reductions of different populations
+        // quoted for one another.
+        .with_separation(crate::Separation::against(
+            "the same alternative as the max row - lcms2's wtpt substitution having fired - \
+             reduced as a MEAN over the same 729 points rather than a max, because a max's \
+             counterfactual quoted on a mean row is two different reductions read for one another",
+            a.counterfactual_mean,
+            a.abs_mean,
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/media-relative/device-vs-lcms2",
             Kind::CrossCheck,
@@ -750,7 +865,16 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
                 a.abs_max, a.rel_max
             ),
             a.rel_max,
-        ),
+        )
+        .with_separation(crate::Separation::none(
+            "considered, and there is none. The rival readings this module holds are all about \
+             the MEDIA WHITE POINT, and lcms2 consults it only for the ICC-absolute adjustment - \
+             at media-relative both implementations normalise by white on both sides and the \
+             predicate is never evaluated. The other candidate divergence for this direction, \
+             NA-006's interpolation scheme, is structurally zero too: Pass 4b measured that lcms2 \
+             FORCES trilinear for a Lab-PCS output LUT, which is iccce's n-linear on a 3-input \
+             table. What is left is 8-bit quantisation, and quantisation has one value, not two",
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/absolute/counterfactual-wtpt-substituted",
             Kind::SelfConsistency,
@@ -766,7 +890,23 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
                 a.counterfactual, a.abs_max
             ),
             a.counterfactual,
-        ),
+        )
+        // A real alternative with a computable value, and it is EXACTLY ZERO —
+        // which is the point. Substituting on the source instead of the
+        // destination costs nothing here because the source's wtpt already IS
+        // D50, and that asymmetry is the reason the counterfactual is exact
+        // rather than approximate.
+        .with_separation(crate::Separation::against(
+            "the substitution firing on the SOURCE instead of the destination. lcms2's predicate \
+             is applied per profile, so which of the pair would have tripped is a real \
+             alternative and not a hypothetical - and here it costs EXACTLY ZERO, because the \
+             source's stored wtpt already IS D50 and substituting D50 for D50 is the identity. \
+             That asymmetry is precisely why this counterfactual is exact rather than modelled, \
+             and stating it as a separation puts the reason on the row instead of in a paragraph",
+            0.0,
+            a.counterfactual,
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/absolute/sensitivity-floor",
             Kind::SelfConsistency,
@@ -781,7 +921,17 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
                 a.ratio()
             ),
             (100.0 - a.ratio()).max(0.0),
-        ),
+        )
+        .with_separation(crate::Separation::none(
+            "considered, and there is none. Both terms of the ratio are measured in this run from \
+             iccce alone, and neither has a rival READING: the counterfactual is exact for the \
+             reason the row above states, and the observed residual is a subtraction. The only \
+             alternative one could name is a different FLOOR than 100x - and that is a tolerance \
+             question, answered in this row's `why` from Pass 4b's accepted 99x/139x/191x band, \
+             not an alternative value this row could have observed. Separations and tolerances are \
+             different objects and conflating them is how a separation becomes a second, \
+             undocumented gate",
+        )),
         pass_or_fail(
             "pass4c/v4matrix-to-swop/absolute/degeneracy-guard-unmoved-fraction",
             Kind::SelfConsistency,
@@ -799,7 +949,16 @@ fn section_a_records(a: &AbsAnalysis) -> Vec<Record> {
                 (a.unmoved_fraction * n as f64).round() as u32
             ),
             a.unmoved_fraction,
-        ),
+        )
+        .with_separation(crate::Separation::none(
+            "considered, and there is none. This row counts points, from iccce's own two arms, \
+             against a threshold of 1e-9. A rival would have to be a rival READING of 'the \
+             absolute scaling did not move this point', and there is not one - the 1e-9 is a \
+             numerical-zero threshold, not an interpretation. The null the row guards against \
+             (gamut clipping pinning the grid and manufacturing agreement) is the HYPOTHESIS the \
+             row tests, not an alternative value it could have observed, which is the same \
+             distinction pass5c's ATTRIBUTION row makes",
+        )),
     ]
 }
 
@@ -821,9 +980,33 @@ fn section_b_records(a: &AbsAnalysis) -> Vec<Record> {
                  at 0 exact because it is a count of files",
             ),
             "cmsio1.c _cmsReadMediaWhitePoint at pin 21c582a; evaluated against parsed headers",
-            format!("|gate count - 1| over the pair: {}", a.structure),
+            format!(
+                "|gate count - 1| over the pair: {} | the same count under the other two live \
+                 readings: class-only (ICC.1:2022 9.2.36) = {:.0}, disjunction = {:.0}",
+                a.structure, a.gate_count_class_only, a.gate_count_disjunction
+            ),
             (a.gate_count - 1.0).abs(),
-        ),
+        )
+        // ★ A DIFFERENT rival from §A's, and the difference is the honest part.
+        // The class-only reading gives the SAME count here (1), so it is not a
+        // threat to this row and naming it would have manufactured a
+        // ZERO-SEPARATION. The reading this row is sensitive to is the
+        // disjunction, which would count 2 and would mean the destination is
+        // substituting too — under which §B's attribution of the whole effect
+        // to the SOURCE's white point is wrong.
+        .with_separation(crate::Separation::against(
+            "the '&&' in cmsio1.c read as '||'. Under that reading BOTH profiles trip (the v2 \
+             'mntr' source on both halves, the v2.1 'prtr' destination on the version half), the \
+             count is 2, and section B's attribution of the whole effect to the SOURCE's white \
+             point is wrong because the destination would be substituting as well. NOTE THAT THIS \
+             IS A DIFFERENT RIVAL FROM SECTION A's, deliberately: the class-only reading of \
+             ICC.1:2022 9.2.36 gives the SAME count as the conjunction on this pair (1), so it is \
+             not a threat to this row and naming it would have manufactured a ZERO-SEPARATION out \
+             of a rival that is real but harmless here",
+            (a.gate_count_disjunction - 1.0).abs(),
+            (a.gate_count - 1.0).abs(),
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/srgb-to-swop/absolute/device-vs-lcms2",
             Kind::CrossCheck,
@@ -843,7 +1026,23 @@ fn section_b_records(a: &AbsAnalysis) -> Vec<Record> {
                 a.abs_max / a.rel_max
             ),
             a.abs_max,
-        ),
+        )
+        // §A's separation mirrored: there the alternative was "it fired", here
+        // it is "it did NOT". If lcms2 did not substitute, both sides would
+        // apply the same 6.3.2.2 scaling and this row would fall to the
+        // media-relative floor measured on the same pair and grid in this run.
+        .with_separation(crate::Separation::against(
+            "lcms2 NOT substituting - i.e. the gate not firing on the v2 'mntr' source. Both \
+             implementations would then apply the same 6.3.2.2 scaling and this row would fall to \
+             the media-relative residual measured on the SAME pair and grid in this run, which is \
+             the floor row below. It is section A's separation mirrored: there the named \
+             alternative is 'the substitution fired' and here it is 'it did not', and the two \
+             rows together are what make the policy's direction-symmetry a measurement rather \
+             than a pair of anecdotes",
+            a.rel_max,
+            a.abs_max,
+            crate::SepUnits::SameAsMetric,
+        )),
         pass_or_fail(
             "pass4c/srgb-to-swop/media-relative/device-vs-lcms2",
             Kind::CrossCheck,
@@ -857,7 +1056,13 @@ fn section_b_records(a: &AbsAnalysis) -> Vec<Record> {
                 a.abs_max
             ),
             a.rel_max,
-        ),
+        )
+        .with_separation(crate::Separation::none(
+            "considered, and there is none, for the same reason as section A's floor row: lcms2 \
+             consults the media white point only for the ICC-absolute adjustment, so at \
+             media-relative the predicate whose three readings this module prices is never \
+             evaluated at all. A floor row measures quantisation, and quantisation has one value",
+        )),
     ]
 }
 
@@ -1020,16 +1225,62 @@ mod tests {
         let a = AbsAnalysis {
             structure: String::new(),
             gate_count: 0.0,
+            gate_count_class_only: 0.0,
+            gate_count_disjunction: 0.0,
             abs_max: 0.0,
             abs_mean: 0.0,
             rel_max: 0.0,
             rel_mean: 0.0,
             counterfactual: 1.0,
+            counterfactual_mean: 0.0,
             unmoved_fraction: 0.0,
             worst_index: 0,
             worst_iccce: vec![],
             worst_lcms2: vec![],
         };
         assert!(a.ratio().is_infinite());
+    }
+
+    /// ★ The three readings of lcms2's `wtpt` predicate must give **different**
+    /// counts on §A's pair, or the separations §3.4.5.1 states are theatre.
+    ///
+    /// This is the same discipline as `the_gate_predicate_can_return_true`
+    /// applied to a candidate separation rather than to a precondition: a rival
+    /// reading that yields the same observation as the implemented one prices
+    /// nothing, and the only way to know is to compute both. Verified on the
+    /// real fixture pair when the vendor profile is present; skipped, loudly,
+    /// when it is not.
+    #[test]
+    fn the_three_predicate_readings_are_not_the_same_reading() {
+        let src = v4_matrix_src();
+        let dst = Path::new(SWOP);
+        if !src.exists() || !dst.exists() {
+            eprintln!(
+                "SKIP: section A's profile pair is not both present; the separations on the \
+                 precondition rows are unverified on this machine"
+            );
+            return;
+        }
+        let sb = std::fs::read(&src).expect("readable");
+        let db = std::fs::read(dst).expect("readable");
+        let s = Profile::parse(&sb).expect("parses");
+        let d = Profile::parse(&db).expect("parses");
+
+        let conjunction = u8::from(trips_lcms2_wtpt_gate(&s)) + u8::from(trips_lcms2_wtpt_gate(&d));
+        let class_only = u8::from(is_display_class(&s)) + u8::from(is_display_class(&d));
+        let disjunction = u8::from(is_display_class(&s) || s.header.version.raw < 0x0400_0000)
+            + u8::from(is_display_class(&d) || d.header.version.raw < 0x0400_0000);
+
+        assert_eq!(
+            (conjunction, class_only, disjunction),
+            (0, 1, 2),
+            "section A's pair must separate all three readings of lcms2's predicate: the \
+             conjunction it implements (0 — the confound is structurally absent), ICC.1:2022 \
+             9.2.36's class-only reading (1 — the v4 'mntr' SOURCE trips, and section A would be \
+             measuring the policy again), and the '&&' misread as '||' (2). If any two coincide, \
+             the candidate separation on \
+             pass4c/v4matrix-to-swop/precondition-neither-profile-trips-lcms2-wtpt-gate is \
+             pricing nothing"
+        );
     }
 }

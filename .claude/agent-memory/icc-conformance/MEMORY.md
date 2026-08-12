@@ -2,6 +2,7 @@
 
 - [Conformance can WORSEN the cross-check](project_conformance_can_worsen_the_crosscheck.md) — fixing our 4.2.5.4 defect moved us 58.8x further from lcms2; the defect's own size was 57.8x the gap it was blamed for.
 - [Candidate separation is now an emitted field](project_candidate_separation.md) — how far the named rival answer sits, with auto BLIND/ZERO-SEPARATION; found a 4th stale literal on run one.
+- [Prove an arm by INJECTING the defect](project_prove_the_arm_by_injecting_the_defect.md) — no row caught a 4.2.5.4 reversion; "differential" ≠ "load-bearing"; Separation::against collapses to 0 exactly when the defect is live.
 - [Stale claim strings in emitted records](project_stale_claim_strings_in_emitted_records.md) — three typed numerals went false within a day; interpolate, never type. "Derived for" vs "graded at" hid a second error.
 - [Throughput is not a claim; break-even is](project_throughput_is_not_a_claim_breakeven_is.md) — speedup withdrawn (12.4–32x on one box); break-even ≈1.3e6 px AT GRID 33, and it must always carry the grid.
 
