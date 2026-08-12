@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; the ISO 4.2.5.4 question ANSWERED AGAINST US and the code corrected; a FIFTH crate iccce-measure; next free NC-165; DL-032 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; 4.2.5.4 corrected and RE-MEASURED, the divergence GREW 58.8x; speedup WITHDRAWN; next free NC-176; DL-036 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -68,9 +68,37 @@ this"** comment stopped him. Removing it ships a tarball with **no MIT
 notice text**, invisibly (`license = "MIT"` is only metadata). ★ **Rule
 1 in a non-colour register: the clean build IS the defect.**
 
-**Ledger: NC-158 … NC-164 filed; next free NC-165.** New evidence class
-**`apparatus-census`**. **DL-030/031/032 filed; 32 decision-log
-entries.**
+**★★★ UPDATED 2026-08-12, SIXTEENTH FILING — the block above's
+"nobody has re-measured the collapse" is DISCHARGED and the prediction
+is FALSIFIED.** The `swop` divergence did **not** collapse; it **GREW
+58,8×**, `8,166 8×10⁻² → 4,799 109 ΔE76`. **NA-009's cost is MEASURED
+at last** (`4,799 109` swop / `5,000 000` synthetic) with three
+mandatory caveats: **black point only**, **relative to lcms2 not
+truth**, and ★ **NO ground truth exists** (no published black point for
+SWOP; 18619 is a committee draft) — **never promote it**. Full story:
+[[iccce-agreement-can-be-the-symptom]] (DL-033), and DL-036 — the
+authored fixture had **zero power**; the vendor profile was the only
+arm that could see. **NC-164a SPLIT into NC-174 (measured, true) and
+NC-175 (unmeasured, falsified).**
+
+**★★ THE SPEEDUP IS NOW WITHDRAWN OUTRIGHT** (supersedes the "12–23×
+range" paragraph above). It spans **2,03× within ONE session at grid
+33** (1,15× at grid 17 — not uniform across grids).
+`TOLERANCES.md` §3.6.3(b): *"this project does not carry a speedup
+figure."* The two-non-overlapping-ranges item is **discharged by
+WITHDRAWAL, not reconciliation** — §3.23.4's hypothesis (the two
+harnesses time different work) is **still untested**. What survives:
+**break-even `≈1,3×10⁶ px AT GRID 33`**; the `85 900 → 1 273 800 px`
+shift is **14,8×**, matching median build `0,838 → 12,444 s` to three
+figures. Also: **`COMPILED_DE` is not derived on any compiled grid** —
+Pass 4's 341-point CMYK iccce-vs-lcms2 max (`2,529 411×10⁻¹`), and
+`pass4.rs` never builds a `CompiledTransform` (**DL-034**).
+**T1/T4 got greener for bad reasons** — DL-035.
+
+**Ledger: NC-158 … NC-175 filed; next free NC-176.** New evidence class
+**`apparatus-census`**. **DL-030 … DL-036 filed; 36 decision-log
+entries.** ★ **`README.md` carries NO throughput/speedup/break-even
+claim at all** *(verified by grep, 2026-08-12)*.
 
 **Counts verified 2026-08-12 (by reading, no shell):** **129 `#[test]`
 declarations across 20 files** under `crates/` — cmm 63 · profile 33 ·

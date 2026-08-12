@@ -159,11 +159,41 @@ looking like evidence.**
     accurately can still quote the text wrongly, and the quoted text is
     the part an edit acts on.
 
+12. **★★★ A CORRECTION WITH NOWHERE TO LAND — and the first one caught
+    BEFORE the filing rather than after (black-point re-measure filing,
+    2026-08-12).** The dispatch carried a correction *to the engineer
+    himself*: *"I told you the reference arm had drifted outside its
+    recorded 0,076–0,091 band. It had not."* Before writing the
+    correction, this librarian grepped `docs/` for `drift`/`drifted`
+    and the band's figures. **No document owned by this librarian ever
+    said the reference arm drifted** — the two mentions of the band both
+    attribute it to `TOLERANCES.md` and flag it as *unreconciled*. So
+    the filing recorded **"the claim lived in the dispatch only"**
+    instead of retracting a sentence that did not exist. ★ **The
+    engineer's own tagging discipline is what made it cheap**: every
+    dispatch claim arrived labelled `[VERIFIED — I ran it]` or
+    `[CARRIED]`, and this one arrived labelled *a correction*, so the
+    first question was **"correcting what, where?"** ★ **Same filing,
+    the positive twin:** an owed item — *sweep `README.md` for a
+    single-figure speedup claim* — was discharged by grepping and
+    finding **nothing there at all**, and that was **filed as a
+    discharge rather than silently dropped**, because *"we checked and
+    found nothing"* is a different fact from *"we never checked"* and
+    only one of them is evidence.
+
 **How to apply.**
 
 - ★ **A dispatch's quoted string is a claim about a file — search for
   it.** "Change S to T" is two claims: that S is wrong, and that S is
   there. The second fails more often than the first.
+- ★ **A CORRECTION is the same shape**: "I was wrong when I told you W"
+  is a claim that W reached a document. **Grep for W before writing the
+  retraction.** Five instances of the dispatch and the tree disagreeing
+  are now on record in this project; this was the first found *before*
+  a document was touched.
+- **Discharge an owed item explicitly even when the answer is
+  "nothing was there."** A silently dropped item is indistinguishable
+  from an unchecked one.
 - **Re-verify every carried-forward prediction on the Pass that was
   predicted about.** A "what Pass N inherits" annotation is written
   before Pass N exists; the day it exists, it is a testable claim.

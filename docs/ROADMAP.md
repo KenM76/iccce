@@ -450,6 +450,79 @@ claim, because the apparatus is half the number.** `NUMERIC_CLAIMS.md`
 > has flagged rather than reconciled. Full treatment, with every
 > reading and its apparatus: `NUMERIC_CLAIMS.md` **§3.23**.
 
+**Updated again 2026-08-12 (same day, latest): ★★★ THE PREDICTION IN
+THE BLOCK ABOVE IS FALSIFIED. The `swop` black-point divergence did NOT
+collapse on the corrected 4.2.5.4 code — it GREW 58,8×. And the reason
+is that agreement with the oracle had been the symptom of our
+defect.** Filed at tip **`2881e19`** *(verified — `.git/refs/heads/master`
+read)*; code corrected at `fd34a44`, harness at `cc03f3d`, oracle pin
+`21c582a`. **The measurement is `icc-conformance`'s and is carried; the
+mechanism is verified from source.**
+
+**★★★ 1. The re-measure, and what it means.** Block 1 above recorded the
+defect's cost as **0,0817 ΔE76 — 100 % of the `swop` arm's divergence**,
+and `NUMERIC_CLAIMS.md` §7.12 then predicted the divergence would
+**collapse** once both implementations returned `InitialLab`. It did the
+opposite:
+
+| | before `fd34a44` | after |
+|---|---|---|
+| ISO 4.2.5 black (iccce) | `L* 16,489 806` | **`L* 11,772 365`** |
+| lcms2 (reimplemented, pin `21c582a`) | `L* 16,571 474` | **unmoved** |
+| **the divergence** | `8,166 8×10⁻²` ΔE76 | **`4,799 109` ΔE76** |
+
+**This is not a bug.** Both sides take the straightness short-circuit
+and both return what their own document calls `InitialLab` — **ISO
+4.2.2.2 means the darkest DEVICE VERTEX neutralised; lcms2's
+`cmsDetectBlackPoint` means the PERCEPTUAL BLACK ROUND TRIP with chroma
+zeroed.** Two documents meaning different things by one name: **rule 7 in
+its sharpest form, and this time neither side is wrong.**
+
+**★★★ 2. The methodological finding, which outlives the number.** The
+non-conformant return was `outRamp[first] = MinL = 16,489 806`, and
+**`MinL(lcms2) = MinL(ISO) = 16,489 806` exactly** — so the defective
+code sat **0,082 `L*`** from lcms2's answer **for a reason unrelated to
+being right**. The defect's own magnitude, **`4,717 441 L*`**, was
+**57,8× the divergence it was blamed for.** ★ **The cross-check built to
+catch exactly this was nearly blind to it, because being wrong in that
+particular way looked like being right.** `ARCHITECTURE.md` gains
+**DL-033**: *a cross-check's power is bounded by the separation of the
+two CANDIDATE answers, not by the tightness of the residual it
+reports.*
+
+**★★ 3. NA-009's cost is MEASURED at last** — `4,799 109 ΔE76` (`swop`,
+100 % `L*`) and `5,000 000` (synthetic, 100 % chroma) — after four
+filings of "unmeasured". **Three caveats travel with it and are not
+optional:** it is a cost **at the black point only**; it is measured
+**relative to lcms2, not to truth**; and ★ **there is NO ground truth in
+this comparison** — no published black point exists for
+`USWebCoatedSWOP.icc` and 18619 is a **committee draft**. It reads as a
+cross-check throughout and **must never be promoted**.
+
+**★★ 4. The synthetic fixture could not see any of this.** Its
+`InitialLab` and `outRamp[first]` are **both `L* 20`**, so swapping them
+changed nothing and its `5,000 000` is *identically* unmoved. **The
+vendor profile was the only arm with the power** — because nobody
+designed it. `ARCHITECTURE.md` gains **DL-036**, the stated converse of
+DL-020: an authored fixture discharges *the doubt it was authored for*
+**and nothing adjacent to it.**
+
+> **★★ AND THE SPEEDUP IS NOW WITHDRAWN OUTRIGHT — the block above's
+> "12–23× on this machine, load-dependent" is no longer the honest
+> form.** `icc-conformance` measured it ten more times and found it
+> spans **2,03× within ONE session at ONE grid**; the decision at
+> `TOLERANCES.md` §3.6.3(b) is that **this project does not carry a
+> speedup figure at all**. What survives is the **break-even, stated
+> with its grid**: **≈1,3×10⁶ px at grid 33**, whose `85 900 →
+> 1 273 800 px` shift is **14,8×** — matching the median build time's
+> `0,838 → 12,444 s` **to three figures**, which is the arithmetic
+> saying the shift is *entirely* the build. `NUMERIC_CLAIMS.md`
+> **§3.27**, **NC-170 … NC-173**. Two more decisions come out of the
+> same sweep: **DL-034** (a claim-bearing number the harness can compute
+> is **formatted at run time**, never typed into prose beside it) and
+> **DL-035** (**an improvement whose cause is the denominator or the
+> rival is not an improvement**).
+
 ---
 
 ## Pass 0 — scaffold and the oracle

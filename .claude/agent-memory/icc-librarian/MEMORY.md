@@ -1,7 +1,8 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-12: ORIGINAL SCOPE COMPLETE; the ISO 4.2.5.4 question ANSWERED AGAINST US; a fifth crate; next free NC-165.
+- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-12: ORIGINAL SCOPE COMPLETE; 4.2.5.4 corrected AND re-measured; speedup withdrawn; next free NC-176.
+- [Agreement can be the symptom](project_agreement_can_be_the_symptom.md) — DL-033: a cross-check's power is the CANDIDATE SEPARATION, not the residual; fixing the defect made it 58.8× worse.
 - [Rule 7 can run against us](project_rule7_can_run_against_us.md) — DL-030: iccce shipped non-conformant code and lcms2 was right; withholding attribution is what made the measurement usable.
 - [A count needs its apparatus](project_count_needs_its_apparatus.md) — DL-031: 129, 36 and 142 are three runners, not a trend; a commit message's bare count can never be corrected.
 - [A residual under every hypothesis](project_apparatus_fault_under_every_hypothesis.md) — DL-028: two candidates or no discrimination; and an error bar the same order as its effect may BE the measurement (98.3%).

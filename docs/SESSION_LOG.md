@@ -3390,3 +3390,238 @@ SOURCE for this filing, not written.**
   was checked at this filing. **Rule 9 and DL-024 are unchanged.**
 - **That the librarian has a shell.** Two filings in a row without one.
   Ask, per session; never inherit.
+
+---
+
+## 2026-08-12 (later the same day, latest) — ★★★ THE COLLAPSE THAT DIDN'T: the divergence GREW 58,8× on the corrected code, because agreement with the oracle had been the SYMPTOM of our defect; a ledger row turns out to have carried a measured claim and an unmeasured one in one sentence; and the speedup is withdrawn outright
+
+**Filed by:** `icc-librarian`, from a dispatch by `icc-engineer` ·
+**Sixteenth filing overall, the fifth of this calendar day** ·
+**No shell** — third consecutive filing without one · **Nothing was
+committed and nothing was pushed;** both are the engineer's and the
+operator's acts · **Tip `2881e19`** *(verified —
+`.git/refs/heads/master` read: `2881e1903a85d8d531c5d573fb965f597c25354a`)*
+
+> **★ THE DISPATCH ARRIVED FULLY TAGGED**, every claim marked
+> `[VERIFIED — I ran it]` or `[CARRIED — conformance's, not
+> re-derived]`, in explicit response to the last filing having caught
+> three unsourced claims. **That discipline paid for itself inside this
+> filing** — see "the correction that had nowhere to land" below.
+
+### ★★★ 1. The re-measure reversed a prediction this librarian had filed
+
+`NUMERIC_CLAIMS.md` §7.12 predicted, from the engineer, that NC-142's
+`8,166 8×10⁻² ΔE76` **should collapse** once the 4.2.5.4 defect was
+corrected and both implementations returned `InitialLab`.
+
+| | before `fd34a44` | after |
+|---|---|---|
+| ISO 4.2.5 black (iccce) | `L* 16,489 806` | **`L* 11,772 365`** |
+| lcms2 (reimplemented from `cmssamp.c`, pin `21c582a`) | `L* 16,571 474` | **unmoved** |
+| **the divergence** (`swop`, T6) | `8,166 8×10⁻²` ΔE76 | **`4,799 109` ΔE76** |
+
+**It grew 58,8×, and it is not a bug.** Both sides now return what
+*their own document* calls `InitialLab`: **ISO 4.2.2.2 means the darkest
+DEVICE VERTEX neutralised; lcms2's `cmsDetectBlackPoint` means the
+PERCEPTUAL BLACK ROUND TRIP with chroma zeroed.** Two documents meaning
+different things by one name — **rule 7 in its sharpest form, and this
+time neither side is wrong.**
+
+### ★★★ 2. The finding that outlives the number
+
+> **AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF OUR DEFECT.**
+
+The non-conformant return was `outRamp[first] = MinL = 16,489 806`, and
+**`MinL(lcms2) = MinL(ISO) = 16,489 806` exactly.** So the defective
+code landed **0,082 `L*`** from the oracle's answer **for a reason that
+had nothing to do with being right** — it was returning a quantity the
+oracle also computes. **The defect's own magnitude, `4,717 441 L*`, was
+57,8× the divergence it was blamed for.**
+
+★ **The cross-check built to catch exactly this class of error was
+nearly blind to it**, and its power was two orders of magnitude below
+the error it was pointed at. **CLAUDE.md rule 1 at its most literal: a
+wrong colour agreed with the oracle to 0,08 ΔE76.** Filed as
+**DL-033** — *a cross-check's power is bounded by the separation of the
+two CANDIDATE answers, not by the tightness of the residual it
+reports.* It is the **mirror of DL-028 and the more dangerous half**:
+DL-028's failure mode announces itself, this one is silent.
+
+### ★★★ 3. A ledger row that carried two claims — split, not corrected
+
+**NC-164a** said the defect *"accounts for the whole observed gap"* AND
+implied that fixing it would end the gap. **The first was measured and
+is true. The second was never measured and is now false.** The engineer
+asked for this to be recorded as **two claims with different evidence
+status** rather than as one corrected number, which is the right call:
+the failure mode *is* the conflation, and editing the row would delete
+the evidence of it.
+
+- **NC-174** — *the defect accounted for 100 % of the pre-correction
+  divergence.* **implementation-cross-check. MEASURED, TRUE.**
+- **NC-175** — *therefore fixing it ends the gap.* **No evidence class,
+  because it was never measured. FALSIFIED.**
+
+★ **The two were only ever equivalent if the residual had exactly one
+cause, which nobody had established.** An unmeasured inference inherited
+a measurement's authority **purely by adjacency**, and nothing flagged
+it because nothing was wrong with the sentence's grammar or its
+arithmetic. **§1 required a class per row; it did not require a row to
+contain only one CLAIM. It does now.**
+
+**§3.24 already did the hard half correctly and that is why this filing
+is cheap:** it labelled the collapse as *expected* and explicitly
+refused to assert it. ★ **Without that refusal this would be a
+retraction instead of an observation** — the same argument §3.24.1 made
+about withholding attribution, one level up.
+
+### ★★ 4. The fixture that could not see it
+
+`v4-rgb-mab-chromatic-black.icc`'s `InitialLab.L*` and `outRamp[first]`
+are **both `L* 20`**. The defect swapped one for the other; **swapping
+two equal numbers changes nothing**, so that arm's `5,000 000 ΔE76` is
+*identically* unmoved. ★ **The fixture authored to discriminate the two
+ESTIMATORS had, by construction, zero power to detect a defect in the
+RETURN VALUE of one of them.** `USWebCoatedSWOP.icc` had the power
+**because nobody designed it**. Filed as **DL-036**, the stated converse
+of DL-020: an authored fixture discharges *the doubt it was authored
+for* **and nothing adjacent to it**.
+
+### ★★ 5. Two green rows got greener for bad reasons
+
+| Row | Before | After | ★ What actually moved |
+|---|---|---|---|
+| **T1** — the DL-028 error-bar guard | `3,043×10⁻¹` | `5,179×10⁻³` | **The error bar did not change. The EFFECT grew 59×** |
+| **T4** — reimplementation vs rival | `1,715×10⁻¹` | `4,258×10⁻²` | **The numerator did not change. The RIVAL got 4,03× worse** |
+
+**A reader seeing only the numbers concludes the opposite of what
+happened**, and both rows are correctly computed. **DL-035:** *an
+improvement whose cause is the denominator or the rival is not an
+improvement.* ★ **DL-018 one level up** — a gate can be made greener by
+deleting the requirement it protects, and a ratio can be made greener by
+an event in its denominator nobody chose.
+
+### ★★ 6. The speedup is withdrawn outright; break-even survives with its grid
+
+`icc-conformance` measured it ten more times and found it spans
+**2,03× within ONE session at ONE grid** (grid 33; **at grid 17 the same
+protocol spanned only 1,15×** — the instability is **not uniform across
+grids**, which this librarian states because the dispatch's compression
+implied both). The decision at `TOLERANCES.md` §3.6.3(b) is that **this
+project does not carry a speedup figure at all.** §7.12's *"reconcile
+the two non-overlapping ranges"* is therefore **discharged by
+withdrawal, not by reconciliation** — ★ **and §3.23.4's labelled
+hypothesis, that the two harnesses time different work, remains
+UNTESTED and is re-listed as a question.**
+
+**What survives is the break-even, always with its grid:**
+**`85 900 → 1 273 800 px` = 14,8×**, matching the median build's
+**`0,838 → 12,444 s` = 14,8×** to **three figures** — the arithmetic
+saying the shift is *entirely* the build, since `N ≈ build ×
+reference_rate` puts the noisy term where it barely enters (spread
+**1,13×** over the same five runs).
+
+**And `COMPILED_DE` is not derived on any compiled grid.** Its
+derivation population is Pass 4's **341-point CMYK** iccce-vs-lcms2
+comparison, and **`pass4.rs` never constructs a `CompiledTransform`**
+*(verified — read)*. The old emitted string was wrong **twice**: `17`
+was **stale**, and `derived for` was **a conflation wrong on the day it
+was written**. **DL-034:** *a claim-bearing number the harness can
+compute is formatted at run time, never typed into prose beside the code
+that computes it* — **a stale comment misleads a reader; a stale string
+in an emitted conformance record misleads the evidence.**
+
+### ★★★ The correction that had nowhere to land
+
+The engineer filed a correction **to himself**: that he had told this
+librarian the **reference arm** had drifted outside its recorded
+`0,076–0,091 Mpix/s` band, and that this was wrong.
+
+**★ This librarian checked whether the ledger contained the claim before
+writing a correction to it. It does not.** *(verified — `docs/` grepped
+for `drift`/`drifted` and the band's figures.)* The two places
+`NUMERIC_CLAIMS.md` mentions that band **both attribute it to
+`TOLERANCES.md` §3.6.2 and flag it as unreconciled**. No document owned
+by this librarian ever said the reference arm drifted.
+
+What is true instead: **within a session the reference arm is the
+TIGHTEST quantity measured — ±4 %, against ±35 % for the compiled arm**;
+today's ten runs give `0,092–0,099 Mpix/s` at both grids. The old band
+was **a four-sample range from one sitting quoted as a property of the
+machine** — i.e. **the same error as the withdrawn speedup claim, not
+evidence of drift.**
+
+> **★★★ Fifth recorded instance of the dispatch and the tree
+> disagreeing (§2.12), and the FIRST caught BEFORE the filing rather
+> than after.** The four previous instances were errors in a dispatch
+> that reached a document. This one would have produced **a correction
+> to a statement no document contains** — precisely the failure the
+> sibling project logged and the reason the verify-against-live-source
+> rule is worded as it is. ★ **The engineer's own tagging discipline is
+> what made it cheap:** the claim arrived labelled as a correction, so
+> the first question was *"correcting what, where?"*, and the answer was
+> *nowhere*.
+
+### ★★ Two owed items discharged by this librarian's own reading
+
+- **`README.md` carries NO throughput, speedup or break-even claim at
+  all** *(verified — grepped at this filing for `Mpix`, `speedup`,
+  `faster`, `×`, `break-even`; the only hit is an unrelated `1×10⁻⁴`)*.
+  §7.12 newly-owed 4 is discharged **in the "there was nothing there"
+  direction**. ★ **Recorded as a discharge rather than silently
+  dropped**: *"we checked and found nothing"* is a different fact from
+  *"we never checked"*, and only one of them is evidence.
+- **`bpc.rs` L620–L703 now carries two tests naming 4.2.5.4**, one
+  asserting `"InitialLab carried through"` and one asserting the whole
+  triple survives on a **chromatic** `InitialLab` *(verified — read at
+  the tip)*. §7.12 newly-owed 6 is **MOVED, not closed** — whether it
+  discharges the item is `icc-conformance`'s call, not this
+  librarian's.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `NUMERIC_CLAIMS.md` | **§3.25** — the re-measure (**NC-165 … NC-167**), the methodological finding, **NC-164a SPLIT into NC-174/NC-175**, the blind fixture, **NA-009's cost measurable at last with its three caveats**, and the new one-claim-per-row convention. **§3.26** — the two rows that got greener for bad reasons (**NC-168**, **NC-169**). **§3.27** — `COMPILED_DE`'s derivation (**NC-170**), break-even's structural shift (**NC-171**, **NC-172**), the **speedup WITHDRAWN** (**NC-173**), the document sweep, the discharge-by-withdrawal of the two-ranges item, **§3.27.5's correction with nowhere to land**, and a coverage statement. A **fourth dated note on NA-009**. **§6** — five new dependency rows, including one that has **already fired**. **§7.13** — three items discharged, six added. **§8** extended through **DL-036**. |
+| `ARCHITECTURE.md` | **§5** — **DL-033** (agreement with the oracle was the symptom of our defect), **DL-034** (claim-bearing numbers are formatted at run time), **DL-035** (an improvement caused by the denominator or the rival is not one), **DL-036** (a vendor profile stays in the fixture set). DL-001 … DL-032 untouched. |
+| `ROADMAP.md` | A dated header block: the falsified prediction, the definitional divergence, DL-033, NA-009's measured cost with its caveats, the blind fixture, and the speedup's outright withdrawal with break-even stated in its place. **No plan text and no earlier block rewritten.** |
+| `NEXT_SESSION.md` | Rewritten — it is this librarian's, and it said *"overwrite once acted on"*. Its previous headline table carried the now-superseded `8,166 8×10⁻²` as the live figure. |
+| `SESSION_LOG.md` | This entry. |
+
+**Not touched, by instruction and by ownership:** `README.md`,
+`TOLERANCES.md`, everything under `tools/`, `crates/` and `fixtures/`,
+every `Cargo.toml`, the corpus, `LEGAL.md`. ★ **`TOLERANCES.md` §3.6.3,
+`tools/difftest/src/pass5c.rs`, `pass6.rs`, `pass4.rs` and
+`crates/iccce-cmm/src/bpc.rs` were read as THE SOURCE for this filing,
+not written** — the engineer's dispatch named them as already committed
+and off-limits, and every figure attributed to them here was checked
+against the file rather than transcribed from the dispatch.
+
+### Left for the next session to not assume
+
+- **That the corrected code is better because the number is bigger, or
+  was better when it was smaller.** ★ **Neither figure grades
+  correctness.** The **clause** graded it (NC-164, DL-030); the
+  cross-check only ever measured distance to another implementation.
+- **That NA-009's cost is a cost against truth.** It is **at the black
+  point only**, **relative to lcms2 only**, and ★ **there is NO ground
+  truth in this comparison** — no published black point exists for
+  `USWebCoatedSWOP.icc` and **18619 is a committee draft**.
+- **That the synthetic arm would catch a regression here.** It has
+  **zero power** on this quantity, by construction. A 4.2.5.4
+  regression would be **invisible on one of the two arms**.
+- **That any cross-check row in the ledger states its candidate
+  separation.** ★ **None of them do.** That is the highest-value item
+  newly owed (§7.13), and DL-033 does not supply it.
+- **That the two timing harnesses have been compared.** The speedup was
+  withdrawn *around* the question, not by answering it.
+- **That `skip=3` has been enumerated.** Eleventh filing; still blocked
+  on a shell.
+- **That a CI run has ever been observed here.** Sixteen filings, none.
+  **The Linux debt is untouched.**
+- **That the tip is pushed, or that any push was authorised.** ★ **The
+  tip hash is now corroborated from `.git/refs/heads/master`** — and
+  that says **nothing** about whether it was pushed. Rule 9 and DL-024
+  unchanged.
+- **That the librarian has a shell.** **Three filings in a row without
+  one.** Ask, per session; never inherit.

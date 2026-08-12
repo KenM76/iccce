@@ -3483,6 +3483,379 @@ number had not been sitting there unexplained.
   was sourced and one branch corrected. **Nothing swept the rest**, and
   §4.6's known ISO internal contradiction is untouched.
 
+### 3.25 ★★★ The re-measure that reversed §7.12's prediction: the divergence did **NOT** collapse — it **GREW 58,8×**. And the reason is that **agreement with the oracle had been the symptom of our defect**
+
+**Filed 2026-08-12, second filing of the session, at tip `2881e19`**
+*(verified — `.git/refs/heads/master` read)*. **Code corrected at
+`fd34a44`; harness at `cc03f3d`; oracle pin `21c582a`.**
+
+> **★★★ PROVENANCE OF THIS SECTION, STATED BEFORE ANY NUMBER.** The
+> measurement is **`icc-conformance`'s and is CARRIED** — this librarian
+> has **no shell** and re-derived nothing. What is **verified** is that
+> every figure below appears in
+> `tools/difftest/src/pass5c.rs`'s emitted `source` string, read at the
+> tip *(L1465–1494)*, and that `crates/iccce-cmm/src/bpc.rs` **L272**
+> still reads `return initial_lab;` so **NC-164 continues to hold at
+> `2881e19`** *(verified — read)*. The runner outcome
+> `pass=142 fail=0 skip=3 error=0` and the record reading `PASS` at
+> `4.799109` are **the engineer's, reported as run this session**.
+
+#### 3.25.1 ★★★ §7.12's newly-owed item 1 is DISCHARGED, and it resolved against the prediction
+
+§7.12 item 1 read: *"**NC-142's 8,166 8×10⁻² ΔE76 should now
+COLLAPSE** … Nobody has re-run it, and §3.24 deliberately does not
+assert the collapse."* **It has now been re-run. It did the opposite.**
+
+| | before `fd34a44` | after `fd34a44` |
+|---|---|---|
+| ISO 4.2.5 black (iccce) | `L* 16,489 806` | **`L* 11,772 365`** |
+| lcms2, reimplemented from `cmssamp.c` at `21c582a` | `L* 16,571 474` | **unmoved** |
+| **the divergence** (`swop`, T6) | `8,166 8×10⁻² ΔE76` | **`4,799 109 ΔE76`** |
+
+| ID | What | Class | Tolerance | Observed | Corpus & coverage |
+|---|---|---|---|---|---|
+| **★★★ NC-165** | **The two black points on the CORRECTED code, `swop` arm** — supersedes **NC-142**'s `swop` figure as the current value, and supersedes nothing else | **implementation-cross-check** *(★ **and there is NO ground-truth arm** — see §3.25.5)* | **∞ — REPORTED, NOT GRADED** | **`4,799 109 ΔE76`**, **100 % `L*`**, chroma term **exactly 0**. **58,8× larger** than NC-142's `8,166 8×10⁻²` | `USWebCoatedSWOP.icc` (v2 `prtr` CMYK) → sRGB; **one intent (media-relative), one direction**; oracle **reimplemented**, not run; pin `21c582a`; code `fd34a44`, harness `cc03f3d`, tip `2881e19` |
+| **★ NC-166** | **The same quantity, `synthetic` arm** — **it did not move at all** | **implementation-cross-check** | **∞ — REPORTED** | **`5,000 000 ΔE76`**, **100 % chroma**, `ΔL*` **exactly 0**. ★ **Identical before and after the correction** — see §3.25.4 for why this is a fact about the fixture, not about the fix | `v4-rgb-mab-chromatic-black.icc` (v4 `prtr` RGB, **authored by this project**); same intent, direction and pin |
+| **★★★ NC-167** | **The DEFECT'S OWN MAGNITUDE** — how far the non-conformant return sat from the conformant one | **self-consistency** *(both sides are iccce: `outRamp[first]` against `InitialLab` on one fixture)* | **∞ — REPORTED** | **`4,717 441 L*`** — ★ **57,8× the divergence it was blamed for.** The non-conformant return was `outRamp[first] = MinL = 16,489 806`, and **`MinL(lcms2) = MinL(ISO) = 16,489 806` exactly** | `USWebCoatedSWOP.icc`, one point (the black point), one intent |
+
+#### 3.25.2 ★★★ The methodological finding, which is the reason this section exists rather than a corrected number
+
+> **AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF OUR DEFECT, AND
+> CONFORMING TO THE CLAUSE MADE THE CROSS-CHECK WORSE.**
+
+The cross-check built to catch exactly this class of error was **nearly
+blind to it**, and the blindness has an exact cause rather than a lucky
+one: **`MinL` is the same quantity in both documents.** A
+non-conformant iccce returning `MinL` was returning something the oracle
+*also* computes, and therefore landed `0,0817 L*` from the oracle's
+answer **for a reason unrelated to being right**. The defect's own
+magnitude, **`4,717 441 L*` (NC-167), was 57,8× the residual the
+cross-check reported** — so the instrument's power was two orders of
+magnitude below the error it was pointed at.
+
+**Filed as `ARCHITECTURE.md` DL-033**, because it is a rule about what a
+cross-check can establish and not a fact about black points: *a
+cross-check's power is bounded by the separation of the two CANDIDATE
+answers, not by the tightness of the residual it reports.*
+
+★ **This is CLAUDE.md rule 1 at its most literal.** A wrong colour looks
+exactly like a right one — and here **a wrong colour agreed with the
+oracle to 0,08 ΔE76**, inside a harness whose entire purpose is to
+notice.
+
+#### 3.25.3 ★★★ NC-164a is SPLIT, not corrected — because a measured claim and an unmeasured one had been filed as a single sentence
+
+**NC-164a is not edited and not withdrawn.** Its number was and is
+correct. What was wrong was that **one row carried two claims with
+different evidence status**, and only one of them had ever been
+measured. The engineer's request was explicit that this be recorded as a
+split rather than as a number change, and it is the right call: *the
+failure mode is the conflation, and editing the row would delete the
+evidence of it.*
+
+| ID | The claim, separated out | Class | Status |
+|---|---|---|---|
+| **★★ NC-174** | *"The 4.2.5.4 defect accounted for **100 %** of the two implementations' observed divergence on the `swop` arm, before it was found."* | **implementation-cross-check** | **MEASURED and TRUE.** `8,166 8×10⁻²` ΔE76 was the whole of the pre-correction gap, and the whole of it was attributable to the defect. **NC-164a stands as this claim** |
+| **★★★ NC-175** | *"Therefore fixing the defect ends the gap"* — the **implication** NC-164a carried without stating it as a separate claim, and which §7.12 item 1 then wrote out as a prediction | **★ NONE — it was never measured, and an unmeasured implication has no evidence class** | **FALSIFIED by NC-165.** The gap did not end; it grew **58,8×**. ★ **The two claims were never the same claim**: *"the defect explains the residual"* and *"removing the defect removes the residual"* are only equivalent if the residual has exactly one cause, **which nobody had established** |
+
+> **★★★ WHY THIS PATTERN IS WORTH MORE THAN THE NUMBER.** A measured
+> claim and an unmeasured inference travelled inside one sentence, and
+> the inference inherited the measurement's authority **purely by
+> adjacency**. Nothing flagged it, because nothing was wrong with the
+> sentence's grammar or its arithmetic. **The ledger's §1 requires a
+> class per row; it did not, until now, require that a row contain only
+> one CLAIM.** It does now — see §3.25.6.
+
+#### 3.25.4 ★★ The synthetic fixture could not see any of this, and the vendor profile was the only arm with the power
+
+`v4-rgb-mab-chromatic-black.icc`'s `InitialLab.L*` **and**
+`outRamp[first]` are **both `L* 20`**. The defect swapped one for the
+other. **Swapping two equal numbers changes nothing**, so NC-166 is
+*identically* unmoved — not "within noise", identically.
+
+★ **The fixture authored to discriminate the two ESTIMATORS had, by
+construction, zero power to detect a defect in the RETURN VALUE of one
+of them.** `USWebCoatedSWOP.icc` had the power **because nobody designed
+it**: its two quantities are `11,772 365` and `16,489 806`, and they
+differ because a real ink set makes them differ.
+
+**This is now the strongest argument on file for keeping a real vendor
+profile beside the authored ones**, and it is filed as
+`ARCHITECTURE.md` **DL-036** — the stated converse of **DL-020**. DL-020
+is not weakened: an authored fixture still discharges *the doubt it was
+authored for*. What is added is the boundary — **and nothing adjacent to
+it**, because the author's model of the mechanism is baked into the
+bytes.
+
+#### 3.25.5 ★★★ NA-009's cost is MEASURABLE AT LAST — and every restatement of it must carry three caveats
+
+**§4's NA-009 has been UNMEASURED since Pass 5**, through four filings,
+because no instrument could discriminate the two estimators. It now has
+a number on both arms:
+
+| Arm | Cost | Composition |
+|---|---|---|
+| `USWebCoatedSWOP.icc` | **`4,799 109 ΔE76`** | **100 % `L*`** |
+| `v4-rgb-mab-chromatic-black.icc` | **`5,000 000 ΔE76`** | **100 % chroma** |
+
+**The three caveats are not optional and must survive every
+restatement:**
+
+1. **It is a cost AT THE BLACK POINT ONLY** — one point of one
+   transform, not a cost over any gamut, any raster or any image.
+2. **It is a cost RELATIVE TO lcms2, not relative to truth.** ★ **There
+   is NO ground truth in this comparison**: no published black point
+   exists for `USWebCoatedSWOP.icc`, and **ISO/CD 18619 is a committee
+   draft**. It reads as an **implementation-cross-check** throughout and
+   **must never be promoted**, however stable it looks.
+3. **The remaining divergence is a DEFINITIONAL difference, not an
+   error by either side.** Both implementations now return what their
+   own document calls `InitialLab`. **ISO 4.2.2.2 means the darkest
+   device vertex, neutralised; lcms2's `cmsDetectBlackPoint` means the
+   perceptual black round trip with chroma zeroed.** Two documents mean
+   different things by one name — **rule 7 in its sharpest form**, and
+   this time neither side is wrong.
+
+#### 3.25.6 ★ The ledger convention this section adds
+
+> **A row states ONE claim. Where a sentence contains both a measurement
+> and something that follows from it, the consequence is a separate row
+> with its own class — and if it has not been measured, its class is
+> the empty one and it is written as a PREDICTION.**
+
+**§3.24 already did the hard half of this correctly** and that is why
+this filing is cheap: it pre-committed the collapse as something
+*expected* and **explicitly refused to assert it** (*"which nobody has
+re-measured and this filing does not assert"*). ★ **Had that refusal not
+been written, this section would be a retraction instead of an
+observation.** Same shape as §3.24.1's own argument about withheld
+attribution — **the measurement was usable precisely because its
+interpretation was withheld.**
+
+#### 3.25.7 What §3.25 does NOT claim
+
+- **That the corrected code is worse.** ★ **Neither figure grades
+  correctness.** The **clause** graded correctness (**NC-164**,
+  **DL-030**); the cross-check only ever measured distance to another
+  implementation, and DL-033 says what that is worth.
+- **That the corrected code is verified.** **NC-164 remains a
+  behavioural row READ FROM SOURCE**, and §7.12 newly-owed 6 — a
+  regression test grading the short-circuit against the clause — is
+  **still owed**. `bpc.rs` L620–L703 does carry two unit tests naming
+  4.2.5.4 *(verified — read at the tip)*, which is **more than the
+  previous filing could see**; whether they satisfy the owed item is
+  `icc-conformance`'s call, not this librarian's.
+- **That the estimators have been compared anywhere else.** **One
+  intent, one direction, two profiles, and only the `swop` arm exercises
+  the corrected branch at all.** DL-021 and DL-027 apply at full
+  strength.
+- **That `5,000 000` on the synthetic arm is a coincidence worth
+  interpreting.** It is a round number because the fixture was authored
+  to make it one. It is not evidence of anything except the fixture.
+
+### 3.26 ★★ Two green rows got GREENER FOR BAD REASONS — and the ledger convention that follows from them
+
+**All figures CARRIED from `icc-conformance`. Not re-derived by this
+librarian, who has no shell.**
+
+| ID | Row | Before | After | ★ What actually moved | Class |
+|---|---|---|---|---|---|
+| **★★ NC-168** | **T1** — the apparatus error bar against the effect it measures (the **DL-028** guard) | `3,043×10⁻¹` | `5,179×10⁻³` | ★ **The error bar did NOT change. The EFFECT grew 59×.** The apparatus is **exactly as good as it was** | **self-consistency** |
+| **★★ NC-169** | **T4** — the reimplementation against the rival candidate | `1,715×10⁻¹` | `4,258×10⁻²` | ★ **The numerator did NOT change. The RIVAL got 4,03× WORSE** | **implementation-cross-check** |
+
+> **★★ A READER SEEING ONLY THE NUMBERS CONCLUDES THE OPPOSITE OF WHAT
+> HAPPENED** — that the apparatus became 59× sharper and the
+> reimplementation 4× better. **Neither is true, and both rows are
+> correctly computed.** The defect is not in the arithmetic; it is in a
+> ratio being publishable on its own.
+
+**The convention, filed as `ARCHITECTURE.md` DL-035:**
+
+> **An improvement whose cause is the DENOMINATOR or the RIVAL is not an
+> improvement. A graded ratio is recorded with the movement of its
+> numerator and its denominator as separate facts, and the word
+> "improved" is not available until both are stated.**
+
+★ **This is DL-018 one level up.** DL-018 established that a gate can be
+made greener by deleting the requirement it protects; here a ratio is
+made greener by an event in its denominator **that nobody chose and
+nobody would defend if it were stated plainly**. The remedy is identical
+and cheap in both cases: **pin the parts, not only the quotient.**
+
+**What §3.26 does not claim:** that either row is the wrong quantity to
+gate on (T1 *is* the DL-028 guard and should exist), that a ratio must
+never be quoted, or that this librarian checked the four component
+figures — **they are carried**.
+
+### 3.27 ★★ `COMPILED_DE`'s derivation, break-even's structural shift, and the **WITHDRAWAL** of the speedup figure
+
+#### 3.27.1 ★★ `COMPILED_DE` is not derived on any compiled grid — the old string was wrong TWICE
+
+| ID | What | Class | Tolerance | Observed |
+|---|---|---|---|---|
+| **★ NC-170** | **`COMPILED_DE`'s derivation population, re-measured** — Pass 4's iccce-vs-lcms2 maximum over **341 CMYK points**, `USWebCoatedSWOP A2B1` → sRGB, media-relative | **implementation-cross-check** | the constant is **`2,5×10⁻¹` ΔE2000**, *"to one significant figure with NO headroom factor and NO free parameter"* | **`2,529 411×10⁻¹` ΔE2000** *(verified — `tools/difftest/src/pass6.rs` L164–175, read at the tip)* |
+
+**The old emitted string was wrong in two independent ways**, and only
+one of them was staleness:
+
+1. **`17` was STALE** — true when written, false after commit `189e732`
+   moved `compiled::recommended_grid_points(4)` to **33**.
+2. **`derived for` was a CONFLATION, wrong on the day it was written.**
+   **`tools/difftest/src/pass4.rs` never constructs a
+   `CompiledTransform`** *(verified — read; it builds a 341-point CMYK
+   `grid()` and compares the **reference path** against the oracle)*.
+   There is no compiled grid in the number to be stale. **The grid
+   governs the bound's APPLICABILITY, never its derivation** — because
+   the graded quantity is `O(h^1,32)` (**DL-025**; the `h²` prediction
+   was falsified).
+
+★ **That is why 17 → 33 left `COMPILED_DE` untouched**, which is the
+whole point of a tolerance with no free parameter in it.
+
+> **★ A HAZARD THIS LIBRARIAN FOUND WHILE VERIFYING, AND IS FILING
+> BECAUSE IT IS EXACTLY §0's CASE.** `pass4.rs` L234 records
+> **`0,254 23` ΔE2000** and `COMPILED_DE` records **`0,252 94`**. These
+> are **two different quantities** — the first is the *method envelope*
+> (iccce's n-linear CLUT against lcms2's geometry, **both reimplemented
+> in the harness**, neither involving lcms2 the program); the second is
+> the **observed iccce-vs-lcms2 residual**. They agree to **0,5 %** and
+> sit in **one crate**, so a future reader has every opportunity to
+> quote one for the other. *(verified — both read at the tip.)*
+> **Neither number is wrong and neither is edited here.**
+
+#### 3.27.2 ★ Break-even's shift is STRUCTURAL, and must always be stated with its grid
+
+| ID | What | Class | Tolerance | Observed |
+|---|---|---|---|---|
+| **★ NC-171** | **Median 4-D build time, grid 17 → grid 33** | **machine-timing** | **none** | **`0,838 s` → `12,444 s` = 14,8×** |
+| **★ NC-172** | **Median break-even raster, grid 17 → grid 33** — supersedes **NC-152** and **NC-163** as the quotable figure | **machine-timing** | **none** | **`85 900 px` → `1 273 800 px` = 14,8×.** ★ **The two ratios agree to THREE FIGURES**, which is the arithmetic saying the shift is *entirely* the build |
+
+**Confirmed by re-measurement, not by a model** — ten `iccce bench`
+invocations in one session, five at each grid, same binary (`cc03f3d`),
+same pair, same 8 700 867-px raster *(**CARRIED**; recorded by
+`icc-conformance` at `TOLERANCES.md` §3.6.3(a), **verified — read at the
+tip**)*. Break-even solves `N = build ÷ (1/reference − 1/compiled)`;
+**`build` is in the numerator and `build` is what the grid moved.**
+Nothing else in the expression depends on the grid.
+
+★ **The figure to quote is `≈1,3×10⁶ px AT GRID 33`, and only ever with
+the grid attached.** *A break-even without a grid is like a tolerance
+without units.*
+
+#### 3.27.3 ★★ The speedup is WITHDRAWN as a documented figure — in any form, including as a range
+
+| ID | What | Class | Status |
+|---|---|---|---|
+| **★★ NC-173** | **The compiled-over-reference speedup** | **machine-timing** | ★★ **WITHDRAWN. SUPERSEDES NC-162's `12,18×–22,85×` range and NC-107's `14,4×` figure, and replaces them with NOTHING** |
+
+**The grounds, measured:** the speedup spans **2,03× within ONE session
+at ONE grid** (grid 33, five runs, `12,44×–25,27×`). Break-even over
+**those same runs** spans **1,13×**, because `N ≈ build × reference_rate`
+and the noisy term barely enters. **A quantity insensitive to the arm
+that varies is the one to publish.**
+
+> **★ A REFINEMENT THIS LIBRARIAN IS MAKING TO THE DISPATCH'S OWN
+> COMPRESSION.** The dispatch says the speedup *"spans 2,03× within one
+> session at fixed grid"*. That is true **at grid 33**; at **grid 17**
+> the same five-run protocol spanned only **1,15×** *(verified —
+> `TOLERANCES.md` §3.6.3(b), read)*. **The instability is not uniform
+> across grids**, and the withdrawal is better supported by the grid-33
+> arm alone than by a sentence that implies both. Recorded because
+> rounding a claim's scope up is the one thing this ledger exists to
+> stop.
+
+**The decision is `icc-conformance`'s** (`TOLERANCES.md` §3.6.3(b),
+2026-08-12): *"this project does not carry a speedup figure."*
+`iccce bench` keeps printing `speedup.compiled_over_reference` — **it is
+a diagnostic a user runs on THEIR machine** — and it is not restated in
+any project document as a property of the engine.
+
+**Sweep result, this filing.** Every surviving single-figure or range
+speedup claim in `docs/`:
+
+| Where | What it says | Status |
+|---|---|---|
+| **`README.md`** | ★★ **NOTHING — no throughput, no speedup, no break-even, no `Mpix`, no `×` claim anywhere in the file** *(**verified** — this librarian grepped it at this filing)* | ★★ **§7.12 newly-owed 4 is DISCHARGED, in the "there was nothing there" direction.** The user-facing surface was clean all along |
+| `NUMERIC_CLAIMS.md` **NC-107** (`14,4×`), **NC-162** (`12,18×–22,85×`) | the retired figure and the retired range | **Superseded by NC-173. Retained, not edited** — §3.23.2's "must not" is unchanged |
+| `NUMERIC_CLAIMS.md` **§3.23**, whole section | *"the honest published form is `12–23× on this machine, load-dependent`"* | ★ **That sentence is now WRONG and is corrected HERE rather than in place**, the section being the record of what was believed at the Pass 6 filing. **The honest published form is now: no speedup figure at all.** |
+| `ROADMAP.md` header block (2026-08-12) | *"the honest form is `12–23× on this machine, load-dependent`"* | ★ **Superseded by this filing's dated head block** |
+| `SESSION_LOG.md` Pass 6 entry | the original two figures | **Append-only; left exactly as written** |
+| `TOLERANCES.md` §3.6.2's old *"28–32×"* | superseded **by its own owner** at §3.6.3 | **Not mine. Not edited.** ★ It is where the withdrawal was decided |
+
+#### 3.27.4 ★★★ §7.12's newly-owed item 2 — the TWO NON-OVERLAPPING RANGES — is discharged **by withdrawal, not by reconciliation**, and the distinction matters
+
+§7.12 item 2 recorded that `iccce bench` gave **12–23×** while
+`TOLERANCES.md` §3.6.2 gave **28–32×**, that *"the project holds two
+ranges that do not overlap and does not know why"*, and offered a
+labelled **hypothesis** (§3.23.4): *the two harnesses may time different
+work — e.g. with or without the CLI's per-pixel buffer marshalling.*
+
+**What happened is not what the item asked for.** `icc-conformance`
+did not reconcile the ranges; it **measured the quantity ten more times,
+found `28–32×` not reproducible, and withdrew the quantity entirely.**
+Across every session on the machine the observed range is
+**`12,4×` to `32×`, a factor of 2,6, with no change of grid, code or
+workload to attribute it to** *(verified — `TOLERANCES.md` §3.6.3(b))*.
+
+> **★★ THE HYPOTHESIS IS STILL UNTESTED.** Nobody has compared the two
+> harnesses' work. It is **not** refuted by the withdrawal — a quantity
+> too noisy to publish can still be *systematically* different between
+> two harnesses, and if the marshalling hypothesis is right it is a fact
+> about `iccce bench` that outlives the speedup claim. **The item is
+> closed as a documentation hazard and remains open as a question**, and
+> it is re-listed as such in §7.13.
+
+#### 3.27.5 ★★★ A dispatch claim that NEVER REACHED THE LEDGER — checked before filing the correction for it
+
+**The engineer filed a correction to himself**: that he had told this
+librarian the **reference arm** had drifted outside its recorded
+`0,076–0,091 Mpix/s` band, and that this was wrong.
+
+**★ This librarian checked whether the ledger contained the claim before
+recording a correction to it. It does not.** *(verified — `docs/`
+grepped for `drift`/`drifted` and for the band's figures.)*
+`NUMERIC_CLAIMS.md` mentions `0,076–0,091` in exactly two places —
+§3.23.1's table row and §3.23.4 — and **both attribute it to
+`TOLERANCES.md` §3.6.2 and flag it as unreconciled rather than
+asserting anything about drift.** No document owned by this librarian
+ever said the reference arm drifted.
+
+**So the correction is recorded as what it is:**
+
+| | |
+|---|---|
+| **The claim** | *"the reference arm has drifted outside `0,076–0,091`"* |
+| **Where it lived** | **In the dispatch only.** It never entered a document |
+| **What is true instead** | ★ **Within a session the reference arm is the TIGHTEST quantity measured: ±4 %, against ±35 % for the compiled arm.** Today's ten runs give `0,092–0,099 Mpix/s` at **both** grids *(verified — `TOLERANCES.md` §3.6.3(c), read)* |
+| **What the old band actually was** | **A four-sample range from one sitting, quoted as if it were a property of the machine** — i.e. **the same error as the withdrawn speedup claim**, not evidence of drift |
+| **Consequence for §3.23.1** | Its table row records `0,076–0,091` as *what `TOLERANCES.md` said then*, which remains a **correct record**. ★ **Superseded, not wrong.** Not edited |
+
+> **★★★ THIS IS THE FIFTH RECORDED INSTANCE OF THE DISPATCH AND THE TREE
+> DISAGREEING (§2.12), AND IT IS THE FIRST ONE CAUGHT BEFORE THE FILING
+> RATHER THAN AFTER.** The four previous instances were errors *in* a
+> dispatch that reached a document. This one would have produced **a
+> correction to a statement no document contains** — the exact failure
+> the sibling project logged and the reason the verify-against-live-source
+> rule is worded as it is. ★ **The engineer's own tagging discipline is
+> what made it cheap**: the claim arrived labelled as a correction, so
+> the first question was *"correcting what, where?"*, and the answer was
+> *nowhere*.
+
+#### 3.27.6 Coverage of §3.25 – §3.27, stated because a number without it is not a claim
+
+- **One machine**: Windows 11, MSVC, **release**, **single-threaded**.
+- **One profile pair per Pass**; **media-relative only**; **one oracle
+  pin, `21c582a`**.
+- **The black-point re-measure**: **two profiles, one intent, one
+  direction** — and ★ **only the `swop` arm exercises the corrected
+  branch at all** (§3.25.4).
+- **The timing figures**: ten `iccce bench` invocations in **one
+  session**, five at each grid, one raster size, one pair, one intent.
+- **Nothing here is a claim about another CPU, another OS, another
+  build profile, multi-threading, or any other profile pair.**
+- ★ **No CI run has been observed by this librarian, in any filing**,
+  and the Linux debt is untouched.
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -4074,6 +4447,50 @@ moment it exists, not the moment a Pass measures it.)*
 >   today zero** — 4.2.6 ignores `a`/`b` — **and it is still a change to
 >   what this register describes.**
 
+> **★★★ FOURTH dated note, 2026-08-12 (second filing of the session,
+> tip `2881e19`) — NA-009's COST IS MEASURED, after four filings of
+> "unmeasured", and the third note's prediction above is FALSIFIED.**
+> The bullet reading *"it should now be expected to COLLAPSE toward zero
+> on the `swop` arm"* was a **prediction, correctly labelled as one and
+> correctly left unasserted**. It has now been measured and it went the
+> other way. **Figures CARRIED from `icc-conformance`;** the mechanism is
+> verified from source. Full treatment in **§3.25**.
+>
+> | Arm | NA-009's cost | Composition | Movement on the correction |
+> |---|---|---|---|
+> | `USWebCoatedSWOP.icc` | **`4,799 109 ΔE76`** (**NC-165**) | **100 % `L*`** | ★ **GREW 58,8×** — it did not collapse |
+> | `v4-rgb-mab-chromatic-black.icc` | **`5,000 000 ΔE76`** (**NC-166**) | **100 % chroma** | **Identically unmoved**, as the third note predicted for this arm |
+>
+> **Three things this register must now carry, and none is optional:**
+>
+> - **★★★ The cost is real but it is a DEFINITIONAL divergence, not an
+>   error by either implementation.** Both now return what their own
+>   document calls `InitialLab`. **ISO 4.2.2.2 means the darkest device
+>   vertex, neutralised; lcms2's `cmsDetectBlackPoint` means the
+>   perceptual black round trip with chroma zeroed.** The subset
+>   re-implementation this entry describes is a subset of a *differently
+>   defined quantity*, which is a stronger statement of the departure
+>   than "a labelled subset" and supersedes nothing in the entry above.
+> - **★★ Three caveats travel with the number wherever it is
+>   restated**: it is a cost **at the black point only**; it is measured
+>   **relative to lcms2, not to truth**; and ★ **there is NO ground truth
+>   in this comparison** — no published black point exists for
+>   `USWebCoatedSWOP.icc` and 18619 is a **committee draft**. **It reads
+>   as an implementation-cross-check throughout and must never be
+>   promoted**, however stable it looks.
+> - **★★ The measurement's power came from the VENDOR profile, not the
+>   authored one.** The synthetic fixture's `InitialLab` and
+>   `outRamp[first]` are **both `L* 20`**, so it had zero power to see
+>   the defect or the correction (§3.25.4). Filed as
+>   `ARCHITECTURE.md` **DL-036**, the stated converse of DL-020.
+>
+> ★ **What this does to the third note above: nothing is edited.** Its
+> attribution work was right, its prediction was labelled, and **a
+> labelled prediction that is falsified is the register working**, not
+> the register failing. The failure mode it warned about — *"a named
+> approximation's register must not carry a bug as though it were a
+> priced departure"* — **was avoided**, and the price is now known.
+
 ### NA-010 — the fixed v4 perceptual black follows **the implementations' triple**, not ICC.1 Table 16's printed decimals. A deviation from printed spec text whose cost is **corpus-derived, not measured here**
 
 *(Filed 2026-08-11 at the Pass 4b filing by `icc-librarian`, from the
@@ -4354,6 +4771,11 @@ are the rows to re-run or retire.
 | **★ `fixtures/synthetic/v2-ncl2-named.icc`'s bytes** *(added 2026-08-12, Pass 7)* | **NC-111 and NC-112.** The file is `gen-profiles` output and **`gen-profiles verify` is the only detector for a change to it, and nothing runs it automatically** — the same exposure §6 already records for `v4-cmyk-mab-lab.icc`, now on a second file |
 | **★ `Chain::pcs_to_destination`, and the fact that `convert` shares it** *(added 2026-08-12, Pass 7)* | **NC-111 — and, in the other direction, every end-to-end row in §3.8 … §3.13.** The de-duplication is the Pass's central decision: **a change to the destination half now moves the spot path and the ordinary path together, which is the point.** ★ **What would break it silently is re-introducing a private destination arm for named colours** — the code would work, every test would pass, and the guarantee that a spot cannot drift from the rest of the CMM would be gone with nothing to notice |
 | **★ The system sRGB and SWOP profiles in `C:\Windows\System32\spool\drivers\color\`** *(added 2026-08-12, Passes 6 and 7)* | **NC-105 … NC-109 and NC-111.** Neither profile is committed (LEGAL §3), so **every one of these rows SKIPS on a machine without them** — and a skip is not a failure. Combined with "no Linux run, ever", **six of this section's eight rows are unreproducible off this one machine** |
+| **★★★ `bpc.rs`'s 4.2.5.4 branch, or the corpus's transcription of that clause** *(added 2026-08-12, §3.25)* | **NC-165, NC-166, NC-167, NC-174, NC-175 and NA-009's cost — all of them, and NOT symmetrically.** ★ **The sharp part is that this dependency has already fired ONCE and moved a number 58,8× in the direction nobody predicted.** A further change to which quantity the short-circuit returns moves **NC-165 and NC-167 together and in opposite directions**, because NC-167 measures the distance between two candidate returns while NC-165 measures the distance from the chosen one to lcms2. **NC-166 would not move at all** — the synthetic fixture's two candidates are the same number (§3.25.4) — so ★ **a regression here would be invisible on one of the two arms** |
+| **★★ THE SEPARATION OF THE TWO CANDIDATE ANSWERS, in any cross-check** *(added 2026-08-12, DL-033)* | **Every `implementation-cross-check` row whose two implementations could compute a shared intermediate.** ★ **This row is new in kind and it invalidates nothing today** — it is a *reading instruction*: a small residual is evidence of **proximity**, not of correctness, and where the candidate answers are close for a reason unrelated to the code being right, **the cross-check has no power and the row cannot be quoted as though it had.** The founding instance is NC-164a/NC-174: `MinL(lcms2) = MinL(ISO) = 16,489 806` **exactly**, so a defective iccce agreed with the oracle to `0,08 ΔE76`. **Candidate-separation statements are OWED on the cross-check rows and this entry does not supply them** |
+| **★ A vendor profile leaving the fixture set** *(added 2026-08-12, DL-036)* | **NC-165, NC-167, NA-009's `swop` cost — and, going forward, any measurement whose power comes from quantities a real ink set separates.** ★ **The authored corpus would keep passing.** `v4-rgb-mab-chromatic-black.icc` has `InitialLab.L*` = `outRamp[first]` = **`L* 20`**, so on this measurement it had **zero** power. **Removing `USWebCoatedSWOP.icc` would not fail a single test; it would delete the only arm that can see** |
+| **★★ A ratio's DENOMINATOR or its RIVAL candidate moving** *(added 2026-08-12, DL-035)* | **NC-168 (T1) and NC-169 (T4) — and the direction of travel of every graded ratio in this ledger.** Both rows moved green-ward on the corrected code **for reasons opposite to what the numbers imply**: T1's error bar did not change (its *effect* grew 59×) and T4's numerator did not change (its *rival* got 4,03× worse). ★ **Nothing fails when this happens**, which is why it is a dependency row and not a test |
+| **★★ THE MACHINE'S LOAD, as distinct from the machine** *(added 2026-08-12, §3.27)* | **NC-161, NC-162 and NC-173 — the speedup, which is now WITHDRAWN because of this row.** The quantity spans **2,03× within one session at grid 33** with no change of grid, code or workload. ★ **NC-171 and NC-172 (build time and break-even) survive it**, because `N ≈ build × reference_rate` puts the noisy term where it barely enters — measured spread **1,13×** over the same five runs. **A quantity insensitive to the arm that varies is the one to publish** |
 
 ---
 
@@ -5107,6 +5529,82 @@ though they had been re-examined.
 
 ---
 
+### 7.13 Status of §7 … §7.12, re-checked 2026-08-12 at the **black-point re-measure** filing
+
+No list above is edited. **This is the fifth status pass of the same
+calendar day and the sixteenth filing overall.** ★ **It is the third
+consecutive filing taken WITHOUT a shell**, and the discipline that
+follows from that is unchanged: an item settled by running a command in
+an earlier filing is **verified-then, unchecked-now**, and is never
+restated as though it had been re-examined.
+
+★ **What is different about this status pass:** two items are
+discharged **by this librarian's own reading** rather than by a carried
+dispatch claim, and one is discharged **in the direction opposite to the
+prediction that opened it**.
+
+| Item | Status now |
+|---|---|
+| §7.12 newly-owed 1 — **re-measure the `swop` black-point divergence on corrected code** | **★★★ DISCHARGED, AND THE PREDICTION IT CARRIED IS FALSIFIED.** It did **not** collapse; it **GREW 58,8×**, from `8,166 8×10⁻²` to **`4,799 109 ΔE76`** (**NC-165**). ★ **The item called itself "the highest-value item on the list" and it was right, for a reason it did not anticipate**: the finding is not the number but **DL-033** — *agreement with the oracle was the symptom of our defect*. **NA-009's cost is MEASURED at last** (§3.25.5, fourth dated note in §4), with three caveats that must never be dropped. **§3.25**, **NC-165 … NC-167**, **NC-174/NC-175**, **DL-033**, **DL-036** |
+| §7.12 newly-owed 2 — **reconcile the two non-overlapping speedup ranges** | **★★ DISCHARGED BY WITHDRAWAL, NOT BY RECONCILIATION — and the distinction is filed, not glossed.** `icc-conformance` measured the quantity ten more times, found `28–32×` not reproducible, and **withdrew the speedup entirely** (`TOLERANCES.md` §3.6.3(b); **NC-173**). ★ **§3.23.4's labelled hypothesis — that the two harnesses time different work — remains UNTESTED and is re-listed below as a question.** A quantity too noisy to publish can still be systematically different between two harnesses |
+| §7.12 newly-owed 4 — **sweep `README.md` for a single-figure throughput or speedup claim** | **★★ DISCHARGED BY THIS LIBRARIAN, in the "there was nothing there" direction** *(**verified** — `README.md` grepped at this filing for `Mpix`, `speedup`, `faster`, `×` and `break-even`; the only hit is an unrelated `1×10⁻⁴` at L172)*. **The user-facing surface was clean all along.** ★ **Recorded as a discharge and not silently dropped**, because "we checked and found nothing" is a different fact from "we never checked", and only one of them is evidence |
+| §7.12 newly-owed 3 — **enumerate NC-160's `skip=3`** | **Still owed, untouched.** ★ **It requires the runner's output and this librarian has no shell.** A skip remains the one place a green census can hide something, and `fail=0` cannot see it |
+| §7.12 newly-owed 5 — **`TOLERANCES.md` rows for the corrected NA-009 and for NC-164** | **★ PARTIALLY DISCHARGED — by its owner, and more than was asked.** `TOLERANCES.md` §3.6.3 and the 4.2.5.4 subsection now carry the re-measure *(verified — read at the tip; §996 records `8,166 8×10⁻² → 4,799 109 ΔE76, 58,8× LARGER`)*. **Whether a §5 row for NA-009 now exists is `icc-conformance`'s to state; this ledger did not audit §5 and does not claim it was filled** |
+| §7.12 newly-owed 6 — **a regression test for the 4.2.5.4 branch, graded against the clause** | **★ MOVED, not closed.** `crates/iccce-cmm/src/bpc.rs` **L620–L703** carries two tests naming 4.2.5.4, one asserting `"InitialLab carried through"` and one asserting the **whole triple** survives on a **chromatic** `InitialLab` *(verified — read at the tip)*. ★ **That is more than the previous filing could see, and this librarian does not grade it**: whether it discharges the item is `icc-conformance`'s call. **The defect shipped once through exactly this gap** |
+| §7.12 newly-owed 7 — **nothing is owed for the manifest** | **Unchanged, and deliberately still listed.** It exists so nobody files the correction twice |
+| §7.11 newly-owed 3 — **the A41 constant's error, measured** | **Still owed, untouched, second filing.** The fixture exists; the measurement does not |
+| §7.11 newly-owed 4 — **the CI evidence** | **Still owed, untouched.** ★ **No CI run has been observed by this librarian in any of sixteen filings.** The Linux debt is undischarged |
+| §7.9 items 4–5 — **the `nDeviceCoords` cross-check; a spot into a LUT/gray destination; a PCSXYZ `ncl2` fixture** | **Still owed, untouched, FIFTH filing.** ★ **The `nDeviceCoords` comparison is still the cheapest genuine cross-check available anywhere in this project** |
+| §7.10 item 1 — **`dechk.obj` in the public repository** | **Carried, `unverified-this-filing`.** The repository root was not enumerated |
+| §7.10 item 2 / §7.11 — **pushes without a recorded go-ahead** | **Carried, `unverified-this-filing`.** ★ **One thing IS newly evidenced and it is narrow:** `.git/refs/heads/master` reads **`2881e1903a85d8d531c5d573fb965f597c25354a`** *(verified — read)*, which corroborates the dispatch's tip. **It says nothing about whether that tip has been pushed**, and this librarian did not read the push log. Rule 9 and **DL-024** unchanged |
+| §7.10 item 3 — **commits sweeping in other agents' unfinished work** | **No new instance observed — and nothing was checked.** The three recorded instances stand |
+| §7.10 item 5 — **`cargo fmt --check` in `tools/difftest`** | **Carried, `unverified-this-filing`.** Two runners, one gate |
+| §7.10 item 6 / §7.8 item 1 — **the PCSLAB gray fixture, and the non-zero-black v4 LUT fixture** | **★★ THE SECOND ONE CHANGES MEANING TODAY.** The non-zero-black fixture was owed as *"the only instrument that can make NA-009's cost measurable"* — **and NA-009's cost is now measured without it**, by the correction plus the vendor arm. ★ **The fixture is still owed, for a different reason**: §3.25.4 shows the authored corpus currently has **zero power** to separate `InitialLab` from `outRamp[first]`, so it is the cheapest way to give the synthetic arm a regression it could actually fail (**DL-036**'s revisit clause). **NA-008's PCSLAB gray arm is untouched and remains the oldest UNMEASURED entry in §4** |
+| §7.10 item 7 / **the DL-014 citation audit** | **★ Still owed, ELEVENTH filing.** §3.24 cites ISO/CD 18619 4.2.5.4 verbatim and the audit should confirm the corpus carries that paragraph at the tier the citation implies |
+| §7.1 item 4 — **a ground-truth row for chromatic adaptation** | **Still owed. Still not due** *(no adaptation code changed; not re-grepped)* |
+| §7.1 item 6 / §7.9 — **a Linux run** | **Still owed. Nothing, by anyone, ever.** |
+| **`published-ground-truth` for any transform** | **★★ UNCHANGED, ELEVENTH consecutive filing — and today it acquires its sharpest illustration yet.** ★ **NA-009's newly measured cost has NO ground-truth arm at all**: no published black point exists for `USWebCoatedSWOP.icc`, and the clause that arbitrated the defect is a **committee draft**. So the project has just measured a real quantity to six figures **against another implementation**, and cannot say which of the two is nearer the truth. **`IEC 61966-2-1` is still the cheapest route to a real ground-truth row and still nobody has dispatched for it** |
+
+**Newly owed as of this filing:**
+
+1. **★★★ Candidate-separation statements on the cross-check rows
+   (DL-033).** For every `implementation-cross-check` row where the two
+   implementations could compute a **shared intermediate**, state **how
+   far apart the two candidate answers were** — because that, and not
+   the residual, is what bounds the check's power. **The founding
+   instance is the whole of §3.25**, and nothing here supplies the
+   statements. ★ **This is the highest-value item on the list**, and it
+   is the successor to §7.12 item 1 in the same way that item was the
+   successor to §3.18.6.
+2. **★★ The `iccce bench`-vs-`pass6.rs` harness question, RE-LISTED as a
+   question after being closed as a documentation hazard.** §3.23.4's
+   hypothesis — *the two harnesses may time different work, e.g. the
+   CLI's per-pixel buffer marshalling* — **was never tested**, and the
+   withdrawal of the speedup does not refute it. **If it is right it is
+   a fact about `iccce bench` that outlives the withdrawn claim.**
+3. **★ Enumerate NC-160's `skip=3`** — carried forward from §7.12 and
+   still blocked on a shell.
+4. **★★ A regression that would FAIL if the 4.2.5.4 branch regressed,
+   on the arm that can see it.** `bpc.rs`'s two unit tests are
+   behavioural and run on constructed input; **NC-166 shows the
+   synthetic difftest arm has zero power here**, so the only
+   *differential* detector is the `swop` arm. ★ **State plainly which
+   detector is load-bearing**, because §6's new row says a regression
+   would be invisible on one of the two arms.
+5. **★ A `TOLERANCES.md` §5 row for NA-009 now that its cost EXISTS.**
+   The register carried "UNMEASURED" for four filings and the
+   justification for that has now expired. `icc-conformance` owns the
+   file; this ledger has recorded the facts and edited nothing.
+6. **★★ Nothing is owed for a "reference arm drift" correction, because
+   no document ever carried the claim.** *(verified — `docs/` grepped.)*
+   Recorded as a numbered item for the same reason §7.12 item 7 was:
+   **so nobody files a correction to a statement that does not exist.**
+   ★ **It is the fifth instance of the dispatch and the tree
+   disagreeing (§2.12) and the FIRST caught before the filing rather
+   than after** — see §3.27.5.
+
+---
+
 ## 8. Related
 
 - `docs/TOLERANCES.md` — the tolerance budget (`icc-conformance`).
@@ -5196,6 +5694,33 @@ though they had been re-examined.
   deleting `license-file` to silence a cargo warning would have shipped
   a tarball with **no MIT notice text**, invisibly. ★ **Rule 1 in a
   non-colour register — the clean build IS the defect.**
+  **DL-033** *(added 2026-08-12)* — ★★★ **AGREEMENT WITH THE ORACLE WAS
+  THE SYMPTOM OF OUR DEFECT**: a cross-check's power is bounded by the
+  **separation of the two candidate answers**, not by the tightness of
+  the residual it reports. Filed with the arithmetic that names it —
+  `MinL(lcms2) = MinL(ISO) = 16,489 806` exactly, so a defect of
+  **`4,717 441 L*`** hid inside a reported divergence of
+  **`0,0817 ΔE76`**, **57,8× smaller** (**§3.25**, **NC-165 … NC-167**).
+  ★ **The mirror of DL-028, and the more dangerous half** — DL-028's
+  failure announces itself; this one is silent. **DL-034** *(added
+  2026-08-12)* — **a claim-bearing number the harness can COMPUTE is
+  formatted at run time, never typed into prose beside the code that
+  computes it**; a stale comment misleads a reader, **a stale string in
+  an emitted conformance record misleads the evidence**. Filed with two
+  instances in one sentence, only one of which was staleness
+  (**§3.27.1**, **NC-170**). **DL-035** *(added 2026-08-12)* — **an
+  improvement whose cause is the DENOMINATOR or the RIVAL is not an
+  improvement**; filed with T1 (error bar unchanged, effect grew 59×)
+  and T4 (numerator unchanged, rival 4,03× worse), both of which read as
+  the opposite of what happened (**§3.26**, **NC-168**, **NC-169**).
+  ★ **DL-018 one level up.** **DL-036** *(added 2026-08-12)* — **a real
+  vendor profile stays in the fixture set beside the authored ones,
+  because on the measurement that mattered the AUTHORED fixture had ZERO
+  power**: the synthetic arm's `InitialLab` and `outRamp[first]` are
+  both `L* 20`, so swapping them changed nothing (**§3.25.4**,
+  **NC-166**). ★ **The stated converse of DL-020** — an authored fixture
+  discharges the doubt it was authored for **and nothing adjacent to
+  it**.
 - `tools/difftest/README.md` — the oracle, its pin and its licence (§2–§3),
   the smoke record (§8), the harness and its one registered check (§11),
   and **§12, the legacy-Lab experiment and the BPC finding** — the

@@ -3423,3 +3423,290 @@ is an end in itself:** here the clean build **is** the defect.
 becomes stale and should say so rather than be deleted); or a second
 expected-warning site appears, at which point the pattern is worth a
 short list somewhere rather than one comment per site.
+
+---
+
+### DL-033 — ★★★ **AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF OUR DEFECT.** A cross-check's power is bounded by the distance between the two CANDIDATE answers, not by the tightness of the residual it reports — so being wrong in the right way is invisible to it
+
+**Date:** 2026-08-12 · **Occasioned by:** the re-measurement of the
+`swop` black-point divergence on the code corrected at `fd34a44`, which
+**grew 58,8× instead of collapsing** · **Measured by:**
+`icc-conformance` · **Filed by:** `icc-librarian` from
+`tools/difftest/src/pass5c.rs`, read at the tip `2881e19` *(verified —
+the record's own `source` string carries every figure below)* ·
+**Relates to** **DL-030** (the defect itself), **DL-028** (a residual
+large under every hypothesis), **DL-023** (pre-registration), and
+**NC-165 … NC-167**, **NC-174**, **NC-175**
+
+#### The decision
+
+> **A cross-check whose two candidate answers are close together cannot
+> detect an error that moves the result between them. Before a
+> cross-check is offered as evidence that a value is right, state the
+> SEPARATION OF THE CANDIDATES it was capable of resolving — and where
+> the defect's own magnitude exceeds the residual the cross-check
+> reports, say so in the same sentence. A small residual is not evidence
+> of correctness; it is evidence of proximity, and proximity has more
+> than one cause.**
+
+#### The arithmetic, which is the whole entry
+
+`bpc.rs`'s straightness short-circuit returned `outRamp[first]`. Clause
+4.2.5.4 of ISO/CD 18619 requires `InitialLab`. On
+`USWebCoatedSWOP.icc`:
+
+| Quantity | Value |
+|---|---|
+| the **non-conformant** return, `outRamp[first] = MinL` | `L* 16,489 806` |
+| the **conformant** return, `InitialLab` | `L* 11,772 365` |
+| **the defect's own magnitude** | **`4,717 441 L*`** |
+| lcms2's answer (reimplemented from `cmssamp.c` at pin `21c582a`) | `L* 16,571 474` |
+| the divergence the cross-check reported **before** the fix | **`8,166 8×10⁻² ΔE76`** |
+| the divergence the cross-check reports **after** the fix | **`4,799 109 ΔE76`** |
+
+★ **The defect's magnitude was 57,8× the divergence it was blamed for.**
+And the reason is exact rather than coincidental: `MinL` **is the same
+number in both documents** — `MinL(lcms2) = MinL(ISO) = 16,489 806` —
+so a non-conformant implementation that returned `MinL` was returning a
+quantity the oracle also computes, and landed `0,0817 L*` from the
+oracle's answer **for a reason that had nothing to do with being
+right**.
+
+#### ★★ Why this is not the same entry as DL-028
+
+**DL-028** says a residual that is *large under every hypothesis* is an
+apparatus fault. **This is its mirror and it is the more dangerous
+half**: a residual that is *small* is read as success by default, and
+nothing in the number asks to be explained. DL-028's failure announces
+itself; **this one is silent, and silence is the failure mode CLAUDE.md
+rule 1 exists for.** A wrong colour looks exactly like a right one —
+and here **a wrong colour agreed with the oracle to 0,08 ΔE76.**
+
+#### ★★★ What this does NOT license, and the trap is right here
+
+It does **not** license reading the *new*, larger figure as evidence
+that the corrected code is worse, or the old, smaller one as evidence
+that the defective code was better. **Neither number grades
+correctness at all.** The clause graded correctness (**DL-030**); the
+cross-check only ever measured distance to another implementation.
+★ **The right reading is that the cross-check was nearly blind here and
+is now merely uninformative here** — both implementations return what
+their own document calls `InitialLab`, and the residual is two
+documents meaning different things by one name (ISO 4.2.2.2: the
+darkest **device vertex**, neutralised; lcms2's `cmsDetectBlackPoint`:
+the **perceptual black round trip** with chroma zeroed). **There is no
+ground truth in this comparison** — no published black point exists for
+`USWebCoatedSWOP.icc`, and 18619 is a committee draft.
+
+#### What follows operationally
+
+1. **Every cross-check row in `NUMERIC_CLAIMS.md` that grades a value
+   against lcms2 owes a candidate-separation statement** wherever the
+   two implementations' *methods* could produce answers close together
+   for unrelated reasons. This is owed and is **not** discharged by this
+   entry.
+2. **A pre-registered prediction of a collapse is a prediction, and gets
+   measured.** §3.24 pre-committed that NC-142's figure *"should now be
+   expected to COLLAPSE"* and explicitly **refused to assert it**
+   (`NUMERIC_CLAIMS.md` §7.12 newly-owed 1). ★ **That refusal is the
+   only reason this entry is an observation rather than a retraction.**
+
+**Revisit if:** a published black-point value for any real profile
+becomes available (the comparison acquires a ground-truth arm and this
+entry's "no ground truth" clause narrows); or a cross-check is built
+whose candidate separation is stated in advance, at which point this
+rule has a worked positive example instead of only its founding
+negative one.
+
+---
+
+### DL-034 — ★★ **a claim-bearing number the harness can COMPUTE is FORMATTED AT RUN TIME, never typed into prose beside the code that computes it.** A stale comment misleads a reader; a stale string inside an emitted conformance record misleads the EVIDENCE
+
+**Date:** 2026-08-12 · **Adopted from:** `icc-conformance`, which found
+the instances · **Filed by:** `icc-librarian` from
+`tools/difftest/src/pass6.rs`, read at the tip *(verified — the
+corrective comment at L1055–1072 and the `format!` at L1084–1099)* ·
+**Relates to** **DL-031** (a count without its apparatus), **DL-018**
+(a gate that rewards deletion), and `NUMERIC_CLAIMS.md` §0
+
+#### The decision
+
+> **If the harness already holds a value in a variable, the emitted
+> record interpolates that variable. Writing the value out as a literal
+> in the adjacent prose creates a second, unsynchronised copy of a fact
+> the program already knows — and the copy lives inside the artefact
+> whose entire purpose is to be durable evidence.**
+
+#### The instance that named the rule
+
+A Pass 6 record's `source` string read *"**17** is the shipped
+default"*. It was true when written. Commit `189e732` moved
+`compiled::recommended_grid_points(4)` to **33**, and the string went on
+being emitted into **every record of every subsequent run** — so the
+apparatus spent a day **asserting a false fact about the shipped product
+inside its own evidence**. The string is now
+`"{DEFAULT_GRID} is the shipped default"`, interpolated from the same
+constant the code grades against *(verified — read)*.
+
+#### ★★ The second instance, which is the sharper one
+
+The same string also read *"the only grid `COMPILED_DE` is **DERIVED**
+for"*. That was **wrong on the day it was written** — not stale, wrong.
+`COMPILED_DE`'s derivation population is **Pass 4's 341-point CMYK
+comparison of the REFERENCE path against lcms2 2.19.1**, and
+`tools/difftest/src/pass4.rs` **never constructs a `CompiledTransform`
+at all** *(verified — read; the file builds a 341-point CMYK `grid()`
+and compares reference-path output against the oracle)*. There is no
+compiled grid anywhere in that number to be stale. What is
+grid-dependent is the bound's **applicability**, because the graded
+quantity is `O(h^1,32)` in the grid spacing (**DL-025**).
+
+★ **A stale number and a conflated concept were shipping in one
+sentence, and only the stale one was visible.** Re-formatting the
+string forced the sentence to be re-read, which is what found the other.
+
+#### What this rule cannot do
+
+- **It cannot help a number the harness does not compute.** A figure
+  quoted from another document, another session or a commit message is
+  outside its reach entirely; **DL-031** covers that case and this one
+  does not.
+- **It does not make the record self-explaining.** `DEFAULT_GRID`
+  interpolated correctly still says nothing about *which runner* emitted
+  it — the census problem is orthogonal and unsolved by this.
+- **It is not a licence to delete prose.** The remedy is to interpolate
+  the *number*, keeping the reasoning around it; a record with no source
+  string is worse than one with a stale figure, because the stale figure
+  at least gets audited.
+
+**Revisit if:** a claim-bearing figure is found in an emitted record
+that the harness genuinely cannot compute at run time (the rule needs an
+explicit exception clause, stating how such a figure is dated instead).
+
+---
+
+### DL-035 — ★★ **an improvement whose cause is the DENOMINATOR or the RIVAL is not an improvement.** A graded ratio is read with its numerator and its denominator separately, or its direction of travel is unreadable
+
+**Date:** 2026-08-12 · **Occasioned by:** two conformance rows that went
+green-er on the corrected 4.2.5.4 code for reasons opposite to what
+their numbers imply · **Measured by:** `icc-conformance` · **Filed by:**
+`icc-librarian` *(the two rows' figures are **CARRIED** — this librarian
+has no shell and did not re-derive them; see `NUMERIC_CLAIMS.md`
+§3.26)* · **Relates to** **DL-018**, **DL-028**, **DL-031**
+
+#### The decision
+
+> **Where a graded quantity is a ratio, the ledger records the movement
+> of the numerator and of the denominator as separate facts, and a
+> narrative sentence about "improvement" is only permitted once both are
+> stated. A ratio that improves because its denominator grew, or
+> because a rival candidate got worse, has recorded no improvement in
+> the thing anyone cares about.**
+
+#### The two rows that named it
+
+| Row | Before | After | ★ What actually moved |
+|---|---|---|---|
+| **T1** — apparatus error bar against the effect | `3,043×10⁻¹` | `5,179×10⁻³` | **The error bar did not change.** The *effect* grew **59×**. The apparatus is exactly as good as it was |
+| **T4** — the reimplementation against the rival candidate | `1,715×10⁻¹` | `4,258×10⁻²` | **The numerator did not change.** The **rival got 4,03× worse** |
+
+★ **A reader seeing only the two numbers concludes the opposite of what
+happened**: that the apparatus got 59× sharper and the reimplementation
+4× better. Neither is true, and both rows are *correctly computed*.
+**The defect is not in the arithmetic; it is in the ratio being
+publishable on its own.**
+
+#### Why this is filed as a decision and not a note
+
+Because **both rows are green, and green is not audited.** DL-018
+established that a gate can be made greener by deleting the requirement
+it protects; this is the same structure one level up — **a ratio can be
+made greener by an event in its denominator that nobody chose and
+nobody would defend if it were stated plainly.** The remedy in both
+cases is identical and cheap: **pin the parts, not only the quotient.**
+
+#### What this does NOT say
+
+- **It does not say the two rows are wrong or should be ungraded.**
+  Both are the right quantity to gate on; T1's ratio is exactly the
+  DL-028 guard that an error bar must be smaller than its effect.
+- **It does not say a ratio must never be quoted.** It says a quoted
+  ratio must arrive with its two components, in the same table.
+- **It does not extend to ratios whose denominator is a constant** —
+  a tolerance with no free parameter in it (`COMPILED_DE`) has nothing
+  to hide behind.
+
+**Revisit if:** a third instance appears whose components move in the
+same direction, which would show the pattern is not confined to
+compensating movements and may need a stronger form (e.g. recording the
+components as their own ledger rows rather than as a note beside the
+ratio).
+
+---
+
+### DL-036 — ★★ **a real vendor profile stays in the fixture set beside the authored ones, because on the measurement that mattered the AUTHORED fixture had no power at all.** The converse of DL-020, learned from the same clause
+
+**Date:** 2026-08-12 · **Occasioned by:** the black-point re-measure, in
+which the `synthetic` arm's figure **did not move by one part in 10⁶**
+while the `swop` arm's grew 58,8× · **Filed by:** `icc-librarian`
+*(figures **CARRIED** from `icc-conformance`; the mechanism is
+**verified** from `tools/difftest/src/pass5c.rs` and `bpc.rs`, read at
+the tip)* · **Relates to** **DL-020** (a refusal is discharged by an
+independently authored fixture), **DL-027** (behaviour keyed by profile
+class), **GP-001**
+
+#### The decision
+
+> **The fixture corpus keeps at least one real, third-party-authored
+> profile alongside every synthetic one, and a measurement taken only on
+> authored fixtures states that it was. An authored fixture is
+> constructed to make a mechanism visible; it is therefore also
+> constructed — accidentally — to make everything else invisible.**
+
+#### Why the synthetic arm was blind, exactly
+
+On `v4-rgb-mab-chromatic-black.icc`, `InitialLab.L*` and
+`outRamp[first]` are **both `L* 20`**. The 4.2.5.4 defect swapped one
+for the other. **Swapping two equal numbers changes nothing**, so the
+arm's `5,000 000 ΔE76` was identical before and after the correction —
+not approximately, *identically*, and its divergence remains **100 %
+chroma with `ΔL*` exactly 0**. ★ **The fixture that was authored to
+discriminate the two ESTIMATORS had, by construction, zero power to
+detect a defect in the RETURN VALUE of one of them.**
+
+The vendor profile had the power because nobody designed it: on
+`USWebCoatedSWOP.icc` those two quantities are `11,772 365` and
+`16,489 806`, and they differ **because a real ink set makes them
+differ**.
+
+#### ★ The relationship to DL-020, stated so neither entry is misread
+
+**DL-020 is not weakened.** A doubt the corpus cannot discharge is still
+discharged by bytes this project authors — that is how GP-001 worked
+and how the estimator discrimination worked. **What is added is the
+boundary:** an authored fixture discharges *the doubt it was authored
+for* and **nothing adjacent to it**, because the author's model of the
+mechanism is baked into the bytes. **A vendor profile is the only
+member of the corpus that was not written by someone who already had a
+hypothesis.**
+
+#### What this does NOT decide
+
+- **It does not make the vendor profile ground truth.** It has no
+  published black point; it is a *fixture*, not an oracle
+  (rule 3 unchanged).
+- **It does not say synthetic fixtures are weak evidence.** They are the
+  only instrument that can isolate a mechanism, and §3.11's
+  derived-expectation rows are the strongest non-published rows in the
+  ledger.
+- **It does not license adding vendor profiles freely.** Licensing and
+  redistribution of third-party `.icc` files is unexamined here; this
+  entry is about **keeping** the arm that exists, not about acquiring
+  more.
+
+**Revisit if:** a second vendor profile is added (the "one real arm"
+policy should become a stated minimum with a rationale for the number);
+or a synthetic fixture is authored that *does* separate `InitialLab`
+from `outRamp[first]`, which would give the authored corpus the power it
+lacked here and is the cheapest way to make this entry's warning
+concrete rather than historical.
