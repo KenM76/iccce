@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass5, pass5b, pass6,
+    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -321,6 +321,24 @@ fn main() {
         report.push_record(r);
     }
 
+    // Pass 4c — ICC-absolute through a LUT destination, measured on a pair
+    // chosen so lcms2's v2-display `wtpt` substitution CANNOT fire (§A), and
+    // then on the pair where it does, from the opposite direction to NC-053
+    // (§B). §A carries the first raw, unmodelled graded row the ICC-absolute
+    // path has ever had: before it, the only gate at that intent was NC-054,
+    // which grades a model, and a model can absorb an arithmetic error along
+    // with the policy difference it was built to isolate.
+    let (p4c, p4c_records) = pass4c::run(&oracle);
+    if let Some(a) = &p4c.clean {
+        report.note(format!("pass4c/A: {}", a.structure));
+    }
+    if let Some(a) = &p4c.exposed {
+        report.note(format!("pass4c/B: {}", a.structure));
+    }
+    for r in p4c_records {
+        report.push_record(r);
+    }
+
     // Pass 5 — black point compensation. Its §A (the scaling map against
     // ICC.1 6.3.4.3 and against Maria 2013's two constraints) needs neither a
     // profile nor the oracle, so it is the first section in this suite that
@@ -350,6 +368,28 @@ fn main() {
         report.note(format!("pass5b: {}", a.structure));
     }
     for r in p5b_records {
+        report.push_record(r);
+    }
+
+    // Pass 5c — lcms2's `cmsDetectDestinationBlackPoint` REIMPLEMENTED from
+    // the pinned source, so the two black-point estimators can be compared
+    // without recovering one of them through a round trip. Needs the two
+    // system profiles, the oracle (for the end-to-end validation in its §B)
+    // and the shipped binary. It **supersedes Pass 5b row Q8**, whose premise
+    // — that the ISO estimator has no caller — stopped being true when
+    // `Chain::estimate_dst_black` was wired.
+    let (p5c, p5c_records) = pass5c::run(&oracle);
+    if let Some(a) = &p5c {
+        report.note(format!(
+            "pass5c: {} | ISO black L*={:.6} vs lcms2 (reimplemented) L*={:.6},              divergence {:.6} dE76 of which chroma {:.3e}",
+            a.structure,
+            a.iso_black.l,
+            a.lcms2.black.l,
+            a.estimator_divergence_de76(),
+            a.divergence_chroma(),
+        ));
+    }
+    for r in p5c_records {
         report.push_record(r);
     }
 

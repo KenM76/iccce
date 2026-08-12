@@ -1,6 +1,8 @@
 # icc-conformance — memory index
 
-- [Pass 6 compiled-path findings](project_pass6_compiled_path_findings.md) - the gate FAILS at grid 17 (0.297 vs 0.253); order is 1.32 not 2; max-of-max is the wrong estimator.
+- [Pass 4c absolute-intent findings](project_pass4c_absolute_intent_findings.md) — lcms2's wtpt gate is a CONJUNCTION, so a fixture can defeat it instead of a model subtracting it; 8.90e-5 over 729 pts, sensitivity 2310x; the policy is direction-symmetric; NA-008's second arm has no fixture.
+- [Pass 5c estimator-BRANCH finding](project_pass5c_estimator_branch_finding.md) — lcms2 has TWO estimators and the destination's HEADER picks; this overturned Pass 5b's claim 1; transicc prints RGB 0..255.
+- [Pass 6 compiled-path findings](project_pass6_compiled_path_findings.md) - the gate FAILED at grid 17 (0.297 vs 0.253) and PASSES at the new default 33; order is 1.32 not 2; max-of-max is the wrong estimator.
 - [Pass 5b estimator findings](project_pass5b_estimator_findings.md) - the ISO estimator has NO CALLER; the pre-registered prediction split 2/1/1; the gamut absorbs 90%.
 - [Parallel-agent build collisions](project_parallel_agent_build_collisions.md) - crates/ breaks mid-session and the engineer sweeps your files into their commits; use a detached worktree.
 - [Oracle and tolerance state](project_oracle_and_tolerance_state.md) — harness now drives transicc AND the shipped iccce binary; ΔE allowed; §3.1/§3.3/§5 filled; what is still blank.

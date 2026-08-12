@@ -11,6 +11,8 @@ Apparatus `tools/difftest/src/pass6.rs`; record `tools/difftest/README.md`
 (`mft2`, 4-D, 9 CLUT nodes/axis) → system sRGB, media-relative, on `iccce
 bench`'s own 513 sampled probes.
 
+**★★ RESOLVED 2026-08-12 (same day).** Commit `189e732` moved `recommended_grid_points` from 17 to **33** for 3-D and 4-D. **Both gate rows now PASS — 1,677×10⁻¹ (bench probes) and 9,349×10⁻² (Pass 4 grid) — against the IDENTICAL 2,5×10⁻¹.** Two things the transition added: `pass6.rs`'s `DEFAULT_GRID` must track the shipped default (the apparatus row caught the drift by failing at 1,576×10⁻³, which is the gap between the grids, not an error), and at 33 the two probe populations **stop agreeing** — 1,79× apart — so quoting either alone is now a population claim. The 14 s build moves `iccce bench`'s break-even from ≈70 000 px to **≈1,19 M px**. See [[project-pass5c-estimator-branch-finding]].
+
 **★★ THE GATE FAILS AND THE SUITE IS DELIBERATELY RED.** Tolerance
 **2,5×10⁻¹ ΔE2000** = Pass 4's measured iccce-vs-lcms2 figure on this exact pair
 (0,252 94), to one significant figure, **no free parameter**. Observed

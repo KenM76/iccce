@@ -5,6 +5,28 @@ metadata:
   type: project
 ---
 
+**★★★★★ Updated 2026-08-12 (Pass 5c + the grid move).** Everything below still
+holds except the two suite counts; add:
+
+- **`pass5c` exists** (`src/pass5c.rs`, README **§19**, `TOLERANCES.md`
+  **§3.5.8**) — 8 rows × **2 arms**, and it reimplements lcms2's
+  `cmsDetectDestinationBlackPoint` from the pinned source. See
+  [[project-pass5c-estimator-branch-finding]].
+- **★ `transicc` prints RGB and gray as `0..255`, ink spaces as `0..100`.**
+  Anything reading oracle device output must scale per colour space; a flat
+  `/100` silently inflates every RGB destination by 2,55×.
+- **Three graded rows were INVERTED rather than deleted** when the ISO estimator
+  was wired (`c268261`) and the compiled default grid moved (`189e732`):
+  `pass5/S5/…` and `pass5b/coverage/…` used to grade REFUSALS that no longer
+  happen, and `pass6`'s `DEFAULT_GRID` had to follow
+  `compiled::recommended_grid_points`. **A graded row that disappears takes the
+  transition with it**; each inversion carries its own history and a §4 entry.
+- **Suite: `pass=142 fail=0 skip=3 error=0`** in the main tree at commit
+  `95c04c1` (includes another agent's `pass4c`). Pass 6's two deliberate REDs are
+  green at grid 33 **against the unchanged tolerance**.
+- **A second `icc-conformance` instance was running concurrently** and writing to
+  this same memory directory. Read `MEMORY.md` immediately before editing it.
+
 **★★★★ Updated 2026-08-12 (completion sweep).** Everything below still holds; add:
 
 - **`pass4b` §A now runs THREE intents.** `(Intent::Saturation, tag::B2A2)` was

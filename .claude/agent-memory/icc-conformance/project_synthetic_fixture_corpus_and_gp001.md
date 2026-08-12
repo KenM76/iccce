@@ -1,13 +1,13 @@
 ---
 name: project-synthetic-fixture-corpus-and-gp001
-description: fixtures/synthetic now exists (38 profiles from tools/gen-profiles, verify-able byte-for-byte); building it produced FINDING GP-001 — iccce mis-counts mBA curve sets — plus three ICC_Spec corpus gaps closable from the PDF.
+description: fixtures/synthetic now exists (39 profiles from tools/gen-profiles, verify-able byte-for-byte); building it produced FINDING GP-001 — iccce mis-counts mBA curve sets — plus three ICC_Spec corpus gaps closable from the PDF.
 metadata:
   type: project
 ---
 
 **State as of 2026-08-11.** `tools/gen-profiles` (standalone, zero-dep, own
-empty `[workspace]`) and `fixtures/synthetic/` (38 committable profiles:
-12 well-formed, 26 one-defect-each malformed) exist. This **supersedes** the
+empty `[workspace]`) and `fixtures/synthetic/` (39 committable profiles:
+13 well-formed, 26 one-defect-each malformed) exist. This **supersedes** the
 "`tools/gen-profiles` still open" line in
 [[project-oracle-and-tolerance-state]].
 
@@ -26,6 +26,20 @@ tag-level and unusable outside `cargo test`.
 - Nothing in that corpus is a colorimetric reference. Colorants are an
   arbitrary split of the *encoded* D50 white chosen so the integers sum to it
   exactly — a structural invariant, not colorimetry.
+
+**★★ Updated 2026-08-12 (Pass 5c): the corpus is 39 profiles.** New recipe
+`v4-rgb-mab-chromatic-black` — v4.4 `prtr` **RGB**, `mAB `/`mBA ` (3→3, 9³, the
+`A,CLUT,B` combination: no matrix, no M curves), device black
+`Lab(20 · 4 · −3)`, device white `Lab(100 · 0 · 0)`. **It is the first fixture in
+the corpus with a non-zero, chromatic black**, and it was built RGB rather than
+CMYK on purpose: lcms2 only keeps a black point's chroma when the destination is
+**not** (output-class AND ink space). Its colour model is affine and the `B2A`
+CLUT is its **exact closed-form inverse**, so multilinear interpolation
+reproduces it exactly and NA-006 is not a confound. All three Lab values encode
+**exactly** in the general 16-bit PCSLAB encoding. `verify` clean, 18 608 bytes,
+`iccce inspect` reports 0 malformations. Being square (3→3) it **cannot** catch
+GP-001, and its recipe says so. See
+[[project-pass5c-estimator-branch-finding]].
 
 **★★ Updated 2026-08-11 (later still, Pass 4b).** Three things:
 

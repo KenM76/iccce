@@ -2839,6 +2839,31 @@ perceptual (**A27**).
 `3502cb7`. Apparatus: `src/pass5b.rs`. Tolerances: `docs/TOLERANCES.md`
 **§3.5.7**.
 
+> ⚠⚠ **PARTIALLY SUPERSEDED THE SAME DAY BY §19. READ THAT FIRST.**
+>
+> This section could not read lcms2's black point and **recovered** it through
+> `A2B1 ∘ B2A1`. It said so, graded the recovery's error at **95 % of the
+> effect** (§17.3.1, ratio 0,948), and refused to promote the one conclusion
+> that bar could not support. §19 reimplemented lcms2's estimator from source
+> and found:
+>
+> * **98,3 % of §17.3's `0,858 17 ΔE76` was the recovery.** The true divergence
+>   on this fixture is **8,166 8×10⁻² ΔE76, entirely `L*`**.
+> * **lcms2's black here is NEUTRAL**, because a CMYK *output-class* profile at
+>   relative colorimetric reaches `BlackPointUsingPerceptualBlack`, which forces
+>   `a* = b* = 0` (`cmssamp.c` L174) — a branch §17.2's table did not trace.
+>   **Claim 1's "CONFIRMED" verdict is WITHDRAWN.**
+> * **Neither implementation fits a quadratic here.** §17.3's "precisely
+>   lcms2's method-4 (quadratic-fit) territory" is wrong; both take the
+>   mid-range straightness short-circuit.
+> * **Claim 3's "NOT ESTABLISHED" was the correct call** and is now settled —
+>   FALSIFIED here, CONFIRMED on a fixture where lcms2 takes the other branch.
+>
+> Claims 2 and 4, §17.3.1's method, and §17.5's "the destination absorbs 90 %"
+> are unaffected. The section is kept in full because the two readings sit
+> beside each other in the record, which is the only way a reader can see which
+> of its guards worked.
+
 Pass 5's coverage statement (§16.7 (C)) says it plainly:
 
 > *"Both sides estimate the same two black points in every scenario in reach, so
@@ -3038,12 +3063,12 @@ prediction nor Pass 5 contains it.
 
 ### 17.6 What §17 owes
 
-1. **A harness reimplementation of `cmsDetectDestinationBlackPoint`** —
-   constant-chroma ramp, its own `BlackPointAsDarkerColorant` — modelled from
-   `cmssamp.c` at the pin, exactly as §15 modelled `cmsReverseToneCurveEx`. It
-   would remove §17.3.1's error bar entirely and turn claim 3 from *unattributed*
-   into a finding either way. **The single highest-value item left in Pass 5's
-   family.**
+1. ~~**A harness reimplementation of `cmsDetectDestinationBlackPoint`**~~ —
+   **DONE 2026-08-12, see §19.** It removed §17.3.1's error bar (0,948 → 0,304
+   on this fixture, same constant), settled claim 3, and **overturned claim 1**:
+   the branch that supplies `InitialLab` is chosen by the destination's device
+   class and colour space, and on a CMYK output profile it forces the chroma to
+   zero.
 2. **Wiring the ISO estimator into `Chain::estimate_dst_black`** — engineering,
    not conformance, but until it happens `iccce transform --bpc` has exactly the
    coverage Pass 5 recorded and §17's rows describe a function no caller reaches.
@@ -3053,10 +3078,15 @@ prediction nor Pass 5 contains it.
    assumed a chromatic printer black and that a coated CMYK profile has not got
    one. A pre-registered prediction that is quietly dropped teaches nothing; one
    that is falsified in writing teaches the thing it got wrong.
-5. **The v4 perceptual arm**, which still needs §16.8 item 4's synthetic v4 LUT
-   fixture with a non-zero device black. **Not built this session** — Pass 5b
-   found a real-profile route to the *media-relative* arm, which is a different
-   arm, and the v4 one is untouched.
+5. ~~**The v4 perceptual arm**~~ — **REFRAMED 2026-08-12, see §19.7.** The
+   fixture now exists (`fixtures/synthetic/v4-rgb-mab-chromatic-black.icc`,
+   device black `Lab(20 · 4 · −3)`), but **the arm it was asked for cannot be
+   discriminated by any fixture**: at perceptual and saturation on a v4 profile
+   both implementations return the fixed A41 constant *without reading the
+   profile*. What the fixture discriminates instead is the **media-relative**
+   arm on a **non-ink** destination, which is where lcms2's other branch lives.
+   Measuring the A41 constant's error against this fixture's real black is
+   §19.9 item 1 and is **owed**.
 6. **A `NUMERIC_CLAIMS.md` mirror**, `icc-librarian`'s file, not this one's.
 
 ---
@@ -3101,6 +3131,45 @@ rather than luck.** `k/1023 = m/N` needs `N·k = 1023·m`; `1023 = 3·11·31` so
 — i.e. `v ∈ {0, 1}`. Exactly two of the 1024 sample values are nodes, at the two
 ends. A probe set that had landed on nodes would have measured zero and meant
 nothing, which is the trap `compiled.rs`'s own control hit on its first run.
+
+### 18.2 ★★ The gate — it FAILED at the then-default grid of 17, and PASSES at the default of 33
+
+> ★★ **RE-GRADED 2026-08-12 after commit `189e732`.** Everything below was
+> measured when `compiled::recommended_grid_points` returned **17** for a 4-D
+> chain. §18.2.1 said in terms that *the remedy is the grid, not the number*.
+> The engineer moved the default to **33**, and the two rows that had been red
+> went green **against the identical `2,5×10⁻¹`**:
+>
+> | row | grid 17 | grid 33 |
+> |---|---|---|
+> | `…/compiled-cost-de2000` (513 bench probes) | **FAIL 2,970 17×10⁻¹** | **PASS 1,677 3×10⁻¹** |
+> | `…/compiled-cost-de2000-on-pass4-grid` (341 pts) | **FAIL 2,962 90×10⁻¹** | **PASS 9,348 6×10⁻²** |
+> | `…/compiled-cost-device` (reported) | 3,588 962×10⁻³ | 2,012 444×10⁻³ |
+> | `pass6/apparatus/harness-reproduces-bench` | 2,537×10⁻¹⁰ | 2,739×10⁻¹⁰ |
+>
+> **Three things this transition put on the record that the original run could
+> not.**
+>
+> 1. **The apparatus row caught the move.** `DEFAULT_GRID` in `pass6.rs` must
+>    track the shipped default; when it did not, `harness-reproduces-bench`
+>    failed at **1,576×10⁻³** — which is not an error but the gap between the
+>    two grids' costs. A cheap row that fails loudly when the two arms stop
+>    describing the same transform is worth more than an expensive one that
+>    averages over it.
+> 2. **At grid 33 the two probe populations stop agreeing.** At 17 they were
+>    within 0,25 % of each other, which is what §18.2 leant on to say the
+>    failure was a property of the transform. At 33 the bench-raster figure is
+>    **1,79×** the Pass 4-grid figure, because once the error is small enough
+>    probe *placement* dominates. **Both are inside the line; quoting either
+>    alone is now a population claim.**
+> 3. **The green has a price, and it is reported nowhere else.** Building the
+>    33-node 4-D grid takes **~14 s** against 1,06 s, which moves `iccce
+>    bench`'s break-even from **≈70 000 px to ≈1,19 million px** — a 17×
+>    increase. Compiling now pays for itself only on large rasters.
+>
+> The grid-17 text below is kept verbatim, because the derivation of the
+> tolerance and the reasoning about what must *not* happen next are what made
+> the outcome possible, and they read differently once the number is green.
 
 ### 18.2 ★★ The gate, and it FAILS
 
@@ -3284,3 +3353,281 @@ path agrees with lcms2 on this pair.
 4. **A `NUMERIC_CLAIMS.md` mirror**, including the correction that the compiled
    path's convergence order on this pair is **1,32 and not 2** —
    `icc-librarian`'s file, not this one's.
+
+---
+
+## 19. ★★★ Pass 5c — lcms2's estimator REIMPLEMENTED, and what §17 got wrong
+
+**Run 2026-08-12 by `icc-conformance`**, oracle pin `21c582a`, iccce at commit
+`95c04c1`. Apparatus: `src/pass5c.rs`. Tolerances: `docs/TOLERANCES.md`
+**§3.5.8**.
+
+§17.6 item 1 named this and called it *"the single highest-value item left in
+Pass 5's family"*. It is built. It overturned two of §17's own conclusions,
+and the way it did so is the most useful thing in this section.
+
+### 19.1 ★★★ THE FINDING — lcms2 has two black-point estimators at media-relative, and the destination's HEADER picks between them
+
+§17.2 read `cmsDetectDestinationBlackPoint` at the pin and tabulated what it
+does with the chroma:
+
+> | returned chroma | **`(L, 0, 0)`, NEUTRAL** (ISO) | **`Lab.a = InitialLab.a`** (lcms2, L590–592) |
+
+Every word of that is true. What it does **not** trace is where `InitialLab`
+comes from, and that is where the whole question lives. For
+`INTENT_RELATIVE_COLORIMETRIC`:
+
+```c
+// cmsDetectDestinationBlackPoint, L464-471
+if (!cmsDetectBlackPoint(&IniXYZ, hProfile, Intent, dwFlags)) return FALSE;
+cmsXYZ2Lab(NULL, &InitialLab, &IniXYZ);
+```
+
+and `cmsDetectBlackPoint` **branches before it reaches the darkest-colorant
+code** (L370–374):
+
+```c
+// If output profile, discount ink-limiting and that's all
+if (Intent == INTENT_RELATIVE_COLORIMETRIC &&
+    (cmsGetDeviceClass(hProfile) == cmsSigOutputClass) &&
+    (isInkColorspace(cmsGetColorSpace(hProfile))))
+    return BlackPointUsingPerceptualBlack(BlackPoint, hProfile);
+...
+return BlackPointAsDarkerColorant(hProfile, Intent, BlackPoint, dwFlags);   // L385
+```
+
+| | `BlackPointUsingPerceptualBlack` (L146+) | `BlackPointAsDarkerColorant` (L62+) |
+|---|---|---|
+| taken when | output class **and** ink colour space | anything else |
+| what it evaluates | `A2B1(B2A0(Lab(0,0,0)))` — a **perceptual** round trip | the space's darkest colorant through `A2B` at the caller's intent |
+| `L*` clip | `> 50 → 50` | `> 95 → 0`, `< 0 → 0`, `> 50 → 50` |
+| **the chroma** | **FORCED to 0** (L174) | **RETAINED** |
+
+**So "does lcms2 keep its black point's chroma?" has no answer.** It has one
+answer for a CMYK press profile and the opposite answer for an RGB printer
+profile, and the only real LUT profile within reach of this machine was the
+first kind.
+
+### 19.2 What that costs §17, itemised
+
+1. **§17.4 claim 1 ("the MECHANISM — CONFIRMED") is WITHDRAWN.**
+   `USWebCoatedSWOP.icc` is `prtr` + `CMYK`, so lcms2 returns a **neutral**
+   black. The `a* 0,347 2 / b* 0,300 1` §17.3 tabulated is chroma the
+   `A2B1 ∘ B2A1` **recovery** introduced.
+2. **§17.4 claim 3 ("the SHAPE — NOT ESTABLISHED") was the right call and is
+   now settled** — FALSIFIED on SWOP, CONFIRMED on a fixture where lcms2 takes
+   the other branch.
+3. **§17.3's sentence "this configuration is precisely lcms2's method-4
+   (quadratic-fit) territory" is wrong.** Both implementations take the
+   mid-range straightness short-circuit (`cmssamp.c` L521–545; `bpc.rs`'s
+   4.2.5.4 gate) on **both** fixtures. No quadratic is fitted by either side,
+   so every §17 statement about the shadow window, the sample count or the root
+   describes code that did not run.
+4. **What they actually disagree about at the short-circuit is what it
+   RETURNS**: lcms2 returns `InitialLab` (L536) — a value from a *different*
+   round trip — and ISO returns `outRamp[first]`. On SWOP that is the whole
+   0,081 67 `L*`.
+5. **§17.3.1's error bar did its job.** It was reported at 0,948 — green by
+   5 % — and §17.3.1 said out loud that the section was *marginal* and that
+   which conclusions survived would be decided claim by claim. **They were, and
+   the one that did not survive is the one the bar was too weak to support.**
+
+**None of this is a reason to have skipped §17.** A recovery that is honestly
+bounded and then replaced is how the bound gets to be checked; a recovery
+quoted as a measurement is how it does not.
+
+### 19.3 The reimplementation, and what it deliberately does not reproduce
+
+`pass5c::detect_destination_black_point` models `cmsDetectDestinationBlackPoint`
+for a CLUT-based, gray/RGB/ink destination at relative colorimetric, including:
+
+- both `InitialLab` branches, selected by [`branch_for`] from the same two
+  header fields lcms2 uses;
+- the 256-sample ramp with the chroma **held constant** at
+  `clamp(±50, InitialLab.a/.b)`;
+- **lcms2's monotonic pass exactly, including its off-by-one**:
+  `for (l = 254; l > 0; --l)` never assigns `outRamp[0]`, where ISO's loop
+  runs to 0. That matters in principle — `outRamp[0]` is `MinL`, `MinL`
+  normalises `yRamp`, and `yRamp` selects the shadow window — and both values
+  are recorded so the difference is measured rather than assumed. On both
+  fixtures here they are identical;
+- the mid-range straightness test and **the two different things the two
+  implementations return from it**;
+- `RootOfLeastSquaresFitQuadraticCurve` including lcms2's own `_cmsMAT3inverse`
+  and its `|det| < 1,0×10⁻⁴` singularity test, its `n < 4` guard (the caller
+  checks `n < 3`), its `|a| < 1e-10` and `|b| < 1e-10` fallbacks, and the
+  `[0, 50]` clamp.
+
+**It does not reproduce lcms2's pipeline, and that is the point.** lcms2
+evaluates its round trip through the 16-bit machinery
+(`cmsCreateExtendedTransform` with `NOOPTIMIZE|NOCACHE`); this harness hands
+**both** estimators the same `f64` round trip built from iccce's own tag
+evaluators. Feeding both arms one `BT` isolates the algorithm difference, which
+is the only thing under test. The residual pipeline difference is bounded
+separately by §15's 1,330×10⁻⁴ device figure and is measured end to end in
+§19.5.
+
+### 19.4 The two arms
+
+| | **arm `swop`** | **arm `synthetic`** |
+|---|---|---|
+| destination | `USWebCoatedSWOP.icc` — v2.1 `prtr` **CMYK**, `mft2`/`mft1` | `fixtures/synthetic/v4-rgb-mab-chromatic-black.icc` — v4.4 `prtr` **RGB**, `mAB `/`mBA `, 9³ |
+| provenance | `LEGAL.md` §3 category (c) — system profile, never committed | category (a) — authored byte by byte, committed, regenerable |
+| lcms2 branch | `BlackPointUsingPerceptualBlack` | `BlackPointAsDarkerColorant` |
+| darkest colorant | `Lab(11,772 4 · 0,765 6 · 0,328 1)` | `Lab(20,000 000 · 4,000 000 · −3,000 000)` — **exact, by construction** |
+| lcms2 `InitialLab` | `L* 16,571 474`, chroma forced to 0 | `L* 20`, chroma **kept** |
+| ISO 4.2.5 black | `L* 16,489 806`, neutral | `L* 20,000 000`, neutral |
+| lcms2 black | `L* 16,571 474`, **neutral** | `Lab(20 · 4 · −3)`, **chromatic** |
+| **divergence** | **8,166 8×10⁻² ΔE76 — 100 % `L*`, chroma exactly 0** | **5,000 000 ΔE76 — 100 % chroma, `ΔL*` exactly 0** |
+| claim 1 / claim 3 | **FALSIFIED / FALSIFIED** | **CONFIRMED / CONFIRMED** |
+
+⚠ **The synthetic arm's 5,000 ΔE76 is evidence for the MECHANISM and nothing
+else.** That chroma is what this project authored into the fixture. It happens
+to land inside the corpus's pre-registered 2–6 ΔE76 band; **that is not a
+confirmation of claim 2 (the magnitude)**, whose falsification stands on the
+arm where the profile was not ours to choose.
+
+### 19.5 §B — validated against the real lcms2, in device units, with no round trip
+
+The trick that removes §17.3.1's error bar altogether:
+
+> BPC's second constraint sends the source black **exactly** to the destination
+> black (§16 row P3, graded at 3,33×10⁻¹⁶), and this source's black is
+> `XYZ(0,0,0)`. **So the device values an implementation emits at input black
+> ARE `B2A1(its own detected black)`, and nothing else.**
+
+So a candidate black point can be *predicted forward* into device space and
+compared with what `transicc` actually printed — no `A2B1 ∘ B2A1`, no recovery,
+no inversion.
+
+| | swop | synthetic |
+|---|---|---|
+| `transicc` at input black, BPC on | `(0,722 728 0,676 844 0,670 939 0,883 833)` | `(0,064 408 0,037 507 0,055 863)` |
+| `B2A1(lcms2 black)` — the reimplementation | `(0,722 792 0,676 859 0,670 952 0,884 255)` | `(0,064 411 0,037 501 0,055 872)` |
+| residual | **4,224 9×10⁻⁴** | **8,938 3×10⁻⁶** |
+| `B2A1(ISO black)` — the rival candidate | | |
+| residual | **2,463 9×10⁻³** | **5,725 1×10⁻²** |
+| **ratio (the discrimination row)** | **1,714 7×10⁻¹** | **1,561 2×10⁻⁴** |
+| `d(device)/d(L*)` on the same table | 1,700 0×10⁻² | 8,143 1×10⁻³ |
+| **⇒ `L*` bound on the black point** | **2,485×10⁻²** | **1,098×10⁻³** |
+| bound ÷ effect (§17.3.1's ratio, same constant) | **0,304 3** | **2,195×10⁻⁴** |
+
+**§17.3.1's row scored 0,948 on the same fixture. The same tolerance, applied
+to a better apparatus, now scores 0,304 — and on the synthetic arm 4 300×
+tighter still.** A constant carried unchanged across an apparatus replacement
+is the strongest evidence available that it was never fitted to an observation.
+
+#### 19.5.1 ★ Pass 5b's recovered black, reproduced from first principles
+
+| | Pass 5b recovered (from `transicc`) | `BT(reimplemented black)` |
+|---|---|---|
+| swop | `L* 17,214 958 · a* 0,347 197 · b* 0,300 108` | `L* 17,199 985 · a* 0,346 780 · b* 0,299 265` |
+
+**Unexplained: 1,500 2×10⁻² ΔE76 of the 8,582×10⁻¹ §17 published — 98,3 % of
+that number is now accounted for as the round trip.** §17.3.1 measured the same
+residual at 0,813 7 and called it an error bar. *It was not an error bar; it
+was the measurement.*
+
+### 19.6 ★ The apparatus fault this section caught, and the row that caught it
+
+The synthetic arm's **first** run reported a device residual of **9,98×10⁻²**,
+where the truth is 8,9×10⁻⁶, and would have been filed as *"the
+reimplementation does not reproduce lcms2 on this fixture"*.
+
+`transicc` prints ink spaces as percentages (`0..100`) and **RGB and gray as
+`0..255`**. Every oracle output in Passes 5, 5b and 5c had been divided by 100,
+because until this section the only destination in reach was CMYK.
+
+**It was caught because §B carries a second, independent hypothesis.** Both the
+lcms2 candidate *and* the ISO candidate missed by roughly the same amount, and
+the discrimination row — the one whose entire job is to ask whether the
+experiment can tell the two apart — is where that shows. **A residual that is
+large under every hypothesis is an apparatus fault, not a finding.** A section
+with one arm and one candidate has no way to notice.
+
+### 19.7 The fixture, and why the one Pass 5 asked for could not exist
+
+`fixtures/synthetic/v4-rgb-mab-chromatic-black.icc` is new
+(`tools/gen-profiles`, recipe `v4-rgb-mab-chromatic-black`, 18 608 bytes,
+`verify` clean, `iccce inspect` reports **0 malformations**).
+
+**§16.8 item 4 and §17.6 item 5 asked for a *v4 perceptual* instrument. That
+instrument cannot exist.** At perceptual and saturation on a v4 profile, lcms2
+returns the fixed `cmsPERCEPTUAL_BLACK` triple **without reading the profile**
+(`cmssamp.c` L432–446) and `Chain::estimate_dst_black` returns
+`bpc::PERCEPTUAL_BLACK` the same way. Two implementations that both return a
+constant cannot be discriminated by any fixture, however black its black.
+
+What the fixture does instead:
+
+- **discriminates the media-relative arm**, because an **RGB** output profile
+  is not an ink space and therefore takes lcms2's *other* branch — the one
+  where the chroma survives;
+- **makes the A41 constant's error measurable**, by carrying `A2B0`/`B2A0` as
+  well: the constant is `L* ≈ 3,1` and this device's real black is `L* 20`.
+  **That measurement is owed, not made.**
+
+Its colour model is affine —
+`L* = 20 + 80·G`, `a* = 4(1−G) + 60(R−G)`, `b* = −3(1−G) + 60(B−G)` — with the
+`B2A` CLUT its **exact closed-form inverse**, so multilinear interpolation
+reproduces it exactly and any disagreement between two consumers is a
+disagreement about the ICC pipeline rather than about interpolation error. Its
+black is `Lab(20 · 4 · −3)`: non-zero, slightly chromatic, and encoding-exact
+in the general 16-bit PCSLAB encoding (`20 × 655,35 = 13 107`,
+`(4+128) × 257 = 33 924`, `(−3+128) × 257 = 32 125`, all integers).
+
+**It is not colorimetry** and `MANIFEST.md` says so; like every colorant in
+that corpus it is an arbitrary but exactly stated structural relation.
+
+### 19.8 Coverage — what "Pass 5c verified" is allowed to mean
+
+> **(A)** lcms2 2.19.1's `cmsDetectDestinationBlackPoint` is **reimplemented
+> from source at pin `21c582a`** for a CLUT-based gray/RGB/ink destination at
+> **media-relative**, including both `InitialLab` branches and every give-up
+> path. The reimplementation predicts `transicc`'s own device output at input
+> black to **4,22×10⁻⁴** (CMYK) and **8,94×10⁻⁶** (RGB), against a rival
+> candidate that misses by **5,8×** and **6 400×** respectively.
+>
+> **(B)** On `USWebCoatedSWOP.icc` at media-relative the two estimators differ
+> by **8,167×10⁻² ΔE76, entirely in `L*`**, and **both return a neutral
+> black**. The mechanism half of the corpus's pre-registered prediction is
+> **FALSIFIED** here.
+>
+> **(C)** On `v4-rgb-mab-chromatic-black.icc` at media-relative they differ by
+> **5,000 000 ΔE76, entirely in chroma**, with `ΔL*` exactly zero. The same
+> claim is **CONFIRMED** here. **The discriminating variable is the
+> destination's device class and colour space.**
+>
+> **(D)** Neither implementation fits a quadratic on either fixture; both take
+> the mid-range straightness short-circuit, and the divergence is entirely in
+> what that short-circuit returns.
+>
+> **(E)** The shipped `iccce transform --bpc` reaches the ISO estimator and
+> agrees with the library function driven in process to **4,5×10⁻⁷** and
+> **4,3×10⁻⁷** device — the CLI's own six-decimal print floor.
+
+Everything outside those five paragraphs is **not** verified. In particular
+Pass 5c says nothing about: **perceptual, saturation or ICC-absolute**; any
+source but the system sRGB profile; the `bkpt` tag (`CMS_USE_PROFILE_BLACK_POINT_TAG`
+is off in the pinned build); a profile whose darkest colorant has `|a*|` or
+`|b*|` above **50**, where lcms2's clamp/return asymmetry would bite; lcms2's
+**ink round trip** as a value in its own right; or any platform but
+Windows/MSVC.
+
+### 19.9 What §19 owes
+
+1. **The A41 constant's error, measured** on the new fixture — both
+   implementations use `L* ≈ 3,1` where its real black is `L* 20`, at
+   perceptual. The instrument now exists; the row does not.
+2. **A fixture whose darkest colorant has chroma above 50**, which would turn
+   §17.2's ★ clamp/return asymmetry from READ into RUN. Deliberately **not**
+   built here: a fixture constructed to trigger one branch of one clamp is a
+   fixture built to make a point, and it should be authored only if something
+   depends on the answer.
+3. **`BlackPointAsDarkerColorant`'s `L* > 95 → 0` rule**, which exists for
+   "synthetical negative profiles" and which no fixture in this corpus
+   triggers.
+4. **A corpus correction** recording that the pre-registered prediction's
+   mechanism is **branch-dependent**, and that the magnitude band assumed a
+   chromatic printer black which a coated CMYK profile has not got.
+5. **A `NUMERIC_CLAIMS.md` mirror** — `icc-librarian`'s file, not this one's.

@@ -201,8 +201,27 @@ pub const DECAYS_TO_ZERO: Tolerance = Tolerance::new(
      that row - a different number here would be a tolerance tracking an observation",
 );
 
-/// **§C.** The shipped binary must still refuse, and it must refuse **by
-/// name**.
+/// **§C - INVERTED 2026-08-12.** The shipped binary must now **convert**.
+///
+/// This row was written when `bpc::estimate_lut_destination_black` had no
+/// caller: it graded that `iccce transform --bpc` refused, by name, exactly
+/// the case ISO/CD 18619 4.2.5 exists for. That finding was acted on -
+/// commit `c268261` wired the estimator into `Chain::estimate_dst_black` -
+/// so the refusal no longer happens and the row premise is gone.
+///
+/// It is **inverted rather than deleted**, because a graded row that
+/// disappears takes the transition with it. What it now catches is a
+/// regression that unwires the estimator, which would look like a refusal
+/// again.
+///
+/// Its numeric successor is Pass 5c's
+/// `pass5c/shipped/binary-reaches-the-iso-estimator`, which grades that the
+/// wired path reaches the *same* black point the library function does - a
+/// wiring that passed a different `InitialLab` would convert, satisfy this
+/// row, and be wrong.
+///
+/// ## What the row asserted when it was the other way round, kept for the record
+///
 ///
 /// `iccce transform --bpc` into a v2 CMYK LUT destination at media-relative is
 /// the case ISO/CD 18619 4.2.5 exists for, and `Chain::estimate_dst_black` does
@@ -216,12 +235,18 @@ pub const DECAYS_TO_ZERO: Tolerance = Tolerance::new(
 ///
 /// `0,0 — exact`: the quantity is `0` if the refusal matched and `1` if it did
 /// not.
-pub const REFUSES_BY_NAME: Tolerance = Tolerance::new(
+pub const NOW_CONVERTS: Tolerance = Tolerance::new(
     0.0,
-    "0 if the shipped binary refused with the exact wording, 1 otherwise. Graded, not reported: a \
-     build that silently substituted a zero black for an unestimable one would produce plausible \
-     colour and pass every other row here. The needle is the exact Display text, not the error \
-     variant's name - Pass 5 row P20 failed on precisely that",
+    "0 if the shipped binary CONVERTS this case, 1 if it refuses. INVERTED 2026-08-12 and \
+     deliberately not deleted. Until commit c268261 this row graded the opposite - that `iccce \
+     transform --bpc` REFUSED a v2 CMYK LUT destination at media-relative, on the exact \
+     Display wording, because bpc::estimate_lut_destination_black had no caller. Pass 5b \
+     found the missing caller, the engineer wired it into Chain::estimate_dst_black, and the \
+     refusal is gone. Deleting the row would erase the transition from the record stream; \
+     inverting it keeps the history and still catches a regression that unwires the \
+     estimator. The NUMERIC successor - does the wired path reach the same black point the \
+     library function does - is pass5c/shipped/binary-reaches-the-iso-estimator, which this \
+     row deliberately does not duplicate",
 );
 
 pub const REPORTED: Tolerance = Tolerance::new(
@@ -673,15 +698,20 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             ),
         ),
         Record::graded(
-            "pass5b/PREDICTION/1-mechanism-CONFIRMED-chroma-component",
+            "pass5b/PREDICTION/1-mechanism-SUPERSEDED-BY-PASS-5C-structural-only",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             MECHANISM_EXACT,
             a.mechanism_residual(),
-            "claim 1 of 4, CONFIRMED and STRUCTURAL on iccce's side: the chroma component of \
-             the divergence equals the detected black's chroma because ISO 4.2.3 returns a \
-             NEUTRAL black. It grades that clause 4.2.3 is implemented, not that the \
-             prediction's substance was right",
+            "claim 1 of 4. THE CONFIRMED VERDICT IS WITHDRAWN - see Pass 5c. What this row grades \
+             is unchanged and still sound: ISO 4.2.3 returns a NEUTRAL black, so the chroma \
+             component of the divergence equals the RECOVERED black chroma identically, and \
+             a build that quietly kept the chroma fails it. What is withdrawn is the reading \
+             that the recovered chroma was LCMS2 S: Pass 5c reimplements \
+             cmsDetectDestinationBlackPoint from the pinned source and finds that lcms2 \
+             returns a NEUTRAL black here too - cmssamp.c L370-374 routes to \
+             BlackPointUsingPerceptualBlack, which forces a=b=0 at L174. The 0.4589 was \
+             chroma the A2B1(B2A1(.)) RECOVERY introduced. STRUCTURAL ONLY",
             format!(
                 "{ctx} | chroma component {:.6} vs detected chroma {:.6} -> residual {:.3e}",
                 a.divergence_chroma(),
@@ -714,18 +744,18 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             ),
         ),
         Record::graded(
-            "pass5b/PREDICTION/3-shape-NOT-ESTABLISHED-lightness-term-unattributed",
+            "pass5b/PREDICTION/3-shape-SETTLED-IN-PASS-5C",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             REPORTED,
             a.lightness_over_chroma(),
-            "claim 3 of 4: the prediction says the divergence IS the chroma, which requires the \
-             two estimators to agree on L*. The measured L* term is 1.58x the chroma term - but \
-             it is UNATTRIBUTED and probably apparatus, and this row says so rather than \
-             claiming a falsification it cannot support. The obvious mechanism (lcms2 holds the \
-             ramp's chroma CONSTANT, ISO 4.2.5.2.2 ramps it to zero, so the two fit different \
-             outRamps) is worth only 0.05 L* when measured oracle-free, 13x too small; and the \
-             recovery error bar is the same size as the term itself. NOT ESTABLISHED",
+            "claim 3 of 4 - SETTLED IN PASS 5C, AND FALSIFIED. This row own verdict was NOT \
+             ESTABLISHED, and that was the correct call: the L* term sat inside the recovery \
+             error bar. Pass 5c removes the bar by reimplementing lcms2 estimator from the \
+             pinned source, and the answer is that the chroma term is EXACTLY ZERO on both \
+             sides while 100 percent of a much smaller divergence (0.0817 dE76, not 0.858) \
+             is L*. The ratio this row reports is a property of the RECOVERY and is retained \
+             only so the two can be compared",
             format!(
                 "{ctx} | L* term {:.4} vs chroma term {:.4} = {:.2}x. The prediction's own \
                  mechanism produces the SMALLER half of the divergence. SUGGESTED, NOT \
@@ -789,15 +819,19 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             ),
         ),
         Record::graded(
-            "pass5b/coverage/shipped-chain-cannot-reach-the-iso-estimator",
+            "pass5b/coverage/shipped-chain-now-REACHES-the-iso-estimator",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            REFUSES_BY_NAME,
-            if a.refusal_matched { 0.0 } else { 1.0 },
-            "the honest statement of where the ISO work has landed: \
-             bpc::estimate_lut_destination_black is implemented and unit tested but has NO \
-             CALLER - Chain::estimate_dst_black still carries the pre-ISO subset - so the \
-             shipped `iccce transform --bpc` refuses this exact case. Graded on the EXACT wording",
+            NOW_CONVERTS,
+            if a.refusal_matched { 1.0 } else { 0.0 },
+            "INVERTED 2026-08-12. This row used to grade a REFUSAL: \
+             bpc::estimate_lut_destination_black was implemented, unit tested and had NO \
+             CALLER - Chain::estimate_dst_black still carried the pre-ISO subset - so the \
+             shipped `iccce transform --bpc` refused exactly the case ISO/CD 18619 4.2.5 \
+             exists for. Pass 5b found that; commit c268261 wired it; the refusal is gone. \
+             The row is kept, INVERTED, so the transition stays in the record stream and a \
+             regression that unwires the estimator still fails something. Pass 5c grades \
+             the NUMBER",
             format!("{ctx} | binary said: {}", crate::sanitise(&a.refusal_text)),
         ),
     ]
@@ -820,7 +854,7 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
             REPORTED,
         ),
         (
-            "pass5b/PREDICTION/1-mechanism-CONFIRMED-chroma-component",
+            "pass5b/PREDICTION/1-mechanism-SUPERSEDED-BY-PASS-5C-structural-only",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             MECHANISM_EXACT,
@@ -832,7 +866,7 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
             REPORTED,
         ),
         (
-            "pass5b/PREDICTION/3-shape-NOT-ESTABLISHED-lightness-term-unattributed",
+            "pass5b/PREDICTION/3-shape-SETTLED-IN-PASS-5C",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             REPORTED,
@@ -850,10 +884,10 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
             REPORTED,
         ),
         (
-            "pass5b/coverage/shipped-chain-cannot-reach-the-iso-estimator",
+            "pass5b/coverage/shipped-chain-now-REACHES-the-iso-estimator",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            REFUSES_BY_NAME,
+            NOW_CONVERTS,
         ),
     ];
     specs

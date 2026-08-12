@@ -760,6 +760,289 @@ fn v4_cmyk_mab_lab() -> Vec<u8> {
 }
 
 // ===========================================================================
+// (g) Well-formed: v4 RGB mAB/mBA with a NON-ZERO, SLIGHTLY CHROMATIC BLACK
+// ===========================================================================
+
+/// The synthetic device's black, in `L*a*b*`. **This is the whole reason the
+/// fixture exists**, so it is a named constant rather than three numbers
+/// buried in a loop.
+///
+/// `L* = 20` — a non-zero black, which no profile in this corpus and no
+/// profile on the authoring machine's system had. `a* = +4, b* = −3` — chroma
+/// **5,0**, "slightly chromatic": the same order as a real ink black's
+/// departure from neutral (`USWebCoatedSWOP`'s darkest colorant is 0,834 off
+/// neutral) but several times larger, so that an estimator which **drops** the
+/// chroma and one which **keeps** it differ by far more than the round-trip
+/// noise that defeated the first attempt at this measurement.
+///
+/// **It was not chosen to make a prediction come true.** The corpus's
+/// pre-registered magnitude band for the estimator divergence was 2–6 ΔE76;
+/// chroma 5,0 sits inside it, which is a coincidence of the same reasoning
+/// (both are "what a chromatic printer black looks like") and not a fit. What
+/// the fixture is for is the *mechanism*, which is a yes/no question about
+/// whether one implementation zeroes `a*` and `b*` and the other does not.
+const SYNTH_BLACK_L: f64 = 20.0;
+const SYNTH_BLACK_A: f64 = 4.0;
+const SYNTH_BLACK_B: f64 = -3.0;
+
+/// The forward colour model — `A2B`, device RGB in `0..1` to `L*a*b*`.
+///
+/// ```text
+/// L* = 20 + 80·G
+/// a* =  4·(1 − G) + 60·(R − G)
+/// b* = −3·(1 − G) + 60·(B − G)
+/// ```
+///
+/// ## Why this shape, and what it is not
+///
+/// It is **not colorimetry.** No instrument produced it and no device behaves
+/// like it; like every colorant in this corpus it is an arbitrary but *exactly
+/// stated* structural relation (see `fixtures/synthetic/README.md`). What it
+/// has to be is four things, and it is each of them on purpose:
+///
+/// 1. **Non-zero, chromatic at device black.** `f(0,0,0) = (20, 4, −3)`. A
+///    black-point estimator has something to find, and a chroma-dropping
+///    estimator and a chroma-keeping one must disagree.
+/// 2. **Neutral and full-scale at device white.** `f(1,1,1) = (100, 0, 0)`,
+///    so the profile's white *is* the PCS adopted white and the media-relative
+///    white scaling is the identity. A fixture whose white was not the adopted
+///    white would put a second, unrelated difference into every comparison.
+/// 3. **Multi-affine, therefore reproduced EXACTLY by multilinear CLUT
+///    interpolation at any grid size.** There are no cross terms — each of
+///    `L*`, `a*`, `b*` is a sum of terms each linear in one channel — so a
+///    consumer that interpolates the CLUT correctly gets the closed form back
+///    to encoding precision, at 9 nodes or at 65. **That makes the fixture an
+///    instrument rather than a sample**: any disagreement between two
+///    consumers is a disagreement about the ICC pipeline, not about
+///    interpolation error, which is the confound `NA-006` names.
+/// 4. **Invertible in closed form**, so the `B2A` side is the *exact* inverse
+///    rather than a numerical approximation of one. See [`lab_to_rgb_chromatic_black`].
+///
+/// Out-of-range results are clamped to the encodable PCSLAB range, and the
+/// clamp is the only non-affine thing in the file. It bites only for `a*`/`b*`
+/// beyond ±128 at the far corners.
+fn rgb_to_lab_chromatic_black(r: f64, g: f64, b: f64) -> (f64, f64, f64) {
+    let l = SYNTH_BLACK_L + (100.0 - SYNTH_BLACK_L) * g;
+    let a_star = SYNTH_BLACK_A * (1.0 - g) + 60.0 * (r - g);
+    let b_star = SYNTH_BLACK_B * (1.0 - g) + 60.0 * (b - g);
+    (
+        l.clamp(0.0, 100.0),
+        a_star.clamp(-128.0, 127.0),
+        b_star.clamp(-128.0, 127.0),
+    )
+}
+
+/// The exact inverse of [`rgb_to_lab_chromatic_black`] — `B2A`, `L*a*b*` to
+/// device RGB in `0..1`, clamped to the unit cube.
+///
+/// ```text
+/// G = (L* − 20) / 80
+/// R = G + (a* −  4·(1 − G)) / 60
+/// B = G + (b* +  3·(1 − G)) / 60
+/// ```
+///
+/// **Why an exact inverse matters here.** Both black-point estimators under
+/// test evaluate the round trip `BT(x) = A2B(B2A(x))`. If `B2A` were a
+/// numerical inverse, `BT` would carry that inversion's error and the
+/// estimators would be comparing their own noise. With the closed form,
+/// `BT` is the identity everywhere the clamps do not bite — which makes the
+/// *in-gamut* part of the round trip exactly straight, and that is
+/// deliberate: it is the configuration in which the two implementations'
+/// mid-range straightness tests both fire, so the fixture isolates **what the
+/// short-circuit returns** rather than mixing it with a quadratic fit.
+fn lab_to_rgb_chromatic_black(l: f64, a_star: f64, b_star: f64) -> (f64, f64, f64) {
+    let g = (l - SYNTH_BLACK_L) / (100.0 - SYNTH_BLACK_L);
+    let r = g + (a_star - SYNTH_BLACK_A * (1.0 - g)) / 60.0;
+    let b = g + (b_star - SYNTH_BLACK_B * (1.0 - g)) / 60.0;
+    (r.clamp(0.0, 1.0), g.clamp(0.0, 1.0), b.clamp(0.0, 1.0))
+}
+
+/// v4.4 RGB Output profile carrying `A2B0`/`A2B1` as `lutAToBType` and
+/// `B2A0`/`B2A1` as `lutBToAType`, whose **device black is non-zero and
+/// slightly chromatic**.
+///
+/// ## ★★ Why this fixture exists, and why it is RGB rather than CMYK
+///
+/// `TOLERANCES.md` §3.5.7 and `tools/difftest/README.md` §17.6 item 5 have
+/// asked since Pass 5 for "a synthetic v4 LUT fixture with a non-zero device
+/// black", to discriminate the two black-point estimators where no real
+/// profile could. **Reading lcms2's source at the pin changed what that
+/// fixture has to be, in two ways that are worth stating in the file that
+/// implements them.**
+///
+/// **First, it cannot be a perceptual-intent fixture.** Pass 5 asked for the
+/// *v4 perceptual* arm. `cmssamp.c` L432–446 short-circuits: for a v4 profile
+/// at perceptual or saturation lcms2 returns the fixed `cmsPERCEPTUAL_BLACK`
+/// triple **without looking at the profile at all**, and
+/// `Chain::estimate_dst_black` does the same with `bpc::PERCEPTUAL_BLACK`.
+/// Two implementations that both return a constant cannot be discriminated by
+/// any profile, however black its black. What such a fixture *can* do — and
+/// what this one does, by carrying `A2B0`/`B2A0` as well — is **measure how
+/// wrong that constant is**: the A41 triple is `L* ≈ 3,1` and this device's
+/// black is `L* 20`, so the perceptual arm can be made to state its own error
+/// instead of hiding it.
+///
+/// **Second, the intent that CAN discriminate is media-relative, and the
+/// colour space must not be an ink space.** At relative colorimetric lcms2
+/// picks its `InitialLab` through `cmsDetectBlackPoint`, which branches
+/// (`cmssamp.c` L370–374):
+///
+/// ```text
+/// if (Intent == INTENT_RELATIVE_COLORIMETRIC &&
+///     cmsGetDeviceClass(hProfile) == cmsSigOutputClass &&
+///     isInkColorspace(cmsGetColorSpace(hProfile)))
+///     return BlackPointUsingPerceptualBlack(BlackPoint, hProfile);
+/// ```
+///
+/// `BlackPointUsingPerceptualBlack` **forces `a* = b* = 0`** (L174). So on a
+/// CMYK output profile — `USWebCoatedSWOP`, the only real LUT profile in
+/// reach — lcms2's detected black is *neutral*, ISO/CD 18619 4.2.3's is
+/// neutral, and the prediction's mechanism ("ISO drops the chroma, lcms2
+/// retains it") **cannot be exercised at all**. Pass 5c measured exactly that
+/// and recorded it.
+///
+/// An **RGB** output profile is not an ink colorspace, so the branch is not
+/// taken and lcms2 falls through to `BlackPointAsDarkerColorant`, which clips
+/// `L*` to 50 and **keeps `a*` and `b*`**. That is the one configuration in
+/// which the two estimators genuinely differ in chroma — and no profile on the
+/// authoring machine had it. **This fixture is the instrument for the claim,
+/// and the claim is why the fixture is RGB.**
+///
+/// ## What a conformant consumer must produce
+///
+/// * `A2B1` evaluated at device `(0,0,0)` is `Lab(20, 4, −3)` to encoding
+///   precision (the general 16-bit PCSLAB encoding of 6.3.4.2, so ±0,002 in
+///   `L*` and ±0,002 in `a*`/`b*`).
+/// * `B2A1(A2B1(x)) = x` for every `x` whose image is inside the encodable
+///   PCSLAB range — the model is affine and its inverse is exact, so the only
+///   residue is the two encodings.
+/// * `mAB `: `A = inputChan = 3`, `M = B = outputChan = 3` (10.12.2/4/6);
+///   `mBA `: `B = M = inputChan = 3`, `A = outputChan = 3` (10.13.2/4/6).
+///   Both are square here, so — unlike `v4-cmyk-mab-lab` — this fixture
+///   **cannot** catch GP-001, and that is stated rather than hoped.
+/// * Both `mAB ` and `mBA ` use the `A, CLUT, B` element combination
+///   (10.12.1 / 10.13.1): **no matrix and no M curves**, `offsetMat` and
+///   `offsetM` are `0`. The sibling CMYK fixture exercises the matrix path
+///   with non-zero offsets; this one deliberately does not, so that a
+///   black-point measurement made with it has no 3×4 offset in the chain to
+///   attribute anything to.
+///
+/// ## What it deliberately does not do
+///
+/// The grid is **hypercubic** (9 per axis) rather than ragged: raggedness is
+/// `v4-cmyk-mab-lab`'s job, and mixing the two would mean a black-point
+/// disagreement and a grid-parsing disagreement could not be told apart.
+/// Clause 8.4's full required-tag set for an Output profile is **not**
+/// complete — no `gamt`, no `A2B2`/`B2A2` — exactly as in the sibling recipe;
+/// the fixture is well-formed for the path under test and its manifest says
+/// so.
+fn v4_rgb_mab_chromatic_black() -> Vec<u8> {
+    /// Nodes per axis, both directions. 9 is the smallest odd grid that puts
+    /// nodes on eighths (so the CLUT's own lattice is legible in a hex dump)
+    /// and it is more than enough: the model is multi-affine and multilinear
+    /// interpolation reproduces it exactly at any size.
+    const N: usize = 9;
+
+    // --- A2B: RGB -> Lab ----------------------------------------------------
+    let mut a2b_clut = Vec::with_capacity(N * N * N * 3);
+    for ri in 0..N {
+        for gi in 0..N {
+            for bi in 0..N {
+                let (l, a_star, b_star) =
+                    rgb_to_lab_chromatic_black(frac(ri, N), frac(gi, N), frac(bi, N));
+                a2b_clut.push(general_lab_l(l));
+                a2b_clut.push(general_lab_ab(a_star));
+                a2b_clut.push(general_lab_ab(b_star));
+            }
+        }
+    }
+    let (b_n, _m_n, a_n) = tags::spec_curve_counts(LutAbKind::AToB, 3, 3);
+    let a2b = LutAb {
+        kind: LutAbKind::AToB,
+        input_chan: 3,
+        output_chan: 3,
+        b_curves: vec![tags::curv_identity(); usize::from(b_n)],
+        // A, CLUT, B — 10.12.1's third permitted combination.
+        matrix: None,
+        m_curves: Vec::new(),
+        clut: Some(AbClut {
+            grid_points: grid(&[N as u8, N as u8, N as u8]),
+            precision: 2,
+            data: a2b_clut,
+        }),
+        a_curves: vec![tags::curv_identity(); usize::from(a_n)],
+    };
+
+    // --- B2A: Lab -> RGB ----------------------------------------------------
+    // The CLUT's input axes are the ENCODED PCSLAB axes, so node (li, ai, bi)
+    // stands for L* = 100·li/(N−1), a* = b* = −128 + 255·ai/(N−1). That is the
+    // general encoding of 6.3.4.2 read backwards, and getting it wrong is the
+    // classic B2A authoring error: a fixture whose B2A axes assumed [-128,127]
+    // mapped linearly onto [0,1] with a different span would still parse and
+    // would be silently wrong everywhere except the neutral axis.
+    let mut b2a_clut = Vec::with_capacity(N * N * N * 3);
+    for li in 0..N {
+        for ai in 0..N {
+            for bi in 0..N {
+                let l = 100.0 * frac(li, N);
+                let a_star = -128.0 + 255.0 * frac(ai, N);
+                let b_star = -128.0 + 255.0 * frac(bi, N);
+                let (r, g, b) = lab_to_rgb_chromatic_black(l, a_star, b_star);
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "each value is clamped to 0..1 above, so ×65535 is 0..=65535"
+                )]
+                {
+                    b2a_clut.push((r * 65535.0).round() as u16);
+                    b2a_clut.push((g * 65535.0).round() as u16);
+                    b2a_clut.push((b * 65535.0).round() as u16);
+                }
+            }
+        }
+    }
+    let (b_n, _m_n, a_n) = tags::spec_curve_counts(LutAbKind::BToA, 3, 3);
+    let b2a = LutAb {
+        kind: LutAbKind::BToA,
+        input_chan: 3,
+        output_chan: 3,
+        b_curves: vec![tags::curv_identity(); usize::from(b_n)],
+        matrix: None,
+        m_curves: Vec::new(),
+        clut: Some(AbClut {
+            grid_points: grid(&[N as u8, N as u8, N as u8]),
+            precision: 2,
+            data: b2a_clut,
+        }),
+        a_curves: vec![tags::curv_identity(); usize::from(a_n)],
+    };
+
+    let mut tags_ = v4_meta(
+        "iccce synthetic v4 RGB, mAB/mBA, non-zero slightly chromatic black Lab(20 4 -3)",
+    );
+    tags_.push(wtpt());
+    // Perceptual and media-relative carry the SAME tables. That is not
+    // laziness: it makes the perceptual arm's use of the fixed A41 black
+    // measurable against this profile's real black without a second colour
+    // model to attribute anything to.
+    let a2b_bytes = a2b.encode();
+    let b2a_bytes = b2a.encode();
+    tags_.push(Tag::own(b"A2B0", a2b_bytes.clone()));
+    tags_.push(Tag::own(b"A2B1", a2b_bytes));
+    tags_.push(Tag::own(b"B2A0", b2a_bytes.clone()));
+    tags_.push(Tag::own(b"B2A1", b2a_bytes));
+    ProfileSpec {
+        version: 0x0440_0000,
+        class: *b"prtr",
+        color_space: *b"RGB ",
+        pcs: *b"Lab ",
+        rendering_intent: 1,
+        tags: tags_,
+    }
+    .assemble()
+}
+
+// ===========================================================================
 // (f) Well-formed: ncl2 named-colour profile
 // ===========================================================================
 
@@ -1372,6 +1655,24 @@ pub fn all() -> Vec<Recipe> {
                      lcms2's Type_LUTB2A_Read at the pin); see tools/gen-profiles/README.md \u{a7}5 \
                      \u{2014} FINDING GP-001. Do not change the fixture to match the parser.",
             build: v4_cmyk_mab_lab,
+        },
+        Recipe {
+            name: "v4-rgb-mab-chromatic-black",
+            category: WellFormed,
+            covers: "mAB and mBA with the A,CLUT,B combination (no matrix, no M curves); a NON-ZERO, slightly chromatic device black",
+            what: "v4.4.0.0 prtr RGB, Lab PCS, A2B0/A2B1 as mAB and B2A0/B2A1 as mBA (3->3, 9x9x9 grids, general PCSLAB encoding). Device black maps to Lab(20 4 -3), chroma 5.0; device white to Lab(100 0 0). The colour model is affine and the B2A CLUT is its EXACT closed-form inverse",
+            expect: "parses; 0 malformations; lutAToB in=3 out=3 B=3 M=0 A=3 grid=9x9x9 matrix=absent; \
+                     lutBToA in=3 out=3 B=3 M=0 A=3. A2B1 at device (0,0,0) is Lab(20 4 -3) to encoding \
+                     precision; B2A1(A2B1(x)) = x wherever the PCS image is encodable. \
+                     \u{2605} THE POINT OF THE FIXTURE: at MEDIA-RELATIVE this is an OUTPUT-class, \
+                     NON-INK profile, so lcms2 reaches BlackPointAsDarkerColorant (cmssamp.c L370-374 \
+                     does NOT fire) and RETAINS the black's chroma, while ISO/CD 18619 4.2.3 neutralises \
+                     it - the one configuration in which the two estimators differ in chroma, and one \
+                     that no profile on the authoring machine had. At PERCEPTUAL both implementations \
+                     return the fixed A41 triple (L* ~ 3.1) WITHOUT reading the profile, so the fixture \
+                     cannot discriminate them there; what it can do is measure how far that constant is \
+                     from this device's real black of L* 20.",
+            build: v4_rgb_mab_chromatic_black,
         },
         Recipe {
             name: "v2-ncl2-named",

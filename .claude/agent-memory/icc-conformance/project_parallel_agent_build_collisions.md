@@ -22,6 +22,21 @@ Observed **2026-08-12** during the completion sweep, and it cost real time.
 **Why this matters:** neither is a problem to fix — the engineer owns commits and
 the other agent owns `crates/` — but both invalidate a naive workflow.
 
+3. **A second instance of THIS agent runs concurrently and writes the same
+   memory directory.** On 2026-08-12 `project_pass4c_absolute_intent_findings.md`
+   and an edited `MEMORY.md` appeared mid-session from another
+   `icc-conformance`. **Re-read `MEMORY.md` immediately before editing it**, and
+   never rewrite it wholesale — insert a line, do not replace the file.
+4. **The collision now also happens inside `tools/difftest` itself**, not just
+   in `crates/`. The other instance added `src/pass4c.rs`, `pub mod pass4c;` in
+   `lib.rs` and a block in `main.rs`; their in-flight file called a `Profile`
+   method that commit `95c04c1` had just sealed, and the whole crate stopped
+   compiling for ~20 minutes. In a worktree, strip their module from the
+   **worktree copy** of `lib.rs`/`main.rs` only — never from the main tree,
+   which is theirs to finish. A conservative line-based filter is safer than a
+   regex: a `.*p4c.*` sweep silently ate an unrelated line and produced a
+   parse error 200 lines away.
+
 **How to apply.**
 
 - **Do not `git stash` or edit another agent's broken file.** Instead:

@@ -74,7 +74,7 @@
 //! | **S2** | `v4-cmyk-mab-lab.icc` → sRGB | perceptual | **A41 triple** / 0 | **guard 3 constant** / not-CLUT → guard 6 | `PB → 0`, **lowers** everything below D50 | iccce `--bpc` ≡ lcms2 `-b`; lcms2 does **not** force (destination is v2) |
 //! | **S3** | sRGB → `v4-cmyk-mab-lab.icc` | perceptual | 0 / **A41 triple** | guard 6 / **guard 3 constant** | `0 → PB`, **raises** | iccce `--bpc` ≡ lcms2 with **or without** `-b` — lcms2 **forces** here (destination is v4) |
 //! | **S4** | sRGB → `v4-rgb-matrix-trc.icc` | perceptual | 0 / 0 | guard 6 / **guard 3's matrix-shaper escape** → 0 | identity | forced BPC costs **exactly zero** — corpus trap **T5** measured |
-//! | **S5** | sRGB → `USWebCoatedSWOP.icc` | media-relative | — | guard 6 / the **quadratic curve fit** | — | **iccce refuses by name**; no comparison exists. The subset boundary |
+//! | **S5** | sRGB → `USWebCoatedSWOP.icc` | media-relative | — | guard 6 / the **quadratic curve fit** | — | ~~iccce refuses by name; no comparison exists~~ **SUPERSEDED 2026-08-12**: the ISO estimator was wired (`c268261`) and iccce now converts. Pass 5c makes the comparison Pass 5 said did not exist |
 //! | **S6** | two committed matrix fixtures | **ICC-absolute** | — | excluded by guard 2 | — | **iccce refuses by name**; lcms2 excludes it too, for the same published reason |
 //!
 //! ## What "null by construction" means and why S1 is still run
@@ -1138,16 +1138,31 @@ pub fn analyse(oracle: &Oracle) -> Result<Pass5, Unavailable> {
     };
 
     // --- S5: the estimation-subset refusal ----------------------------------
+    // ★ INVERTED 2026-08-12. S5 used to assert a REFUSAL here: a v2 CMYK
+    // LUT destination at media-relative was outside iccce's black-point
+    // estimation subset and the shipped binary exited 1 by name. Pass 5b
+    // found that `bpc::estimate_lut_destination_black` implemented ISO/CD
+    // 18619 4.2.5 in full and had NO CALLER; commit `c268261` wired it into
+    // `Chain::estimate_dst_black`; the case now converts.
+    //
+    // The row is kept and inverted rather than deleted, because the sentence
+    // it used to carry - "SO NO COMPARISON EXISTS FOR THIS CASE and Pass 5
+    // claims none" - is now false, and a coverage gap that closes should be
+    // visible closing rather than quietly absent. Pass 5c is the comparison.
     let refusal_lut = if srgb.is_file() && swop.is_file() {
-        Some(expect_refusal(
-            &iccce,
-            srgb,
-            swop,
-            Intent::RelativeColorimetric,
-            &[vec![0.5, 0.5, 0.5]],
-            4,
-            "black point not estimable",
-        ))
+        Some(
+            iccce
+                .transform_rows_shaped_bpc(
+                    srgb,
+                    swop,
+                    Intent::RelativeColorimetric,
+                    &[vec![0.5, 0.5, 0.5]],
+                    4,
+                    true,
+                )
+                .map(|rows| format!("converted: {:?}", rows[0]))
+                .map_err(|e| format!("STILL REFUSES - {e}")),
+        )
     } else {
         None
     };
@@ -1717,7 +1732,7 @@ pub fn records(p: &Pass5) -> Vec<Record> {
     // ---- S5 / S6: the refusals -------------------------------------------
     match &p.refusal_lut {
         None => out.push(Record::skipped(
-            "pass5/S5/srgb-to-swop/media-relative/refuses-outside-the-subset",
+            "pass5/S5/srgb-to-swop/media-relative/SUPERSEDED-now-inside-the-subset",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
             REFUSAL,
@@ -1725,23 +1740,25 @@ pub fn records(p: &Pass5) -> Vec<Record> {
             "sRGB and/or USWebCoatedSWOP not present (LEGAL.md §3 category (c))",
         )),
         Some(r) => out.push(Record::graded(
-            "pass5/S5/srgb-to-swop/media-relative/refuses-outside-the-subset",
+            "pass5/S5/srgb-to-swop/media-relative/SUPERSEDED-now-inside-the-subset",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
             REFUSAL,
             if r.is_ok() { 0.0 } else { 1.0 },
             SRC_BOTH_COMPUTED,
             format!(
-                "★ THE SUBSET BOUNDARY, AND IT IS A COVERAGE GAP, NOT A BUG. A v2 CMYK prtr \
-                 destination at media-relative is exactly where lcms2 runs the least-squares \
-                 quadratic fit whose mathematics Maria 2013 forwards to the ToS-barred AdobeBPC.pdf \
-                 (A42) and whose six thresholds are unattributed even in lcms2's own source. iccce \
-                 refuses by name rather than reproducing constants nobody can cite. lcms2 answers \
-                 here; iccce does not; SO NO COMPARISON EXISTS FOR THIS CASE and Pass 5 claims \
-                 none. Outcome: {}",
+                "★ INVERTED 2026-08-12 - THE COVERAGE GAP CLOSED. This row used to assert \
+                 that iccce REFUSED here, and its prose ended 'SO NO COMPARISON EXISTS FOR THIS \
+                 CASE and Pass 5 claims none'. Both halves have stopped being true. A v2 CMYK \
+                 prtr destination at media-relative is where lcms2 runs the Adobe-derived black \
+                 point search whose thresholds are unattributed even in lcms2's own source (A42); \
+                 iccce refused rather than reproduce constants nobody can cite. It now implements \
+                 ISO/CD 18619 4.2.5 instead, Pass 5b found that implementation had no caller, \
+                 commit c268261 wired it, and PASS 5C MAKES THE COMPARISON THIS ROW SAID DID NOT \
+                 EXIST - the two estimators are 0.0817 dE76 apart, entirely in L*. Outcome: {}",
                 match r {
-                    Ok(msg) => format!("refused as required - {msg}"),
-                    Err(e) => format!("DID NOT REFUSE AS REQUIRED - {e}"),
+                    Ok(msg) => format!("converts as required now - {msg}"),
+                    Err(e) => format!("DID NOT CONVERT - {e}"),
                 }
             ),
         )),

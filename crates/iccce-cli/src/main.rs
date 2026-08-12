@@ -45,8 +45,10 @@ USAGE:
   iccce bench --src <profile> --dst <profile> [--grid N] [--pixels N]
                             Time a page-sized conversion through the
                             compiled path. Defaults to a 300 DPI A4
-                            raster (2481x3507 = 8,700,267 px) and a
-                            17-point grid. Prints build time, convert
+                            raster (2481x3507 = 8,700,867 px) and to
+                            the recommended grid for the source's
+                            channel count (33 for 3- and 4-channel,
+                            129 for 1- and 2-). Prints build time, convert
                             time, throughput and the compiled path's
                             off-node error against the reference path.
 

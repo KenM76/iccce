@@ -1,6 +1,6 @@
 ---
 name: project-pass5b-estimator-findings
-description: Pass 5b — the ISO/CD 18619 estimator is implemented but has NO CALLER; the corpus's pre-registered prediction split 2 CONFIRMED / 1 FALSIFIED / 1 NOT ESTABLISHED; and a CMYK destination's gamut boundary absorbs 90% of a black-point disagreement.
+description: Pass 5b (PARTIALLY SUPERSEDED by Pass 5c) — the ISO/CD 18619 estimator is implemented but has NO CALLER; the corpus's pre-registered prediction split 2 CONFIRMED / 1 FALSIFIED / 1 NOT ESTABLISHED; and a CMYK destination's gamut boundary absorbs 90% of a black-point disagreement.
 metadata:
   type: project
 ---
@@ -61,6 +61,8 @@ a 15-L\* band prices in curvature the recovery never touches. v3 measures the
 **local** residual at the two estimated blacks: **0,948, a 5 % margin, and the
 row says so.** A marginal apparatus quoted as green makes a whole section
 unfalsifiable.
+
+**★★ PARTIALLY SUPERSEDED 2026-08-12 by [[project-pass5c-estimator-branch-finding]].** lcms2's estimator was reimplemented from source: **98,3 % of the 0,858 ΔE76 above was the recovery**, lcms2's black on SWOP is **neutral**, claim 1's CONFIRMED is **withdrawn**, claim 3 is settled both ways, and **neither implementation fits a quadratic here** — both take the straightness short-circuit. The true divergence on this fixture is 0,0817 ΔE76, entirely L\*. Claims 2 and 4 and the 90 %-absorption finding stand.
 
 **Owed, highest value first:** a harness reimplementation of
 `cmsDetectDestinationBlackPoint` (constant-chroma ramp + its own

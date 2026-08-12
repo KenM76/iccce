@@ -137,6 +137,16 @@ These assert that the parser **reads** correctly. Each must parse with zero malf
 | Contents | v4.4.0.0 prtr CMYK, Lab PCS, A2B0 as mAB (4->3, 5x4x3x2 grid) and B2A0 as mBA (3->4, 3x3x3 grid), general PCSLAB encoding |
 | Expected of a consumer | parses; 0 malformations; lutAToB in=4 out=3 B=3 M=3 A=4 grid=5x4x3x2 matrix=3x4; lutBToA in=3 out=4 B=3 M=3 A=4 per clauses 10.13.2/10.13.4/10.13.6. ★ AS OF 2026-08-11 ICCCE DOES NOT MEET THIS: it refuses the mBA tag with "curve chain broken at element 3 (byte 68)" because it counts B and M curves by outputChan for both tag types. The fixture is correct per the primary spec (and per lcms2's Type_LUTB2A_Read at the pin); see tools/gen-profiles/README.md §5 — FINDING GP-001. Do not change the fixture to match the parser. |
 
+### `v4-rgb-mab-chromatic-black.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v4-rgb-mab-chromatic-black v4-rgb-mab-chromatic-black.icc` | 
+| Size | 18608 bytes | 
+| Covers | mAB and mBA with the A,CLUT,B combination (no matrix, no M curves); a NON-ZERO, slightly chromatic device black |
+| Contents | v4.4.0.0 prtr RGB, Lab PCS, A2B0/A2B1 as mAB and B2A0/B2A1 as mBA (3->3, 9x9x9 grids, general PCSLAB encoding). Device black maps to Lab(20 4 -3), chroma 5.0; device white to Lab(100 0 0). The colour model is affine and the B2A CLUT is its EXACT closed-form inverse |
+| Expected of a consumer | parses; 0 malformations; lutAToB in=3 out=3 B=3 M=0 A=3 grid=9x9x9 matrix=absent; lutBToA in=3 out=3 B=3 M=0 A=3. A2B1 at device (0,0,0) is Lab(20 4 -3) to encoding precision; B2A1(A2B1(x)) = x wherever the PCS image is encodable. ★ THE POINT OF THE FIXTURE: at MEDIA-RELATIVE this is an OUTPUT-class, NON-INK profile, so lcms2 reaches BlackPointAsDarkerColorant (cmssamp.c L370-374 does NOT fire) and RETAINS the black's chroma, while ISO/CD 18619 4.2.3 neutralises it - the one configuration in which the two estimators differ in chroma, and one that no profile on the authoring machine had. At PERCEPTUAL both implementations return the fixed A41 triple (L* ~ 3.1) WITHOUT reading the profile, so the fixture cannot discriminate them there; what it can do is measure how far that constant is from this device's real black of L* 20. |
+
 ### `v2-ncl2-named.icc`
 
 | | |

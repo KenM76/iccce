@@ -81,8 +81,23 @@ const SRGB: &str = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Pr
 
 /// `iccce bench`'s default raster: 2481 × 3507, a 300 DPI A4 page.
 const BENCH_PIXELS: usize = 2481 * 3507;
-/// `iccce bench`'s default grid.
-const DEFAULT_GRID: usize = 17;
+/// `iccce bench`'s default grid, i.e. `compiled::recommended_grid_points(4)`.
+///
+/// ##  Moved 17 -> 33 on 2026-08-12, and this constant is downstream of that
+///
+/// Pass 6 was first run when the shipped default was **17**, where the gate
+/// (`COMPILED_DE`) FAILED at 2,970x10^-1 against 2,5x10^-1. `TOLERANCES.md`
+/// 3.6.1 said in terms that *the remedy is the grid, not the number*, and
+/// commit `189e732` moved `recommended_grid_points` to 33 for 3-D and 4-D.
+///
+/// **This constant must track the shipped default and nothing else.** If it
+/// is ever set to a value the binary does not use, `APPARATUS_BENCH` fails -
+/// by design: the harness arm and the `iccce bench` arm would be measuring
+/// different transforms and every number below would stop being a
+/// translation of what the binary prints. That is exactly how the move was
+/// detected: the suite went red at 1,576x10^-3 on the apparatus row, which
+/// is the difference between grid 17 and grid 33, not an error.
+const DEFAULT_GRID: usize = 33;
 /// The four grids §B compares. 5 → 9 → 17 → 33 halves the spacing three
 /// times. **9, 17 and 33 all place their nodes ON the source CLUT's own
 /// 9-node lattice** (kinks at eighths are nodes of all three); **5 does not**,
@@ -100,7 +115,13 @@ const SRGB_BREAKPOINT: f64 = 0.040_45;
 // ===========================================================================
 
 /// **§A, the one that matters.** The compiled path's off-node cost against the
-/// reference path, in ΔE2000, at the shipped default grid of 17.
+/// reference path, in ΔE2000, at the shipped default grid.
+///
+/// **The constant has never moved.** It was derived and first graded when
+/// the shipped default was 17, where it failed at 2,970x10^-1; the default
+/// is now 33 and the same constant is graded against 1,677x10^-1. A
+/// tolerance that survives the thing it failed changing underneath it is
+/// the only kind worth writing down.
 ///
 /// ## The derivation, which has no free parameter
 ///
@@ -136,9 +157,10 @@ const SRGB_BREAKPOINT: f64 = 0.040_45;
 /// needed. It is not a claim that 0,25 ΔE2000 is invisible.
 ///
 /// **Grid-dependent by construction**, and stated on the record: the quantity
-/// is `O(h²)` in the grid spacing, so this bound belongs to `grid = 17` and to
-/// nothing else. §B prints what 5 and 9 cost so that dependence is visible
-/// rather than implied.
+/// is `O(h^1,32)` in the grid spacing - the control measured the order and
+/// the `h²` prediction was falsified - so this bound belongs to the shipped
+/// default grid and to nothing else. §B prints what 5, 9 and 17 cost so that
+/// dependence is visible rather than implied.
 pub const COMPILED_DE: Tolerance = Tolerance::new(
     2.5e-1,
     "compiling must not move the result further than the two implementations already differ on \
@@ -148,7 +170,7 @@ pub const COMPILED_DE: Tolerance = Tolerance::new(
      parameter. Deliberately NOT derived from the 1.0 dE2000 perceptibility anchor: NA-006 \
      alone was measured at 1.574 dE2000 on A2B0 of this same file, so a budget derived from a \
      total below the anchor would be derived from a total that is already exceeded. \
-     GRID-DEPENDENT: the quantity is O(h^2), so this belongs to grid=17 and nothing else. \
+     GRID-DEPENDENT: the quantity is O(h^1.32) as measured by the control row (NOT O(h^2) - that prediction was falsified), so this bound belongs to the SHIPPED DEFAULT GRID and to nothing else. It was derived when that default was 17, where it FAILED at 2.9702e-1; the default moved to 33 in commit 189e732 and the constant did NOT move, which is the whole point of a tolerance with no free parameter in it. \
      self-consistency - worthless as correctness evidence however small",
 );
 
@@ -179,8 +201,15 @@ pub const REPORTED: Tolerance = Tolerance::new(
     "REPORTED, NOT GRADED - recorded so the number is on file next to the ones that are graded",
 );
 
-/// **§A, apparatus.** The harness's in-process off-node device maximum at grid
-/// 17 against the number `iccce bench` prints from the shipped binary.
+/// **§A, apparatus.** The harness's in-process off-node device maximum at the
+/// shipped default grid against the number `iccce bench` prints.
+///
+/// ★ **This row is what caught the default moving from 17 to 33.** When
+/// `recommended_grid_points` changed in commit `189e732` and `DEFAULT_GRID`
+/// here did not, it failed at 1,576x10^-3 - which is not an error but the
+/// gap between the two grids' costs. A cheap row that fails loudly when the
+/// two arms stop describing the same transform is worth more than an
+/// expensive one that quietly averages over it.
 ///
 /// The precondition for §A being a *translation* of the benchmark rather than a
 /// second, differently-shaped measurement that happens to concern the same
