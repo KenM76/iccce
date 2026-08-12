@@ -19,8 +19,8 @@
 //! 3. **DL-018: an upper bound on a deliberate cost is worthless if deleting
 //!    the precision would make it greener.** The engineer honoured this in
 //!    `compiled.rs`'s unit tests with a 5-vs-9 control; §B carries it into the
-//!    suite at 5 / 9 / 17 on the shipped default pair, and reports the ΔE cost
-//!    of each grid so the trade is visible rather than asserted.
+//!    suite at 5 / 9 / 17 / 33 on the shipped default pair, and reports the ΔE
+//!    cost of each grid so the trade is visible rather than asserted.
 //!
 //! ## The pair, and why it is this one (DL-021)
 //!
@@ -170,7 +170,7 @@ pub const COMPILED_DE: Tolerance = Tolerance::new(
      parameter. Deliberately NOT derived from the 1.0 dE2000 perceptibility anchor: NA-006 \
      alone was measured at 1.574 dE2000 on A2B0 of this same file, so a budget derived from a \
      total below the anchor would be derived from a total that is already exceeded. \
-     GRID-DEPENDENT: the quantity is O(h^1.32) as measured by the control row (NOT O(h^2) - that prediction was falsified), so this bound belongs to the SHIPPED DEFAULT GRID and to nothing else. It was derived when that default was 17, where it FAILED at 2.9702e-1; the default moved to 33 in commit 189e732 and the constant did NOT move, which is the whole point of a tolerance with no free parameter in it. \
+     GRID-DEPENDENT IN ITS APPLICABILITY, NOT IN ITS DERIVATION - the distinction matters and was blurred once already. The DERIVATION POPULATION contains no compiled grid at all: Pass 4 compares the REFERENCE path against the oracle over 341 CMYK points and never builds a CompiledTransform, so there is no grid in this number to be stale. What is grid-dependent is where the bound may be APPLIED: the graded quantity is O(h^1.32) as measured by the control row (NOT O(h^2) - that prediction was falsified), so an observation is comparable to this bound only at the grid it was taken on. It was first GRADED when the shipped default was 17, where it FAILED at 2.9702e-1; the default moved to 33 in commit 189e732 and the constant did NOT move, which is the whole point of a tolerance with no free parameter in it. \
      self-consistency - worthless as correctness evidence however small",
 );
 
@@ -1050,7 +1050,26 @@ pub fn records(a: &Analysis) -> Vec<Record> {
         ),
     ];
 
-    // --- the cost of the two coarser grids, reported so the trade is visible --
+    // --- the cost of the non-default grids, reported so the trade is visible --
+    //
+    // ★ The `source` string is FORMATTED FROM `DEFAULT_GRID`, not typed.
+    // It used to read "17 is the shipped default", was written when 17 was
+    // the shipped default, and went on being emitted into every record after
+    // commit `189e732` moved the default to 33 - i.e. this apparatus spent a
+    // day asserting a false fact about the shipped product inside the
+    // artefact whose whole purpose is to be durable evidence. A
+    // claim-bearing number that the code already knows must be interpolated
+    // from the code, never spelled out in prose beside it.
+    //
+    // ★ It also said "the only grid COMPILED_DE is DERIVED for", which was
+    // wrong on the day it was written and is worth correcting rather than
+    // merely re-dating. COMPILED_DE has no compiled grid in its derivation
+    // at all: it is Pass 4's iccce-vs-lcms2 maximum over a 341-point CMYK
+    // grid, and Pass 4 compares the REFERENCE path against the oracle - it
+    // never builds a `CompiledTransform`. The grid enters the OBSERVATION
+    // and never the BOUND. What is true of the bound is narrower and is
+    // stated as such: it is APPLICABLE only at the grid it is graded at,
+    // because the graded quantity is O(h^1.32) in the grid spacing.
     for r in &a.runs {
         if r.grid_points == DEFAULT_GRID {
             continue;
@@ -1061,11 +1080,27 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             Metric::DeltaE2000Max,
             REPORTED,
             r.de_max,
-            "both arms are iccce. REPORTED, NOT GRADED: 17 is the shipped default and the only \
-             grid COMPILED_DE is derived for; these say what the alternatives cost",
             format!(
-                "{ctx} | grid={} device={:.6e} dE-mean={:.4e} build={:.3}s",
-                r.grid_points, r.device_max, r.de_mean, r.build_seconds
+                "both arms are iccce. REPORTED, NOT GRADED: {DEFAULT_GRID} is the shipped default \
+                 (compiled::recommended_grid_points(4)) and the only grid COMPILED_DE is GRADED \
+                 at; these say what the alternatives cost. COMPILED_DE is not DERIVED from any \
+                 grid - its derivation population is Pass 4's 341-point CMYK comparison of the \
+                 REFERENCE path against lcms2 2.19.1 (0.25294 dE2000, TOLERANCES.md 3.4.1), in \
+                 which no compiled grid appears at all. The grid enters the OBSERVATION, never \
+                 the BOUND; what is grid-dependent is the bound's APPLICABILITY, because the \
+                 graded quantity is O(h^1.32)"
+            ),
+            format!(
+                "{ctx} | grid={} device={:.6e} dE-mean={:.4e} build={:.3}s | shipped default is \
+                 {DEFAULT_GRID} (build {:.3}s) since commit 189e732",
+                r.grid_points,
+                r.device_max,
+                r.de_mean,
+                r.build_seconds,
+                a.runs
+                    .iter()
+                    .find(|x| x.grid_points == DEFAULT_GRID)
+                    .map_or(f64::NAN, |x| x.build_seconds),
             ),
         ));
     }

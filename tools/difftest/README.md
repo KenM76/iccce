@@ -3177,8 +3177,8 @@ nothing, which is the trap `compiled.rs`'s own control hit on its first run.
 |---|---|---|---|
 | 5 | 2,770 3×10⁻² | 7,284 4×10⁻¹ | 0,006 s |
 | 9 | 4,972 8×10⁻³ | 4,045 6×10⁻¹ | 0,080 s |
-| **17 (shipped default)** | **3,588 962×10⁻³** | **★ 2,970 2×10⁻¹** | 0,950 s |
-| 33 | 2,012 4×10⁻³ | 1,677 3×10⁻¹ | 13,845 s |
+| **17 (shipped default *when this table was written*; a reported alternative since `189e732`)** | **3,588 962×10⁻³** | **★ 2,970 2×10⁻¹** | 0,950 s |
+| 33 (**the shipped default now**) | 2,012 4×10⁻³ | 1,677 3×10⁻¹ | 13,845 s |
 
 **Tolerance `2,5×10⁻¹` ΔE2000. Observed `2,970 17×10⁻¹`. FAIL, by 17 %.**
 
@@ -3299,6 +3299,12 @@ refinement buys.
 
 ### 18.4 The speed, reported and graded nowhere
 
+> ★★ **RE-MEASURED AND RE-FILED 2026-08-12 — see §18.4.1. Everything in this
+> subsection was measured at the OLD default grid of 17, its break-even is
+> therefore off by 14,8×, and its speedup range was never reproducible at any
+> grid. Kept verbatim because the correction is more useful with the sentence
+> it corrects beside it.**
+
 Across four invocations in one session on this machine (Windows/MSVC, release,
 single-threaded): compiled **2,4–2,7 Mpix/s**, reference **0,076–0,091 Mpix/s**,
 ratio **28–32×**, build 0,79–0,95 s at grid 17, break-even **≈63 000–75 000 px**.
@@ -3311,6 +3317,57 @@ that gated on it would fail on a busy laptop and pass on an idle one.
 
 The number that *is* stable and useful is the **break-even pixel count**: below
 ~70 000 px, compiling costs more than it saves.
+
+#### 18.4.1 ★★ Re-filed 2026-08-12 — the break-even carries its grid, and the speedup is withdrawn
+
+**Ten `iccce bench` invocations, one session, one binary (`cc03f3d`, release,
+MSVC), same pair and same 8 700 867-px raster, five at each grid:**
+
+| grid | build (s) | compiled (Mpix/s) | reference (Mpix/s) | speedup | **break-even (px)** |
+|---|---|---|---|---|---|
+| **33 — shipped default** | 12,05 – 12,91 | 1,18 – 2,46 | 0,092 – 0,099 | 12,44 – 25,27× | **1,23×10⁶ – 1,39×10⁶** |
+| 17 — previous default | 0,82 – 0,94 | 1,23 – 1,36 | 0,092 – 0,099 | 12,72 – 14,67× | **8,3×10⁴ – 9,9×10⁴** |
+
+**(a) The break-even was never grid-free.** `N = build ÷ (1/ref − 1/comp)` puts
+`build` in the numerator, and `build` is the *only* term the grid moves — both
+throughputs above are indistinguishable at 17 and 33. Median build
+0,838 → 12,444 s is **14,8×**; median break-even 85 900 → 1 273 800 px is
+**14,8×**. They agree to three figures, so the whole shift is the build and
+none of it is load. **The figure to quote is ≈1,3×10⁶ px *at grid 33*, and
+never without the grid.** Concretely: compiling pays for itself at about a
+1140 × 1140 image; on `iccce bench`'s own A4-at-300-DPI raster (8,7 Mpix) it
+pays ~7× over; on a 1024 × 768 sheet it does not.
+
+**(b) The speedup is withdrawn.** `28–32×` is the top of a distribution, not a
+measurement of anything: **12,44×–25,27× within one session at a fixed grid**,
+and **12,4×–32× across the day's sessions on this machine**, with no change of
+code, grid or workload to attribute it to. The recorded "~10 % run-to-run
+spread" understated the variance by an order of magnitude. `iccce bench` still
+prints `speedup.compiled_over_reference` — it is a diagnostic a user runs on
+*their* machine — and no project document restates it as a property of the
+engine. Where it must be quoted, it is labelled *observed on one Windows box
+under unknown load, 12,4–32×*, which is a sentence that argues against quoting
+it.
+
+**(c) Why the break-even is the stabler statistic, structurally.** Since the
+compiled path is >12× faster, `1/comp ≪ 1/ref` and `N ≈ build × ref_rate` — the
+noisy arm barely enters. Over the five grid-33 runs the compiled rate spanned
+**2,08×** while the break-even computed from those same runs spanned **1,13×**.
+*Publish the quantity that is insensitive to the arm that varies.*
+
+**(d) The reference arm is not the unstable one.** Its old recorded band
+(0,076–0,091) does not contain today's 0,092–0,099 — but within this session it
+is the **tightest** quantity measured, ±4 %, against ±35 % for the compiled arm.
+The old band was a four-sample range from one sitting quoted as a property of
+the machine; that is the same error as (b), not evidence of drift. (The
+reference arm times the first 100 000 px only — `iccce-cli` bounds it because
+the reference path is ~13× slower — which is ~1,1 s of work, so this is not
+sampling noise.)
+
+**Coverage of §18.4.1:** one machine (Windows 11, MSVC, release,
+single-threaded), one pair, one intent, one raster size, fifteen invocations
+across three sessions on 2026-08-12. Nothing here is a claim about the engine's
+performance in general.
 
 ### 18.5 Coverage — what "Pass 6 verified" is allowed to mean
 
@@ -3427,6 +3484,12 @@ first kind.
    RETURNS**: lcms2 returns `InitialLab` (L536) — a value from a *different*
    round trip — and ISO returns `outRamp[first]`. On SWOP that is the whole
    0,081 67 `L*`.
+   > ★★ **SUPERSEDED 2026-08-12 by §19.10.** `outRamp[first]` was **iccce's
+   > defect**, not ISO's text: 4.2.5.4's final paragraph says the black point
+   > *"shall be the same as `InitialLab`"*, and commit `fd34a44` corrected it.
+   > **Both sides now return their own `InitialLab`**, the divergence on SWOP
+   > is **4,799 109 `L*`** rather than 0,081 67, and the entire disagreement is
+   > that the two documents mean different things by `InitialLab`.
 5. **§17.3.1's error bar did its job.** It was reported at 0,948 — green by
    5 % — and §17.3.1 said out loud that the section was *marginal* and that
    which conclusions survived would be decided claim by claim. **They were, and
@@ -3631,3 +3694,83 @@ Windows/MSVC.
    mechanism is **branch-dependent**, and that the magnitude band assumed a
    chromatic printer black which a coated CMYK profile has not got.
 5. **A `NUMERIC_CLAIMS.md` mirror** — `icc-librarian`'s file, not this one's.
+
+### 19.10 ★★★ Re-measured 2026-08-12 on the corrected 4.2.5.4 code — the divergence grew 58,8×
+
+Harness at `cc03f3d`, `iccce-cmm` carrying commit `fd34a44`'s correction to
+`bpc::estimate_lut_destination_black`. Same apparatus, same fixtures, same pin
+(`21c582a`); nothing in `pass5c.rs`'s measurement path changed. `NUMERIC_CLAIMS.md`
+§3.24.4 predicted the `swop` divergence would **collapse** and was explicit that
+nobody had re-measured it. It did not collapse.
+
+| | before `fd34a44` | after |
+|---|---|---|
+| ISO/CD 18619 4.2.5 black (`iccce_cmm::bpc`) | `L* 16,489 806` | **`L* 11,772 365`** |
+| lcms2's black (reimplemented) | `L* 16,571 474` | `L* 16,571 474` — **unmoved** |
+| **divergence** | **8,166 8×10⁻² ΔE76** | **★ 4,799 109 ΔE76** |
+| device residual under the ISO hypothesis | 2,463 9×10⁻³ | **9,921 1×10⁻³** |
+| device residual under the lcms2 hypothesis | 4,224 9×10⁻⁴ | 4,224 9×10⁻⁴ — **identical** |
+
+The `synthetic` arm is **unchanged at 5,000 000** and could not have moved: on
+that fixture ISO's `InitialLab` and `outRamp[first]` are both `L* 20`. **The
+fixture this project authored cannot see the defect; only the vendor profile
+can.**
+
+**Why.** Both implementations take the mid-range straightness short-circuit,
+and since `fd34a44` both return a quantity their own document calls
+`InitialLab` — so the whole divergence is that **the two documents mean
+different things by that name**. ISO/CD 18619 4.2.2.2 → 4.2.3 builds it from
+the darkest **device vertex** (`CMYK(1,1,1,1)` → `Lab(11,7724 · 0,7656 ·
+0,3281)`, neutralised); lcms2's ink+output branch builds it from the
+**perceptual black round trip** `A2B1(B2A0(Lab 0,0,0))` with chroma forced to
+zero. Two constructions of "the darkest colour this profile can make", not two
+readings of one construction.
+
+**★★★ The finding: agreement with the oracle was the symptom of our defect.**
+The non-conformant return value — `outRamp[first] = MinL = 16,489 806`, a
+quantity that is not a black-point candidate in any branch of 4.2.5 — landed
+**0,082 `L*`** from lcms2's answer. The conformant one lands **4,799 `L*`**
+from it. The **defect's own magnitude** is `|16,489 806 − 11,772 365| =
+4,717 441 L*`, **57,8× the divergence it was blamed for**: it was very nearly
+invisible in the cross-check meant to detect it. *"This defect accounts for the
+whole of the observed gap"* was measured and is true; *"fixing it will end the
+gap"* was never measured and is false. Removing the defect **revealed** a
+disagreement 59× larger that the defect had been standing in front of.
+
+**Two green rows got greener for a bad reason, and both are recorded as such.**
+`pass5c/swop/apparatus/error-bar-is-smaller-than-the-effect` improved
+3,043×10⁻¹ → 5,178×10⁻³ with **an unchanged error bar** — its *effect* grew
+59×. `pass5c/swop/validation/reimplementation-beats-the-rival-candidate`
+improved 1,715×10⁻¹ → 4,258×10⁻² with **an unchanged numerator** — its *rival*
+got 4,03× worse. A ratio that improves because its denominator got worse is not
+a better result, and a reader who saw only the two numbers would have concluded
+the opposite of what happened.
+
+**What this does not establish.** lcms2 is not wrong — it does not implement
+ISO/CD 18619 and never claimed to. **There is no ground truth in this
+comparison at all**: no published black point exists for
+`USWebCoatedSWOP.icc`, every number here is a **cross-check**, and 18619 is a
+committee draft in this project's corpus. §B says only that lcms2's own output
+at input black is predicted by lcms2's own candidate and not by ISO's — a
+statement about whose output is being reproduced, which would read identically
+if ISO's were the better colour.
+
+**NA-009's cost, which has been "UNMEASURED" for two sessions, is now
+measurable**: choosing ISO/CD 18619's estimator over lcms2's costs
+**4,799 109 ΔE76 (100 % `L*`)** on `USWebCoatedSWOP` and **5,000 000 ΔE76
+(100 % chroma)** on the synthetic v4 RGB fixture, carrying to **9,921×10⁻³**
+and **5,725×10⁻²** of device range at the input black. Both are costs *at the
+black point* (not over a population — nothing here measures how the effect
+tapers away from the shadow end) and *relative to lcms2* (not relative to
+truth).
+
+**Three stale claim-bearing strings were found and fixed while doing this**,
+all of them emitted into every record: `pass5c.rs` printed *"ISO returned
+exactly `outRamp[first]` (11,772 365 against MinL 16,489 806)"* — self-refuting
+inside one sentence; `DISCRIMINATES`'s justification asserted *"the two
+candidates are only 0,082 `L*` apart"*; and `pass6.rs` asserted *"17 is the
+shipped default"* a day after it became 33. All three now interpolate the value
+the apparatus already computes. **A claim-bearing number the harness can
+compute must be formatted at run time, never typed into the prose beside the
+code that computes it** — a stale comment misleads a reader, a stale string in
+an emitted conformance record misleads the evidence.

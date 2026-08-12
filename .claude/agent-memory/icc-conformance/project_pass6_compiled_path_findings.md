@@ -54,6 +54,13 @@ reference = 28–32× on this machine, ~10 % run-to-run spread across four
 invocations, and ~2× from the engineer's 1,20 Mpix/s / 14,4× in an earlier
 session. The stable figure is **break-even ≈63 000–75 000 px**.
 
+> ★★ **SUPERSEDED 2026-08-12 — see [[project-throughput-is-not-a-claim-breakeven-is]].**
+> Every figure in the paragraph above was measured at the **old default grid of
+> 17**. The speedup is **withdrawn** (12,44–25,27× over ten same-session runs;
+> the "~10 %" understated the variance by an order of magnitude), and the
+> break-even at the shipped grid 33 is **≈1,3×10⁶ px**, 14,8× larger — entirely
+> because build went 0,838 s → 12,444 s.
+
 **Method lesson worth carrying:** *the same physical event has a different size
 in two units, and the unit the requirement is stated in is the one that may
 carry the tolerance.* The device row is ungraded because the bound its ΔE

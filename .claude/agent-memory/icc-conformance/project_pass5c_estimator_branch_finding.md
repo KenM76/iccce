@@ -5,6 +5,11 @@ metadata:
   type: project
 ---
 
+> ★★ **RE-MEASURED 2026-08-12 on the corrected 4.2.5.4 code — the `swop`
+> divergence is now 4,799 109 ΔE76, not 8,166 8×10⁻², and the reason is a
+> finding rather than a fix. See
+> [[project-conformance-can-worsen-the-crosscheck]].**
+
 Measured **2026-08-12** at oracle pin `21c582a`, iccce commit `95c04c1`.
 Apparatus `tools/difftest/src/pass5c.rs`; record `tools/difftest/README.md`
 **§19**; tolerances `docs/TOLERANCES.md` **§3.5.8**. Two arms:

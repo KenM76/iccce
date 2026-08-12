@@ -1,5 +1,9 @@
 # icc-conformance — memory index
 
+- [Conformance can WORSEN the cross-check](project_conformance_can_worsen_the_crosscheck.md) — fixing our 4.2.5.4 defect moved us 58.8x further from lcms2; the defect's own size was 57.8x the gap it was blamed for.
+- [Stale claim strings in emitted records](project_stale_claim_strings_in_emitted_records.md) — three typed numerals went false within a day; interpolate, never type. "Derived for" vs "graded at" hid a second error.
+- [Throughput is not a claim; break-even is](project_throughput_is_not_a_claim_breakeven_is.md) — speedup withdrawn (12.4–32x on one box); break-even ≈1.3e6 px AT GRID 33, and it must always carry the grid.
+
 - [Pass 4c absolute-intent findings](project_pass4c_absolute_intent_findings.md) — lcms2's wtpt gate is a CONJUNCTION, so a fixture can defeat it instead of a model subtracting it; 8.90e-5 over 729 pts, sensitivity 2310x; the policy is direction-symmetric; NA-008's second arm has no fixture.
 - [Pass 5c estimator-BRANCH finding](project_pass5c_estimator_branch_finding.md) — lcms2 has TWO estimators and the destination's HEADER picks; this overturned Pass 5b's claim 1; transicc prints RGB 0..255.
 - [Pass 6 compiled-path findings](project_pass6_compiled_path_findings.md) - the gate FAILED at grid 17 (0.297 vs 0.253) and PASSES at the new default 33; order is 1.32 not 2; max-of-max is the wrong estimator.

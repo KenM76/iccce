@@ -84,10 +84,20 @@
 //! |---|---|---|
 //! | `InitialLab` (rel-col) | darkest **vertex** (4.2.2.2) → neutralise+clip (4.2.3) | `BlackPointUsingPerceptualBlack` = `A2B1(B2A0(Lab 0,0,0))`, `L*` clipped to 50, chroma **forced to 0** |
 //! | monotonic pass | `for i in (0..255).rev()` — **includes index 0** | `for (l = 254; l > 0; --l)` — **index 0 is never touched** (L505) |
-//! | straight-midrange return | `outRamp[first]`, clamped `[0,50]` | **`InitialLab`** (L536), i.e. a value from a *different* round trip |
+//! | straight-midrange return | **`InitialLab`** — 4.2.5.4 final paragraph, *"shall be the same as InitialLab"* (**corrected `fd34a44`**; iccce returned `outRamp[first]` here until 2026-08-12 and that had no textual support in any branch of 4.2.5) | **`InitialLab`** (L536), i.e. **its own**, from a *different* round trip |
 //! | minimum shadow points | `xs.len() < 3` → give up | caller checks `n < 3`, but `RootOfLeastSquaresFitQuadraticCurve` **returns 0 for `n < 4`** (L317) |
 //! | near-linear fallback | `b == 0.0` → 0 | `fabs(b) < 1.0E-10` → 0 |
 //! | singular normal equations | rejected on the determinant of the Gaussian solve | `_cmsMAT3inverse` rejects on `fabs(det) < 1.0E-4` (`lcms2_internal.h` L142) |
+//!
+//! ★★ **Row 3 is now the whole of the divergence on `swop`, and it is not the
+//! divergence it was.** Since `fd34a44` **both sides return a quantity each
+//! document calls `InitialLab`** — so the entire disagreement is that the two
+//! documents *mean different things by that name*: ISO's is 4.2.2.2's darkest
+//! **device vertex** neutralised (`L* 11,772 365` here), lcms2's is the
+//! **perceptual black round trip** (`L* 16,571 474`). Row 1 of this table was
+//! always the real difference; row 3 used to hide it, because the
+//! non-conformant `outRamp[first]` happened to land 0,082 `L*` from lcms2's
+//! answer. **Conformance moved iccce 59× further from the oracle.**
 //!
 //! The first three are the substantive ones. The monotonic-pass difference is
 //! a genuine off-by-one in lcms2 with a real consequence: `outRamp[0]` is
@@ -165,9 +175,11 @@ pub struct Lcms2Detect {
     pub min_l_lcms2: f64,
     pub min_l_iso: f64,
     pub max_l: f64,
-    /// Did the mid-range straightness test fire? If it did, lcms2 returns
-    /// `InitialLab` and ISO returns `outRamp[first]` — a divergence with a
-    /// completely different mechanism from the fit.
+    /// Did the mid-range straightness test fire? If it did, **both sides
+    /// return their own `InitialLab`** (lcms2 `cmssamp.c` L536; ISO/CD 18619
+    /// 4.2.5.4 final paragraph, since `fd34a44` — before that correction
+    /// iccce returned `outRamp[first]` here) — a divergence with a completely
+    /// different mechanism from the fit, and on `swop` the *only* one.
     pub nearly_straight: bool,
     /// How many shadow points landed in `[lo, hi)`.
     pub n_shadow: usize,
@@ -391,7 +403,9 @@ pub fn detect_destination_black_point(
     if straight {
         // ★ lcms2 returns InitialLab ITSELF (L536-539) — a value from the
         // PERCEPTUAL round trip, not from the ramp it just computed. ISO
-        // returns outRamp[first].
+        // 4.2.5.4 also returns *its own* InitialLab (since `fd34a44`), and
+        // the two InitialLabs are built from different round trips, which is
+        // the whole of the divergence on the `swop` arm.
         det.black = det.initial_lab;
         return det;
     }
@@ -1226,19 +1240,39 @@ pub const BRANCH_EXACT: Tolerance = Tolerance::new(
 ///
 /// A reimplementation that predicted lcms2's output no better than the rival
 /// candidate did would be evidence of nothing, **however small its absolute
-/// residual**. The two candidate black points here are only 0,082 `L*` apart,
-/// so this row is what establishes that §B can tell them apart at all.
+/// residual**. This row is what establishes that §B can tell the two
+/// candidates apart at all.
+///
+/// ★ **The separation between the candidates is now measured and printed
+/// rather than quoted.** This justification used to assert *"the two
+/// candidates are only 0,082 `L*` apart"* — a literal typed in on
+/// **2026-08-12** when it was true, and false by the afternoon of the same
+/// day. Commit `fd34a44` corrected `bpc.rs`'s 4.2.5.4 short-circuit to return
+/// `InitialLab`, and the separation on the `swop` arm went to **4,799 `L*`**,
+/// 59× larger. **The argument survives the change and the number did not**,
+/// which is exactly why the number does not belong in the prose: a
+/// claim-bearing figure the apparatus can compute must be interpolated at run
+/// time, never spelled out beside the code that computes it.
 ///
 /// Tolerance **1,0**, no free parameter: below 1 the lcms2 model is the better
 /// explanation of lcms2's own output; at or above 1 §B has no resolving power
-/// and must be read as such.
+/// and must be read as such. **Note the direction of the evidence.** The
+/// smaller this ratio, the further apart the candidates are — so a run in
+/// which it *improves* is not necessarily a run in which anything got better.
+/// On 2026-08-12 it improved from 1,715×10⁻¹ to 4,258×10⁻² **because iccce's
+/// own estimate moved away from lcms2's**, which is a finding and not a
+/// success. Read it with row `estimators/black-points-in-lab` beside it.
 pub const DISCRIMINATES: Tolerance = Tolerance::new(
     1.0,
     "the device residual against transicc under the REIMPLEMENTED lcms2 black, divided by the \
      residual under the ISO black. A reimplementation that predicted lcms2's own output no better \
      than the rival candidate did would be evidence of nothing however small its absolute \
-     residual, and the two candidates are only 0.082 L* apart. Below 1 the lcms2 model is the \
-     better explanation; at or above 1 this section has no resolving power",
+     residual. Below 1 the lcms2 model is the better explanation; at or above 1 this section has \
+     no resolving power. The separation between the two candidates is PRINTED in the context \
+     field rather than quoted here: it was 0.082 L* until commit fd34a44 corrected 4.2.5.4, and \
+     4.799 L* after, so a literal in this string would have been false within a day. A SMALLER \
+     ratio does not mean a better reimplementation - it can also mean the candidates moved \
+     apart, which is what happened",
 );
 
 /// **§B, the attribution.** `what Pass 5b's recovery leaves unexplained ÷
@@ -1408,17 +1442,23 @@ pub fn records(a: &Analysis) -> Vec<Record> {
              it is not, and every Pass 5b statement about the shadow window or the root describes \
              code that did not run",
             format!(
-                "{ctx} | nearlyStraight = {} on lcms2's ramp; ISO returned exactly outRamp[first] \
-                 ({:.6} against MinL {:.6}). THE DIVERGENCE IS THEREFORE ENTIRELY IN WHAT THE \
-                 SHORT-CIRCUIT RETURNS: lcms2 returns InitialLab (L536), a value from the \
-                 PERCEPTUAL round trip A2B1(B2A0(Lab 0,0,0)) = {:.6}; ISO returns outRamp[first], \
-                 a value from the RELATIVE round trip A2B1(B2A1(Lab 0,0,0)) = {:.6}. Two \
-                 different tables, one short-circuit",
+                "{ctx} | nearlyStraight = {} on lcms2's ramp. THE DIVERGENCE IS THEREFORE \
+                 ENTIRELY IN WHAT THE SHORT-CIRCUIT RETURNS - and since commit fd34a44 BOTH \
+                 SIDES RETURN A QUANTITY THEY EACH CALL InitialLab, so the whole of it is that \
+                 the two documents mean different things by that name. lcms2 (cmssamp.c L536) \
+                 returns its InitialLab = BlackPointUsingPerceptualBlack, the PERCEPTUAL round \
+                 trip A2B1(B2A0(Lab 0,0,0)) with chroma forced to 0 at L174, L*={:.6}. ISO/CD \
+                 18619 4.2.5.4 returns its InitialLab = 4.2.2.2's darkest DEVICE VERTEX carried \
+                 through A2B1 and neutralised by 4.2.3, L*={:.6}. NOT outRamp[first]/MinL \
+                 ({:.6} on lcms2's ramp, {:.6} on ISO's) - that is what iccce returned here \
+                 until fd34a44 and it has no textual support in 4.2.5 in any branch. \
+                 SEPARATION OF THE TWO CANDIDATES: {:.6} L*",
                 a.lcms2.nearly_straight,
-                a.iso_black.l,
-                a.lcms2.min_l_iso,
                 a.lcms2.initial_lab.l,
+                a.iso_black.l,
                 a.lcms2.min_l_lcms2,
+                a.lcms2.min_l_iso,
+                a.divergence_lightness(),
             ),
         ),
         Record::graded(
@@ -1429,7 +1469,22 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             a.estimator_divergence_de76(),
             "REPORTED: the two estimators' black points, with lcms2's REIMPLEMENTED from \
              cmssamp.c at pin 21c582a rather than recovered from its output. This supersedes \
-             Pass 5b row Q2's 0.8582 dE76, which was 95% apparatus",
+             Pass 5b row Q2's 0.8582 dE76, which was 95% apparatus. \
+             ** RE-MEASURED 2026-08-12 ON THE CORRECTED 4.2.5.4 CODE (commit fd34a44, harness \
+             at cc03f3d) AND THE swop FIGURE DID NOT COLLAPSE - IT GREW 58.8x, from 8.1668e-2 \
+             to 4.799109 dE76, still 100% L*. ** The collapse was predicted because the \
+             pre-correction gap had been attributed in full to the 4.2.5.4 defect. That \
+             attribution was right about the CAUSE and wrong about the CONSEQUENCE: iccce's \
+             non-conformant return value (outRamp[first] = MinL = 16.489806) sat 0.0817 L* from \
+             lcms2's answer, and the CONFORMANT return value (InitialLab = 11.772365) sits \
+             4.7991 L* from it. The defect's own magnitude - how far the old code was from the \
+             new - is 4.717441 L*, i.e. 57.8x the divergence it was blamed for; it was very \
+             nearly INVISIBLE in the cross-check. AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF \
+             OUR DEFECT, AND CONFORMING TO THE CLAUSE MADE THE CROSS-CHECK WORSE. Both sides \
+             now return a quantity their own document calls InitialLab; the entire remaining \
+             divergence is that ISO/CD 18619 4.2.2.2 and lcms2's cmsDetectBlackPoint mean \
+             different things by that name. This is a cross-check, NOT ground truth: no \
+             published value exists for either black point",
             format!(
                 "{ctx} | ISO L*={:.6} vs lcms2 L*={:.6}: dL*={:.6}, chroma term {:.3e}, total \
                  {:.6} dE76. Pass 5b row Q2 reported 0.858170 for this quantity - 10.5x larger - \
@@ -1453,17 +1508,20 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             },
             "the reimplemented black predicts the REAL transicc's CMYK at input black better than \
              the ISO black does. Without this row section B's absolute residual would be evidence \
-             of nothing: the two candidates are only 0.082 L* apart",
+             of nothing. The separation between the two candidates is printed in the context \
+             field, because it MOVED (0.082 L* before commit fd34a44, 4.799 after) and a literal \
+             here would now be false",
             format!(
                 "{ctx} | residual under the lcms2 model {:.6e} vs under the ISO model {:.6e} = \
-                 {:.4}. BPC's second constraint sends the source black EXACTLY to the destination \
-                 black (Pass 5 row P3, 3.33e-16) and this source's black is XYZ(0,0,0), so the \
-                 CMYK an implementation emits at input black IS B2A1(its own detected black) - \
-                 which is why a black point can be validated in device units with no round trip \
-                 anywhere in the comparison",
+                 {:.4}, with the candidates {:.6} L* apart. BPC's second constraint sends the \
+                 source black EXACTLY to the destination black (Pass 5 row P3, 3.33e-16) and \
+                 this source's black is XYZ(0,0,0), so the CMYK an implementation emits at input \
+                 black IS B2A1(its own detected black) - which is why a black point can be \
+                 validated in device units with no round trip anywhere in the comparison",
                 a.device_residual_lcms2(),
                 a.device_residual_iso(),
                 a.device_residual_lcms2() / a.device_residual_iso(),
+                a.divergence_lightness(),
             ),
         ),
         Record::graded(
@@ -1519,7 +1577,11 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             "Pass 5b's recovered black is BT(the reimplemented black) to within this section's \
              own error bar. That is the attribution row: 0.858 dE76 of 'estimator divergence' was \
              0.082 of estimator and the rest of round trip, and it is now shown rather than \
-             suspected",
+             suspected. BOTH SIDES OF THIS ROW ARE lcms2's, so commit fd34a44's correction to \
+             iccce's 4.2.5.4 does not touch it and the decomposition stands as measured. The \
+             0.082 in it is the estimator divergence AS ICCCE THEN COMPUTED IT, before that \
+             correction; the conformant divergence is on row estimators/black-points-in-lab and \
+             is 59x larger, and it is NOT a term in Pass 5b's 0.858",
             format!(
                 "{ctx} | Pass 5b recovered Lab({:.6} {:.6} {:.6}); BT(reimplemented black) = \
                  Lab({:.6} {:.6} {:.6}); unexplained {:.6} dE76 against an L* bound of {:.6} = \
