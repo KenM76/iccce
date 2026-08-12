@@ -37,6 +37,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build workspace
         run: cargo build --workspace --all-targets
+      # ★ A GREEN TICK HERE DOES NOT EVIDENCE THE ANNEX D GROUND-TRUTH
+      # CLAIM. `crates/iccce-cmm/tests/annex_d_ground_truth.rs` reads
+      # ICC © 2022 published values that are deliberately NOT in this
+      # repository (they are held locally; see that file's header). No
+      # runner has them and none sets $ICCCE_PRIVATE_FIXTURES, so that
+      # test is permanently in its SKIPPING case here — it prints a
+      # loud SKIPPED banner to stderr and asserts nothing. That is by
+      # design, and it is written down because a green badge covering a
+      # test that never ran is precisely the false-green this project
+      # has shipped twice before.
       - name: Test workspace
         run: cargo test --workspace
 
