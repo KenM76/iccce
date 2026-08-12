@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; 4.2.5.4 corrected, re-measured, and now DOCUMENTED BUT UNDEFENDED on any clean machine; separation apparatus live at 16/145; next free NC-179; DL-037 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; 4.2.5.4 now has a PROVEN third arm and the "undefended" risk is RETRACTED; separation at 41/160; ground truth AVAILABLE but UNMEASURED; next free NC-192; DL-043 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -147,7 +147,59 @@ PCS rows, one cause, a **principled refusal to grade** (see
 **coverage**) and a new **§1.1** stating that *a row's KIND measures
 evidence strength and says nothing about POWER*.
 
-Related: [[iccce-disclosure-is-not-enforcement]],
+**★★★ UPDATED 2026-08-12, EIGHTEENTH FILING (tip `6c7cda1`) — THE
+"STANDING RISK" TWO PARAGRAPHS ABOVE IS RETRACTED, and the engineer
+measured it, not this librarian.** *"Documented but not defended"* is
+**false in both halves**: a full reversion of `fd34a44` makes
+`cargo test -p iccce-cmm` **fail (exit 101, 62 passed / 2 failed)** —
+the clause was defended at **unit** level on a **synthetic closure** all
+along; and the same reversion turned **no conformance row red on ANY
+machine**, so the vendor arm was not the detector either. ★ **The
+corrected, narrower claim: what had no detector was the clause exercised
+THROUGH A PARSED PROFILE** (`parse → LUT model → estimator`), which is
+where a wiring defect lives. **Seventh dispatch-vs-tree instance and the
+first the dispatcher caught.**
+
+**★★ That gap is now CLOSED and its power PROVEN by injection.** Third
+Pass 5c arm on a new fixture `fixtures/synthetic/v4-rgb-mab-floored-b2a.icc`
+(**40 fixtures now**): `InitialLab` `L* 12,5` vs rival `outRamp[first]`
+`L* 37,5` — **25 `L*` apart by construction**. Bound
+**`7,629 511×10⁻⁴`** = **half one PCSLAB quantum and nothing else**; the
+reversion fails it by **`3,28×10⁴`**, the **only** failure in the suite
+with both vendor paths disabled. **Two surfaces** — the runner row and a
+`pass5c` unit test — and since `2835d23` `tools/` is gated in CI on
+**ubuntu + windows**. ★ **Still no CI run observed, eighteen filings; a
+workflow file is not a run.**
+
+**★★★ GROUND TRUTH: AVAILABLE ≠ MEASURED.** See
+[[iccce-ground-truth-cannot-exist]]. **NC-001 is STILL the only
+`published-ground-truth` row** — do not let any future filing round
+this up.
+
+**★★ Census at this tip:** `pass=157 fail=0 skip=3`; separation
+`unstated=119 … discriminating=16` over **160 rows** — **41 state a
+separation**, up from 16 of 145. ★ **`16` has changed meaning between
+filings** (was rows-stating-a-separation, is now `discriminating`) —
+**always carry the denominator.** `cargo test --workspace` **131
+passed**, matching **131 `#[test]` declarations across 20 files**
+*(counted)*. `gen-profiles verify` **40 identical**. ★ **The `129`
+collision has broken on its own** (119 vs 131) — the rule stands anyway.
+
+**Owed and worth remembering:** the Annex D.6.3 fixture (blocked on **one
+operator decision** — may published numbers live in an MIT repo, covering
+ICC + CIE + ECI together); **two named-and-owed instruments**
+(inverse-polarity; a vertex lighter than `L* 95` reaching lcms2's
+untested `if (Lab.L > 95) L = 0`); a **retro-audit of which older rows
+use `Separation::against`**; and `.github/workflows/ci.yml`'s prose
+**"43 tests"** against a counted **47** (candidate fifth DL-034).
+
+**Ledger now: NC-179 … NC-191 filed; next free NC-192. DL-038 … DL-043
+filed; 43 decision-log entries. `SESSION_LOG.md` has 18 entries.**
+
+Related: [[iccce-ground-truth-cannot-exist]],
+[[iccce-negative-finding-removes-its-auditor]],
+[[iccce-measurement-under-the-guards]],
+[[iccce-disclosure-is-not-enforcement]],
 [[iccce-count-needs-its-apparatus]],
 [[iccce-git-files-readable-without-shell]],
 [[iccce-apparatus-fault-under-every-hypothesis]],

@@ -57,14 +57,30 @@ having no gate to make greener.
 2. **A fourth stale literal** — see [[iccce-pass-status]] and DL-034.
    Found **by an apparatus rather than by a person**.
 
+**★★★ UPDATED 2026-08-12 (eighteenth filing) — the guards were right and
+the ARITHMETIC UNDER THEM was wrong.** Guard 3 (`ZERO-SEPARATION`, the
+one that outranks everything) fired on a row that was **failing at
+`2,500 019×10¹` at that moment**, because the distance was *derived* as
+`|observed − alt_observed|`. **DL-038 —
+[[iccce-measurement-under-the-guards]].** Nothing in the guard order is
+superseded; what changed is the number handed to it. **Note this is NOT
+the "wrong rival" case DL-037 deferred — the rival was right — and that
+case is still uncovered.**
+
+**Coverage moved at the same filing: 41 of 160 rows now state a
+separation** (was 16 of 145); **119 print `UNSTATED`**; **16 reached the
+final comparison** (was 6). ★ **So `16` now names a different quantity
+than it did one filing ago.**
+
 **How to apply:**
 
-- ★★ **Never quote `blind=0` without its denominator.** **16 of 145 rows
-  carry a separation, all Pass 5c's** — and strictly `blind=0` is out of
-  the **SIX** rows that reached the comparison at all (145 → 16 stated →
-  12 measured → 6 compared). **129 rows print `UNSTATED`.** Preserve the
-  engineer's phrasing *"out of 16, not out of 145"*, then sharpen it —
-  **in that direction only.**
+- ★★ **Never quote `blind=0` — or `16` — without its denominator.** At
+  the seventeenth filing **16 of 145 rows** carried a separation and
+  `blind=0` was strictly out of the **SIX** that reached the comparison
+  (145 → 16 stated → 12 measured → 6 compared). At the eighteenth it is
+  **41 of 160**, with **16** *discriminating*. Preserve the engineer's
+  phrasing *"out of 16, not out of 145"* **with its filing attached**,
+  then sharpen it — **in that direction only.**
 - **A stated separation is not a TRUE one.** The rival candidate is
   named by a human from the two implementations' sources; a wrong or
   missing rival yields a confidently wrong separation and nothing

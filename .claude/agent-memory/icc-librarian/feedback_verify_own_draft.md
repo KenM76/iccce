@@ -1,6 +1,6 @@
 ---
 name: iccce-verify-own-draft-too
-description: The verify-against-live-source rule applies to the librarian's OWN draft text, to totals carried in a dispatch, and to the tree's own shape — a file enumeration is a claim with a timestamp
+description: The verify-against-live-source rule applies to the librarian's OWN draft text, to totals carried in a dispatch, and to the tree's own shape — 13 recorded incidents, incl. a headline that contradicted its own evidence table three lines below it
 metadata:
   type: feedback
 ---
@@ -181,8 +181,37 @@ looking like evidence.**
     found nothing"* is a different fact from *"we never checked"* and
     only one of them is evidence.
 
+13. **★★★ THE HEADLINE CONTRADICTED ITS OWN TABLE, THREE LINES BELOW IT
+    — and the DISPATCHER caught it, not this librarian (third-arm
+    filing, 2026-08-12).** The seventeenth filing's closing sentence,
+    quoted here as *"the sentence to carry out of it"*, was **the
+    corrected 4.2.5.4 clause is documented but UNDEFENDED on any clean
+    machine.** The engineer then injected the defect and measured:
+    `cargo test -p iccce-cmm` **fails** on a full reversion (exit 101,
+    62 passed / 2 failed) — **the clause was defended at unit level all
+    along** — and the reversion turned **no conformance row red on ANY
+    machine**, so the second half was an *understatement* too. ★ **The
+    tension was already visible in this ledger's own §3.28.5 table**,
+    which listed *"plus `bpc.rs`'s two unit tests"* under **what grades
+    the clause today**, three lines under a heading saying it was
+    undefended. **Nobody read the block against its own heading.**
+    ★★ **A claim's prominence is not evidence about it** — and this one
+    had been copied into `ROADMAP.md` and into `SESSION_LOG.md`'s
+    "do not assume" list as *the most load-bearing sentence in the
+    filing*. Corrected by **dated amendment boxes in all three**, never
+    by rewriting. **Seventh dispatch-vs-tree instance and the first the
+    dispatcher caught** — the engineer's own framing: *"a claim about the
+    tree that I did not read the tree for."*
+
 **How to apply.**
 
+- ★★ **Before filing a dispatch's headline claim, check it against the
+  EVIDENCE TABLE in the same block.** A carried sentence and a verified
+  table can contradict each other inside one section, and the heading is
+  the part that gets quoted forward.
+- ★ **A claim about "what defends X" needs the test suites enumerated,
+  not the differential arms.** The 2026-08-12 error was reasoning about
+  *conformance* rows while a *unit* test held the clause.
 - ★ **A dispatch's quoted string is a claim about a file — search for
   it.** "Change S to T" is two claims: that S is wrong, and that S is
   there. The second fails more often than the first.

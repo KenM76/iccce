@@ -594,6 +594,113 @@ is exactly why nobody notices a stale literal inside a justification.
 
 ---
 
+### 2026-08-12, latest — **the block above's most load-bearing sentence was FALSE, the engineer measured it so, and the fixture that replaces it fails by 32 768×**
+
+*(Fourth filing of the day's third session and the eighteenth overall,
+tip **`6c7cda1`** *(verified — the last line of `.git/logs/HEAD`; it
+says **nothing** about whether that tip has been pushed)*. **No plan
+text and no earlier block is rewritten.** Measured figures are
+**carried**; every constant, table and doc comment cited is **verified
+from source**. This librarian has no shell — **fifth consecutive
+filing**.)*
+
+**★★★ 1. RETRACTION, and it is the dispatcher's own.** The block above
+says *"the corrected 4.2.5.4 clause is documented but UNDEFENDED on any
+clean machine"* and this document filed it as a **RISK**. **Both halves
+are false, and `icc-engineer` measured them before this ledger could
+repeat them.** A full reversion of `fd34a44` makes **`cargo test -p
+iccce-cmm` fail — exit 101, 62 passed / 2 failed**: the clause was
+**defended all along, as a function, on a synthetic closure.** And the
+second half was an *understatement* — the same reversion turned **no
+conformance row red on ANY machine**, not merely on machines without a
+vendor profile, because the row carrying the finding is `REPORTED` at
+`inf`. ★ **The corrected sentence is narrower and more useful: what had
+no detector was the clause exercised THROUGH A PARSED PROFILE** — the
+`parse → LUT model → estimator` path, where a wiring defect lives that a
+closure test structurally cannot reach. `NUMERIC_CLAIMS.md` **§3.29.1**;
+§3.28.5 is **amended in place, not rewritten**.
+
+**★★★ 2. The third arm exists and its power was PROVEN, not asserted.**
+`fixtures/synthetic/v4-rgb-mab-floored-b2a.icc` — `InitialLab` at
+`L* 12,5`, the rival `outRamp[first]` at `L* 37,5`, **25 `L*` apart by
+construction.** Its clause row is graded at **`7,629 511×10⁻⁴`**, which
+is **half one PCSLAB encoding quantum and nothing else**: no
+interpolation term (a CLUT corner through identity curves), no oracle
+term (none is consulted), chroma terms exactly zero. With the defect
+injected **and both vendor-profile paths repointed at a non-existent
+drive**, it is **the only failure in the suite** — `pass=129 fail=1
+skip=30` — at **`2,500 019×10¹`**, i.e. **`3,28×10⁴` times its bound**
+*(derived here)*. **It also fails as a unit test**, and since `2835d23`
+the `tools/` trees are gated in CI on **ubuntu and windows**. ★ **The
+Linux collision this document recorded one filing ago no longer exists
+in that form** — though **no CI run has yet been observed by anyone
+here, and a workflow file is not a run.** **NC-179/NC-180**.
+
+**★★★ 3. The separation mechanism was itself lying, exactly where it
+mattered.** `Separation::against` derived its distance as `|observed −
+alt_observed|` — which **collapses to zero on the very run where the
+code returns the rival**. The proof-of-power run therefore printed
+**`ZERO-SEPARATION` beside a row that was failing at `2,500 019×10¹`**:
+the mechanism disclaiming its power in the instant it demonstrated it.
+**`ARCHITECTURE.md` gains DL-038.** ★ **DL-037 recorded the guard order
+as the design; this records that the measurement UNDER the guards had
+the defect the guards were built to catch** — and it was found by *using*
+the instrument on the case it was built for, one filing after this
+document celebrated it. The diagnostic now lives on the constructor's
+own doc comment: **is the distance a property of the RUN or of the
+FIXTURE?**
+
+**★★ 4. A control failed and was NOT accommodated.** The new arm made
+`apparatus/error-bar-is-smaller-than-the-effect` come out at
+**`3,775×10⁹`**, because the fixture's floor makes `d(device)/d(L*)`
+zero by construction (**`1,11×10⁻¹⁶`**). **`APPARATUS_RATIO` was not
+widened**; an authored `DEVICE_OBSERVABLE` table was added, plus a row
+grading the measurement against the declaration, **so the exemption
+cannot be acquired by a number coming out small.** **DL-043** — a worked
+instance of *tolerances are justified, not tuned*.
+
+**★★ 5. Pass 4c's separations, and a tolerance that was DECLINED.** Ten
+of ten rows priced — **four real, six honest absences with reasons**;
+**`unstated` 129 → 119, `discriminating` 6 → 16**, and **41 of 160 rows
+now state a separation.** Two rules out of the six absences (**DL-039**):
+*a rival tolerance is not a rival candidate*, and *name the rival that
+most threatens the row*. And the question of whether NC-176's
+`4,717 441` separation now justifies a real bound was answered **NO**
+(**DL-040**): **a large separation on an `UNGRADED` row is a request for
+a fixture and a graded row elsewhere, not a licence to grade that row.**
+
+**★★★ 6. The eleven-filing ground-truth blocker is SPLIT — and part of
+it was a wrong REJECTION, not a gap.** **ICC.1:2022 Annex D.6.3**
+publishes twelve exact integer PCS encodings and **all twelve
+reproduce**; **Table 16** is normative and its five pairs reproduce too.
+**But for the LUT path the limit is STRUCTURAL:** ICC.1 mandates no
+interpolation method, so two conforming CMMs may legitimately differ and
+**no single value could be published as expected** — corroborated by
+**iccDEV, ICC's own reference implementation, shipping zero expected
+colour values.** ★★★ **NOTHING IN iccce HAS BEEN COMPARED TO ANY OF
+IT.** The ground truth is *available*; the row is *buildable*; **the row
+does not exist**, and **NC-001 remains this project's only
+`published-ground-truth` row.** **DL-041.**
+
+**★★★ 7. And the reason it sat owed for eleven filings is the finding
+that should change how this document is maintained.** The Annex D data
+had been examined months ago and **REJECTED** — by point-evaluating
+values that are intervals. ★ **A negative finding removes its own
+auditor: nobody re-tests a fixture they have been told is broken.** The
+corpus's four previous defects were all wrong *assertions* and all were
+caught within days; this was a wrong *rejection* and survived
+indefinitely. **DL-042: when an item has been owed for many cycles,
+re-audit the REASON it is owed, not just the item.** Eleven filings
+restated this blocker and **none re-read the entry that created it.**
+
+**★ 8. Open, and NOT an engineering question.** Whether **published
+numbers** may live in an MIT repository as fixtures — ICC's Annex D
+values, CIE's CC BY-SA tables and ECI's self-contradicting `cprt` —
+**is one operator decision, not three**, and item 6's fixture is blocked
+on it. Rule 9 unchanged.
+
+---
+
 ## Pass 0 — scaffold and the oracle
 
 **STATUS: DONE — 2026-08-11.** Evidence in the block below the done-when.

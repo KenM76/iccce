@@ -3775,6 +3775,43 @@ from `outRamp[first]`, which would give the authored corpus the power it
 lacked here and is the cheapest way to make this entry's warning
 concrete rather than historical.
 
+> #### ★★★ Dated note, 2026-08-12 (fourth filing, tip `6c7cda1`) — **the second "Revisit if" has FIRED, and the measurement that fired it CORRECTS this entry's headline**
+>
+> **The fixture exists.** `fixtures/synthetic/v4-rgb-mab-floored-b2a.icc`
+> *(verified — the file is on disk, and `tools/gen-profiles/src/recipes.rs`
+> L1150–L1152 and L1253–L1264 author `InitialLab` at `L* 12,5` against an
+> `outRamp[first]` floor at `L* 37,5`, **25,0 `L*` apart by
+> construction**)*. The authored corpus now has the power this entry
+> recorded it as lacking. `NUMERIC_CLAIMS.md` **§3.29**, **NC-179**.
+>
+> **★★★ And the entry's headline sentence — *"the vendor profile was the
+> only arm with the power"* — is now measured, and it is FALSE in the
+> sense a reader would take it.** `icc-conformance` reverted `fd34a44`
+> in a detached worktree and ran the whole conformance suite
+> *(**carried** — this librarian has no shell)*: **no row went red on any
+> machine.** The `swop` arm is *differential* — its numbers move — but
+> **not load-bearing**: the two rows that moved are graded against `1`
+> and observed `5,18×10⁻³` and `4,26×10⁻²`, nowhere near their bounds,
+> because the row that carries the finding is **`REPORTED`** (DL-019,
+> and see **NC-176**).
+>
+> **The distinction this entry must now carry, and it is the whole
+> lesson:** the vendor arm had the power to **OBSERVE** the divergence —
+> that is true, was measured, and is why §3.25.4 was right to say the
+> synthetic arm saw nothing. It never had the power to **CATCH A
+> REGRESSION** in it, because observation and detection are different
+> capabilities and only the second needs a bound the observation can
+> cross. **DL-036 conflated them**, in the one entry written to warn
+> about a fixture's power. See **DL-040**, which is the rule that
+> separates them.
+>
+> **What is NOT weakened:** the *converse-of-DL-020* argument above, and
+> the decision to keep the vendor profile in the corpus. **A synthetic
+> fixture authored by someone who already has a hypothesis still cannot
+> surprise its author**, and the new fixture is no exception — it was
+> authored to separate two candidates it was already known ought to
+> differ. What it can do is **fail**, which is DL-020's own test.
+
 ---
 
 ### DL-037 — ★★★ **candidate separation is an EMITTED FIELD with its own guard order, and the guards are the decision.** `UNGRADED` is tested **before** the comparison and `ZERO-SEPARATION` **outranks everything**, because otherwise the mechanism blames the fixture for a decision the tolerance made
@@ -3887,3 +3924,588 @@ the failure mode this entry explicitly does not cover and would need its
 own rule; or `BLIND` is ever proposed as a gating condition, at which
 point the pressure argument above must be answered rather than
 overlooked.
+
+> #### ★★ Dated note, 2026-08-12 (fourth filing, tip `6c7cda1`) — **the guards were right and the ARITHMETIC UNDER THEM was wrong.** See **DL-038**
+>
+> Nothing in the guard order above is changed, superseded or regretted.
+> What was found one filing later is that **the `distance` the guards
+> classify was itself derived by a formula that collapses to zero on the
+> exact run the row exists to catch** — so guard 4 (`ZERO-SEPARATION`,
+> the one that outranks everything) fired on a row that was **failing at
+> `2,500 019×10¹` at that moment**. **DL-038** records it. Note that
+> this is **NOT** the *"a row's stated rival was the wrong rival"* case
+> deferred in the "Revisit if" above: **the rival was right.** That case
+> is still uncovered and still needs its own rule.
+
+---
+
+### DL-038 — ★★★ **a candidate separation must be a property of the FIXTURE, not of the RUN.** `|observed − alt_observed|` is the wrong formula wherever the alternative is *"the code returns the other candidate"*, because on the defect run `observed` **becomes** `alt_observed` and the mechanism disclaims its power in the instant it demonstrates it
+
+**Date:** 2026-08-12 · **Occasioned by:** the proof-of-power run for the
+third Pass 5c arm — `icc-conformance` injected the pre-`fd34a44` return
+value and the new clause row **failed and printed `ZERO-SEPARATION` on
+the same line** · **Found and fixed by:** `icc-conformance` · **Filed
+by:** `icc-librarian` from `tools/difftest/src/lib.rs`, read at the tip
+`6c7cda1` *(verified — the two constructors at L1405–L1435 and the
+★★ doc block at L1382–L1404, which carries the diagnostic question in
+the source itself)* · **Relates to** **DL-037** (the guard order this
+sits underneath), **DL-033** (the rule both implement), **DL-034** (a
+claim-bearing number is computed, not typed), **DL-025** (a control is
+only as good as its fixture) and `NUMERIC_CLAIMS.md` **§3.29**
+
+#### The decision
+
+> **`Separation::against` — which derives `distance = |observed −
+> alt_observed|` — may be used ONLY where the alternative is a different
+> READING APPLIED TO THE SAME OBSERVATION, so that the two observations
+> genuinely coexist on the same run. Where the alternative is a
+> different ANSWER THE CODE COULD RETURN, the distance is a property of
+> the fixture and must be SUPPLIED, via `Separation::against_distance`.**
+>
+> **The diagnostic, and it is now written on the constructor's own doc
+> comment:** *ask whether the distance is a property of the RUN or of
+> the FIXTURE.*
+
+#### ★★★ Why the derived form is not merely imprecise but actively inverted
+
+The row watches for one thing: the library returning `outRamp[first]`
+where ISO/CD 18619 **4.2.5.4** requires `InitialLab`. While the code is
+correct, `observed ≈ InitialLab`, `alt_observed = outRamp[first]`, and
+the derived distance is the real `25 L*`. **The moment the code is wrong
+in precisely the way the row is watching for**, `observed` *becomes*
+`outRamp[first]` — the same number as `alt_observed` — and the derived
+distance is **exactly `0`**.
+
+So the field reports **`ZERO-SEPARATION`**, whose meaning under DL-037
+is *"this row has no power at any tolerance and only a different fixture
+can rescue it"*, **on the one run in the project's history where that
+row had just proved its power by failing at `2,500 019×10¹` against a
+`7,629 511×10⁻⁴` bound.**
+
+★ **The separation is `25 L*` whichever answer the library happens to
+return today.** It was authored into the bytes (`FLOORED_BLACK_L =
+12,5`, `FLOORED_ROUNDTRIP_L = 37,5`) and it does not become smaller
+because the code got worse. **A quantity that describes the fixture must
+not be computed from the run.**
+
+#### ★★ Why this belongs in the decision log and not in a commit message
+
+**DL-037 recorded the guard ORDER as the design.** This records that the
+**measurement underneath those guards had the same defect the guards
+were built to catch** — a mechanism reporting a confident,
+wrong-in-the-safe-direction verdict about its own power. The guards
+could not have caught it: they classify the number they are handed, and
+the number was `0`.
+
+★ **And the way it was found is the reusable part: it was found by
+USING the instrument on the very case it was built for, one filing after
+the instrument was celebrated.** Reading the code again would not have
+found it; the derived formula is *correct* in every state except one,
+and that one state does not occur while the suite is green. This is
+**DL-025's rule** — *a control is only as good as its fixture* — arriving
+at the same place from the other side: an instrument is only as good as
+the run you are willing to break on purpose.
+
+#### Scope — three rows moved, and which kinds they were
+
+*(**carried** from `icc-conformance`; this librarian read the two
+constructors and the doc comment, not a diff)*
+
+| Kind of row | Why the derived form was wrong there |
+|---|---|
+| the new `CLAUSE/4.2.5.4-…` row | the alternative is literally *"the estimator returns the other branch's value"* |
+| two `0/1` indicator rows | their two candidates are **always exactly one apart** — a property of the encoding, not of any run |
+
+**Rows NOT moved, and this is the boundary:** every row whose rival is a
+*rival reading* — lcms2's `wtpt` predicate read three ways, a legacy-Lab
+decode read as v2 or v4 — keeps `against`, because there the two
+observations really do coexist: one run, one set of bytes, two
+arithmetics applied to it.
+
+#### What this does NOT decide
+
+- **It does not make a supplied distance true.** `against_distance`
+  moves the responsibility to the caller and says so in its own doc:
+  *"the caller states the distance and is responsible for it being in
+  the units it claims."* **Nothing checks it.** The unit test that
+  guards the authored `25 L*` (`the_floored_fixture_separates_4254s_two_candidates`)
+  is a check on the **fixture**, not on the constructor's argument.
+- **It does not retro-audit the earlier separations.** The Pass 5c rows
+  filed at the seventeenth filing (**NC-176 … NC-178**) were not
+  re-derived here. **Which of them use which constructor is not on
+  file**, and a count of rows moved is not an inventory of rows checked.
+- **It does not cover a wrong rival.** DL-037 deferred that and it is
+  still deferred.
+
+**Revisit if:** any row is added whose alternative is *"the code returns
+the other candidate"* and which uses `against` (the fix was three named
+rows, not a mechanism that prevents the fourth); or a lint/test is
+proposed that could enforce the FIXTURE-vs-RUN distinction structurally
+— it currently lives entirely in a doc comment and a reviewer's
+attention.
+
+---
+
+### DL-039 — ★★ **a rival TOLERANCE is not a rival CANDIDATE; and where several rivals exist, the row names the one that MOST THREATENS it.** Both halves exist to stop a disclosure field from turning into a second, undocumented gate — or into a flattering one
+
+**Date:** 2026-08-12 · **Occasioned by:** writing candidate separations
+for Pass 4c's ten rows, six of which turned out to have **no** named
+rival · **Derived by:** `icc-conformance` · **Filed by:**
+`icc-librarian` from `tools/difftest/src/pass4c.rs`, read at the tip
+`6c7cda1` *(verified — the split-out `is_display_class` predicate at
+L486–L495 with its stated reason, the three-reading rows at L754 and
+L778–L788, and the unit test at L1244–L1280 asserting the three readings
+give **different** counts)* · **Relates to** **DL-037** (the field this
+governs), **DL-023** (state what the two implementations were free to
+disagree about, from their sources, before the run), **DL-005** and
+`NUMERIC_CLAIMS.md` **§3.29**
+
+#### The decision, in two halves
+
+> **(a) A rival TOLERANCE is not a rival CANDIDATE.** If the only
+> alternative anyone can name for a row is *"the bound could have been a
+> different number"*, the row has **no named alternative** and says so
+> with that reason. Writing it into the separation field would make the
+> field a second gate — one with no derivation, no owner and no entry in
+> `TOLERANCES.md`.
+>
+> **(b) Where several rivals exist, name the one that MOST THREATENS the
+> row**, and enumerate the others. Naming the rival that happens to
+> flatter the row is exactly the tuning the mechanism exists to prevent.
+
+#### Why (a) is not pedantry
+
+A separation says *"the nearest plausible **answer** was this far
+away"*. A tolerance says *"we will accept this much error"*. They have
+the same units and they are not the same kind of thing. **Conflating
+them lets a number that was never derived acquire the authority of one
+that was**: a reviewer sees a figure in a column headed `separation`,
+reads it as evidence about the fixture's power, and it is actually
+somebody's opinion about the bound.
+
+The live instance is Pass 4c's **sensitivity floor**: the only
+alternative nameable for that row is a different floor. **That is a
+tolerance question, and `TOLERANCES.md` §3.4.5 is where it is already
+answered** — the floor of `100×` is transcribed from Pass 4b's accepted
+counterfactual band, and the observation is `2 310×`. The row therefore
+carries `no-named-alternative` **with that reason attached**, which is
+DL-037's state 2 doing exactly the work it was defined for.
+
+★ **Six of Pass 4c's ten rows are honest absences of this shape.** The
+media-relative floors have no rival because lcms2 consults the media
+white point **only** for the ICC-absolute adjustment — there is no
+second reading for it to have. **`no-named-alternative` with a reason is
+a finding; `no-named-alternative` as a way of clearing `UNSTATED` off a
+report is vandalism**, and the difference is entirely in whether the
+reason is real.
+
+#### Why (b) needed to be written down
+
+lcms2's `wtpt` substitution predicate has **three** live readings — the
+conjunction lcms2 implements, `ICC.1:2022` **9.2.36**'s class-only rule,
+and the disjunction. A row may price itself against any of them, and
+**they do not give the same count on the same pair of profiles**
+*(verified — the unit test at `pass4c.rs` L1244 asserts precisely that
+they differ, so a fixture pair that made all three agree could not be
+adopted silently)*.
+
+★ **A row that prices itself against the reading it beats most easily
+has disclosed nothing and looks rigorous.** The requirement is
+therefore: **the rival named is the one that most threatens the row**,
+and the others are enumerated in the same string so a reader can see
+that the choice was made rather than defaulted.
+
+#### The worked figure
+
+The Pass 4c row `icc-librarian` was asked to note by name lands at
+**`2,055 76×10⁻¹`** against a bound of **`5×10⁻⁴`** — **411×**, and ★
+**exact rather than modelled**: it is computed from the two readings'
+own arithmetic, not from an envelope. **NC-186.**
+
+#### What this does NOT decide
+
+- **It does not say a row with no rival is weak.** Six of ten is not a
+  deficiency; on those rows there genuinely is nothing else the
+  implementations were free to do (**DL-023**'s discipline, applied
+  before the run rather than after it).
+- **It does not give a procedure for finding rivals.** They are found by
+  reading two implementations' sources. Nothing automates that and
+  nothing checks that the search was thorough.
+- **It does not apply to `machine-timing` rows** — DL-037's exclusion is
+  unchanged.
+
+**Revisit if:** a row is ever found stating a separation whose "rival"
+is a bound (half (a) violated in practice rather than in theory); or a
+fixture is adopted on which the three `wtpt` readings coincide, which
+would silently remove the separation the unit test exists to protect.
+
+---
+
+### DL-040 — ★★★ **a large separation on an `UNGRADED` row is a REQUEST FOR A FIXTURE and a graded row elsewhere — never a licence to grade that row.** Ask what clause the number would be graded against; if the answer is *"none, but it would have caught the bug"*, the bound is fitted to the bug
+
+**Date:** 2026-08-12 · **Occasioned by:** `icc-engineer` asking directly
+whether **NC-176**'s `4,717 441` separation now justifies putting a real
+tolerance on the row that carries the whole 4.2.5.4 finding · **Answer:
+NO**, from `icc-conformance`, adopted by the engineer and filed here as
+a rule · **Filed by:** `icc-librarian`; the reasoning is **carried** from
+the dispatch and **corroborated** in `docs/TOLERANCES.md` §4's fourth-filing
+row *(verified — read at the tip)* · **Relates to** **DL-019**
+(report-don't-grade), **DL-026** (a permanently ungraded row), **DL-037**
+(the field that made the question askable), **DL-036** and
+`NUMERIC_CLAIMS.md` **§3.29**
+
+#### The decision
+
+> **When a `REPORTED, NOT GRADED` row turns out to carry a large
+> candidate separation, the correct response is to build a fixture and a
+> graded row SOMEWHERE ELSE — one whose expectation comes from a clause.
+> The `inf` stays.**
+
+#### The three reasons, and each of them generalises
+
+1. **★ There is nothing for a bound to MEAN.** Since `fd34a44` both
+   implementations return a quantity **their own document calls
+   `InitialLab`**, and the two documents mean different things by the
+   name. **No clause requires two implementations of two different
+   documents to agree.** A bound here would grade iccce against lcms2's
+   reading of a specification iccce does not implement — inventing an
+   authority, which is the exact failure **DL-019** was written to
+   prevent.
+2. **★★ Any bound below `4,717 441` is fitted to ONE KNOWN DEFECT.**
+   Anything under it fails the pre-`fd34a44` build; anything over it
+   does not. **That is not a tolerance, it is a memory of a bug wearing a
+   tolerance's clothes** — project rule 5 ("tolerances are justified, not
+   tuned") violated in the one direction that feels virtuous.
+3. **★ It could not be ONE number anyway.** The three arms observe
+   **`4,799`**, **`5,000`** and **`10,000`** *(carried)*. A single
+   constant across them would be a maximum-of-unlike-things; three
+   constants would be three numbers each fitted to its own fixture.
+
+#### ★★★ The test, stated so it can be applied without re-deriving all of this
+
+> **Ask what clause the number would be graded against.**
+> **If the answer is *"none, but it would have caught the bug"*, the
+> bound is fitted to the bug.**
+
+And the constructive half, which is what actually happened here: the
+separation was a **request**, it was honoured, and the honoured form is
+**a fixture whose expectation is a named constant put through a clause**
+— tolerance `7,629 511×10⁻⁴`, derived from **one encoding quantum and
+nothing else**, and the reversion now fails it by four orders of
+magnitude (**NC-179**, **DL-043**'s sibling case). ★ **The bug is caught
+by a row that would exist even if the bug never had.**
+
+#### Why this is not the same as DL-019 or DL-026
+
+- **DL-019** decides *when* to report rather than grade (the mechanism
+  is known, the authority does not exist).
+- **DL-026** decides that one specific such row stays ungraded
+  **permanently**, because the standard binds reading profiles and not a
+  CMM's computed output.
+- **DL-040** decides what to do **when new evidence of that row's
+  importance arrives** — which is the pressure DL-019 and DL-026 do not
+  address, and the pressure is real: a big number in a column labelled
+  `separation` reads like an argument for grading it.
+
+#### What this does NOT decide
+
+- **It does not say `inf` rows are fine as they are.** The row's power
+  is real and **no gate consumes it**; the debt is a *fixture*, and it
+  stays owed until the graded row exists.
+- **It does not close NC-176.** NC-176 is unchanged, still `UNGRADED`,
+  still the largest unconsumed separation in the ledger.
+- **It does not authorise deleting a REPORTED row** to tidy the census.
+
+**Revisit if:** a clause is ever published that requires the two
+estimators' results to agree (at which point reason 1 evaporates and the
+row becomes gradeable on an authority, not on a memory); or ISO 18619
+leaves committee-draft status, which would change what "their own
+document" means on iccce's side.
+
+---
+
+### DL-041 — ★★★ **published ground truth for the LUT path CANNOT EXIST — this is STRUCTURAL, not an availability gap — while the NON-LUT half is now available and unmeasured.** The item that has been "owed" for eleven filings is split, and the three kinds of blocker are kept apart
+
+**Date:** 2026-08-12 · **Occasioned by:** `icc-engineer` dispatching
+`icc-spec-librarian` to *close the standing gap or classify it as
+structural* — a line this ledger has carried since Pass 1 ·
+**Researched by:** `icc-spec-librarian` · **Filed by:** `icc-librarian`
+from `D:\Dev\Rag-Specialized\ICC_Spec\icc\icc__ref__ground_truth_availability.md`,
+read at the tip *(verified — the verdict table §1, the structural
+argument §8, and the three-kinds table §7)* · **Relates to** **DL-002**
+and **DL-014** (corpus tiers and citation terms), **DL-019**, **DL-026**
+(the conformance clause binds reading, not computing), **DL-036**,
+rule 3 (*expected values come from the literature*) and
+`NUMERIC_CLAIMS.md` **§3.29** / **§5**
+
+#### The decision, in the words the ledger must use
+
+> **Not *"we have not found published ground truth for the LUT path"*
+> but *"the specification is written so that none can exist."***
+
+#### Why it cannot exist — the load-bearing clause is the second
+
+1. **A profile is a vendor artifact.** A CLUT is one vendor's fit to
+   measured data; there is no *correct* CLUT for a dataset, so there is
+   no correct output to publish.
+2. **★★★ Interpolation between grid points is UNSPECIFIED.** ICC.1
+   mandates neither tetrahedral nor trilinear. **Two conforming CMMs are
+   permitted to return different numbers for the same profile and the
+   same input** ⟹ *no single value could be published as the expected
+   result even in principle.*
+3. **"Perceptual" is vendor-defined by design** — the standard says what
+   the intent is *for*, not what it *computes*.
+4. **Out-of-gamut handling is delegated** to the CMM.
+5. **★ ICC's conformance clause binds only *reading*** (**DL-026**'s
+   premise): there is no clause a published expected output could be
+   normative under.
+
+**Corroborated from the strongest available direction:** ICC's own
+reference implementation, **iccDEV** (BSD-3, the renamed DemoIccMAX),
+**ships zero expected colour values.** Its `RunTests.sh` compares
+nothing; `ApplyDataFiles/` holds inputs only; its two expectation
+manifests are structural (`invalid-saved` / `parse-fail` /
+validation verdicts), not colorimetric. ★ **The consequence for this
+project is sharp: `icc-conformance` cannot promote agreement to ground
+truth by finding a better implementation.** Comparing against iccDEV
+would produce a **second `implementation-cross-check` row**, not a
+`published-ground-truth` one.
+
+#### ★★ What is now AVAILABLE, and the line this entry refuses to cross
+
+**ICC.1:2022 Annex D.6.3** prints an input, every intermediate, and
+**twelve exact integer PCS encodings**; **all twelve reproduce to the
+digit** — *reproduced by `icc-spec-librarian`'s own arithmetic in the
+corpus, from the printed Table D.3 inputs*. **Table 16** is
+**normative** and its five value↔encoding pairs also reproduce.
+
+> **★★★ NOTHING IN iccce HAS BEEN COMPARED TO EITHER OF THEM.** The
+> ground truth is **available**; the row is **buildable**; **the row
+> does not exist.** `NUMERIC_CLAIMS.md` §5's sentence — *NC-001 is the
+> project's only `published-ground-truth` row* — **remains true at this
+> tip**, and this entry must never be cited as having closed it.
+
+**Three qualifications that travel with every citation of Annex D.6.3:**
+(a) **Annex D is INFORMATIVE** — it is ground truth *epistemically*
+(numbers published by the standards body, not produced by an
+implementation) and **not normatively**; a CMM that disagrees is not
+thereby non-conforming; (b) displayed precision is 4 dp, so **the exact
+part is the twelve integers**; (c) **Table D.2's black `X = 0,009 7` is
+defective** and the fixture must start at **Table D.3** (corpus register
+`A47`).
+
+#### ★★ The three kinds of blocker, kept apart deliberately
+
+| Kind | Where it applies | Statement |
+|---|---|---|
+| **EXISTENCE** | LUT/CLUT transform results; iccDEV's suite; an ECI/Fogra residual; sRGB worked triples | **Nobody publishes these. Not withheld — not produced.** |
+| **AVAILABILITY** | IEC 61966-2-1; ISO 15076-1; ISO 12647-x; CGATS TR001 | Paywalled or purchase-only. **Money and operator time would obtain them.** |
+| **ACCESS TERMS** | `color.org` (ToS naming AI), `fogra.org/fileadmin/` (`robots.txt`), `itu.int` (WAF rejection) | **Obtainable by a human, not by this agent** — and by *three different mechanisms*, which is why they cannot be one row |
+
+★ **Conflating these is the error this table exists to prevent.** "We do
+not have it" has three completely different remedies: build the fixture
+differently, spend money, or ask the operator to click. **ICC.1 §7's
+prior entry (the PDF blocker) is the precedent** — *"free download"
+never implied *"automated retrieval permitted"*.
+
+#### The consequence for the ledger's owed column
+
+**The permanently-owed item is converted, not discharged.** It becomes:
+
+- **STRUCTURAL** for the LUT path — *relabel, do not chase.* The correct
+  arm is, and will remain, a differential; the correct response to a
+  large divergence is **a second independent implementation lineage**
+  (iccDEV, BSD-3 — **Argyll remains BARRED**, AGPL-3.0), so that
+  agreement stops being a single observation.
+- **OPEN AND CHEAP** for PCS encoding, XYZ↔Lab, media-relative white
+  scaling and the ICC-absolute direction — where the numbers now exist
+  and the fixture does not.
+
+#### What this does NOT decide
+
+- **It does not authorise putting published numbers in this repository.**
+  Whether ICC's Annex D values, CIE's CC BY-SA tables and ECI's
+  self-contradicting `cprt` may live in an MIT repo as fixtures is **one
+  operator question, still open**, and rule 9 is unchanged.
+- **It does not make the corpus's reproduction an iccce measurement.**
+  See the boxed sentence above.
+- **It does not close the ICC-absolute direction question by itself** —
+  the empirical confirmation (`× mediaWhite / D50`) is a corpus
+  measurement on a real profile, not a row in this project's suite.
+
+**Revisit if:** CGATS TR001 is obtained (it settles register `A47` from
+the source data); or a second CMM lineage enters the differential; or
+ICC publishes conformance material with expected colour values, which
+would falsify the structural argument outright and is the thing most
+worth watching for.
+
+---
+
+### DL-042 — ★★★ **a negative finding removes its own auditor. When an item has been owed for many cycles, RE-AUDIT THE REASON IT IS OWED, not just the item**
+
+**Date:** 2026-08-12 · **Occasioned by:** the discovery that the
+eleven-filing "no published ground truth" gap was **partly a corpus
+defect**: the ICC.1:2022 Annex D data had been examined months earlier
+and **REJECTED**, by point-evaluating values that were intervals ·
+**Found by:** `icc-spec-librarian` (its corpus defect **C5**) ·
+**Filed by:** `icc-librarian` as a convention binding **this** role ·
+**Relates to** **DL-041**, **DL-031** (a count is not an inventory),
+**DL-034** (a stale literal), and every `§7.x` status pass in
+`NUMERIC_CLAIMS.md`
+
+#### The decision
+
+> **An item that has been restated as owed across many filings gets its
+> REASON re-read, not merely its status re-stated. Restating a blocker
+> is not re-testing it.**
+
+#### Why the failure mode is specific to NEGATIVE findings
+
+The corpus's four previous defects were all wrong **assertions** — "X is
+true" when X was false — and **all four were caught within days**,
+because an assertion is used, and using it exposes it.
+
+★ **This one was a wrong REJECTION**, and it survived indefinitely.
+**Nobody re-tests a fixture they have been told is broken.** A negative
+finding is self-sealing: it removes the very traffic that would have
+audited it, and the longer it stands the more authoritative it looks —
+each restatement is read as another confirmation when it is in fact the
+same observation, copied.
+
+The mechanism of the original error is worth carrying too, because it is
+cheap to repeat: **a displayed value is an interval, not a point.** A
+4-dp printed number is `x ± 5×10⁻⁵`; evaluating it as a point and
+finding an inconsistency proves nothing. The corpus's own generalisation:
+**re-running a point evaluation at higher precision is not a second
+pass — it is the same pass.**
+
+#### ★★ What this obliges THIS role to do, concretely
+
+**Eleven consecutive filings restated *"no published ground truth for any
+transform"*. None re-read the entry that created it.** That is a
+librarian failure, not a corpus failure — the corpus published a
+finding; this ledger **propagated** it without ever asking what it rested
+on.
+
+So, binding on the `§7.x` status passes:
+
+1. **A "still owed, unchanged" line is not free.** After roughly five
+   restatements, the status pass must either re-read the *source of the
+   blocker* or record explicitly that it did not.
+2. **Distinguish "nobody has done it" from "somebody looked and said
+   no".** The second kind carries a **finding** underneath it, and a
+   finding is a claim like any other — with an author, a date, a method,
+   and the possibility of being wrong.
+3. **Record the method of a rejection when filing one.** *"Examined and
+   unusable"* is unauditable; *"examined by point evaluation of the
+   printed 4-dp values, and the black row was inconsistent"* is the
+   sentence that lets the next reader find the error.
+
+#### What this does NOT decide
+
+- **It does not say the corpus was careless.** The rejection was made
+  with a real method that was wrong in one specific way, and the same
+  agent found and retracted it.
+- **It does not make an old negative finding suspect by default.** It
+  makes an old negative finding **re-auditable on a schedule**, which is
+  different.
+- **It does not apply only to the corpus.** ★ **This ledger's own
+  refusals are the same shape** — every `no-named-alternative`, every
+  `REPORTED, NOT GRADED`, every *"not comparable at this intent"* skip
+  is a negative finding that removed its own auditor. **DL-039** already
+  requires their reasons to be stated; this entry is why the reasons must
+  be re-read.
+
+**Revisit if:** a second wrong rejection is found (two instances would
+justify a mechanical review cadence rather than a judgement call); or a
+`§7.x` status pass ever discharges an item by re-reading its blocker,
+which would be the first worked positive instance of this rule.
+
+---
+
+### DL-043 — ★★ **an exemption from a control is DECLARED IN ADVANCE and GRADED against the declaration. It is never acquired by the measurement coming out small**
+
+**Date:** 2026-08-12 · **Occasioned by:** the third Pass 5c arm making
+an existing control row — `apparatus/error-bar-is-smaller-than-the-effect`
+— fail at **`3,775×10⁹`**, because the new fixture's floor makes
+`d(device)/d(L*)` zero by construction · **Designed by:**
+`icc-conformance` · **Filed by:** `icc-librarian` from
+`tools/difftest/src/pass5c.rs`, read at the tip `6c7cda1` *(verified —
+`DEVICE_OBSERVABLE` at L1279–L1301, the lookup at L1303–L1313, the row
+that grades measurement against declaration at L1642–L1665, the
+unchanged `APPARATUS_RATIO` at L1337–L1356, and the two-way arm-coverage
+test at L2771–L2795)* · **Relates to** **DL-018** (a gate must not
+reward deletion), **DL-025** (a control is only as good as its fixture),
+**DL-028** (an apparatus fault is not a finding), project **rule 5**
+(tolerances are justified, not tuned) and `NUMERIC_CLAIMS.md` **§3.29**
+
+#### The decision
+
+> **When a control legitimately does not apply on some arm, the
+> exemption is written into an AUTHORED TABLE naming that arm, and a
+> further row grades the MEASURED property against the table's
+> DECLARATION. The control's own constant does not move.**
+
+#### The situation, and why the obvious fix was the wrong one
+
+§B's apparatus check converts an error bar between units using
+`d(device)/d(L*)`, **which presupposes that derivative is non-zero**.
+The new `floored` fixture's `B2A1` has a floor on `G`, so on that arm the
+derivative is **`1,1×10⁻¹⁶`** — zero by construction — and the ratio
+explodes to `3,775×10⁹`. *(Measured values **carried**; the arm's
+`false` declaration and the three arms' derivative magnitudes are
+**verified** in `pass5c.rs` L1278 and L1290.)*
+
+**`APPARATUS_RATIO` was NOT widened.** Its `1.0` is unchanged and still
+applies **everywhere the conversion it needs exists**. What was added:
+
+- **`DEVICE_OBSERVABLE`** — one authored line per arm, declaring whether
+  a device-side observation of a black point's `L*` is possible at all
+  (`swop` and `synthetic` **true**, `floored` **false**);
+- **a row grading the measured `d(device)/d(L*)` against that
+  declaration**, so a mismatch in **either** direction is a failure;
+- **a two-way test** that every arm in the table is driven by `run()`
+  and every arm `run()` drives has a line in the table — because a
+  declaration table whose keys have drifted silently exempts nothing or
+  everything.
+
+#### ★★★ Why the distinction is the whole entry
+
+**Widening `APPARATUS_RATIO` to `4×10⁹` would have made the suite green
+and the control meaningless** — on every arm, forever, including the two
+where the conversion is real and the check is load-bearing. And it would
+have been *reasonable-looking*: the number that made it green is a
+number the run produced.
+
+> **★ An exemption acquired by a measurement coming out small is
+> indistinguishable from a defect coming out large.** The declaration
+> inverts the burden: the arm is exempt because someone WROTE DOWN that
+> it is exempt and said why, and the code then checks that the world
+> agrees with the writing.
+
+★ **This is DL-018 in a new position.** DL-018 says a gate must not
+reward deleting the requirement; here a gate must not reward the
+requirement *evaporating on its own*. **Both are the same pressure: the
+cheapest route to green must never be the one that removes the
+evidence.**
+
+#### What this does NOT decide
+
+- **It does not say a zero derivative is a defect.** On the `floored`
+  arm it is the fixture's **purpose** — the floor is what separates
+  4.2.5.4's two candidate return values by `25 L*`.
+- **It does not make the declaration true.** `DEVICE_OBSERVABLE` is
+  authored; the grading row checks the *measurement* against it, which
+  catches drift but **not an original mis-declaration**.
+- **It does not generalise to "any failing row may be declared
+  inapplicable."** The exemption is admissible **only** where the
+  quantity the control needs **does not exist**, not where it exists and
+  is inconvenient. That boundary is a judgement and this entry does not
+  automate it.
+
+**Revisit if:** a third arm is added and its `DEVICE_OBSERVABLE` line is
+written **after** its first run rather than before (the declaration
+would then be fitted to the observation, which is exactly what this
+entry forbids, and nothing in the code can detect the ordering); or a
+second control acquires a declaration table, at which point the pattern
+should be factored rather than copied.

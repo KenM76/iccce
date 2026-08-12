@@ -1,9 +1,12 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-12: ORIGINAL SCOPE COMPLETE; 4.2.5.4 corrected AND re-measured; speedup withdrawn; next free NC-176.
+- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-12: ORIGINAL SCOPE COMPLETE; 4.2.5.4 has a PROVEN third arm; separation 41/160; next free NC-192.
+- [Ground truth: available ≠ measured](project_ground_truth_cannot_exist.md) — DL-041: the LUT path's ground truth CANNOT exist; Annex D.6.3 is available and unmeasured; NC-001 is still the only such row.
+- [A negative finding removes its own auditor](project_negative_finding_removes_its_auditor.md) — DL-042: a wrong REJECTION survives forever; re-audit the REASON an item is owed, not just the item.
+- [The measurement under the guards](project_measurement_under_the_guards.md) — DL-038/040/043: the distance is the FIXTURE's not the RUN's; a big UNGRADED separation buys a fixture; exemptions are declared, never acquired.
 - [Agreement can be the symptom](project_agreement_can_be_the_symptom.md) — DL-033: a cross-check's power is the CANDIDATE SEPARATION, not the residual; fixing the defect made it 58.8× worse.
-- [Disclosure is not enforcement](project_disclosure_is_not_enforcement.md) — DL-037: the guard ORDER is the decision, BLIND deliberately does not gate, and `blind=0` is out of 16 (really 6), not 145.
+- [Disclosure is not enforcement](project_disclosure_is_not_enforcement.md) — DL-037: the guard ORDER is the decision, BLIND deliberately does not gate; never quote `blind=0` or `16` without its denominator AND its filing.
 - [Rule 7 can run against us](project_rule7_can_run_against_us.md) — DL-030: iccce shipped non-conformant code and lcms2 was right; withholding attribution is what made the measurement usable.
 - [A count needs its apparatus](project_count_needs_its_apparatus.md) — DL-031: 129, 36 and 142 are three runners, not a trend; a commit message's bare count can never be corrected.
 - [A residual under every hypothesis](project_apparatus_fault_under_every_hypothesis.md) — DL-028: two candidates or no discrimination; and an error bar the same order as its effect may BE the measurement (98.3%).

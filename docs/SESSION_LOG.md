@@ -3742,3 +3742,166 @@ checked against the file.
   about pushing. Rule 9 and DL-024 unchanged.
 - **That the librarian has a shell.** **Four filings in a row without
   one.** Ask, per session; never inherit.
+
+> #### ★★★ Dated correction, 2026-08-12 (fourth filing, tip `6c7cda1`) — **the first bullet of this list is FALSE and the entry is not rewritten**
+>
+> *"That the suite would catch a 4.2.5.4 regression — on a machine
+> without a Windows system profile it would not"*, called here **the
+> most load-bearing sentence in the filing**, was measured the same day
+> and **fails in both directions**: `cargo test -p iccce-cmm` **does**
+> fail on a full reversion (**exit 101, 62 passed / 2 failed**), so the
+> clause was defended at unit level all along; and **no conformance row
+> went red on ANY machine**, so the vendor arm was not the detector
+> either. ★ **A claim's prominence is not evidence about it.** The
+> corrected pair is `NUMERIC_CLAIMS.md` **§3.29.1**; §3.28.5 carries an
+> amendment box. **The third bullet's `16 of 145` is also superseded —
+> it is `41 of 160` now, and `16` has become the name of a different
+> quantity.**
+
+---
+
+## 2026-08-12 — the **third-arm + ground-truth** filing (fourth of the session, eighteenth overall)
+
+**Tip:** `6c7cda1` *(**verified** — the last line of `.git/logs/HEAD`,
+which now holds **68** lines; it says **nothing** about whether that tip
+has been pushed)*. **Filed by:** `icc-librarian`, **without a shell —
+fifth consecutive filing.** **Dispatched by:** `icc-engineer`, with
+provenance tagged throughout.
+
+### ★★★ The headline is a retraction, and it is not this librarian's catch
+
+The seventeenth filing closed on a sentence sourced from the engineer's
+dispatch and quoted here as *"the sentence to carry out of it"*:
+
+> *"the 4.2.5.4 correction is documented but undefended on any clean
+> machine, and the platform where the detector is absent is the one
+> platform this project has never run on."*
+
+**The engineer injected the defect, measured it, and refuted its own
+claim before this ledger filed on it a second time.**
+
+| Half | Verdict |
+|---|---|
+| *"undefended"* | **FALSE.** `cargo test -p iccce-cmm` on a full reversion of `fd34a44`: **exit 101, 62 passed / 2 failed** — both `bpc::tests` clause tests. **The clause was defended all along, as a function, on a synthetic closure** |
+| *"absent on one platform"* | **AN UNDERSTATEMENT.** The reversion turned **no conformance row red on any machine**. `swop` moves (`5,18×10⁻³` and `4,26×10⁻²` against bounds of `1`) but nothing crosses, because the row carrying the finding is `REPORTED`. **There was no conformance detector anywhere** |
+
+**The corrected pair, which is narrower and more useful:** the clause was
+defended at **unit** level on a **closure**; what had no detector was the
+clause exercised **through a parsed profile**, where a `Chain`/estimator
+wiring defect lives that a closure test structurally cannot reach.
+★ **Verified in the source, which is the strongest form available** —
+`pass5c.rs` L2713–L2727 says exactly that, in the tree.
+
+**Seventh dispatch-vs-tree instance in the tally, and the first the
+dispatcher caught.** Its own framing, preserved: *"the same error class
+as the six already in the tally: a claim about the tree that I did not
+read the tree for."*
+
+### What arrived, and how it was treated
+
+| Provenance | Content | What this librarian did |
+|---|---|---|
+| **VERIFIED by the engineer** (it ran them) | the reversion outcome; `pass=157 fail=0 skip=3`; the separation aggregate; `40 identical`; `131 passed` | **Carried.** No shell here. ★ **Two corroborated without one**: **131 `#[test]` declarations across 20 files under `crates/`** matches `131 passed` **exactly**, and `fixtures/synthetic/` holds exactly **40** `.icc` files |
+| **CARRIED** from `icc-conformance` | the proof-of-power run, the mechanism defect, `DEVICE_OBSERVABLE`, Pass 4c's ten separations | **The mechanisms were VERIFIED from source, not accepted**: `lib.rs` L1382–L1435; `pass5c.rs` L1279–L1356, L1642–L1665, L2255–L2373, L2660–L2795; `pass4c.rs` L272, L486–L495, L1244–L1280; `recipes.rs` L1150–L1173, L1253–L1264; `bpc.rs` L604–L709; `TOLERANCES.md` §4 |
+| **CARRIED** from `icc-spec-librarian` | the ground-truth survey and corpus defect **C5** | **Read the corpus file itself** — `ICC_Spec\icc\icc__ref__ground_truth_availability.md` §1, §4, §7, §8, and the amendment box in the corpus index |
+
+### The four findings worth carrying out of this session
+
+1. **★★★ The clause now has an instrument whose expectation is a
+   clause.** Bound `7,629 511×10⁻⁴` = **half one PCSLAB quantum and
+   nothing else**; the reversion fails it by **`3,28×10⁴`**. **Proven by
+   injection with the vendor paths disabled** — the only failure in the
+   suite, `pass=129 fail=1 skip=30`.
+2. **★★★ The separation mechanism was lying exactly where it mattered.**
+   `|observed − alt_observed|` collapses to zero on the defect run, so
+   the row **failed at `2,500 019×10¹` while printing
+   `ZERO-SEPARATION`**. **DL-038.** DL-037 recorded the guards; this
+   records that the measurement *under* them had the defect the guards
+   were built to catch.
+3. **★★★ The eleven-filing ground-truth blocker was partly a wrong
+   REJECTION.** Annex D.6.3 was examined months ago and disqualified by
+   point-evaluating intervals. ★ **A negative finding removes its own
+   auditor.** **DL-042** binds every future `§7.x` pass: **re-audit the
+   REASON, not just the item.**
+4. **★★ A control failed at `3,775×10⁹` and was not accommodated.**
+   `APPARATUS_RATIO` stayed at `1.0`; the exemption was **declared** in
+   an authored table and **graded** against the measurement. **DL-043.**
+
+### ★★ What this librarian refused to round up
+
+- **The ground truth is AVAILABLE, not MEASURED.** Annex D.6.3's twelve
+  integers and Table 16's five pairs were reproduced **by the corpus's
+  arithmetic, not by iccce's code. Nothing in this project has been
+  compared to either**, so **NC-001 remains the only
+  `published-ground-truth` row** and §3.29 must never be cited as having
+  closed that gap. ★ **This is the single easiest sentence in the filing
+  to get wrong.**
+- **The arm's power is proven against ONE injected defect.** A row that
+  catches the bug it was written for is not a general detector of 4.2.5.4
+  faults.
+- **`pass=129 fail=1 skip=30` and `pass=157 fail=0 skip=3` are two
+  APPARATUS STATES, not a trend** (DL-031) — the first ran with both
+  category (c) paths repointed at a non-existent drive.
+- **Three separation rows moved is a count, not an inventory.** Whether
+  **NC-176 … NC-178** use the defective constructor **was not
+  established**.
+- **The fixture's blindness is stated with its power.** It cannot
+  separate lcms2's `L*` from `InitialLab`'s — same vertex, same `A2B`.
+  **Two further instruments are named and OWED**, and named-and-owed is
+  not coverage.
+- **CI is configured for ubuntu, not observed.** **Eighteen filings, no
+  CI run seen.** A workflow file is not a run.
+- **`NC-181`'s observation is not on file.** The `FIXTURE` row is
+  recorded with a tolerance and **no measurement**.
+
+### ★ A number found by counting, and owed to someone else
+
+`.github/workflows/ci.yml` asserts **twice** that `tools/difftest` has
+**43 tests**; the declaration count at this tip is **47**
+*(verified — counted; `gen-profiles`' companion **28** still matches,
+which is what makes the basis comparable)*. **A candidate fifth instance
+of DL-034.** Which tests are new was **not** established. **`.github/`
+is not this librarian's to edit — recorded as owed.**
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `NUMERIC_CLAIMS.md` | **§2.13** — the thirteenth provenance block. **§3.29** — the corrected pair (**NC-183**, **NC-184**), the third arm and its proof (**NC-179 … NC-182**), the declared exemption (**NC-185**), Pass 4c's separations (**NC-186**), the census with **both** number collisions (**NC-187**), `verify` and the workspace suite (**NC-188**, **NC-189**), the ground-truth survey (**NC-190**), the CI count (**NC-191**), and a coverage statement. **An AMENDMENT BOX over §3.28.5**, which is *not* rewritten. **§7.15** — four items discharged or converted, six added. **§8** extended through **DL-043**. |
+| `ARCHITECTURE.md` | **§5** — **DL-038** (fixture, not run), **DL-039** (what counts as a rival), **DL-040** (an `UNGRADED` separation is a request for a fixture), **DL-041** (the LUT path's ground truth cannot exist), **DL-042** (a negative finding removes its own auditor), **DL-043** (a declared exemption). **Dated notes appended to DL-036** (its second *"Revisit if"* has **fired**, and its headline is corrected: the vendor arm could **observe** the divergence and never could **catch a regression** in it) **and to DL-037**. **DL-001 … DL-037 bodies untouched — appended to, never rewritten.** |
+| `ROADMAP.md` | A dated block: the retraction, the proven third arm, the lying mechanism, the unwidened control, Pass 4c, the split ground-truth blocker, and the one operator question. **No plan text and no earlier block rewritten.** |
+| `SESSION_LOG.md` | This entry, plus a **dated correction box** on the previous entry's first "do not assume" bullet. |
+
+**Not touched, by instruction and by ownership:** `README.md`,
+`TOLERANCES.md`, `.github/`, everything under `tools/`, `crates/` and
+`fixtures/`, every `Cargo.toml`, the corpus, `LEGAL.md`. ★ **The files
+listed in the provenance table above were read as THE SOURCE for this
+filing, not written.**
+
+### Left for the next session to not assume
+
+- **That iccce has been compared to published ground truth.** ★ **It has
+  not.** Annex D.6.3 and Table 16 are **available and unmeasured**;
+  **NC-001 is still the only such row**, and the fixture is blocked on
+  an **operator** decision about published numbers in an MIT repo.
+- **That the 4.2.5.4 clause is now generally defended.** It is defended
+  **at unit level on a closure** and **through one parsed profile
+  against one injected defect**.
+- **That the separation field covers the suite.** **41 of 160.** **119
+  rows print `UNSTATED`.**
+- **That `16` means what it meant last filing.** It was
+  *rows-stating-a-separation out of 145*; it is now the
+  **`discriminating`** count out of 160. **Always carry the
+  denominator.**
+- **That the earlier separation rows are safe from DL-038's defect.**
+  **Three named rows were fixed. No retro-audit was done.**
+- **That a CI run has ever been observed here.** **Eighteen filings,
+  none** — ubuntu is now in the workflow *file*.
+- **That the tip is pushed, or that any push was authorised.** The hash
+  and four commit subjects are corroborated from `.git/logs/HEAD`; that
+  says **nothing** about pushing. Rule 9 and DL-024 unchanged.
+- **That an item restated as "still owed" has been re-tested.**
+  **DL-042.** Restating a blocker is not re-testing it, and a *negative*
+  finding is the kind nobody goes back to.
+- **That the librarian has a shell.** **Five filings in a row without
+  one.** Ask, per session; never inherit.
