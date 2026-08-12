@@ -1,6 +1,6 @@
 ---
 name: iccce-direction-scoped-behaviour
-description: DL-021 — a measured implementation behaviour is a fact about ONE direction/path until measured in the others; three lcms2 instances in one file, plus one of this project's own predictions
+description: DL-021 + DL-027 — a measured implementation behaviour is a fact about one DIRECTION, one PATH and one PROFILE CLASS until measured in the others; four lcms2 instances, incl. two black-point estimators picked by the destination's header
 metadata:
   type: project
 ---
@@ -42,6 +42,35 @@ implementations running the *same* algorithm proves sameness, not
 correctness, so a **counterfactual** must price what the comparison
 could have seen (Pass 4b's tetrahedral arm: **99–139×**). That is
 DL-018's discipline moved from a deleted requirement to a method.
+
+**★★★ DL-027 (filed 2026-08-12) adds a THIRD axis: the CLASS OF
+PROFILE.** `cmsDetectBlackPoint` branches **before** the darkest-colorant
+code everyone here had been reading (`cmssamp.c` L370–374): at relative
+colorimetric, an **output-class profile in an INK colour space** goes to
+`BlackPointUsingPerceptualBlack`, which **forces the chroma to zero**;
+**anything else** goes to `BlackPointAsDarkerColorant`, which **keeps
+it** — and `cmsDetectDestinationBlackPoint` returns `InitialLab`'s
+`a`/`b` verbatim, so **the branch IS the returned chroma**.
+
+> ***"Does lcms2 keep its black point's chroma?"* has NO ANSWER.** One
+> answer for a CMYK press profile, the opposite for an RGB printer
+> profile — and **the only real LUT profile on this machine is the first
+> kind**, which is why eleven filings of reading never saw it.
+
+**The cost, and why it is the strongest version of this lesson:** the
+corpus's **pre-registered** prediction resolves **FALSIFIED on the CMYK
+arm and CONFIRMED on the RGB arm** (8,1668e-2 ΔE76 100 % `L*` vs
+5,000000 ΔE76 100 % chroma). **A session that ran only one arm would have
+filed a confident wrong headline either way, supported by a clean,
+tight, honestly bounded measurement.**
+
+**How to apply the new axis.** Before writing a behaviour down as a rule,
+**read the CONDITION that selects it**; if the condition names **header
+fields** (device class, colour space, version), the rule needs a **second
+arm chosen to fail that condition** — and if the corpus has no profile of
+the second class, that is a coverage gap to state, not a rule to
+generalise. *(Related: DL-026's conjunction trick — when a condition is a
+conjunction, a confound may be removable by choosing INPUTS.)*
 
 **The defect is in the transcription, not in lcms2** — each behaviour
 has a rationale in its own place.

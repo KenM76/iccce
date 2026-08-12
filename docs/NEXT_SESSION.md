@@ -1,360 +1,367 @@
 # NEXT SESSION — start here
 
-**Written 2026-08-12 by `icc-librarian`, at the Pass 4 completion
-filing — the second of the second calendar day, and the thirteenth
-overall.** Replaces the Pass 6 + Pass 7 edition entirely. Overwrite this
-file once acted on.
+**Written 2026-08-12 by `icc-librarian`, at the estimator-discrimination
+filing — the fifth of the second calendar day and the fourteenth
+overall.** Replaces the Pass 4 completion edition entirely. Overwrite
+this file once acted on.
 
-Read order: this file → `docs/ROADMAP.md` (the **header's Pass 4
-paragraph and its nine-site correction sweep** first, then the **Pass 4
-completion record**, then the **dated update** at the end of the "what
-remains" block) → `docs/NUMERIC_CLAIMS.md` (**§2.10** — read its commit
-row before quoting anything — then **§3.15**, **§3.14**, **§3.16**, then
-**§7.10**) → `docs/ARCHITECTURE.md` §5 (**twenty-six** entries; **DL-026**
-is new) → `docs/SESSION_LOG.md` (thirteen entries) → `docs/TOLERANCES.md`
-**§3.4.4.6**, **§3.4.5** and the two 2026-08-12 rows in §4.
+> **★★★ THE ORIGINAL SCOPE IS DONE. Passes 0 through 7 are closed and
+> filed.** This file is therefore shaped differently from every edition
+> before it: it is **not** a work queue for finishing a plan. It says
+> **what is complete**, **what remains and why each remaining thing is
+> not merely unfinished work**, and **what to read first**.
 
----
-
-## ★★ Four things that are true today and were not true this morning
-
-1. **★ PASS 4 IS DONE. Passes 0 through 7 are ALL closed — the original
-   scope of this project is complete.** What remains is Pass 8 (built in
-   `pdfce`), Passes 9–10, and the standing debts.
-2. **★ The librarian's oldest constraint does not exist.** Two documents
-   and the dispatch all said `icc-librarian` **has no shell**. **A
-   `Bash` tool was present.** Used for **read-only `git` only**, labelled
-   at every claim. **Three items carried across filings fell to five
-   commands.**
-3. **★★ `dechk.obj` — a 5 933-byte MSVC object file — IS IN THE PUBLIC
-   REPOSITORY.** Tracked, added by `aef7566`, and `aef7566` is an
-   ancestor of `origin/master`.
-4. **★ There are NINE pushes to `origin/master`. DL-024 records two.**
-   *(Eight when this file was drafted; a ninth landed during the
-   drafting — see item 0's commit-hygiene entry.)*
+**Read order** — this file → `docs/ROADMAP.md` (the **header's latest
+status block**, then the **"what remains"** block's **dated update at
+the end**, then the **Pass 5 addendum 2** and the **Pass 6 addendum**) →
+`docs/NUMERIC_CLAIMS.md` (**§2.11**, then **§3.18** — read **§3.18.1**
+and **§3.18.2** before any number — then **§3.17**, **§3.19**, **§3.20**,
+**§3.21**, then **§7.11**) → `docs/ARCHITECTURE.md` §5 (**twenty-nine**
+entries; **DL-027**, **DL-028**, **DL-029** are new) →
+`docs/SESSION_LOG.md` (fourteen entries) → `docs/TOLERANCES.md`
+**§3.5.7**, **§3.5.8**, **§3.6** and the 2026-08-12 rows in §4 →
+`tools/difftest/README.md` **§19**.
 
 ---
 
-## Where the project actually is
+## ★★★ The one thing to read before touching anything
+
+**lcms2 has TWO black-point estimators at media-relative, and which one
+runs is decided by the DESTINATION profile's device class and colour
+space** (`cmssamp.c` L370–374). Ink space + output class →
+`BlackPointUsingPerceptualBlack`, which **forces the chroma to zero**.
+Anything else → `BlackPointAsDarkerColorant`, which **keeps it**.
+
+| | `USWebCoatedSWOP.icc` (v2 `prtr` **CMYK**) | `v4-rgb-mab-chromatic-black.icc` (v4 `prtr` **RGB**, ours) |
+|---|---|---|
+| divergence from iccce's ISO/CD 18619 estimate | **8,166 8×10⁻² ΔE76 — 100 % `L*`, chroma exactly 0** | **5,000 000 ΔE76 — 100 % chroma, `ΔL*` exactly 0** |
+| the corpus's pre-registered **mechanism** claim | **FALSIFIED** | **CONFIRMED** |
+
+> **★★★ A session that ran only one arm would have filed a confident
+> wrong headline EITHER WAY** — *"lcms2 keeps its black's chroma"* or
+> *"the chroma prediction was imaginary"* — **and both would have been
+> supported by a clean, tight, honestly bounded measurement.**
+
+**Take three things from it:**
+
+1. **DL-027 — a behaviour is a fact about the direction, the path AND
+   the CLASS OF PROFILE it was measured on.** DL-021 named the first
+   two because that is what one day's evidence supported. **The same
+   shape of error recurred one axis over, in the same oracle.**
+2. **DL-028 — a residual that is large under EVERY hypothesis is an
+   apparatus fault, not a finding.** The synthetic arm's first run was
+   out by four orders because `transicc` prints ink as `0..100` and
+   **RGB and gray as `0..255`**, and three Passes had divided by 100.
+   **Two candidates caught it; reading the code would not have.**
+3. **★ An error bar the same order as its effect may BE the
+   measurement.** Pass 5b's was **0,813 7** against an effect of
+   **0,858 17**; **98,3 % of its headline was the apparatus.** It
+   reported the ratio as **marginal (0,948 against 1,0)** rather than
+   green, and that honesty is the only reason this was findable.
+
+---
+
+## What is COMPLETE
 
 | Pass | Status |
 |---|---|
 | **0** scaffold + oracle · **1** colorimetry · **2** parsing · **3** matrix/TRC | **DONE** |
-| **4** LUT transforms and intents | **★ DONE (2026-08-12)** — closed today |
-| **5** black point compensation | **DONE on stated terms** (the estimators were never discriminated) |
-| **6** performance · **7** named colours | **DONE** |
-| **8** the pdfce bridge | **NOT STARTED — and it is built in `pdfce`, not here** |
-| **9** HDR (BT.2100) | **NOT STARTED.** Blocked on the ITU terms determination *before* any download (DL-007) |
-| **10** profile creation | **NOT STARTED, far-future**; its precondition — a ground truth that is not iccce — is unsolved |
+| **4** LUT transforms and intents | **DONE** (2026-08-12) |
+| **5** black point compensation | **DONE**, and its one stated boundary — *"the estimators were never discriminated"* — **is now closed** (`ROADMAP.md` Pass 5 addendum 2) |
+| **6** performance | **DONE**, and **its gate now PASSES** at the new default grid of 33, against an unchanged tolerance |
+| **7** named colours and spot | **DONE** |
 
-**`HEAD` = `origin/master` = `95c04c1`; 51 commits; zero merges**
-*(verified — `git log`, `git rev-list --count`, refs read)*. **At the
-last filing the tip was `f6203b8` at 45 commits** — so **§2.9's
-unresolved "45 vs 49" is SETTLED: 45 was right, the dispatch's 49 was
-wrong.**
+**And Pass 1's remainder is down to three items from four** — ΔE94 and
+ΔE CMC exist, `impl_crosscheck`, honestly labelled.
 
-### ★★ The one thing to read before touching anything
-
-**Nine statements across three documents said saturation in B2A had
-"never been run". It had been run, measured, and fully written up in
-`TOLERANCES.md` §3.4.4.6 — on the same calendar day.**
-
-Nothing was wrong. Nothing contradicted anything. **The finding never
-propagated out of the file where it landed.** The cause is in the
-previous edition of this file, §4: at the Pass 6/7 filing **`tools/` was
-deliberately not re-read**, because `icc-conformance` was working there.
-That protocol is **sound**; its cost had never been named — **anything
-finished in the un-read tree is invisible to the filing and is carried
-forward as "owed."**
-
-> **★ THE GUARD, now standing.** When a filing skips a directory because
-> another agent holds it, **record WHICH directory was skipped and mark
-> every dependent item `unverified-this-filing`, NOT `owed`.** They are
-> different claims and **only one is safe to act on**: *"owed"* tells the
-> next session to do work that may already be done — which is exactly
-> what it did. **Grep before recording anything as owed.**
+**★ "DONE" means what each completion record says it means, and no
+more.** Every one carries a coverage statement. **None of them means
+*verified*, and none means *verified against ground truth*.**
 
 ---
 
-## ★★ Then: the work, in dependency order
+## ★★★ What REMAINS — four kinds, and only one of them is a task list
 
-### 0. ★★ Fifteen minutes with a shell — and item 1 is the only urgent thing in this file
+### Kind 1 — it is in another repository
 
-- **★★ `dechk.obj`.** 5 933 bytes, MSVC COFF, at the **repository root**.
-  **Tracked; added by `aef7566`; `aef7566` is an ancestor of
-  `origin/master`** *(all verified — run)*. **`.gitignore` has no
-  `*.obj`/`*.o` rule** *(verified — read)*. Add the rule, remove the
-  file, **and decide about history**. ★ **Same shape as `edce48b`** —
-  `NUMERIC_CLAIMS.md` §2.6: *"untracked in-progress `tools/gen-profiles`
-  swept in by `d9e0b82`'s cwd-relative pathspec — a process slip"* —
-  **same root directory, same mechanism, now with the push already
-  done.** It is small and benign, but ***"benign" is a judgement the
-  operator makes about a published artefact, not one an agent makes for
-  him.***
-- **★★ Confirm the pushes.** **Eight `update by push` lines exist**, the
-  last at **08:19:21 −04:00**; **DL-024 records two.** Rule 9 and DL-024
-  both say publishing is the operator's act and *"he said yes on the
-  12th" is not standing permission*. **Recorded as an observation, not
-  an accusation** — the reflog attributes them to `KenM76` and **no file
-  records authorisation either way.** Confirm; do not assume.
-- **★★ COMMIT HYGIENE — the top process item, on three instances in two
-  days.** ~~Commit the Pass 4c work.~~ **It committed itself**: while
-  this filing was being written, another agent's commit **`5cfee17`**
-  (*"difftest: the estimator discrimination — and lcms2 has TWO
-  estimators"*, 09:06:21, 23 files, +4 907) **swept in `pass4c.rs`, the
-  CLI help fix, `TOLERANCES.md` — and `docs/NUMERIC_CLAIMS.md` mid-write
-  — and was PUSHED** *(all verified — `git show --stat`, refs read)*.
-  `origin/master` is now `5cfee17`, a **ninth** push.
-  **★ That is the THIRD instance of one mechanism**: `edce48b` swept in
-  in-progress `gen-profiles` (§2.6, *"a cwd-relative pathspec — a
-  process slip"*), `aef7566` swept in `dechk.obj` and published it, and
-  now `5cfee17` swept in another agent's unfinished document.
-  **Three times in two days is not a slip; it is the default behaviour
-  of the command being used** — and the cost is no longer untidiness:
-  **it publishes work whose author has not finished checking it.**
-  **Owed: commit with EXPLICIT PATHSPECS, never `-A` or a bare `.` from
-  the repository root, while any other agent is working in the tree.**
-  Consequence to be aware of when reading history: **`5cfee17`'s message
-  mentions neither Pass 4c nor this ledger**, so `git log` is a
-  misleading index of when they landed — use `git log -- <path>`.
-- **Paste the twelve-line `iccce bench` output somewhere durable.** Owed
-  since the Pass 6 filing; still the entire evidence for four rows.
-
-### 1. ★★ Pass 8 — the `pdfce` bridge. The real next step, and NOT in this repository
-
-`ARCHITECTURE.md` §4 fixes the boundary and it does not move: **a thin
-bridge crate *in `pdfce`*, and `iccce` must not know what a PDF is.**
-`/ICCBased` → `iccce_profile::Profile`; `/Separation` and `/DeviceN` →
-named-colour lookups; PDF/X `/OutputIntent` → a destination profile.
+**Pass 8, the `pdfce` bridge.** `ARCHITECTURE.md` §4 fixes the boundary
+and it does not move: **a thin bridge crate *in `pdfce`*, and `iccce`
+must not know what a PDF is.** `/ICCBased` → `iccce_profile::Profile`;
+`/Separation` and `/DeviceN` → named-colour lookups; PDF/X
+`/OutputIntent` → a destination profile.
 
 **What Pass 7 handed it:** `NamedColors::resolve_to_device`, returning
 **`None`** for an unknown name — the `/Alternate` fallback signal,
 deliberately not an error.
 
-**What this repository still owes the bridge:**
+**What this repository still owes it** *(and this is the only part of
+Pass 8 that can be done here)*:
 
 - **A spot resolved into a LUT destination.** A press profile is the
-  normal `/OutputIntent` and it **is** a LUT profile. ★ The **gray**
-  destination arm was finally exercised today (§3.16.2, a scratch
-  probe), so the machinery is demonstrably reachable — **the LUT arm is
-  still not.**
-- **Any cross-check at all on the spot path** — item 2.
+  normal `/OutputIntent` and **is** a LUT profile. The **gray** arm was
+  exercised once as a scratch probe (§3.16.2); **the LUT arm has never
+  been reached from a spot.**
+- **Any cross-check at all on the spot path.** See Kind 4 item 2.
 - **A statement of what a caller should do with a reported
-  malformation.** Rule 6 says the parser reports and does not repair.
-  **No caller that must keep going has ever exercised that**, and a PDF
+  malformation.** Rule 6 says the parser reports and does not repair;
+  **no caller that must keep going has ever exercised that**, and a PDF
   consumer will hand iccce real-world profiles at scale. **That is a
-  `pdfce`-side design question this repository should not answer
+  `pdfce`-side design question and this repository should not answer it
   unilaterally** — but it should be asked before the bridge is written.
 
-### 2. ★ The cheapest genuine cross-check in the project, skipped for two filings running
+### Kind 2 — it is blocked on a document nobody here can produce
 
-**Resolve a spot into ITS OWN profile's device space and compare against
-the entry's stored `nDeviceCoords`.** An `ncl2` entry carries the device
-values *the profile's author* recorded — **an expectation iccce did not
-write, on bytes iccce did not choose.** The only such expectation
-anywhere on the spot path, and it costs almost nothing.
-`icc-conformance`.
+**These are acquisitions, not tasks. No amount of work in this tree
+advances them.**
 
-### 3. ★★ The two fixtures that block two named approximations — `tools/gen-profiles`
+| What is needed | What it unblocks |
+|---|---|
+| **IEC 61966-2-1** (purchased or licensed) | **★★ The project's FIRST `published-ground-truth` row for a transform.** There are **none**, across Passes 3, 4, 4b, 4c, 5, 6, 7 — **ninth consecutive filing.** The cheapest route, and **nobody has dispatched for it** |
+| **`ICC.1:2010-12` (v4.3)** | **A31 — the ambiguity register's ONLY unverified row.** `parametricCurveType` Table 68 across editions |
+| **ICC's published D65→D50 `chad` values** (Annex E.4.2) | the chromatic-adaptation ground-truth hole (**NA-002**) |
+| **ITU-R BT.709 / BT.2100** | **Pass 9's precondition** — and **blocked first on the TERMS determination, not on the download.** *"The file is free"* has never implied *"automated retrieval is permitted"* (DL-002, DL-007) |
 
-**This is now the highest-leverage unwritten code in the repository.**
+> **★ Each row is a CLAIM ABOUT WHAT A DOCUMENT CONTAINS. Treat *"it
+> would settle X"* as a prediction until the document is open.** The
+> worked example is `ICC.1:2001-04`: it was expected to adjudicate an
+> 11 ΔE divergence and turned out **silent** — and the ledger's
+> prediction about *what its arrival would do to the record* was **also**
+> wrong. **Two levels of prediction, both wrong, about one document.**
 
-- **A PCSLAB gray fixture** → **NA-008's second arm.** The approximation
-  is the choice between **`Y/Yn`** (PCSXYZ) and **`L*/100`** (PCSLAB),
-  and **every gray profile in reach is PCSXYZ** — `ewgray18`,
-  `ewgray22`, `BlackWhite`, and both synthetic `v2-gray-curv-*`.
-  ★ **Agreeing with lcms2 cannot substitute**: lcms2 makes one of the two
-  choices too, so a cross-check is blind to the difference by
+### Kind 3 — it is an operator scope call, answered but never sized
+
+- **Pass 9 — HDR (BT.2100 PQ/HLG, BT.2020 primaries).** In scope by
+  **DL-007**. Its hard part is **not the curves**: ICC's PCS is
+  media-relative and reflective-print-derived, PQ is **absolute** and
+  HLG is **scene-referred**, so connecting either needs a **stated
+  choice** about reference luminance and what counts as white — an
+  approximation under rule 4, which must be **named and priced in ΔE**.
+- **Pass 10 — profile creation.** In scope by **DL-008**, far-future,
+  and **its precondition is unsolved and is not a backlog item**:
+  nothing has been chosen as a ground truth that is not iccce.
+  *"Round-tripping a profile through its own inverse is the canonical
+  test whose expected value came from the code under test."* ★ Note the
+  distinction Pass 10 must be sized against: **writing synthetic profile
+  bytes** (what `tools/gen-profiles` already does) was **never out of
+  scope**; **profile creation from measurement data** is the thing that
+  was refused.
+
+### Kind 4 — the standing debts of work already done. **This is the only actionable list.**
+
+**0. ★★★ One open question can make a shipped behaviour WRONG.**
+At ISO/CD 18619 **4.2.5.4**'s mid-range straightness short-circuit —
+which **both** implementations take, so **neither fits a quadratic on
+either fixture** — **iccce returns `outRamp[first]`** and **lcms2
+returns `InitialLab`** (`cmssamp.c` L536). **Dispatched to
+`icc-spec-librarian` 2026-08-12; unanswered.** It is **the whole** of the
+`swop` arm's 8,167×10⁻² ΔE76. **If ISO names lcms2's, iccce is WRONG —
+not divergent — and `icc-engineer` changes the code.** Until then, **no
+document here may describe this difference as lcms2 departing from the
+standard.**
+
+**1. ★★ Commit hygiene — three instances of one mechanism in two days.**
+`edce48b` swept in in-progress `gen-profiles`; `aef7566` swept in and
+**published `dechk.obj`**; `5cfee17` swept in another agent's
+**mid-write `NUMERIC_CLAIMS.md`** *(all reported from `git show --stat` /
+`git log --diff-filter=A` by the previous filing, which had a shell)*.
+**Owed: commit with EXPLICIT PATHSPECS, never `-A` or a bare `.` from
+the repository root, while any other agent is working in the tree.**
+**And `dechk.obj` — 5 933 bytes, MSVC COFF, at the repository root, the
+object file of the ΔE94/CMC C probe — is still there** *(verified — the
+tree enumerated)*, with **no `*.obj`/`*.o` rule in `.gitignore`**. Add
+the rule, remove the file, **and decide about history**: it is small and
+benign, but ***"benign" is a judgement the operator makes about a
+published artefact, not one an agent makes for him.***
+
+**2. ★ The cheapest genuine cross-check in the project, skipped for
+three filings.** **Resolve a spot into ITS OWN profile's device space
+and compare against the entry's stored `nDeviceCoords`** — an
+expectation **iccce did not write**, on bytes **iccce did not choose**.
+The only such expectation anywhere on the spot path.
+
+**3. ★ Two measurements the new fixture makes possible and nobody has
+taken.**
+- **The A41 constant's error.** At perceptual, both implementations use
+  `L* ≈ 3,1` where `v4-rgb-mab-chromatic-black.icc`'s real black is
+  **`L* 20`**. **The instrument now exists; the row does not.**
+- **A PCSLAB gray fixture** → **NA-008's second arm**, which still has
+  **no instrument in existence**. Every gray profile in reach is PCSXYZ,
+  and **agreeing with lcms2 cannot substitute** — lcms2 makes one of the
+  two choices too, so a cross-check is blind to the difference by
   construction.
-- **A v4 RGB-or-gray LUT fixture with a NON-ZERO device black** →
-  **NA-009's cost.** Still the only instrument that can discriminate the
-  two black-point estimators. **Sourcing the estimator on ISO/CD 18619
-  did not change this — sourcing is not measuring.**
 
-### 4. ★ The apparatus gaps
+**4. ★★ Evidence that was never filed, for numbers that are.**
+- **A runner outcome for the shape of `pass5c` and `pass6` filed
+  today.** The last on record is `pass=140 fail=2` on a **shape that no
+  longer exists**. **Twenty-four records have no `pass=` line.**
+- **A `cargo test --workspace` outcome at the current tip.** The last is
+  **exit 0, 121 passed** at `95c04c1`; one commit has landed since.
+  **121 `#[test]` declarations exist across 19 files** *(verified —
+  counted)* — **a different quantity that happens to match.**
+- **The twelve-line `iccce bench` output**, owed since the Pass 6
+  filing, and **worth more now** than when first asked for: the default
+  grid has moved, so §3.13's figures describe a grid the binary no
+  longer uses.
+- **The CI evidence.** CI is **reported** to have run and passed, which
+  retires a caveat repeated across these documents — **by a report**.
+  **No run URL, no summary, and no statement of whether the Linux job
+  was among what passed.** ★ **Do not let it discharge the Linux debt
+  silently.**
 
-- **`tools/difftest/src/pass5.rs` still has no `#[test]` declarations** —
-  **marked `unverified-this-filing`, not `owed`**, because another agent
-  is editing `pass5*.rs` right now. **Fourteen ledger rows rest on two
-  grids that nothing pins.**
-- **★ `cargo fmt --check` FAILS in `tools/difftest`: 109 diffs across 15
-  files**, all pre-existing *(reported)*. Rule 10's gate is stated
-  **workspace-wide** and **`tools/difftest` is deliberately not a
-  workspace member** (DL-001), **so `--workspace` has never seen it.**
-  Either bring it under the gate or state the exemption in `CLAUDE.md` —
-  **a binding rule silently does not apply to a quarter of the code.**
-- **★ Three real measurements are pinned by nothing** (§3.16): the M3
-  A/B, the gray-destination probe, the Pass 4b re-run. **Each is one
-  `Record` away from a graded row with an NC number.**
-- **A sweep for the bare *"D.6/D.7"* citation label.** **Annex D is
-  INFORMATIVE**; the normative statement is **`ICC.1:2022` 6.3.2.2
-  Eq (4)–(6)**; and **the label is not edition-stable** —
-  `ICC.1:2001-04` has **no (D.7)** and its **(D.6) is a different
-  equation**. **Every `wtpt` discussion here concerns a v2 file.** Fold
-  into the DL-014 audit.
-
-### 5. ★ The Pass 5c work is IN FLIGHT and is NOT filed
-
-`pass5c.rs` is untracked; its record count moved **8 → 16** between this
-session's two runs; two of its rows were **failing** at the second run;
-and `TOLERANCES.md` has gained a **§3.5.8** naming a new finding —
-**lcms2 has two black-point estimators at media-relative, selected by
-the destination's device class and colour space** — and **withdrawing**
-row Q3's CONFIRMED verdict. **None of it is in `NUMERIC_CLAIMS.md`.
-Whoever files it reports its own outcome.** Do not fold it into a
-Pass 4c summary and do not read its two red rows as a Pass 4c
-regression.
-
-### 6. The two holes that have outlasted every Pass
-
-- **★★ No `published-ground-truth` row exists for ANY transform.** Not
-  one, across Passes 3, 4, 4b, 4c, 5, 6, 7. **The cheapest route is
-  still `IEC 61966-2-1`'s sRGB primaries, and nobody has dispatched for
-  it — for the EIGHTH consecutive filing.** `icc-spec-librarian`.
-  **This is now unambiguously the largest hole in the project.**
-- **★★ A Linux run of anything at all.** Still nothing, by anyone,
-  ever — and in public, where *"works on Windows"* is a narrower claim
-  than a reader will assume.
+**5. ★ Apparatus and hygiene, carried.**
+- **`tools/difftest/src/pass5.rs` has no `#[test]` declarations** —
+  **`unverified-this-filing`, not `owed`** (`tools/` was read here only
+  at README §17–§19).
+- **`cargo fmt --check` fails in `tools/difftest`: 109 diffs across 15
+  files** *(reported)*. **Rule 10's gate is workspace-wide and
+  `tools/difftest` is deliberately not a workspace member** (DL-001), so
+  `--workspace` has never seen it. Bring it under the gate **or** state
+  the exemption in `CLAUDE.md`.
+- **Three real measurements pinned by nothing** (§3.16): the M3 A/B, the
+  gray-destination probe, the Pass 4b re-run.
+- **A sweep for the bare *"D.6/D.7"* citation label**, folded into the
+  DL-014 audit — **Annex D is INFORMATIVE, and the label is not
+  edition-stable.**
+- **★ A Linux run of anything at all.** Still nothing, by anyone, ever.
 
 ---
 
-## Owed work, carried explicitly
+## Owed work, by agent
 
-### 1. `icc-conformance`
+### `icc-spec-librarian`
 
-- Items 2, 3, 4 and 5 above.
-- **A ΔE2000 translation of NC-108's 0.003589 device units** — rule 4
-  requires a named approximation's cost in ΔE, and `TOLERANCES.md`
-  §3.6's own rows are written in that unit.
-- **The Pass 6 sensitivity control's PASSING ratio**, ★ now against the
-  **re-derived** band: §4 records that the `h²` justification was
-  **falsified** and the measured convergence order is **1.32**, stable
-  to 1 % across three octaves.
-- **A compiled path measured in the B2A direction** (DL-021 makes it a
-  separate question) and **a compiled chain with BPC folded in**.
-- **A repeat timing run, and a second machine.**
+- **★★★ ISO/CD 18619 4.2.5.4's short-circuit return value** — Kind 4
+  item 0. **Dispatched; it is the only open question that can make
+  shipped code wrong.**
+- **★★ `IEC 61966-2-1`** — the first ground-truth row for a transform.
+  **Ninth filing; nobody has dispatched.**
+- **The tier question that decides a ledger CLASS**: is
+  `icc__ref__bpc.md` §2/§3 `primary_spec` or `cross_verified_2src`? At
+  `primary_spec`, **NC-084/NC-086 become `normative-rule-conformance`.**
+- **The forcing-policy question is NOT settled by ISO/CD 18619.** That
+  document supplies **estimation**; **NC-100 / DL-022 turn on
+  applicability**. **NC-100 stays REPORTED, NOT GRADED** until something
+  says otherwise.
+- **The clamp question, narrowed**: must the final `B` curves' output be
+  clipped to 6.3.4.2's encodable PCS range, and does 10.18's domain bind
+  the *evaluator* or only describe the stored samples?
+- **Corpus rows owed**: the **M2 correction**; the **trilinear
+  override**; the **`IsEmptyLayer` 0,002 threshold**; **A41's
+  ΔE2000 = 0,050 201**; **M3's measured magnitude**; ★ **and a
+  correction recording that the black-point prediction's mechanism is
+  BRANCH-DEPENDENT and its magnitude band assumed a chromatic printer
+  black that a coated CMYK profile has not got.**
+- **`A31`**, and **the ITU terms determination** before any BT.709 /
+  BT.2100 fetch.
+
+### `icc-conformance`
+
+- Kind 4 items 2, 3, 4 and 5.
+- **A compiled path in the B2A direction** (DL-021 makes it a separate
+  question) and **a compiled chain with BPC folded in**.
+- **A repeat timing run, and a second machine.** ★ And note the timings
+  now need re-stating anyway: **NC-105 … NC-108 describe grid 17**, and
+  the default is **33**.
 - **Whether to re-grade NC-077** (the encoded-PCS overflow) — its file,
   its call, carried since Pass 5.
 - **A synthetic `lut8` fixture wired into the suite**;
   `fixtures/synthetic/v2-cmyk-mft1-lab.icc` exists unused.
 - **`TOLERANCES.md` §3.2 (Pass 2), a §3.7 (Pass 7), and §6's coverage
   table.**
-- **An instrument check on iccce's ΔE ruler for the sRGB destination.**
-- **A re-run of the Pass 2 machine sweep** against a post-GP-001 build.
+- **An instrument check on iccce's ΔE ruler for the sRGB destination**,
+  and **a re-run of the Pass 2 machine sweep** against a post-GP-001
+  build.
 - **A behavioural test of `ncl2` legacy-Lab decoding** — owed since
-  Pass 2; **Pass 7 does NOT discharge it** (NC-019 still rests on a
-  source reading).
+  Pass 2; **Pass 7 does NOT discharge it** (NC-019 rests on a source
+  reading).
+- **A fixture whose darkest colorant has chroma above 50** — **only if
+  something depends on the answer.** It would turn lcms2's clamp/return
+  asymmetry from READ into RUN, and *a fixture built to trigger one
+  branch of one clamp is a fixture built to make a point.*
 
-### 2. `icc-spec-librarian`
+### `icc-engineer`
 
-- **★ `IEC 61966-2-1`** — still **the** cheapest route to the project's
-  first ground-truth row for a transform. **Eighth filing; nobody has
-  dispatched.**
-- **★ The tier question that decides a ledger CLASS**: is
-  `icc__ref__bpc.md` §2/§3 `primary_spec` or `cross_verified_2src`? At
-  `primary_spec`, **NC-084/NC-086 become `normative-rule-conformance`
-  rows**.
-- **★ The forcing-policy question is NOT settled by ISO/CD 18619.** That
-  document supplies **estimation**; **NC-100 / DL-022 turn on
-  applicability** — whether BPC's *enablement* is specified as a
-  function of intent and version. **NC-100 stays REPORTED, NOT GRADED**
-  until something says it is.
-- **The clamp question, narrowed**: must the final `B` curves' output be
-  clipped to 6.3.4.2's encodable PCS range, and does 10.18's domain bind
-  the *evaluator* or only describe the stored samples?
-- **Corpus rows owed**: the **M2 correction**; the **trilinear
-  override**; the **`IsEmptyLayer` 0,002 threshold**; **A41's
-  ΔE2000 = 0,050 201**. ★ **And M3 now has a measured magnitude**
-  (§3.16.1) that the corpus row does not carry.
-- **`A31`** — the only UNVERIFIED row in the register. Needs
-  `ICC.1:2010-12` (v4.3).
-- **The ITU terms determination** before any BT.709/BT.2100 fetch
-  (DL-007). **"The file is free" has never implied "automated retrieval
-  is permitted"** — DL-002 exists because that inference was available
-  at color.org and would have been wrong.
-
-### 3. `icc-engineer`
-
-- **All of item 0**, starting with `dechk.obj`.
-- **The `tools/difftest` `fmt` exemption question** (item 4).
+- **Kind 4 items 0 (the code change, if ISO names lcms2's), 1 and 4.**
+- **The `tools/difftest` `fmt` exemption question.**
 - **Whether iccce should implement lcms2's `EvalNInputs` geometry at
   all** — DL-021 makes it two choices, not one.
 - **A PCSXYZ `ncl2` fixture**, so Table 66's second permitted encoding
   is not carried on a source reading.
 - **crates.io, if and when the operator says so**: **name availability
-  is still unchecked by anyone**, and **`THIRD_PARTY_LICENSES.md` via
-  `cargo-about` is owed before a first publish**. **A public git
-  repository is not a published crate** (DL-024).
+  is still unchecked by anyone**; **`THIRD_PARTY_LICENSES.md` via
+  `cargo-about` is owed before a first publish**; and **a public git
+  repository is not a published crate** (DL-024). ★ **DL-029 narrowed
+  the API surface for publication and is not an authorisation either.**
 
-### 4. `icc-librarian` / whoever files next
+### `icc-librarian` / whoever files next
 
-- **★★ The DL-014 citation audit.** It decides **NC-084's ledger class**,
-  underwrites **DL-024's third pre-publication check** (a *published*
-  compliance claim, still carried as *reported*), and now has a **live
-  defect** to sweep (the D.6/D.7 label). `iccce-color` and
-  `iccce-profile` have **never** been swept.
-- **A re-read of README §15**, carried unverified three times now. ★ Its
-  **§15.5 build-commit half is DISCHARGED** — the hash flag was correct
-  (`97ad9fa` #29 predates `a0310c7` #32, verified) **and every Pass 4b
-  number reproduces on a fresh build of the current tree** (reported).
+- **★★ The DL-014 citation audit.** It decides **NC-084's ledger
+  class**, underwrites **DL-024's third pre-publication check** (a
+  *published* compliance claim still carried as *reported*), and has a
+  **live defect** to sweep. `iccce-color` and `iccce-profile` have
+  **never** been swept. ★ New cheap surface: `delta_e.rs`'s **CIE
+  116-1995** and **BS 6923** citations — both correctly marked
+  **UNSOURCED**; confirm nothing later upgrades them.
+- **A re-read of README §15**, carried unverified three times.
 - **Observed residuals** for Pass 1's rows and for NC-032.
-- **A ground-truth row for chromatic adaptation** — NA-002, still not
-  due.
+- **★ Re-read anything a claim rests on IMMEDIATELY before asserting
+  it.** This filing drafted a false statement about another agent's work
+  from a read taken **at the start of the same session** (§7.11 item 5).
+  **In a concurrent session an early read is a dispatch, not a source.**
 
-### 5. The operator
+### The operator
 
-| Document | What it settles |
-|---|---|
-| **IEC 61966-2-1** | the **first ground-truth row for a transform**, and the end of the single-source sRGB/D65 lineage. **The largest remaining hole in the project** |
-| **`ICC.1:2010-12` (v4.3)** | **A31 — the register's ONLY unverified row** |
-| **ICC's published D65→D50 `chad` values** (Annex E.4.2) | the adaptation ground-truth hole |
-| **ITU-R BT.709 / BT.2100** | Pass 9's precondition — **blocked first on the terms determination**, not on the download |
+The four documents in **Kind 2**, plus:
 
-**Each row is a claim about what a document contains.** Treat *"it would
-settle X"* as a **prediction** until the document is open. ★ **The
-worked example got worse today**: `ICC.1:2001-04` was expected to
-adjudicate an 11 ΔE divergence and turned out **silent** — and the
-ledger's prediction about *what its arrival would do to the record*
-(*"one implementation acquires a defect"*) is **also now falsified**.
-**Two levels of prediction, both wrong, about the same document.**
+- **Whether pushes three through nine were authorised.** **Nine
+  `update by push` lines exist; DL-024 records two.** The reflog
+  attributes them to `KenM76` and **no file records authorisation either
+  way.** ★ Also reported: **one push failed with HTTP 408** and was
+  retried over HTTP/1.1 — **a failed push leaves no reflog line**, so the
+  failure is a report and only the success is evidence.
+- **`dechk.obj` in the published history** — Kind 4 item 1.
 
 ---
 
 ## Decisions already made — do not re-litigate
 
-- **★ DL-026 (new) — NC-053 is RE-BASED OFF DL-019 and is PERMANENTLY
-  ungraded.** The verdict did not move; **the basis did**, because
-  DL-019 is a holding pattern asserting the project is waiting for a
-  document, and **it is not waiting any more.** `ICC.1:2022` 9.2.36
-  gates on **class with no version gate**; `ICC.1:2001-04` A.3.1.1 gates
-  on the **adaptation condition**, not class — **so lcms2's predicate
-  reproduces no clause in either edition.** And **the conformance clause
-  binds READING profiles, not a CMM's computed output**, so a graded row
-  is **unavailable**. ★ **The judgement is contingent on NC-120
-  existing** — if the pin moves, **re-make it, do not inherit it.**
-- **★★ WORDING: say lcms2 DIVERGES. Never "non-conforming."** The
-  verdict is unavailable on a CMM's computed output, in either
-  direction. Mirrors `TOLERANCES.md` §5.2's NA-003/A39b hedge.
-- **★ A4c is SILENT and did NOT clear when A4b cleared**, and does not
-  clear now. Whether a profile's `wtpt` must agree with its own
-  colorants is a separate ambiguity; **disclosure is the one option
-  ICC.1 does not foreclose**, and the system sRGB profile is exactly
-  such a self-inconsistent file.
+- **★★★ DL-027 (new)** — **a behaviour can be keyed by the DESTINATION
+  PROFILE'S CLASS**, not only by direction and path. Read the
+  **condition** that selects a behaviour; **if it names header fields,
+  the rule needs a second arm chosen to fail that condition.**
+- **★★ DL-028 (new)** — **a residual large under EVERY hypothesis is an
+  apparatus fault, not a finding.** Discrimination experiments carry a
+  **second independent candidate** and grade the **ratio**, not the
+  magnitude. **Corollary: an error bar the same order as its effect may
+  be the measurement.**
+- **★ DL-029 (new)** — **the API sealing split: seal what decodes OUR
+  format (`iccce-profile::num` → `pub(crate)`), publish what implements
+  SOMEONE ELSE'S specification (`bpc.rs`'s ISO surface).** Filed with
+  four pre-publication soundness defects, one of them a **stale-inverse
+  hazard on a public field** — *silently wrong colour with no signal*,
+  which is rule 1 as an API shape.
+- **DL-026** — **NC-053 is RE-BASED off DL-019 and is PERMANENTLY
+  ungraded**: the conformance clause binds **READING** profiles, not a
+  CMM's computed output, so a graded row is **unavailable**. ★ **The
+  judgement is contingent on NC-120 existing — if the pin moves, re-make
+  it, do not inherit it.**
+- **★★ WORDING: say lcms2 DIVERGES. Never "non-conforming."**
+- **★ A4c is SILENT and did NOT clear when A4b cleared.** Disclosure is
+  the one option ICC.1 does not foreclose.
 - **★ The project is PUBLIC** (**DL-024**) — and that authorises
   **nothing else**. No crates.io publish, no tag, no release, **and each
-  push needs its own current go-ahead** (see item 0).
+  push needs its own current go-ahead.**
 - **MIT**, dependencies permissive, **publishing is the operator's act**
   (rule 9).
-- **`iccce-color` depends on nothing** and contains no ICC. **The
+- **`iccce-color` depends on nothing** and contains no ICC; **the
   fixture generator depends on nothing either.**
-- **The parser reports, it does not repair**; in the CMM the same
-  instinct is **refuse by name, never substitute** — and where a file is
-  self-inconsistent in a way no clause adjudicates, **disclose** (A4c).
+- **The parser reports, it does not repair**; in the CMM, **refuse by
+  name, never substitute**; where a file is self-inconsistent in a way
+  no clause adjudicates, **disclose**.
 - **lcms2 is the oracle, never a dependency** — subprocess only, pinned
-  by commit hash (DL-001). **It is also not a dependency of the
-  published artefact**, and a tidy-up that folds `tools/difftest` into
-  the workspace would break that **in public** — which is also why
-  `fmt --check` has never seen it (item 4).
+  by commit hash (DL-001), and **not a dependency of the published
+  artefact**. A tidy-up that folds `tools/difftest` into the workspace
+  would break that **in public**.
 - **DL-003** duplicate tags · **DL-004** the ⚠ provisional 1.0 anchor ·
   **DL-005** exact invariants for legacy Lab · **DL-007** HDR in scope ·
   **DL-008** profile creation in scope · **DL-009** crates.io intent
@@ -365,91 +372,89 @@ ledger's prediction about *what its arrival would do to the record*
   ICC.1:2022 · **DL-015 / NA-004** the `pow` guard · **DL-016** exact
   values at sample points · **DL-017** the harness may path-depend on
   iccce's crates · **DL-018** a prediction pin for an upper-bound gate ·
-  **DL-019** report-not-grade when the mechanism is known and the
-  authority is not (**now re-based for NC-053 — see DL-026**) ·
-  **DL-020** refuse-don't-guess · **DL-021** a behaviour is a fact about
-  **one direction and one path** · **DL-022** iccce never forces BPC ·
+  **DL-019** report-not-grade · **DL-020** refuse-don't-guess ·
+  **DL-021** direction and path · **DL-022** iccce never forces BPC ·
   **DL-023** say what the two sides were free to disagree about, before
-  the run · **DL-024** the publication event · **DL-025** a sensitivity
-  control is only as good as its **fixture**, and its scaling law must
-  match the function's **smoothness class**.
+  the run · **DL-024** the publication event · **DL-025** a control is
+  only as good as its **fixture**, and its scaling law must match the
+  function's **smoothness class**.
 
 ### Everything measured against lcms2 is scoped to commit `21c582a`
 
 Moving the pin is a **licence** event (DL-001) **and** a behavioural
 one. **Re-run, not re-read:** NC-019 … NC-021, NC-034 … NC-037, NC-040,
 NC-041, NC-043, NC-044 … NC-050, NC-053 … NC-057, NC-062 … NC-083,
-NC-088 … NC-096, NC-099 … NC-102, **and NC-113 … NC-128**. **The sharp
-ones are NC-050, NC-056, NC-082 and NC-088** — each is a *transcription*
-of lcms2's internals, so a retuned interpolator, resampler or threshold
-invalidates them **silently**, by continuing to reproduce the old lcms2
-perfectly. ★ **NC-120 is now sharp in a new way**: **DL-026's judgement
-depends on it**, so the pin moving does not merely invalidate a row — it
-reopens a decision.
+NC-088 … NC-096, NC-099 … NC-102, NC-113 … NC-128, **and
+NC-129 … NC-144 and NC-153 … NC-154**. **The sharp ones are NC-050,
+NC-056, NC-082, NC-088 — and now NC-137 … NC-144, which are a
+TRANSCRIPTION of `cmssamp.c` itself**: a retuned estimator invalidates
+them **silently**, by continuing to reproduce the old lcms2 perfectly.
+★ **NC-120 is sharp in a second way — DL-026's judgement depends on
+it**, so the pin moving reopens a decision rather than merely
+invalidating a row. ★ **NC-153/NC-154 are a transcription too**, and
+their ten-decimal agreement would survive a change in lcms2 only by
+being re-measured.
 
 ---
 
 ## Method reminders that stay load-bearing
 
-1. **A wrong colour looks exactly like a right one** — **and so does a
-   wrong measurement.**
-2. **★ Grep before recording anything as owed.** Nine statements in
-   three documents said *"never run"* about finished work.
-   **`unverified-this-filing` ≠ `owed`.**
-3. **★ An instrument is only as good as its fixture** (DL-025) — **and
-   there are TWO ways for a comparison to be vacuous**, not one. The
-   effect can be absent (caught by a sensitivity ratio), **or the output
-   can be SATURATED** — both implementations clamping to the same
-   boundary and agreeing perfectly while computing nothing. **The second
-   needs its own count** (NC-125: 1 of 729).
-4. **★ Read the CONDITION, not just the behaviour.** lcms2's `wtpt`
-   substitution looked like a blocker for three filings; its predicate
-   is a **conjunction**, and the confound was removable by **choosing
-   inputs**. The blocker was a **profile pair**, never a document.
-5. **★ A hedge is cheap and occasionally load-bearing.** NA-003's
-   *"that number must never be restated as a bound in general"* was
-   written from discipline alone and is now vindicated **by a factor of
-   ~2,5×10⁴**.
-6. **Print the sensitivity ratio**, and say what floor it clears and
-   where the floor came from. NC-124's 100× is **transcribed** from an
-   accepted band, not fitted.
-7. **Say which direction and which tag type** (DL-021), in every row.
-8. **Verify against the live source, not the dispatch.** This filing's
-   instances: **the shell** (three documents said there was none), **the
-   commit count** (45, not 49), **`dechk.obj`'s tracked status** (a peer
-   correctly declined to guess; the guess would have been wrong).
+1. **A wrong colour looks exactly like a right one — and so does a wrong
+   measurement.**
+2. **★★ Read the CONDITION, not just the behaviour.** If it names header
+   fields, one arm is not an experiment (**DL-027**). If it is a
+   conjunction, a confound may be removable by **choosing inputs**
+   (DL-026).
+3. **★★ A residual large under every hypothesis is an apparatus fault**
+   (**DL-028**) — and **an error bar the same order as its effect may be
+   the measurement.**
+4. **★ An instrument is only as good as its fixture** (DL-025), and
+   there are **three** ways for a comparison to be vacuous: the effect
+   can be absent, the output can be **saturated** (both sides clamping
+   to the same boundary), or the two sides can be **structurally
+   identical** (a grid at its own node).
+5. **Grep before recording anything as owed.** `unverified-this-filing`
+   ≠ `owed`. ★ **And say WHY it is unverified** — a held directory and a
+   missing shell are different reasons with different fixes.
+6. **Verify against live source — and *live* means AT THE MOMENT OF
+   FILING.** In a session with other agents writing, **an early read is
+   a dispatch, not a source.**
+7. **Say which direction, which tag type, and now which PROFILE CLASS.**
+8. **Print the sensitivity ratio**, and say what floor it clears and
+   where the floor came from.
 9. **A gate figure is a claim.** **Exit codes compose; text matching
-   does not.** Today's gates were gated on `$?` — **and "121 passed" is
-   still not an inventory.**
-10. **A class is not raised by how good the number looks**, and **a
-    number is not a claim without the thing it is compared to.** Quote
-    **8,90×10⁻⁵ with its 1,08×10⁻⁴ floor**, always.
-11. **Coverage is part of every claim.** *"Pass 4 is DONE"* means two
-    profile pairs, one destination tag, one grid each, one machine, one
-    pin, and **no ground-truth row**.
-12. **Do not assert unmeasured facts about the environment** — ★ **and
-    check whether you can measure them before assuming you cannot.**
-    Eleven filings asserted this agent had no shell.
+   does not.** *"121 passed"* is still not an inventory.
+10. **A class is not raised by how good the number looks.** ★ **A
+    ten-decimal agreement with another implementation is
+    `impl_crosscheck`** — it is what a faithful transcription produces
+    **and** what two identical mistakes produce.
+11. **Coverage is part of every claim.** *"The estimators are
+    discriminated"* means **two destination classes, one intent, one
+    pin, one platform, and a reimplementation rather than a run.**
+12. **Do not assert unmeasured facts about the environment** — **and
+    check whether you can measure them.** ★ **Shell availability is a
+    property of a SESSION, not of an agent**: the previous filing had
+    one, this one did not. **Ask; never inherit.**
 
 ---
 
 ## The agents
 
-- **`icc-engineer`** — lead. Be this agent if orchestrating. **Owes all
-  of item 0**, starting with **`dechk.obj` in the public repository**.
-- **`icc-spec-librarian`** — the standards corpus. **Owes** IEC
-  61966-2-1 (eighth filing), the tier question, the forcing-policy
-  question, the narrowed clamp question, five corpus rows, A31, and the
-  ITU terms.
+- **`icc-engineer`** — lead. Be this agent if orchestrating. **Owes**
+  commit hygiene and `dechk.obj`, the runner and CI evidence, and the
+  4.2.5.4 code change **if** the specification names lcms2's behaviour.
+- **`icc-spec-librarian`** — the standards corpus. **Owes ISO/CD 18619
+  4.2.5.4 first** (it can make shipped code wrong), then IEC 61966-2-1
+  (ninth filing), the tier question, the forcing-policy question, the
+  narrowed clamp question, six corpus rows, A31, and the ITU terms.
 - **`icc-conformance`** — the oracle, the fixtures, the tolerance
-  budget. **Owes** the spot-path cross-check, the two missing fixtures,
-  a ΔE for NC-108, `pass5.rs`'s tests, `TOLERANCES.md` §3.2/§3.7, and
-  **the filing of its own in-flight Pass 5c work**.
+  budget. **Owes** the spot-path cross-check, the A41 constant's error,
+  the PCSLAB gray fixture, `pass5.rs`'s tests, `TOLERANCES.md`
+  §3.2/§3.7, and **a runner outcome for the rows filed today**.
 - **`icc-librarian`** — ROADMAP, decision log, session log,
-  `NUMERIC_CLAIMS.md`. ★ **Has a shell after all** — read-only git was
-  used this filing and labelled at every claim. **Owes** the DL-014
-  citation audit, which now underwrites a published claim **and** has a
-  live defect to sweep.
+  `NUMERIC_CLAIMS.md`. **No shell this session** *(the previous session
+  had one — do not inherit either state)*. **Owes** the DL-014 citation
+  audit.
 
 Dispatch them freely, and in parallel on disjoint file sets; no
 permission is needed to dispatch an agent to read, analyse or draft.

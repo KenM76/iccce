@@ -112,6 +112,32 @@ looking like evidence.**
    dispatch and **not** in the lesson file — filed as the dispatch's,
    uncorroborated.
 
+9. **★★ "LIVE SOURCE" MEANS *AT THE MOMENT OF FILING* (estimator
+   filing, 2026-08-12).** A draft of `NUMERIC_CLAIMS.md` §7.11 accused
+   the previous filing of claiming it had rewritten `NEXT_SESSION.md`
+   when it had not. **The accusation was false.** It rested on a read of
+   that file taken **at the start of the same session**, showing the
+   *previous* edition; a re-read minutes before filing showed the
+   thirteenth-filing edition, exactly as claimed. **Another librarian's
+   filing was still landing while this session was open** — `ROADMAP.md`
+   grew its Pass 4 header block mid-session, and the edit tool twice
+   reported a file changed on disk between reads. **In a concurrent
+   session an early read is a DISPATCH, not a source**: it carries
+   exactly the authority of somebody else's report. The near-miss was
+   worse than an ordinary error because it would have put a **false
+   statement about another agent's honesty** into an append-only
+   document. **Cheapest guard: re-read the file a sentence is about, in
+   the minute before writing the sentence.**
+
+10. **★ Shell availability is a property of the SESSION, not of the
+    agent (same filing).** The Pass 4c filing found a working `Bash`
+    tool and corrected *"the librarian has no shell"* from a fact to a
+    reading — **and the very next session had no `Bash` tool at all.**
+    So neither *"it has no shell"* nor *"it has one"* may be inherited:
+    **check the tool grant, per session**, and label items
+    `unverified-this-filing` **with the reason** — a held directory and a
+    missing shell are different reasons with different fixes.
+
 **How to apply.**
 
 - **Re-verify every carried-forward prediction on the Pass that was

@@ -2859,3 +2859,289 @@ graded row is ever proposed for NC-053 (it needs a **derivation**, and
 this entry says where one would have to come from); or **A4c** acquires
 an authority, which would be a different entry and not an extension of
 this one.
+
+---
+
+### DL-027 — ★★★ **an implementation's behaviour can be keyed by the DESTINATION PROFILE'S CLASS, not only by the direction and the path: lcms2 has TWO black-point estimators at media-relative, and two header fields decide which one runs.** Filed with the pre-registered prediction that resolved in OPPOSITE directions on the two arms of one experiment
+
+**Date:** 2026-08-12 (the estimator-discrimination filing, the
+fourteenth) · **Found by:** `icc-conformance`, by **reimplementing**
+`cmsDetectDestinationBlackPoint` from `src/cmssamp.c` at pin `21c582a`
+rather than recovering its output · **Filed by:** `icc-librarian` ·
+**Generalises** **DL-021** · **Relates to** **DL-012** (a predicted
+divergence measured absent), **DL-023** (state what the two sides were
+free to disagree about, before the run), **DL-025** (a control is only
+as good as its fixture), **DL-028** (its sibling, from the same run), and
+`NUMERIC_CLAIMS.md` **§3.17**, **§3.18**, **NC-129 … NC-144**, **NA-009**
+
+#### The mechanism, because the rule is worthless without it
+
+`cmsDetectBlackPoint` **branches before** it reaches the darkest-colorant
+code every previous reading of this project had stopped at
+(`cmssamp.c` **L370–374**):
+
+```c
+// If output profile, discount ink-limiting and that's all
+if (Intent == INTENT_RELATIVE_COLORIMETRIC &&
+    (cmsGetDeviceClass(hProfile) == cmsSigOutputClass) &&
+    (isInkColorspace(cmsGetColorSpace(hProfile))))
+    return BlackPointUsingPerceptualBlack(BlackPoint, hProfile);
+...
+return BlackPointAsDarkerColorant(hProfile, Intent, BlackPoint, dwFlags);
+```
+
+| branch | taken when | the chroma |
+|---|---|---|
+| `BlackPointUsingPerceptualBlack` | output class **and** ink space | **forced to 0** (L174) |
+| `BlackPointAsDarkerColorant` | anything else | **retained** |
+
+`cmsDetectDestinationBlackPoint` then returns `Lab.a = InitialLab.a;
+Lab.b = InitialLab.b` (L590–591). **The branch IS the returned chroma.**
+
+#### ★★★ The decision
+
+> **A measured implementation behaviour is a fact about the DIRECTION,
+> the PATH, *and the CLASS OF PROFILE* it was measured on. Before a
+> behaviour is written down as a rule, read the CONDITION that selects
+> it — and if the condition names header fields, the rule needs a second
+> arm chosen to fail that condition.**
+
+**DL-021 said direction and path because that is what one day's evidence
+supported.** This entry adds the third axis **because the same shape of
+error recurred in the same oracle, one axis over**: iccce had a rule
+about lcms2's chroma handling that was **true of every profile within
+reach of this machine and false of a whole class of profiles nobody
+here owns.**
+
+#### ★★★ The evidence, and why one arm would have been worse than none
+
+`USWebCoatedSWOP.icc` is `prtr` + **CMYK** — an ink space, output class,
+**first branch**. The synthetic `v4-rgb-mab-chromatic-black.icc` is
+`prtr` + **RGB** — not an ink space, **second branch**.
+
+| | `swop` | `synthetic` |
+|---|---|---|
+| divergence | **8,166 8×10⁻² ΔE76 — 100 % `L*`** | **5,000 000 ΔE76 — 100 % chroma, `ΔL*` exactly 0** |
+| the corpus's pre-registered **mechanism** claim | **FALSIFIED** | **CONFIRMED** |
+| its **shape** claim | **FALSIFIED** | **CONFIRMED** |
+
+> **★★★ A session that ran only one arm would have filed a confident
+> wrong headline EITHER WAY** — *"lcms2 keeps its black point's chroma
+> and iccce neutralises it"* or *"the chroma prediction was imaginary"*
+> — **and both sentences would have been supported by a clean, tight,
+> honestly bounded measurement.**
+
+#### ★★ What it cost the record, stated because the cost is the argument
+
+Pass 5b had already discriminated the estimators **on the `swop` arm
+alone** and filed the result. Pass 5c **withdrew** its mechanism verdict,
+**superseded** its headline number (98,3 % of it was the apparatus —
+**DL-028**), and **settled** the one verdict Pass 5b had declined to
+call. **Three graded rows were INVERTED, and none was deleted**
+(`NUMERIC_CLAIMS.md` §3.17 carries them with their old verdicts visible)
+— the project's convention, fifth instance after DL-011 → DL-012,
+NA-006's *"tetrahedral"*, A4b's expiry, and the corpus's M2 correction.
+
+**★ The row that made the withdrawal findable was the one whose job was
+to doubt its own apparatus.** Pass 5b's error bar came back at **0,948**
+against a limit of 1,0, was reported as **marginal rather than green**,
+and said in terms that *which conclusions survive is decided row by
+row*. **They were, and the one that did not survive is exactly the one
+the bar was too weak to support.**
+
+#### What this entry does NOT decide
+
+- **It does not say lcms2 is wrong.** Two branches are a *design*, not a
+  defect, and rule 7's *"disagreement is a finding"* cuts both ways.
+- **★ It does not say iccce is right.** The `swop` divergence is
+  **entirely** the ISO/CD 18619 **4.2.5.4 short-circuit's return value**
+  — iccce returns `outRamp[first]`, lcms2 returns `InitialLab` — and
+  **which one the standard specifies is an open question dispatched to
+  `icc-spec-librarian`.** **If ISO names lcms2's, iccce is WRONG, not
+  divergent**, and the engineer changes the code.
+- **It does not extend past media-relative.** At perceptual and
+  saturation on a v4 profile **both implementations return the fixed A41
+  constant without reading the profile**, so **no fixture can
+  discriminate them there** — the instrument three documents asked for
+  **cannot exist**, and asking again would be asking for a null by
+  construction.
+- **It does not license reading two arms as "enough".** Two arms
+  falsified a one-arm rule. **A third class of destination — gray, or a
+  v2 `mAB ` RGB output profile — is untested**, and this entry is
+  exactly the kind of claim it warns about if it is read as complete.
+
+**Revisit if:** the lcms2 pin moves (**the branch predicate is source,
+and source moves**); a destination class outside {ink+output,
+RGB-output} is measured; or ISO/CD 18619's short-circuit question is
+answered — **which changes the attribution of the `swop` number without
+touching this entry's mechanism.**
+
+---
+
+### DL-028 — ★★ **a residual that is LARGE UNDER EVERY HYPOTHESIS is an apparatus fault, not a finding — so an experiment that can only be checked against one candidate cannot be checked at all.** Filed with the unit error it caught, which had been in three Passes' worth of oracle output
+
+**Date:** 2026-08-12 · **Caught by:** `icc-conformance`'s two-candidate
+validation arm, on the **first** run of the synthetic arm · **Filed by:**
+`icc-librarian` · **Relates to** **DL-018** (a gate needs a prediction
+pin), **DL-025** (a control is only as good as its fixture), **DL-027**
+(its sibling), and `NUMERIC_CLAIMS.md` **§3.18.4**, **NC-140**,
+**NC-141**
+
+#### The incident
+
+The synthetic arm's first run reported a device residual of
+**9,98×10⁻²**, where the truth is **8,9×10⁻⁶** — four orders out. **The
+finding it would have produced is a real sentence somebody would have
+believed:** *"the reimplementation does not reproduce lcms2 on this
+fixture."*
+
+**The cause was not colour at all.** `transicc` prints **ink** spaces as
+percentages (`0..100`) and **RGB and gray as `0..255`**. Every oracle
+output in **Passes 5, 5b and 5c** had been divided by **100**, because
+**until this section the only destination in reach was CMYK** — so the
+bug was correct code for every profile the project had ever measured,
+and became wrong the first time a fixture was RGB.
+
+#### ★★ The decision
+
+> **When a comparison's residual is large under EVERY candidate
+> explanation, suspect the apparatus before the subject. Therefore:
+> carry a SECOND, INDEPENDENT candidate wherever the point of the
+> experiment is to discriminate — and grade the RATIO, not the
+> magnitude.**
+
+**The ratio is what made it visible.** `NC-140` divides the residual
+under the lcms2 hypothesis by the residual under the ISO hypothesis. Its
+purpose is to ask *"can this experiment tell the two apart at all?"* —
+and a unit error inflates **both** numerators identically, so the
+**absolute** numbers looked merely disappointing while the **ratio**
+said the experiment had stopped discriminating.
+
+#### ★ Why "read the code again" would not have found it
+
+This is the third instance in this project of the same shape, and the
+list is worth keeping in one place:
+
+| | what looked fine | what caught it |
+|---|---|---|
+| **DL-016** | a self-consistency round trip that **passed** | exact values at the sample points |
+| **DL-025** | **1,1×10⁻¹⁵** — a magnificent number | a control asked what it would return if the effect were absent |
+| **DL-028** | a plausible *"they disagree"* headline | a **second candidate**, and a ratio between them |
+
+**In every one, re-reading the code was available and would not have
+worked**, because the code did exactly what it said. **The instrument
+was the only thing that could fail in a way a human notices.**
+
+#### ★ The corollary, from the same run, and it is the sharper half
+
+Pass 5b bounded its recovered black point with an error bar of
+**0,813 7** against an effect of **0,858 17** and called the section
+*marginal*. Pass 5c then showed the recovery **was** the effect:
+**98,3 %** of the published number was the apparatus.
+
+> **★★ When an error bar is the same ORDER as the effect, the honest
+> reading is not "the result is marginal". It is "the apparatus may be
+> measuring ITSELF."**
+
+**A margin of 5 % on an error-bar row is not a pass with a small
+margin — it is a row saying, correctly, that the experiment is not yet
+built.**
+
+#### What this entry does NOT say
+
+- **Not that Pass 5b should have been skipped.** *"A recovery that is
+  honestly bounded and then replaced is how the bound gets to be
+  checked; a recovery quoted as a measurement is how it does not."*
+- **Not that every comparison needs two candidates.** It binds
+  **discrimination** experiments — those whose question is *which of two
+  explanations is right* — not agreement checks with one arm and a
+  tolerance.
+- **Not that the unit bug is fully cleared.** It was **corrected where
+  Pass 5c reads `transicc`**; whether every other `transicc` call site in
+  `tools/difftest` scales correctly is **not something this filing
+  measured**, and every destination in those Passes being CMYK is a
+  reason it *probably* never mattered — **which is a hypothesis, not a
+  check.**
+
+**Revisit if:** a harness site is found dividing an RGB or gray
+`transicc` output by 100; or a discrimination row is proposed with a
+single candidate, at which point this entry is the objection.
+
+---
+
+### DL-029 — ★ **the API sealing split, stated as a rule rather than taken case by case: SEAL what decodes OUR file format; PUBLISH what implements SOMEONE ELSE'S published specification.** Filed with the four pre-publication soundness defects, one of which was rule 1 wearing a public field
+
+**Date:** 2026-08-12 · **Done by:** `icc-engineer` (commits **`fc4727b`**
+*"Pre-publication audit: four API soundness defects fixed, metadata,
+CI"* and **`95c04c1`** *"api: seal the byte readers, keep the ISO surface
+public — a stated split"*) · **Filed by:** `icc-librarian` **from the
+tree, not from the dispatch** · **Relates to** **DL-009** (crates.io
+intent), **DL-024** (publication authorises nothing else), and
+`NUMERIC_CLAIMS.md` **§2.11**
+
+#### The rule
+
+> **A published crate's surface is a promise. Seal the parts whose only
+> caller could be ourselves — the byte-level readers that decode ICC's
+> layout — and keep public the parts that are a faithful implementation
+> of a document a caller may legitimately want to drive: ISO/CD 18619's
+> black-point procedure, the colour metrics, the models.**
+
+**The distinction is stated at the site, in `bpc.rs`** *(verified —
+read)*: the ISO vertex-set/darkest-vertex/neutralise functions are
+*"PUBLIC DELIBERATELY, unlike the byte-level readers in
+`iccce-profile::num` which were sealed to `pub(crate)` in the same
+pre-publication pass … those decode **our** file format and a consumer
+has no business calling them, whereas this and its three siblings are a
+faithful implementation of a **published algorithm** … The clause
+citations in these doc comments are the point of exposing them."*
+
+#### ★ The four soundness defects — three carry an audit annotation, and the fourth is this entry's own subject
+
+**Stated as this librarian's reconstruction from the tree, not as the
+engineer's enumeration** *(all four verified — read; the dispatch says
+"four" and does not list them)*:
+
+1. **★ `MatrixTrc::matrix` was `pub`, beside a CACHED `matrix_inv`.** A
+   consumer assigning to the public field would leave `pcs_to_device`
+   using the **stale inverse** — **silently wrong colour with no
+   signal**. Now private with read-only `matrix()` / `matrix_inverse()`.
+   **This is CLAUDE.md rule 1 as an API shape**: *"making the pair
+   unmutatable together is cheaper than documenting the trap."*
+2. **`Clut`'s `grid`/`samples` were public**, while `Clut::new` is the
+   only place the invariants (every entry ≥ 2;
+   `samples.len() == Π grid × outputs`) are checked and `Clut::eval`
+   indexes on their truth. Now private with accessors.
+3. **`ChannelMismatch { expected: 3, actual: 3 }` was being returned as
+   a stand-in for unrelated failures** — *"a public error saying '3
+   channels expected, 3 given' is misinformation on the API surface."*
+   Now `ChainError::EvaluationFailed { stage }`.
+4. **`iccce-profile::num`'s big-endian readers and fixed-point types
+   sealed to `pub(crate)`** — the half of the split this entry names.
+
+#### ★★ Why an API entry belongs in a COLOUR project's decision log
+
+Because three of the four are the **same failure mode this project
+exists to catch, relocated**: a caller does something reasonable, the
+library keeps working, and **the colour is wrong with no signal**. A
+stale inverse produces a plausible image. A `Clut` with a mutated grid
+produces a plausible image. An error that names the wrong cause sends a
+maintainer to the wrong file. **None of them crashes.**
+
+#### What this entry does NOT decide
+
+- **It does not authorise a publish.** **DL-009** is intent, **DL-024**
+  is a git push, and **neither is a crates.io release.** Name
+  availability is **still unchecked by anyone**, and
+  `THIRD_PARTY_LICENSES.md` via `cargo-about` is **still owed**.
+- **It does not claim the surface is now stable.** No version policy has
+  been stated; sealing is not the same as committing to what remains.
+- **It does not claim the audit was exhaustive.** Four defects were
+  found and fixed; **nothing swept the whole public surface**, and this
+  filing did not either.
+
+**Revisit if:** a crates.io publish is authorised (the split becomes a
+compatibility promise); a consumer needs a sealed reader, which is
+evidence the split was drawn in the wrong place; or a fifth defect of
+the same shape is found, which would argue for a systematic sweep rather
+than another entry.

@@ -797,12 +797,14 @@ impl Fixture {
         let darkest = darkest_vertex(self.channels, |d| self.a2b1_lab(d));
         let darkest_lab = self.a2b1_lab(&darkest);
         let initial = neutralise_and_clip(darkest_lab.l);
-        let l = estimate_lut_destination_black(
+        // Full Lab since 2026-08-12 (4.2.5.4 carries InitialLab
+        // through, chroma included on non-CMYK destinations).
+        let black = estimate_lut_destination_black(
             initial,
             EstimationIntent::RelativeColorimetric,
             |lab| self.bt_rel(lab),
         );
-        (darkest, darkest_lab, initial, l)
+        (darkest, darkest_lab, initial, black.l)
     }
 }
 

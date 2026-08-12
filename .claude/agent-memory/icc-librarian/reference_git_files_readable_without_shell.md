@@ -46,4 +46,15 @@ documents** (`edcb60e` → `edce48b`), and **a commit count** (49 vs 45).
 It is the cheapest verification available to an agent with no shell, and
 it should be the first thing done whenever a dispatch names commits.
 
+**★ And check whether this session has a shell before assuming it does
+not.** On 2026-08-12 one librarian session found a working `Bash` tool
+(used read-only: `git log`, `git rev-list --count`, `git status --short`,
+`git ls-files`, `git merge-base`) after eleven filings had asserted there
+was none — and **the very next session had no `Bash` tool at all**.
+**Shell availability is a property of the session, not of the agent**:
+inherit neither state, look at the tool grant, and where a shell would
+have been needed, label the item **`unverified-this-filing` with the
+reason** rather than *owed*. These `.git/` file reads work in either
+case, which is why they remain the baseline.
+
 Related: [[iccce-pass-status]], [[iccce-verify-own-draft-too]].

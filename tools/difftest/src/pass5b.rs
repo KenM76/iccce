@@ -462,12 +462,19 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
     // 4.2.5.2.3's round trip: Lab -> device (user's intent) -> Lab (ALWAYS
     // relative). Media-relative here, so both legs use the same pair of tables.
     let bt = |l: Lab| -> Lab { dev_to_lab(&lab_to_dev(l)) };
-    let iso_l = estimate_lut_destination_black(initial_lab, EstimationIntent::RelativeColorimetric, bt);
-    let iso_black = Lab {
-        l: iso_l,
-        a: 0.0,
-        b: 0.0,
-    };
+    // NOTE 2026-08-12: estimate_lut_destination_black now returns a
+    // full Lab, because ISO/CD 18619 4.2.5.4's straight branch carries
+    // InitialLab through UNCHANGED and 4.2.5.2.1 zeroes chroma only for
+    // CMYK — so a Gray/RGB LUT destination legitimately has a chromatic
+    // black. The harness takes the value as returned rather than
+    // re-neutralising it, which would hide exactly the case pass5c
+    // exists to measure.
+    let iso_black = estimate_lut_destination_black(
+        initial_lab,
+        EstimationIntent::RelativeColorimetric,
+        bt,
+    );
+    let iso_l = iso_black.l;
     // ★ An ORACLE-FREE sensitivity for the L* term. ISO 4.2.3 neutralises the
     // InitialLab before 4.2.5 ramps it; lcms2 does not neutralise and holds the
     // chroma constant across the ramp. The two differences both act through the
@@ -484,7 +491,8 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
         },
         EstimationIntent::RelativeColorimetric,
         bt,
-    );
+    )
+    .l;
 
     // --- the apparatus: how well does A2B1(B2A1(.)) round trip? -------------
     // ★ Measured over the IN-GAMUT neutral shadow ABOVE the estimated black,
