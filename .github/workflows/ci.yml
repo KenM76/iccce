@@ -14,6 +14,8 @@ on:
   push:
     branches: [master, main]
   pull_request:
+  # The `oracle` job below is manual-only. See its comment for why.
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -68,3 +70,141 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
         run: cargo doc --workspace --no-deps
+
+  # ===================================================================
+  # tools/ — 71 tests that gated NOTHING until 2026-08-12
+  # ===================================================================
+  #
+  # ★ WHY THIS JOB HAS TO EXIST, and why its absence was structural
+  # rather than an oversight.
+  #
+  # `tools/difftest` and `tools/gen-profiles` are deliberately NOT
+  # workspace members. That is a load-bearing decision (see the root
+  # Cargo.toml and tools/difftest/README.md §1): keeping the harness
+  # outside the workspace is what guarantees a shipping crate can never
+  # acquire an lcms2 dependency, even accidentally, and that `cargo
+  # tree` on a published crate cannot reach the oracle.
+  #
+  # The cost of that isolation is that `cargo test --workspace` —
+  # everything the `test` job above runs — CANNOT REACH THEM. So the
+  # same boundary that protects the shipping crates also hid, from CI:
+  #
+  #   * tools/difftest      43 tests — the differential harness itself,
+  #                         including the candidate-separation
+  #                         classifier that decides whether a
+  #                         conformance row has any power at all
+  #   * tools/gen-profiles  28 tests — the generator that PRODUCES the
+  #                         synthetic fixture corpus every other test
+  #                         in this repository is measured against
+  #
+  # An untested fixture generator is the worst of the two: a bug there
+  # does not fail, it silently changes what "correct" means for the
+  # whole suite.
+  #
+  # ★ WHY THIS JOB NEEDS NO lcms2. The oracle is invoked as a
+  # SUBPROCESS (`transicc`), never linked — there is no build.rs, no
+  # `links` key, and no lcms2 crate. Verified before writing this job:
+  # with `ICCCE_TRANSICC` pointed at a non-existent path, `cargo test`
+  # in tools/difftest is 43 passed / 0 failed, exit 0. The tests that
+  # NEED the oracle live in the runner binary, which is the `oracle`
+  # job below.
+  #
+  # Both trees were also confirmed to build clean under this workflow's
+  # global `RUSTFLAGS: -D warnings` before the job was added, so it does
+  # not go red on pre-existing lint debt.
+  harness:
+    name: tools/ build+test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build + test the differential harness
+        working-directory: tools/difftest
+        run: cargo test --all-targets
+      - name: Build + test the fixture generator
+        working-directory: tools/gen-profiles
+        run: cargo test --all-targets
+      # The corpus is generated, committed, and must stay byte-identical:
+      # a fixture that drifts silently re-bases every measurement taken
+      # against it. `verify` regenerates and compares without writing.
+      - name: Fixture corpus is byte-identical to its recipes
+        working-directory: tools/gen-profiles
+        run: cargo run --release -- verify ../../fixtures/synthetic
+
+  # ===================================================================
+  # oracle — the full 142-row conformance suite. MANUAL ONLY, for now.
+  # ===================================================================
+  #
+  # ★ WHY `workflow_dispatch` AND NOT `push`.
+  #
+  # `tools/difftest/build-lcms2.sh` says of itself: "NOT YET EXERCISED
+  # … the development machine is Windows-only and has no POSIX C
+  # toolchain. It is here so CI has something to call, and it is stated
+  # as unexercised so nobody mistakes 'a script exists' for 'the Linux
+  # build works'. Whoever first runs Linux CI should replace this
+  # paragraph with the result."
+  #
+  # This job is that call. Its FIRST RUN IS AN EXPERIMENT, and an
+  # experiment wired to every push turns CI red for reasons unrelated to
+  # the commit that triggered it — which trains everyone to ignore CI,
+  # costing more than the job is worth. Manual dispatch makes the first
+  # run a deliberate act by someone who will read the result.
+  #
+  # PROMOTE IT TO `push` once it has gone green at least once, and
+  # update build-lcms2.sh's header paragraph with the outcome — that is
+  # an instruction the script asked for, not a suggestion.
+  #
+  # ★ WHY THE GATE IS THE BARE EXIT CODE AND NOTHING IS GREPPED.
+  # The runner's contract (Report::exit_code) is:
+  #     0  passed          1  a check FAILED
+  #     2  harness/oracle ERROR    3  NOTHING RAN
+  # `3` is the one that matters here: if lcms2 is missing every check
+  # SKIPS, and a suite that skipped everything must not be able to
+  # report success. Because that distinction is already in the exit
+  # code, CI needs no output parsing — which is the point. This project
+  # has twice shipped a false "all green" from piping test output
+  # through `grep`/`tail` (grep exits 0 on a FAILED match; tail masks
+  # the real status). The exit code is the evidence; the log is for
+  # humans.
+  #
+  # Category (c) rows — those needing a Windows system profile — will
+  # SKIP here and that is correct and expected. `skip` does not affect
+  # the exit code.
+  oracle:
+    name: conformance suite vs pinned lcms2 (manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # ubuntu-latest ships cmake and build-essential; installed
+      # explicitly anyway so a runner-image change fails HERE, with a
+      # clear message, rather than inside build-lcms2.sh's toolchain
+      # probe.
+      - name: C toolchain for lcms2
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+      # Exit 4 from this script means the tag moved and HEAD is not the
+      # pinned commit. That is a hard stop by design: results attributed
+      # to a version that did not produce them are worse than no results.
+      - name: Fetch lcms2 at the pin
+        run: sh tools/difftest/fetch-lcms2.sh
+      - name: Build lcms2 (first ever exercise of this script)
+        run: sh tools/difftest/build-lcms2.sh
+      # The harness runs the SHIPPED binary as a subprocess, so it must
+      # exist and must be the release build the records will name.
+      - name: Build the iccce CLI (release)
+        run: cargo build --release -p iccce-cli
+      - name: Run the conformance suite
+        working-directory: tools/difftest
+        run: cargo run --release
+      # Emitted for the record so a run's numbers are readable in the
+      # log. Deliberately AFTER the gate above, and deliberately not
+      # part of it.
+      - name: Re-emit the summary and separation lines
+        if: always()
+        working-directory: tools/difftest
+        run: cargo run --release 2>/dev/null | grep -E '^(summary|separation)' || true
