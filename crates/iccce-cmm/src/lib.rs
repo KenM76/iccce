@@ -46,6 +46,7 @@
 
 pub mod bpc;
 pub mod clut;
+pub mod compiled;
 pub mod curve;
 pub mod gray_trc;
 pub mod lut_ab;

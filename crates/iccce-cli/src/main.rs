@@ -42,6 +42,14 @@ USAGE:
                             count); writes one converted set per line,
                             6 decimals.
 
+  iccce bench --src <profile> --dst <profile> [--grid N] [--pixels N]
+                            Time a page-sized conversion through the
+                            compiled path. Defaults to a 300 DPI A4
+                            raster (2481x3507 = 8,700,267 px) and a
+                            17-point grid. Prints build time, convert
+                            time, throughput and the compiled path's
+                            off-node error against the reference path.
+
 Profiles are read as raw bytes; any file (or stream dump) containing an
 ICC profile is accepted. Malformations are reported, never repaired.
 ";
@@ -58,6 +66,7 @@ fn main() -> ExitCode {
             cmd_inspect(path)
         }
         Some("transform") => cmd_transform(&args[1..]),
+        Some("bench") => cmd_bench(&args[1..]),
         Some(other) => {
             eprintln!("iccce: unknown subcommand `{other}`\n\n{USAGE}");
             ExitCode::from(2)
@@ -317,6 +326,187 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             }
         }
     }
+    ExitCode::SUCCESS
+}
+
+/// `iccce bench` — Pass 6's done-when, on the shipped surface.
+///
+/// Reports, one `key: value` per line (diffable, like `inspect`):
+/// grid build time, per-pixel conversion time over a page-sized
+/// raster, throughput, and the compiled path's **off-node** error
+/// against the reference path.
+///
+/// ★ The error line is deliberately measured OFF-NODE and labelled
+/// `self-consistency`: at a grid node the two arms are identical by
+/// construction (the node IS a reference evaluation), so an on-node
+/// number would be a spectacular zero that measured nothing —
+/// exactly the DL-023 trap the unit tests document.
+fn cmd_bench(args: &[String]) -> ExitCode {
+    let mut src_path: Option<&String> = None;
+    let mut dst_path: Option<&String> = None;
+    let mut grid = 17usize;
+    // 300 DPI A4: 8.268 x 11.693 in → 2481 x 3507 px.
+    let mut pixels = 2481usize * 3507;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--src" if i + 1 < args.len() => {
+                src_path = Some(&args[i + 1]);
+                i += 2;
+            }
+            "--dst" if i + 1 < args.len() => {
+                dst_path = Some(&args[i + 1]);
+                i += 2;
+            }
+            "--grid" if i + 1 < args.len() => {
+                let Ok(n) = args[i + 1].parse::<usize>() else {
+                    eprintln!("iccce bench: --grid needs an integer >= 2");
+                    return ExitCode::from(2);
+                };
+                grid = n;
+                i += 2;
+            }
+            "--pixels" if i + 1 < args.len() => {
+                let Ok(n) = args[i + 1].parse::<usize>() else {
+                    eprintln!("iccce bench: --pixels needs an integer");
+                    return ExitCode::from(2);
+                };
+                pixels = n;
+                i += 2;
+            }
+            other => {
+                eprintln!("iccce bench: unknown argument `{other}`\n\n{USAGE}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let (Some(src_path), Some(dst_path)) = (src_path, dst_path) else {
+        eprintln!("iccce bench: --src and --dst are required\n\n{USAGE}");
+        return ExitCode::from(2);
+    };
+    if grid < 2 {
+        eprintln!("iccce bench: --grid must be >= 2");
+        return ExitCode::from(2);
+    }
+
+    let load = |p: &String| -> Result<iccce_profile::Profile, String> {
+        let bytes = std::fs::read(p).map_err(|e| format!("cannot read `{p}`: {e}"))?;
+        iccce_profile::Profile::parse(&bytes).map_err(|e| format!("`{p}` refused: {e}"))
+    };
+    let (src, dst) = match (load(src_path), load(dst_path)) {
+        (Ok(s), Ok(d)) => (s, d),
+        (Err(e), _) | (_, Err(e)) => {
+            eprintln!("iccce bench: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let chain = match iccce_cmm::transform::Chain::new(
+        &src,
+        &dst,
+        iccce_cmm::matrix_trc::Intent::MediaRelative,
+    ) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("iccce bench: cannot build transform: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let in_ch = chain.input_channels();
+    let out_ch = chain.output_channels();
+
+    let t0 = std::time::Instant::now();
+    let compiled = match iccce_cmm::compiled::CompiledTransform::new(&chain, grid) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("iccce bench: cannot compile: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let build = t0.elapsed();
+
+    // A synthetic raster with structure (not one repeated pixel,
+    // which would be unrepresentatively cache-friendly).
+    let mut raster = vec![0.0f64; pixels * in_ch];
+    for p in 0..pixels {
+        for c in 0..in_ch {
+            #[allow(clippy::cast_precision_loss)]
+            let v = ((p * 7 + c * 131) % 1024) as f64 / 1023.0;
+            raster[p * in_ch + c] = v;
+        }
+    }
+    let mut out = vec![0.0f64; pixels * out_ch];
+
+    let t1 = std::time::Instant::now();
+    if !compiled.convert_buffer(&raster, &mut out) {
+        eprintln!("iccce bench: buffer shape mismatch");
+        return ExitCode::from(1);
+    }
+    let convert = t1.elapsed();
+
+    // The reference path over a bounded prefix of the SAME raster,
+    // timed in-process so the comparison is transform-vs-transform
+    // and not dominated by stdio (a first attempt measured the CLI's
+    // text parsing and reported ~49k px/s, which said nothing about
+    // either path).
+    let ref_pixels = pixels.min(100_000);
+    let t2 = std::time::Instant::now();
+    let mut sink = 0.0f64;
+    for p in 0..ref_pixels {
+        let px = &raster[p * in_ch..(p + 1) * in_ch];
+        if let Ok(r) = chain.convert(px) {
+            sink += r[0]; // keep the loop from being optimised away
+        }
+    }
+    let ref_time = t2.elapsed();
+    std::hint::black_box(sink);
+
+    // Off-node error against the reference path, on a sample of the
+    // raster (the reference path is far too slow for every pixel —
+    // which is the entire point of compiling).
+    let mut worst = 0.0f64;
+    let mut checked = 0usize;
+    let step = (pixels / 512).max(1);
+    let mut p = 0;
+    while p < pixels {
+        let px = &raster[p * in_ch..(p + 1) * in_ch];
+        if let Ok(reference) = chain.convert(px) {
+            for c in 0..out_ch {
+                worst = worst.max((out[p * out_ch + c] - reference[c]).abs());
+            }
+            checked += 1;
+        }
+        p += step;
+    }
+
+    #[allow(clippy::cast_precision_loss)]
+    let mpix_per_s = pixels as f64 / convert.as_secs_f64() / 1.0e6;
+    println!("src: {src_path}");
+    println!("dst: {dst_path}");
+    println!("channels: {in_ch} -> {out_ch}");
+    println!("grid.points_per_axis: {grid}");
+    // in_ch is a profile channel count (≤ 15): cannot truncate.
+    #[allow(clippy::cast_possible_truncation)]
+    let dims = in_ch as u32;
+    println!("grid.nodes: {}", grid.saturating_pow(dims));
+    println!("build.seconds: {:.6}", build.as_secs_f64());
+    println!("raster.pixels: {pixels}");
+    println!("convert.seconds: {:.6}", convert.as_secs_f64());
+    println!("throughput.megapixels_per_second: {mpix_per_s:.3}");
+    #[allow(clippy::cast_precision_loss)]
+    let ref_mpix = ref_pixels as f64 / ref_time.as_secs_f64() / 1.0e6;
+    println!("reference.pixels: {ref_pixels}");
+    println!("reference.seconds: {:.6}", ref_time.as_secs_f64());
+    println!("reference.megapixels_per_second: {ref_mpix:.3}");
+    println!(
+        "speedup.compiled_over_reference: {:.2}",
+        mpix_per_s / ref_mpix
+    );
+    println!("error.samples: {checked}");
+    println!("error.max_device_offnode: {worst:.9}");
+    println!(
+        "error.class: self-consistency (compiled vs reference, same code; \
+         worthless as correctness evidence — NUMERIC_CLAIMS.md §1)"
+    );
     ExitCode::SUCCESS
 }
 
