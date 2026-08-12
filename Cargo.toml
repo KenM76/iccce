@@ -1,6 +1,6 @@
 # iccce — workspace manifest
 #
-# Four crates, per docs/ARCHITECTURE.md §1:
+# Five crates, per docs/ARCHITECTURE.md §1:
 #
 #   iccce-color    CIE colorimetry. INVARIANT: depends on nothing.
 #   iccce-profile  ICC profile parsing. INVARIANT: no colour maths.
@@ -8,6 +8,18 @@
 #                  every approximation lives.
 #   iccce-cli      the scriptable shell that makes the library verifiable
 #                  without a GUI.
+#   iccce-measure  CGATS/IT8.7 measurement files. INVARIANT: no ICC AND
+#                  no colour maths — it reads numbers off a target, it
+#                  does not interpret them. Pass 10 pre-work, added
+#                  2026-08-12: the half of a profiler that needs no
+#                  measurement hardware, buildable while the half that
+#                  does waits.
+#
+# The invariants above are the architecture. Each is a statement about
+# what a crate must NOT reach for, and each is checked by the fact that
+# the crate's [dependencies] section stays empty — three of the five
+# depend on nothing at all. A dependency added to iccce-color or
+# iccce-measure is an architectural change, not a convenience.
 #
 # tools/difftest (the lcms2 differential oracle) is deliberately NOT a
 # workspace member: lcms2 is an oracle, never a dependency, and keeping
