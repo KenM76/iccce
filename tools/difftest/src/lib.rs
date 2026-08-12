@@ -115,6 +115,7 @@ pub mod pass3;
 pub mod pass4;
 pub mod pass4b;
 pub mod pass5;
+pub mod pass5b;
 pub mod pass6;
 
 // ===========================================================================

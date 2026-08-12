@@ -275,6 +275,14 @@ mod tests {
         let fine = max_err(9); // half the spacing
         assert!(coarse > 0.0, "the instrument must see SOMETHING off-node");
         let ratio = coarse / fine;
+        // PRINTED ALWAYS, not only on failure: icc-librarian's audit
+        // noted that both FAILING ratios (0.94, 1.44) were on record
+        // while the passing one was not — so nobody could tell whether
+        // the control sits comfortably inside its band or at the edge.
+        // `cargo test -- --nocapture` now records it.
+        eprintln!(
+            "sensitivity control: coarse(5)={coarse:.9} fine(9)={fine:.9} ratio={ratio:.4} (band 2.0-8.0)"
+        );
         // h² predicts 4×; accept 2×–8× — wide enough for a real TRC's
         // varying curvature, narrow enough to fail if the compiled
         // path were secretly the reference path (ratio → 1) or if the

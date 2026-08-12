@@ -1,0 +1,83 @@
+iccce bench — raw output, recorded 2026-08-12
+=============================================
+
+Recorded because `icc-librarian`'s Pass 6 filing noted that the
+throughput figures were being quoted (1.20 Mpix/s, 14.4x) while the
+raw output they came from was on record nowhere, so the derived ratio
+could not be checked. It can now.
+
+★ READ THE VARIANCE NOTE BEFORE QUOTING ANY NUMBER HERE.
+
+Machine: Windows 11 Pro 10.0.26200, MSVC toolchain, release build.
+Command:
+  iccce bench --src USWebCoatedSWOP.icc --dst "sRGB Color Space Profile.icm"
+
+
+VARIANCE — why a single figure must not be quoted as "the" throughput
+--------------------------------------------------------------------
+Three measurements of the same binary on the same machine within one
+hour, differing only in system load (this machine was running several
+background agents during the first two):
+
+  full A4 raster, loaded machine   : 1.203 Mpix/s, speedup 14.4x
+  full A4 raster, loaded machine   : 0.820 Mpix/s, speedup 12.18x
+  2 Mpix raster, quiet machine (x3): 1.477 / 1.466 / 1.475 Mpix/s,
+                                     speedup 16.00 / 16.01 / 16.19x
+
+That is a 1.8x spread on throughput between the loaded and quiet
+cases. The quiet-machine runs agree with each other to 0.7%, so the
+instrument is stable; the machine is not.
+
+Consequences, stated rather than smoothed:
+
+  - Quote a RANGE and the load condition, never a point figure.
+  - The SPEEDUP is the more transportable number (both arms suffer the
+    same load): 12.2x-16.2x observed, and it is the ratio that says
+    what compiling bought.
+  - This is exactly why `NUMERIC_CLAIMS.md` gained the `machine-timing`
+    evidence class: a throughput figure is not weak correctness
+    evidence, it is not correctness evidence at all, and it does not
+    survive the machine it was taken on.
+  - The ERROR figure below is machine-independent (pure arithmetic)
+    and does not carry this caveat.
+
+
+Full output, loaded machine, full 300 DPI A4 raster
+---------------------------------------------------
+src: C:\Windows\System32\spool\drivers\color\USWebCoatedSWOP.icc
+dst: C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm
+channels: 4 -> 3
+grid.points_per_axis: 17
+grid.nodes: 83521
+build.seconds: 1.037909
+raster.pixels: 8700867
+convert.seconds: 6.726712
+throughput.megapixels_per_second: 1.293
+reference.pixels: 100000
+reference.seconds: 1.193003
+reference.megapixels_per_second: 0.084
+speedup.compiled_over_reference: 14.36
+error.samples: 513
+error.max_device_offnode: 0.003588962
+error.class: self-consistency (compiled vs reference, same code;
+             worthless as correctness evidence — NUMERIC_CLAIMS.md §1)
+
+
+Sensitivity control (DL-018), passing value
+-------------------------------------------
+From `cargo test -p iccce-cmm error_scales -- --nocapture`, sRGB ->
+AdobeRGB, smooth-region probes:
+
+  coarse(5)=0.006414671  fine(9)=0.002479679  ratio=2.5869  (band 2.0-8.0)
+
+★ The ratio sits at 2.59 against an h^2 prediction of 4.0 — inside the
+band, but nearer its floor than its centre. The honest reading: the
+composite is not perfectly smooth even away from the sRGB breakpoint,
+because both TRCs are 1024-entry SAMPLED tables evaluated by linear
+interpolation, so the "smooth" region is itself piecewise-linear with
+a kink at every table entry. A pure-h^2 fixture would need analytic
+curves on both sides.
+
+The control still discriminates (a null instrument gives ~1.0, and the
+identity-chain fixture that failed first gave 0.94), which is what it
+is for — but nobody should read 2.59 as confirming the h^2 law.

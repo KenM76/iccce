@@ -2318,3 +2318,292 @@ committed** — instructed not to, and committing is the engineer's act.
   filing left them, and Pass 5's saturation gap is a **different** item.
 - **That anything ran on Linux, or that any CI run has ever been
   observed.** Still nothing, by anyone, ever.
+
+---
+
+## 2026-08-12 — ★★ THE PROJECT IS PUBLIC, Pass 6 and Pass 7 CLOSE, and the librarian's oldest constraint loosens: this project's own repository became a readable source, and the first thing it did was catch a wrong hash carried in three documents
+
+**The first entry of a SECOND calendar day** — the previous eleven are
+all 2026-08-11. Filed by `icc-librarian` against the working tree, the
+plain-text log and ref files under `.git/`, and the live corpus.
+
+> **★ The dispatch that commissioned this filing was headed
+> 2026-08-11, and it is 2026-08-12.** Three independent readings:
+> `.git/logs/HEAD` timestamps the first of the four commits at epoch
+> `1786527689 -0400` = **2026-08-12 05:41:29 −04:00**, and the other
+> three between 06:20 and 06:55 the same morning *(verified — read)*;
+> the environment reports 2026-08-12; the corpus's ambiguity register
+> carries `revised: 2026-08-12` *(verified — read)*. **Corrected, not
+> followed.** It is not cosmetic: eleven filings assert *"the same
+> calendar day"*, and a twelfth would have made that assertion false.
+
+**Commits, and for the first time in this project's history the hashes
+are corroborated by something in the repository rather than reported
+alone:** **`bb5d6b8`** (the A4c disclosure), **`0378f76`** (ISO/CD
+18619:2013 estimation), **`3502cb7`** (Pass 6), **`f6203b8`** (Pass 7
+wiring). **All four appear in `.git/logs/HEAD` with these subject
+lines** *(verified — read end to end)*. **No git command was run** — a
+reflog is a text file, and reading one is not running `git`. **The
+contents of all four commits remain unverified.** Verified in the
+working tree: `compiled.rs`, `cmd_bench`, `resolve_to_device`,
+`convert_pcs_to_device`, `pcs_to_destination` and `Chain::convert`'s
+call to it, `white_point_note`, and `bpc.rs`'s ISO/CD 18619 header.
+
+### ★★ Publication — the event, and the line between evidence and report
+
+`master` was pushed to **`https://github.com/KenM76/iccce`** on the
+operator's explicit go-ahead *(the go-ahead itself is **reported**; no
+agent here holds its wording)*. Filed as **DL-024**.
+
+**What was read, not reported:**
+
+| File | What it says |
+|---|---|
+| `.git/config` | `origin` = `https://github.com/KenM76/iccce.git` |
+| `.git/logs/refs/remotes/origin/master` | **Two lines, both `update by push`.** `0000000…` → **`3502cb7`** at **06:51:17 −04:00** — the all-zero left side means **the remote branch did not exist before it**, so *this line is the publication event* and it carried the entire history through Pass 6. Then → **`f6203b8`** at **06:54:50 −04:00**, three seconds after Pass 7 was committed |
+| `.git/refs/heads/master` · `.git/refs/remotes/origin/master` | Both **`f6203b8d…`** — nothing local is unpushed |
+
+**★ What this does NOT establish: that the repository is PUBLIC.**
+Visibility is a server-side setting; **a push to a private repository
+produces an identical reflog**, and no file in this tree records it.
+**Public is the operator's report**, and is carried at that strength
+throughout this filing.
+
+**The three pre-publication checks, and they are not equal:**
+
+1. **No vendor profiles tracked — ★ VERIFIED, and more strongly than
+   claimed.** Every `.icc`/`.icm` in the tree was enumerated: **38 in
+   `fixtures/synthetic/`**, all generator output; the rest under
+   `tools/difftest/vendor/` (ignored by name) and `tools/difftest/out/`
+   (caught by `.gitignore`'s `*.icc`, negated only for `fixtures/**`).
+   **`fixtures/reference/PROVENANCE.md`'s table reads "(none yet)"** —
+   no third-party profile was ever admitted, so there was nothing to
+   miss *(verified — globbed and read)*.
+2. **The corpus is not in the repo — VERIFIED as to the file tree.**
+   `ICC_Spec` is outside it, which is what LEGAL §2.1 requires.
+   **Not checked: whether any corpus file was ever committed and later
+   removed** — history keeps deletions, and that is a `git log`-shaped
+   question.
+3. **Spec quotation is short-with-citation per LEGAL §2.1 — REPORTED,
+   and this is the one not to round up.** §2.1's rule was verified as
+   *text*. **That the whole tree complies has never been audited**, by
+   anyone. **DL-014's citation audit is that audit**, it has been owed
+   since Pass 3, and it now underwrites a **published** compliance
+   claim.
+
+### ★★ The first thing the new evidence caught: a wrong commit hash, carried three times
+
+The commit *"untrack tools/gen-profiles"* is **`edce48b`**
+*(`.git/logs/HEAD` line 25 — verified, read)*. **`ROADMAP.md` (×2), this
+log (×3, at lines 1406, 1590 and 2052) and `NEXT_SESSION.md` all carry
+`edcb60e`, which matches no prefix in the reflog.**
+**`NUMERIC_CLAIMS.md` §2.6 has it right**, because it arrived by a
+different route — a transcription of `gen-profiles/README.md` §6.
+
+**This entry is the correction; the earlier entries stand unedited**, as
+this log's own header requires. `NEXT_SESSION.md` is rewritten and
+carries the right hash. **The lesson is the project's own, in a new
+place:** a hash typed from a screen is a claim, **it looks exactly like
+a right one**, and it survived three documents because nothing could
+check it. Something can now.
+
+**And a discrepancy left open, deliberately.** The dispatch reports **49
+commits**; `.git/logs/HEAD` holds **45 lines** — one `commit (initial)`
+and 44 `commit` lines, with **no `reset`, `rebase`, `amend`, `checkout`
+or `merge` entry anywhere**. **Neither number is asserted here.**
+Nobody has run `git log`; one command settles it.
+
+### ★★ Pass 6 — the done-when is MET, and the Pass's real work was making the second number mean anything
+
+- **Clause 1 — a stated time.** **8 700 867 px** (2481 × 3507, A4 at 300
+  DPI) in **7.23 s** = **1.20 Mpix/s**; grid build (83 521 chain
+  evaluations) **1.04 s**; reference path **0.084 Mpix/s** in-process;
+  **speedup 14.4×**. **NC-105 … NC-107**, in a new evidence class,
+  **`machine-timing`** — which is not weak correctness evidence, it is
+  *not correctness evidence*, and **lcms2 was never timed**, so the
+  ratio is iccce against **iccce**.
+- **Clause 2 — a stated error.** **0.003589 device units**, maximum
+  **off-node**, on **SWOP `A2B1` (`mft2`, 4-D) → sRGB matrix/TRC,
+  media-relative, 17-point grid** (DL-021 named in the row).
+  **`self-consistency`** — both arms are iccce — and `iccce bench`
+  **prints that sentence in its own output**, which is the right place
+  for it. **NC-108.**
+
+**★ The sensitivity control caught its own instrument, twice**, and both
+failures are in the test's doc comment *(verified — read)*:
+
+| Draft | Returned | What was wrong |
+|---|---|---|
+| **1** — fixture **sRGB→sRGB** | **1.1×10⁻¹⁵**, ratio **0.94** | **The FIXTURE nullified the control.** A grid reproduces an identity chain **exactly everywhere**, not merely at nodes — `n`-linear interpolation is exact on a linear function. No `h²` scaling, no discrimination. **That 1.1×10⁻¹⁵ would have been reported as the compiled path's cost** |
+| **2** — sRGB→**AdobeRGB**, whole axis | ratio **1.44** | **Neither code nor fixture.** sRGB's TRC kinks at 0.04045, and error across a derivative discontinuity scales `h¹`. **A correct control disagreeing with an incorrect expectation** — not a band being widened. Fixed by probing `[0.2, 0.9]`, off-node for both grids |
+
+**★ DL-023 predicted this trap by name at the previous filing** — the
+ROADMAP's second Pass 6 annotation calls a compiled-vs-reference row
+*"the most likely null-by-construction row this project will ever
+write"* — **and it was walked into anyway.** Filed as **DL-025**, with
+the observation that this is the **third** instrument in two days to
+catch something a competent engineer was about to ship:
+
+| Pass | About to ship | Caught by | Filed |
+|---|---|---|---|
+| 3 | a curve evaluator **off by one sample** | an **exact-value** test; the round trip *would have passed* | **DL-016** |
+| 4 | an `mBA ` curve count the corpus could not supply | a **refusal by name**, discharged by an **independently authored fixture** (GP-001) | **DL-020** |
+| 6 | an error of **1.1×10⁻¹⁵** that measured nothing | a **sensitivity control**, which failed on its own fixture | **DL-025** |
+
+**The generalisation is not "be careful."** In this project the thing
+that catches an error is **never** a re-reading of the code and **never**
+the number looking wrong — 10⁻¹⁵ looks magnificent. It is always **an
+apparatus built to fail**. Rule 1's corollary: **a wrong measurement
+looks exactly like a right one.**
+
+**And one measurement thrown away, recorded because it matters.** A
+first reference timing measured the CLI end to end at **≈49 000 px/s** —
+that is **stdio text parsing**, not either transform. ≈49 k and 84 k are
+the same order of magnitude, so **the speedup would have read ≈24×
+instead of 14.4× and nothing about it would have looked wrong.** The
+timing is now in-process. **NC-107 / §3.13.5.**
+
+### ★★ Pass 7 — the spot reaches a real destination through the ORDINARY machinery, and a finding this project filed TWICE is closed
+
+`NamedColors::resolve_to_device(name, dst)` →
+`Chain::convert_pcs_to_device` → **`Chain::pcs_to_destination`**, *which
+is the same method `Chain::convert` uses for its own destination half* —
+the duplicated arm was removed, and `convert` now ends
+`self.pcs_to_destination(xyz)` *(verified — read)*.
+
+**That last arrow is the Pass.** A spot inherits the sourced 8.10.2
+fallback, the same model selection, the same refusals and the same
+clamping **by construction**, so **it cannot drift from the rest of the
+CMM without the rest of the CMM drifting too**. The failure mode a
+private path invites is not a crash — it is a `Separation` rendering
+0.4 % off from every other object on the page, on some profiles only.
+**Spot colours are brand matching**, which the module names as *"the
+least acceptable place in the whole system for a sub-perceptual
+defect."*
+
+- **Unknown name → `None`**, the `/Alternate` signal, **not a guess**
+  (**NC-112**).
+- **Media-relative by construction** — Table 66 makes the spot's PCS
+  relative colorimetric, so **no intent choice arises** and there is
+  nothing for a caller to get wrong.
+- **The legacy encoding asserted by exact integers, never ΔE**:
+  `0xFF00/0x8000/0x8000` → `Lab(100, 0, 0)` **exactly**; the v4 decode
+  gives **99.6109** — invisible to any ΔE gate, fatal to a brand colour
+  (**DL-005**, **DL-016**).
+- **`NamedColors` was referenced by nothing outside its own file** — a
+  finding filed at the Pass 4b annotation and **repeated** at the Pass 5
+  filing. **A test now resolves every spot in the committed `ncl2`
+  fixture into the real system sRGB profile** (**NC-111**). **Closed.**
+
+**★ What NC-111 is not.** It asserts a **range**, not a colour: a
+resolution wrong by 10 ΔE but inside `[0, 1]` passes it. **No spot's
+resolved value has ever been compared to anything.** And the cheapest
+genuine cross-check was available and not taken — an `ncl2` entry
+carries **`nDeviceCoords`**, the device values *the profile's author*
+recorded, so resolving into the spot's **own** profile and comparing
+would be an expectation iccce did not write. Owed.
+
+### ★ Two commits belonging to earlier Passes, and the operator is why
+
+- **`bb5d6b8` — A4c, and A4b is RESOLVED.** `ICC.1:2001-04` **A.3.1.1**
+  addresses the profile's **AUTHOR** and is **silent on readers**, so
+  the clause that was supposed to adjudicate an 11.2 ΔE2000 divergence
+  **does not address the question**. iccce keeps `wtpt` **as stored**
+  and **discloses** the inconsistency (`white_point_note`, detectable
+  from the file's own bytes at 1×10⁻³ per component). **★ And the
+  empirical finding is bigger than the disclosure**: a test written to
+  show the note stays silent on a coherent profile **failed**, and the
+  sweep that followed found **AdobeRGB1998, AppleRGB, PAL_SECAM,
+  SMPTE-C, ewrgb18, ewsrgb and the stock sRGB** all storing `wtpt` = D65
+  with colorants summing to D50 and no `chad`. **Seven profiles: the A4c
+  configuration is the v2 authoring NORM**, which is why lcms2
+  substitutes D50 and why iccce's disclosure will fire constantly and
+  must be worth reading. **A4c is SILENT and does not clear when A4b
+  clears.** The corpus register now has **one UNVERIFIED row in total
+  (A31)** *(verified — read)*.
+- **`0378f76` — `A42` upgraded on ISO/CD 18619:2013.** The operator's
+  download turned out to be the **committee draft, not WP40**, and
+  `bpc.rs` binds the citation form: **"ISO/CD 18619:2013 clause 4.2.x",
+  never "ISO 18619"** — a CD has **normative language with non-normative
+  status**. Every threshold this project carried as an unattributed
+  lcms2 constant is in clause 4.2 verbatim. iccce implements 4.2.5
+  including the three places ISO corrects Adobe, and **names three
+  constants that have no home in either document and are NOT copied**.
+  **★ A pre-registered prediction remains unmeasured**: ISO ignores the
+  black points' `a*`/`b*` where lcms2 propagates chroma, predicted
+  **2–6 ΔE76** at input black on relative colorimetric with a LUT
+  destination. `icc-conformance` is **reported** to be measuring it in
+  parallel; **no result is recorded here, in either direction.**
+  **DL-011/DL-012 is the precedent** — this project has already once
+  predicted an lcms2 divergence and measured it **absent**.
+- **Neither commit discharges NA-009.** **Sourcing an estimator is not
+  measuring one**, and Pass 5's negative result (DL-023) is unchanged.
+
+### ★ Three things this filing found by reading rather than transcribing
+
+1. **The date.** The dispatch said 2026-08-11; the reflog, the
+   environment and the corpus all say 2026-08-12.
+2. **The hash.** `edcb60e` is `edce48b`, in three documents.
+3. **The arithmetic.** **14.4× does not reproduce from the other quoted
+   figures**: `8 700 867 / 7.23 = 1.2034` Mpix/s, and `1.2034 / 0.084 =
+   14.3`. It is **not** an error — `cmd_bench` divides unrounded values,
+   and a printed `0.084` puts the true ratio in `[14.24, 14.41]` — but
+   **14.4 sits at the very bottom of that band, and the raw twelve-line
+   `iccce bench` output is not on record anywhere.** §3.13.2.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph (**public**, Pass 6 DONE, Pass 7 DONE) and a **dated hash correction**; a **Pass 4 addendum** (A4b RESOLVED, the A4c disclosure, the seven-profile norm); a **Pass 5 addendum** (ISO/CD 18619, the binding citation form, the three uncopied constants, the unmeasured prediction); the **Pass 6 completion record** (the done-when clause by clause, the control that failed twice, the three inherited rules discharged, the discarded ≈49 k figure, a six-point coverage statement, four *does-not-claim* items, six owed); the **Pass 7 completion record** (no done-when exists, so none is declared met; the shared-destination decision; three properties; the closed "reachable from nothing" finding; a six-point coverage statement; five owed); and a **"what remains"** block under Pass 8 with every Pass's status, the two items keeping Pass 4 open, and seven tail debts. **No plan text and no earlier block rewritten.** |
+| `NUMERIC_CLAIMS.md` | A new evidence class **`machine-timing`** in §1, with the argument for adding one; a dated amendment to §2.8 (**hashes corroborated as to existence, not contents**); **§2.9** provenance (the date correction, the push evidence, the commit-count discrepancy, the wrong hash, *no runner outcome of any kind*); **§3.13** — **NC-105 … NC-112**, a shared coverage box, and seven subsections including the **transcription-precision** note, the **class judgement** for NC-108, the **control-and-null pair**, the **discarded measurement**, and *what §3.13 does not claim*; **seven** new §6 dependency rows, one of them (**the control's fixture**) new in kind; **§7.9** re-checking every prior owed item — **two discharged, one split** — and adding eight; and §8's decision-log pointers extended through **DL-025**. |
+| `ARCHITECTURE.md` §5 | **DL-024** — the publication event: what was read versus what is reported, the three pre-publication checks graded separately, the commit-count discrepancy, the wrong hash it caught, and **four things publication does not authorise** (starting with crates.io). **DL-025** — a sensitivity control is only as good as its **fixture**, and its scaling law must match the function's **smoothness class**; filed with both failures and with the three-instance observation. DL-001 … DL-023 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for a project whose original scope is essentially complete. |
+
+**Not touched, by instruction and by ownership:** `README.md`,
+`TOLERANCES.md`, `tools/`, `fixtures/`, every `Cargo.toml`, the corpus,
+`LEGAL.md`. Two other agents were working in parallel (`icc-conformance`
+in `tools/` + `TOLERANCES.md`, a publication-readiness agent in
+`README.md` + manifests), **so `tools/` was deliberately not re-read
+this session** and two §7.8 items are carried forward unverified.
+**Nothing was committed** — instructed not to, and committing is the
+engineer's act.
+
+### Left for the next session to not assume
+
+- **That the GitHub repository is public.** **A push proves a push.**
+  Visibility is the operator's report, and settling it takes a browser,
+  signed out.
+- **That the commit count is 49, or 45.** Two sources disagree and
+  nobody has run `git log`.
+- **That the commits' CONTENTS are what this filing describes.** The
+  reflog corroborates that they **exist** and their subject lines. **It
+  says nothing about what is in them.**
+- **That "spec quotation complies with LEGAL §2.1" has been checked.**
+  It has not, by anyone, and it is now a published claim.
+- **That 1.20 Mpix/s or 14.4× says anything about lcms2.** **lcms2 was
+  never timed.** Both arms are iccce.
+- **That 0.003589 device units is a small colour error.** **No ΔE
+  translation exists**, and supplying one by intuition is what DL-004
+  forbids.
+- **That the sensitivity control passes comfortably.** The two
+  **failing** ratios are on record; **the passing one is not.**
+- **That a spot colour resolves correctly.** NC-111 asserts a **range**.
+- **That Pass 7 discharges the `ncl2` behavioural test owed since Pass
+  2.** It does not. **NC-019 still rests on a source reading.**
+- **That the ISO/CD 18619 work measured anything.** It **sourced** an
+  estimator. **NA-009's cost is still unmeasurable** without a
+  non-zero-black v4 LUT fixture, which still does not exist.
+- **That the chroma-divergence prediction has an outcome.** It was
+  pre-registered and is **unmeasured here**. DL-012 is the precedent for
+  a prediction of exactly this shape coming out **absent**.
+- **That any test passes.** **No `cargo test --workspace` outcome at any
+  of the last seven filings.** **116 `#[test]` declarations across 19
+  files** *(verified — counted)* is not a pass result — and this project
+  has shipped two commits whose messages said otherwise.
+- **That Pass 4 closed.** **A4b resolving unblocked it; it did not close
+  it.** Saturation in B2A and ICC-absolute through a LUT destination
+  still have no measurement.
+- **That anything ran on Linux.** Still nothing, by anyone, ever — and
+  now in public.

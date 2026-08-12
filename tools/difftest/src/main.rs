@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass5, pass6,
+    pass3, pass4, pass4b, pass5, pass5b, pass6,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -336,6 +336,20 @@ fn main() {
         ));
     }
     for r in p5_records {
+        report.push_record(r);
+    }
+
+    // Pass 5b — the black-point ESTIMATORS, and the corpus's pre-registered
+    // prediction about them. Needs the oracle (lcms2's estimator is one arm),
+    // the two system profiles and the shipped binary; drives
+    // `iccce_cmm::bpc`'s ISO/CD 18619 function IN PROCESS, because
+    // `Chain::estimate_dst_black` has no call to it and the shipped binary
+    // therefore refuses this case — which one of its records grades.
+    let (p5b, p5b_records) = pass5b::run(&oracle);
+    if let Some(a) = &p5b {
+        report.note(format!("pass5b: {}", a.structure));
+    }
+    for r in p5b_records {
         report.push_record(r);
     }
 

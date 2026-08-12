@@ -1,7 +1,9 @@
 # Memory index — `icc-librarian` (iccce)
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-11: Pass 5 DONE on stated terms (estimators never discriminated); Pass 4 still open; next free NC-105.
+- [iccce Pass status](project_iccce_pass_status.md) — 2026-08-12: PUBLIC on GitHub; Passes 6+7 DONE, scope essentially complete; A4b resolved; next free NC-113.
+- [.git files are readable without a shell](reference_git_files_readable_without_shell.md) — reflog/refs/config are plain text; they corroborate hashes, pushes and dates — but never contents, visibility, or a commit count.
+- [A control is only as good as its fixture](project_control_only_as_good_as_its_fixture.md) — DL-025: an identity fixture nullified the control (1.1e-15); a kink made h² the wrong law. Instruments catch errors, re-reading never does.
 - [What were they free to disagree about?](project_free_to_disagree.md) — DL-023: pre-register the negative result from both sources; DL-022: iccce never forces BPC, 3,137 L*, reported not graded.
 - [Say which direction](project_direction_scoped_behaviour.md) — DL-021: a measured implementation behaviour is a fact about one direction/path; three lcms2 half-rules in one file.
 - [Refuse, then let a fixture decide](project_refusal_discharged_by_fixture.md) — DL-020: refuse what the corpus can't supply; only an independently authored fixture discharges the doubt (GP-001).
