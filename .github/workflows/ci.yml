@@ -89,13 +89,29 @@ jobs:
   # everything the `test` job above runs — CANNOT REACH THEM. So the
   # same boundary that protects the shipping crates also hid, from CI:
   #
-  #   * tools/difftest      43 tests — the differential harness itself,
-  #                         including the candidate-separation
-  #                         classifier that decides whether a
-  #                         conformance row has any power at all
-  #   * tools/gen-profiles  28 tests — the generator that PRODUCES the
-  #                         synthetic fixture corpus every other test
-  #                         in this repository is measured against
+  #   * tools/difftest      the differential harness itself, including
+  #                         the candidate-separation classifier that
+  #                         decides whether a conformance row has any
+  #                         power at all
+  #   * tools/gen-profiles  the generator that PRODUCES the synthetic
+  #                         fixture corpus every other test in this
+  #                         repository is measured against
+  #
+  # ★ NO TEST COUNT IS STATED HERE, and that is deliberate — DL-034.
+  # This comment originally read "43 tests" and "28 tests". Within
+  # hours the harness gained the third Pass 5c arm and became 47, so
+  # the file asserted a wrong number twice while sitting beside the job
+  # that computes the right one. That is the fifth recorded instance of
+  # the same defect, and it was written by the same author who adopted
+  # the rule against it earlier the same day — which is the argument
+  # for the rule being mechanical rather than attentional.
+  #
+  # A YAML comment cannot format a value at run time, so DL-034's
+  # remedy is unavailable and the correct move is the other one: DO NOT
+  # STATE A NUMBER THE RUN WILL STATE FOR YOU. The job's own output
+  # carries the counts, always current, on every run. Where a magnitude
+  # genuinely helps a reader, anchor it to a tip and date it, so it
+  # reads as a dated observation rather than a live claim.
   #
   # An untested fixture generator is the worst of the two: a bug there
   # does not fail, it silently changes what "correct" means for the
@@ -103,9 +119,12 @@ jobs:
   #
   # ★ WHY THIS JOB NEEDS NO lcms2. The oracle is invoked as a
   # SUBPROCESS (`transicc`), never linked — there is no build.rs, no
-  # `links` key, and no lcms2 crate. Verified before writing this job:
-  # with `ICCCE_TRANSICC` pointed at a non-existent path, `cargo test`
-  # in tools/difftest is 43 passed / 0 failed, exit 0. The tests that
+  # `links` key, and no lcms2 crate. Verified before writing this job,
+  # as a DATED OBSERVATION rather than a live claim: at tip `2835d23`
+  # on 2026-08-12, with `ICCCE_TRANSICC` pointed at a non-existent
+  # path, `cargo test` in tools/difftest was 43 passed / 0 failed, exit
+  # 0. (It is 47 at `6c7cda1`; the count moves, the PROPERTY does not,
+  # and the property is what this paragraph is about.) The tests that
   # NEED the oracle live in the runner binary, which is the `oracle`
   # job below.
   #
