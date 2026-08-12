@@ -48,14 +48,18 @@
 /// module's; by the time samples are here they are plain numbers.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Clut {
-    /// Grid points per input dimension, in channel order. Length =
-    /// input dimensionality. INVARIANT: every entry ≥ 2 and the
-    /// products bounded (enforced by [`Clut::new`]).
-    pub grid: Vec<usize>,
-    /// Output channels per node.
-    pub outputs: usize,
-    /// `Π grid[i] × outputs` values, first channel slowest.
-    pub samples: Vec<f64>,
+    /// Grid points per input dimension, in channel order.
+    ///
+    /// ★ PRIVATE with read-only accessors since the pre-publication
+    /// audit (2026-08-12). [`Clut::new`] is the only place the
+    /// invariants (every entry ≥ 2; `samples.len() == Π grid ×
+    /// outputs`) are checked, and [`Clut::eval`] indexes on their
+    /// strength — so public fields meant safe consumer code could
+    /// mutate `samples` and panic **inside a raster loop**, which is
+    /// the least acceptable place in the system for a panic.
+    grid: Vec<usize>,
+    outputs: usize,
+    samples: Vec<f64>,
 }
 
 /// Construction errors — all invariant violations, reported.
@@ -119,6 +123,25 @@ impl Clut {
             outputs,
             samples,
         })
+    }
+
+    /// Grid points per input dimension (read-only; the invariants
+    /// live in [`Clut::new`]).
+    #[must_use]
+    pub fn grid(&self) -> &[usize] {
+        &self.grid
+    }
+
+    /// Output channels per node.
+    #[must_use]
+    pub fn outputs(&self) -> usize {
+        self.outputs
+    }
+
+    /// The stored samples, first channel slowest.
+    #[must_use]
+    pub fn samples(&self) -> &[f64] {
+        &self.samples
     }
 
     /// Flat sample index of a grid node (first channel slowest — A20).

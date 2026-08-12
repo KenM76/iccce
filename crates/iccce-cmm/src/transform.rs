@@ -110,6 +110,25 @@ pub enum ChainError {
     /// BPC requested but a side's black point is outside the named
     /// estimation subset (A42) — refused, not guessed.
     BpcEstimationUnsupported,
+    /// A stage that should have evaluated returned nothing — an
+    /// internal shape inconsistency, not a caller error.
+    ///
+    /// Added by the pre-publication audit (2026-08-12), which found
+    /// `ChannelMismatch { expected: 3, actual: 3 }` being returned as
+    /// a stand-in for unrelated failures: a public error saying "3
+    /// channels expected, 3 given" is **misinformation on the API
+    /// surface**, and this project does not get to report an
+    /// implausible-but-tidy answer anywhere.
+    EvaluationFailed {
+        stage: &'static str,
+    },
+    /// A compiled grid's node count overflows this machine's address
+    /// space. Refused rather than wrapped into a small allocation
+    /// that would silently produce a wrong transform.
+    GridTooLarge {
+        grid_points: usize,
+        dimensions: usize,
+    },
 }
 
 impl std::fmt::Display for ChainError {
@@ -134,6 +153,16 @@ impl std::fmt::Display for ChainError {
             Self::BpcEstimationUnsupported => write!(
                 f,
                 "black point not estimable within iccce's named subset (A42); refused, not guessed"
+            ),
+            Self::EvaluationFailed { stage } => {
+                write!(f, "internal: the {stage} stage produced no value")
+            }
+            Self::GridTooLarge {
+                grid_points,
+                dimensions,
+            } => write!(
+                f,
+                "compiled grid {grid_points}^{dimensions} exceeds addressable memory; refused"
             ),
         }
     }
@@ -423,9 +452,8 @@ impl Chain {
                     PcsKind::Xyz => PcsValue::Xyz(xyz),
                 };
                 l.pcs_to_device(pcs_value)
-                    .ok_or(ChainError::ChannelMismatch {
-                        expected: 3,
-                        actual: 3,
+                    .ok_or(ChainError::EvaluationFailed {
+                        stage: "destination B2A",
                     })
             }
             DestModel::LutAb(l) => {
@@ -434,9 +462,8 @@ impl Chain {
                     PcsKind::Xyz => PcsValue::Xyz(xyz),
                 };
                 l.pcs_to_device(pcs_value)
-                    .ok_or(ChainError::ChannelMismatch {
-                        expected: 3,
-                        actual: 3,
+                    .ok_or(ChainError::EvaluationFailed {
+                        stage: "destination B2A",
                     })
             }
             DestModel::Gray(g) => Ok(vec![g.pcs_to_device(xyz).map_err(|e| {

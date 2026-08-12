@@ -214,6 +214,8 @@ mod tag {
     pub const A2B0: Signature = Signature(0x4132_4230);
     pub const B2A0: Signature = Signature(0x4232_4130);
     pub const B2A1: Signature = Signature(0x4232_4131);
+    /// Added 2026-08-12 for the saturation table. `'B2A2'` = `0x42324132`.
+    pub const B2A2: Signature = Signature(0x4232_4132);
     pub const A2B1: Signature = Signature(0x4132_4231);
 }
 
@@ -247,6 +249,23 @@ mod tag {
 /// against 1,330 241×10⁻⁴): the disagreement is not merely small, it is
 /// *accounted for*.
 ///
+/// ## ★ Re-derived 2026-08-12 when the saturation table was added — the
+/// NUMBER did not move, the STATED ENVELOPE did
+///
+/// `B2A2` is a steeper table than either of the other two, so its computed
+/// envelope is **1,552 5×10⁻⁴** — larger than both figures the `why` string
+/// originally named (1,330×10⁻⁴ media-relative, 9,602×10⁻⁵ perceptual). The
+/// constant stays at `5×10⁻⁴`, now ~3,2× the worst of the three rather than
+/// ~3,8× the worst of two, and **the `why` string was corrected to name the new
+/// maximum**. This is the case §4's log calls a corrected justification rather
+/// than a widened tolerance, and the direction of travel is the diagnostic one:
+/// the *justification* moved toward the observation while the *number* stayed
+/// put. Had it been the other way round it would have been tuning.
+///
+/// The observed saturation residual is **1,550 0×10⁻⁴** against that
+/// 1,552 5×10⁻⁴ envelope — **99,8 % accounted for**, the same signature as the
+/// other two intents.
+///
 /// **GRID-DEPENDENT BY CONSTRUCTION** (the envelope is largest where the B2A
 /// table is steepest, which is the near-neutral shadow) and
 /// **arithmetic-agreement, not perceptual**: §2's 1,0 ΔE2000 anchor is
@@ -256,8 +275,9 @@ pub const DEVICE_B2A: Tolerance = Tolerance::new(
     "the quantisation envelope computed from lcms2's OWN arithmetic over this pipeline \
      (tabulated 256-entry curves rounded to 1/65535 in and out, CLUT input rounded to u16, \
      CLUT output returned as u16/65535, source 1024-entry curv TRCs likewise) propagated \
-     through the actual B2A table: 1.330e-4 device units at media-relative and 9.602e-5 at \
-     perceptual, plus ~276% headroom for lcms2's \
+     through the actual B2A table: 1.5525e-4 device units at SATURATION (B2A2, the steepest of \
+     the three tables, measured 2026-08-12), 1.330e-4 at media-relative and 9.602e-5 at \
+     perceptual, plus ~222% headroom over the worst of the three for lcms2's \
      16-bit FIXED-POINT curve and CLUT interpolation, which the f64 model does not reproduce. \
      No lcms2 output enters the envelope. GRID-DEPENDENT: a grid reaching further into the \
      shadow re-derives it. Arithmetic agreement, NOT perceptual",
@@ -324,6 +344,31 @@ pub const DEVICE_B2A_MODELLED: Tolerance = Tolerance::new(
 /// `crates/`. 10⁻⁹ is ~7 orders above `f64` noise on this arithmetic and ~5
 /// below anything colorimetric — it can neither pass a real divergence nor fail
 /// on rounding.
+/// **§A, the precondition for the saturation records (added 2026-08-12).**
+/// How many of the three `B2A*` tag-data blocks are **byte-identical**.
+///
+/// `0,0 — exact`, and this is one of the few places 0,0 is honestly available:
+/// the quantity is a **count of integer comparisons on file bytes**, not a
+/// floating-point residual, so there is no rounding for a tolerance to absorb.
+/// §3.4.4 row B0's rule ("0,0 only when the two sides are the same operations
+/// in the same order") is about arithmetic; this is not arithmetic.
+///
+/// **What it catches, and it is not hypothetical.** In the *A2B* direction of
+/// this very file `A2B0` and `A2B2` are one block at one offset, and Pass 4
+/// graded their equality at exactly zero for that reason. Had `B2A0`/`B2A2`
+/// been laid out the same way, §A's saturation run would have reproduced the
+/// perceptual run bit for bit and the suite would have gained three green lines
+/// that measured nothing — the precise failure mode `CLAUDE.md` rule 5 and
+/// `TOLERANCES.md` §6 exist to prevent. **A null that is null by construction
+/// must be identified before it is collected, not explained afterwards.**
+pub const TAGS_ARE_DISTINCT: Tolerance = Tolerance::new(
+    0.0,
+    "a COUNT of byte-identical tag-data blocks among B2A0/B2A1/B2A2, read from the file with \
+     no parser in the way; not a floating-point residual, so 0.0 needs no rounding allowance. \
+     Any non-zero value means one of section A's three intent runs is a restatement of another \
+     rather than a third measurement - which is exactly how A2B0/A2B2 behave in this same file",
+);
+
 pub const APPARATUS_B2A: Tolerance = Tolerance::new(
     1e-9,
     "apparatus self-check: the harness's lut8 pipeline must be the crate's, to f64 noise. \
@@ -1162,7 +1207,7 @@ fn srgb_to_xyz(model: &MatrixTrc, rgb: [f64; 3], quantise: bool) -> Xyz {
             model.trc[2].eval(rgb[2]),
         ]
     };
-    let v = model.matrix.apply(linear);
+    let v = model.matrix().apply(linear);
     Xyz {
         x: v[0],
         y: v[1],
@@ -1524,18 +1569,147 @@ pub struct B2aAnalysis {
     pub pcs_counterfactual: Vec<f64>,
     pub structure: String,
     pub max_step: f64,
+    /// ★ Added 2026-08-12. Byte-level distinctness of the three `B2A*` tags,
+    /// read straight from the file with no parser in the way. See
+    /// [`TagDistinctness`].
+    pub tag_distinctness: TagDistinctness,
+}
+
+/// ★ Are the three `B2A*` tags actually three tables?
+///
+/// **This exists because the opposite is true one direction away.** Pass 4
+/// found `A2B0` and `A2B2` in this same file sharing **one** block of tag data
+/// at **one** offset, and graded `pass4/swop/perceptual-equals-saturation` at
+/// exactly zero on that basis. If `B2A0` and `B2A2` were laid out the same way,
+/// every saturation record in §A would be a byte-identical restatement of the
+/// perceptual one, and the coverage statement "saturation was run in the B2A
+/// direction" would be true and worthless.
+///
+/// So it is **measured, from the raw file bytes**, before anything is
+/// converted: for each of the three pairs, how many of the 145 588 bytes
+/// differ. `identical_pairs` is the graded quantity and must be **0**.
+///
+/// This is a *structural* fact about one file, not a claim about ICC profiles
+/// in general — plenty of real profiles do alias their intent tables, which is
+/// exactly why 8.10.2 has a fallback and why this has to be checked per file
+/// rather than assumed either way.
+#[derive(Debug, Clone)]
+pub struct TagDistinctness {
+    /// `(label, differing bytes, total bytes)` for `0-vs-1`, `0-vs-2`, `1-vs-2`.
+    pub pairs: Vec<(&'static str, usize, usize)>,
+    /// Offsets, so a reader can see whether the tags even alias.
+    pub offsets: Vec<(&'static str, u32, u32)>,
+}
+
+impl TagDistinctness {
+    /// The graded quantity: how many of the three pairs are byte-identical.
+    /// Must be zero for §A's three intents to be three measurements.
+    #[must_use]
+    pub fn identical_pairs(&self) -> f64 {
+        #[allow(clippy::cast_precision_loss)]
+        {
+            self.pairs.iter().filter(|(_, d, _)| *d == 0).count() as f64
+        }
+    }
+
+    /// The least-distinct pair, as a fraction of bytes differing — reported so
+    /// "distinct" cannot mean "one byte in 145 588".
+    #[must_use]
+    pub fn least_distinct_fraction(&self) -> f64 {
+        #[allow(clippy::cast_precision_loss)]
+        self.pairs
+            .iter()
+            .map(|(_, d, t)| *d as f64 / *t as f64)
+            .fold(f64::INFINITY, f64::min)
+    }
+
+    fn describe(&self) -> String {
+        let o = self
+            .offsets
+            .iter()
+            .map(|(n, off, sz)| format!("{n}@{off}({sz}B)"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let p = self
+            .pairs
+            .iter()
+            .map(|(n, d, t)| {
+                #[allow(clippy::cast_precision_loss)]
+                let f = *d as f64 / *t as f64;
+                format!("{n}: {d}/{t} bytes differ ({:.1}%)", f * 100.0)
+            })
+            .collect::<Vec<_>>()
+            .join(" | ");
+        format!("{o} | {p}")
+    }
+}
+
+/// Read the three `B2A*` tags' raw bytes and compare them pairwise.
+///
+/// Deliberately byte-level and parser-free: the question is whether the file
+/// stores three tables, and routing it through `iccce-profile` would make the
+/// answer depend on the code under test.
+fn measure_tag_distinctness(profile: &Profile, bytes: &[u8]) -> TagDistinctness {
+    let sigs: [(&'static str, Signature); 3] =
+        [("B2A0", tag::B2A0), ("B2A1", tag::B2A1), ("B2A2", tag::B2A2)];
+    let mut offsets = Vec::new();
+    let mut blocks: Vec<(&'static str, &[u8])> = Vec::new();
+    for (name, sig) in sigs {
+        if let Some(t) = profile.tags.iter().find(|t| t.sig == sig) {
+            offsets.push((name, t.offset, t.size));
+            let start = t.offset as usize;
+            let end = start.saturating_add(t.size as usize).min(bytes.len());
+            if start < end {
+                blocks.push((name, &bytes[start..end]));
+            }
+        }
+    }
+    let mut pairs = Vec::new();
+    for i in 0..blocks.len() {
+        for j in (i + 1)..blocks.len() {
+            let (na, a) = blocks[i];
+            let (nb, b) = blocks[j];
+            let label: &'static str = match (na, nb) {
+                ("B2A0", "B2A1") => "B2A0-vs-B2A1",
+                ("B2A0", "B2A2") => "B2A0-vs-B2A2",
+                ("B2A1", "B2A2") => "B2A1-vs-B2A2",
+                _ => "pair",
+            };
+            let n = a.len().min(b.len());
+            let differing = (0..n).filter(|&k| a[k] != b[k]).count() + a.len().abs_diff(b.len());
+            pairs.push((label, differing, a.len().max(b.len())));
+        }
+    }
+    TagDistinctness { pairs, offsets }
 }
 
 /// Run §A: `sRGB → USWebCoatedSWOP` at perceptual and media-relative, plus the
 /// PCS-side `*Lab4 → USWebCoatedSWOP` comparison.
 ///
-/// **Intents.** Media-relative uses `B2A1`, perceptual `B2A0`; unlike the
-/// `A2B0`/`A2B2` pair Pass 4 found sharing one block of tag data, this file's
-/// three `B2A*` tags are at three different offsets with three different
-/// contents, so the two intents are genuinely different tables and each is
-/// worth its own record. **Saturation and ICC-absolute are out of scope**:
-/// saturation adds a third copy of the same shape, and absolute would
-/// re-measure §14.6's white-point divergence rather than the B2A path.
+/// **Intents.** Media-relative uses `B2A1`, perceptual `B2A0`, saturation
+/// `B2A2`; unlike the `A2B0`/`A2B2` pair Pass 4 found sharing one block of tag
+/// data, this file's three `B2A*` tags are at three different offsets with
+/// three different contents, so the three intents are genuinely different
+/// tables and each is worth its own record.
+///
+/// ## ★ Saturation added 2026-08-12 (`icc-conformance`), and why it is not a
+/// third copy of the same shape
+///
+/// The original text of this comment said *"saturation adds a third copy of the
+/// same shape"* and put it out of scope. **That sentence was an assumption, and
+/// it was wrong.** SWOP's `B2A2` sits at offset 374 568, 145 588 bytes long —
+/// the same *shape* as `B2A0`@83 392 and `B2A1`@228 980, and **not the same
+/// bytes**. Pass 4's mirror-image row (`pass4/swop/perceptual-equals-saturation`,
+/// graded at *exactly zero*) is what made the assumption plausible: in the
+/// **A2B** direction `A2B0` and `A2B2` are one block at one offset, so
+/// perceptual and saturation there are the same numbers by construction. **The
+/// B2A direction is not built that way in this file**, and
+/// [`B2aAnalysis::tag_distinctness`] measures it rather than asserting it, so
+/// the saturation records below are a third independent table and not a
+/// restatement.
+///
+/// **ICC-absolute remains out of scope** — it would re-measure §14.6's
+/// white-point divergence rather than the B2A path.
 ///
 /// **No forced-BPC confound**: both profiles are v2.1
 /// (`cmsGetEncodedICCversion < 0x4000000`), and the versions are printed on
@@ -1583,8 +1757,14 @@ pub fn analyse_b2a(oracle: &Oracle) -> Result<B2aAnalysis, Unavailable> {
         }
     };
 
+    // ★ Read the three B2A tags' bytes BEFORE anything is converted. If two of
+    // them were the same block, one of the three intent runs below would be a
+    // restatement rather than a measurement, and §A's coverage sentence would
+    // be false in the most flattering possible way.
+    let tag_distinctness = measure_tag_distinctness(&dst, &dst_bytes);
+
     let structure = format!(
-        "src v{:08X} {} {}->{} TRC=tabulated | dst v{:08X} {} {}->{} B2A0@{} B2A1@{} (mft1, 3->4, 33 pts, 8-bit)",
+        "src v{:08X} {} {}->{} TRC=tabulated | dst v{:08X} {} {}->{} B2A0@{} B2A1@{} B2A2@{} (mft1, 3->4, 33 pts, 8-bit)",
         src.header.version.raw,
         src.header.device_class,
         src.header.color_space,
@@ -1601,6 +1781,10 @@ pub fn analyse_b2a(oracle: &Oracle) -> Result<B2aAnalysis, Unavailable> {
             .iter()
             .find(|t| t.sig == tag::B2A1)
             .map_or("absent".to_string(), |t| t.offset.to_string()),
+        dst.tags
+            .iter()
+            .find(|t| t.sig == tag::B2A2)
+            .map_or("absent".to_string(), |t| t.offset.to_string()),
     );
 
     let rgb = rgb_grid();
@@ -1611,6 +1795,7 @@ pub fn analyse_b2a(oracle: &Oracle) -> Result<B2aAnalysis, Unavailable> {
     for (intent, sig) in [
         (Intent::Perceptual, tag::B2A0),
         (Intent::RelativeColorimetric, tag::B2A1),
+        (Intent::Saturation, tag::B2A2),
     ] {
         let lut = read_lut8(&dst, sig)
             .ok_or_else(|| Unavailable::Error(format!("no decodable mft1 for {}", intent.name())))?;
@@ -1776,6 +1961,7 @@ pub fn analyse_b2a(oracle: &Oracle) -> Result<B2aAnalysis, Unavailable> {
         pcs_counterfactual,
         structure,
         max_step,
+        tag_distinctness,
     })
 }
 
@@ -2198,7 +2384,7 @@ pub fn analyse_gray(oracle: &Oracle) -> Result<GrayAnalysis, Unavailable> {
     // lcms2's destination: three 4096-entry reverse curves built from the
     // stored 1024-entry tables.
     let dst_inverse = dst_model
-        .matrix
+        .matrix()
         .inverse()
         .ok_or_else(|| Unavailable::Error("destination colorant matrix is singular".into()))?;
     let reverses: Vec<Option<ReverseCurve>> = (0..3)
@@ -2356,6 +2542,23 @@ pub fn b2a_records(a: &B2aAnalysis) -> Vec<Record> {
         a.rgb_grid.len(),
         a.structure
     );
+    out.push(Record::graded(
+        "pass4b/srgb-to-swop/b2a-tags-are-three-distinct-tables",
+        Kind::SelfConsistency,
+        Metric::AbsMaxComponent,
+        TAGS_ARE_DISTINCT,
+        a.tag_distinctness.identical_pairs(),
+        "raw file bytes, no parser: the count of byte-identical pairs among B2A0/B2A1/B2A2. \
+         The PRECONDITION for reading the three intent runs below as three measurements",
+        format!(
+            "{} | least-distinct pair differs in {:.1}% of its bytes | \
+             CONTRAST: in the A2B direction of this same file A2B0 and A2B2 are ONE block at \
+             ONE offset, which is why pass4/swop/perceptual-equals-saturation is graded at \
+             exactly zero",
+            a.tag_distinctness.describe(),
+            a.tag_distinctness.least_distinct_fraction() * 100.0
+        ),
+    ));
     for r in &a.runs {
         let s = slug(r.intent);
         let (dev_max, dev_mean) = max_mean(&r.device_dev);
@@ -2702,7 +2905,13 @@ pub fn unavailable_records(u: &Unavailable, section: &str) -> Vec<Record> {
     let reason = u.to_string();
     let mut specs: Vec<(String, Kind, Metric, Tolerance)> = Vec::new();
     if section == "b2a" {
-        for s in ["perceptual", "media-relative"] {
+        specs.push((
+            "pass4b/srgb-to-swop/b2a-tags-are-three-distinct-tables".to_string(),
+            Kind::SelfConsistency,
+            Metric::AbsMaxComponent,
+            TAGS_ARE_DISTINCT,
+        ));
+        for s in ["perceptual", "media-relative", "saturation"] {
             specs.push((
                 format!("pass4b/srgb-to-swop/{s}/apparatus-lut8-matches-iccce-cmm"),
                 Kind::SelfConsistency,

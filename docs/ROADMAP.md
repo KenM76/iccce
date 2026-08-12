@@ -171,6 +171,65 @@ disagree about**, derived from their sources *before* the run). **Pass 4
 remains open at exactly the same two items** — saturation in B2A, and
 the ICC-absolute intent, blocked on an operator download.
 
+**★★ Updated 2026-08-12 — a SECOND calendar day, and the project's
+original scope is essentially complete. ★ THE PROJECT IS PUBLIC.**
+`master` was pushed to `https://github.com/KenM76/iccce` on the
+operator's explicit go-ahead; `ARCHITECTURE.md` gains **DL-024**, which
+records the event, the file-level evidence for it (two `update by push`
+lines in `.git/logs/refs/remotes/origin/master`, at 06:51:17 and
+06:54:50 −04:00 — **the first time any statement this project makes
+about its own repository rests on something other than a report**), the
+three pre-publication checks with **two verified and one carried as
+reported**, and the four things publication does **not** authorise —
+starting with crates.io, which remains unexercised. **★ Pass 6 is DONE**
+— the done-when's two clauses are answered with numbers: a 300 DPI A4
+CMYK→RGB conversion (**8 700 867 px**) in **7.23 s** = **1.20 Mpix/s**,
+**14.4× the reference path**, with the compiled path's **off-node**
+error against the reference path at **0.003589 device units**
+(`self-consistency`, and labelled so). **The Pass's real work was making
+that number mean anything**: its sensitivity control **caught its own
+instrument on the first run** — an sRGB→sRGB fixture made the compiled
+and reference arms identical *everywhere*, not merely at nodes, giving
+**1.1×10⁻¹⁵ with no `h²` scaling at all** — and a second failure taught
+that probing across the sRGB TRC breakpoint gives `h¹` rather than `h²`.
+Both failures are in the test's own doc comment, and both are filed as
+**DL-025**, with the observation that this is the **third** time in two
+days that an instrument built to fail caught something a competent
+engineer was about to ship (after **DL-016**'s off-by-one-sample and
+**DL-020**'s GP-001). **★ Pass 7 is DONE** —
+`NamedColors::resolve_to_device(name, dst)` resolves a spot colour into
+a destination profile's device values through
+`Chain::convert_pcs_to_device` → **the ordinary destination machinery**
+(the same sourced 8.10.2 fallback), so a spot cannot take a private
+path; the duplicated destination arm in `Chain::convert` now calls the
+one shared method. An unknown name returns **`None`** — the
+`/Alternate` signal — **not a guess**. Media-relative by construction
+(Table 66). **The "reachable from nothing" finding this document filed
+twice is closed**: a test resolves every spot in the committed `ncl2`
+fixture into the real system sRGB profile. Also landed: the **A4c
+disclosure** (`ICC.1:2001-04` **A.3.1.1** resolved **A4b** — the clause
+addresses the profile's **author** and is silent on readers, so iccce
+keeps `wtpt` **as stored** and **discloses** the inconsistency; a sweep
+of this machine found **seven** v2 display profiles with that exact
+shape, making it the authoring **norm**, not an outlier), and the
+**ISO/CD 18619:2013** black-point estimation procedure implemented,
+upgrading corpus **A42** — with a **pre-registered** chroma-divergence
+prediction still awaiting measurement. `NUMERIC_CLAIMS.md` gains
+**§3.13**, rows **NC-105 … NC-112**, and a new evidence class,
+**`machine-timing`**. **What remains is in the "what remains" block
+under Pass 8**, and the short version is: **Pass 8 is built in `pdfce`,
+not here.**
+
+**★ A dated correction issued with this filing, because the new evidence
+found it.** The commit *"untrack tools/gen-profiles"* is **`edce48b`**,
+not **`edcb60e`**. `edcb60e` matches no prefix in `.git/logs/HEAD`
+*(verified — read)*, and it is carried in this document at the two
+places below, in `SESSION_LOG.md` at three, and was carried in
+`NEXT_SESSION.md` (now corrected there). **`NUMERIC_CLAIMS.md` §2.6 has
+it right**, because it came by a different route. **The old text is not
+edited** — this note is the correction, and the incident is in
+`ARCHITECTURE.md` **DL-024**.
+
 ---
 
 ## Pass 0 — scaffold and the oracle
@@ -2346,6 +2405,63 @@ graded records in this suite that survive that machine.**
    points are the first grid in this suite genuinely outside the
    destination gamut, and the count **was not recorded on this run**.
 
+### ★★ Pass 4 addendum — **A4b is RESOLVED by the operator's `ICC.1:2001-04` download, and it resolves in iccce's favour by being SILENT.** The A4c disclosure. Filed 2026-08-12 by `icc-librarian`
+
+**This block belongs to Pass 4, not to Pass 6 or 7**, and is filed with
+them only because that is when the work landed. Commit **`bb5d6b8`**
+*"cmm+cli: A4c disclosure — the residue ICC.1:2001-04 leaves to
+readers"* *(hash and subject line corroborated by `.git/logs/HEAD`;
+contents not verified)*.
+
+**What the operator's download settled.** The corpus's ambiguity
+register — `icc__ref__ambiguity_register.md`, `revised: 2026-08-12`,
+tenth pass — records **A1b, A2, A4b, A34 and A39c moving UNVERIFIED →
+RESOLVED** on `ICC.1-2001-04.pdf`, leaving **exactly one UNVERIFIED row
+in the whole register (A31)** *(verified — the register's frontmatter
+and movement table read)*. **A4b has been the top corpus gap in this
+document since Pass 4.**
+
+**How it resolved, and why the shape of the answer matters more than the
+answer.** Annex **A.3.1.1** of the v2 specification recommends what a
+profile's **AUTHOR** should put in `wtpt` when the viewer is fully
+adapted. **It says nothing whatever about what a READER should do with a
+file whose author did otherwise.** So the clause that was supposed to
+adjudicate an 11.2 ΔE2000 divergence between iccce and lcms2 turns out
+not to address the question at all — and **iccce's position (use `wtpt`
+as stored) is not contradicted by it.**
+
+**What iccce did about the residue, which is where rule 6 shows up in
+the CMM.** The parser reports and does not repair; the CMM's version of
+that instinct is **disclose, do not silently pick a side**.
+`MatrixTrc::white_point_note()` returns a note whenever a profile's
+`wtpt` disagrees with its own colorant sum **and** carries no `chad` to
+explain the difference — the exact configuration A.3.1.1 leaves
+undecided — naming the consequence: *"iccce uses wtpt as stored; lcms2
+would substitute D50 for a v2 display profile — a difference of up to
+~11 ΔE2000 at the ICC-absolute intent"* *(verified — read)*. The
+detection is decidable **from the file's own bytes** (in a matrix/TRC
+model the colorant sum *is* the adapted media white, F.3), at a
+threshold of 1×10⁻³ per component, so it costs nothing.
+
+**★ And the empirical finding, which is bigger than the disclosure.** A
+test written to prove the disclosure **stays silent on a coherent
+profile** failed — because the profile chosen as the coherent
+counter-example is not coherent either. The sweep that followed found
+that **`AdobeRGB1998`, `AppleRGB`, `PAL_SECAM`, `SMPTE-C`, `ewrgb18`,
+`ewsrgb` and the stock sRGB all store `wtpt` = D65 with colorants
+summing to D50 and no `chad`** *(the finding is recorded in the test's
+own doc comment — verified, read)*. **Seven of this machine's v2 display
+profiles.** So the A4c configuration is **the v2 authoring norm, not an
+outlier** — which explains why lcms2 substitutes D50 at all, and means
+**iccce's disclosure will fire constantly and must therefore be worth
+reading.**
+
+**A4c is SILENT, and it does not clear when A4b clears** — the register
+says so in its own words *(verified — read)*. **A4b's resolution does
+not close Pass 4's done-when**: that clause needs the ICC-absolute
+intent *measured through a LUT destination*, which nobody has run. See
+the "what remains" block under Pass 8.
+
 ## Pass 5 — black point compensation
 
 **Done when**: BPC on and off differ in the documented direction, and
@@ -2653,6 +2769,77 @@ with each other's status.
    **`cross_verified_2src`** *(both verified — read this session)*. See
    `NUMERIC_CLAIMS.md` §3.12.1.
 
+### ★★ Pass 5 addendum — **the estimation step is SOURCED: `A42` upgraded on ISO/CD 18619:2013, and every unattributed lcms2 constant has a clause.** With a pre-registered prediction still awaiting measurement. Filed 2026-08-12 by `icc-librarian`
+
+**This block belongs to Pass 5.** Commit **`0378f76`** *"cmm: ISO/CD
+18619 black-point estimation — A42's practical consequence closed"*
+*(hash and subject line corroborated by `.git/logs/HEAD`; contents not
+verified)*.
+
+**What the operator's download turned out to be.** The file fetched as
+`_sources\BlackPointCompensation.pdf` is **ISO/CD 18619:2013, not
+WP40** — WP40 is its own superseded ancestor. `bpc.rs`'s module header
+records that identification and, with it, **a binding citation form**:
+*"ISO/CD 18619:2013 clause 4.2.x", never "ISO 18619"* — because a
+committee draft carries **normative language with non-normative
+status**, and its own cover forbids the short form *(verified — read)*.
+**That distinction is not decoration.** A row graded against a CD is not
+graded against an International Standard, and writing the short form
+would quietly upgrade every claim built on it.
+
+**What it supplies.** The whole estimation procedure in `shall`
+language. **Every threshold this project had been carrying as "an
+unattributed lcms2 constant" is in clause 4.2 verbatim**: `0.2`, `≥ 4`,
+the shadow windows `[0.1,0.5)` / `[0.03,0.25)`, the `L* ≤ 50` clamps,
+256 ramp samples, the ±50 chroma clamp, `1.0E-10`, `max(0,min(50,·))`,
+`n < 3` *(the list is in the module header — verified, read)*. `A42`
+moves **UNVERIFIED → PARTLY RESOLVED** in the corpus register, and stays
+*partly* on the CD-not-IS technicality alone *(verified — the register's
+movement table read)*.
+
+**What iccce implemented, and the three places ISO corrects Adobe.**
+`estimate_lut_destination_black` follows 4.2.5: the **darkest-colour
+SEARCH** (`darkest_vertex`, over 4.2.2.2's verbatim vertex sets) instead
+of a fixed device black; the **root** instead of the vertex; and the
+monotonic and validity guards. `neutralise_and_clip` implements 4.2.3 —
+**always** neutral `(Li, 0, 0)`, where Adobe neutralised for CMYK only
+*(all verified — read)*.
+
+**★ Three constants have NO home in either document, and iccce does not
+copy them**: lcms2's `L* > 95 → 0`, its `IsEmptyLayer` `0.002`
+stage-drop (corpus **M6**, the threshold Pass 5 solved for at ≈0.41
+`L*`), and an `n < 4` fitter guard that **contradicts both ISO's `3` and
+lcms2's own caller** *(verified — read)*. Naming what was *not* adopted
+is the same discipline as naming an approximation.
+
+**★ A pre-registered prediction, awaiting measurement — and this is the
+part to not round up.** The module header records, **before anything was
+run** (DL-023): ISO 4.2.6 says the black points' `a*`/`b*` *"are
+ignored"*, while **lcms2 retains chroma and propagates it per-channel**.
+At input black the difference should equal exactly the detected
+destination black's `√(a*² + b*²)` — predicted **2–6 ΔE76** for a `b*`
+of −2…−6, decaying to zero at white, **on relative colorimetric with a
+LUT destination**. **iccce follows ISO.** *(verified — read.)*
+
+> **★ A predicted divergence is not a finding.** **DL-011** predicted an
+> lcms2 disagreement and **DL-012** measured it **absent**. This
+> prediction is unmeasured as of this filing; `icc-conformance` is
+> reported to be measuring it in a parallel dispatch, **and no result of
+> that run is recorded here, in either direction.** It gets a
+> `NUMERIC_CLAIMS.md` row when it has a number, and not before.
+
+**What this does NOT do.** It does **not** discharge **NA-009**'s cost.
+Pass 5's negative result (DL-023) stands unchanged: **everywhere iccce
+does BPC at all, lcms2's estimator reduces to the same two values**, so
+**the two estimators still cannot be discriminated** by anything in
+reach. **Sourcing an estimator is not measuring one.** The instrument
+that would close it — **a synthetic v4 RGB-or-gray LUT fixture with a
+non-zero device black** — still does not exist. And **A27 still
+stands**: ISO gives the procedure, **not worked numbers**, so there is
+still **no BPC conformance test with a published expected value**, and
+this project still has **zero `published-ground-truth` rows for any
+transform**.
+
 ## Pass 6 — performance
 
 Compiled transforms, caching, a benchmark on a page-sized raster. Only
@@ -2732,6 +2919,174 @@ measured and stated.
 >   answer, beside how much the two arms differ (Pass 5's were **388×**
 >   and **682×**).
 
+### ★★ Pass 6 completion record — the done-when MET with two numbers, and the Pass's real work was making the second number MEAN anything. Filed 2026-08-12 by `icc-librarian`
+
+**The first filing of a second calendar day** (the previous eleven were
+all 2026-08-11). Plan text and both annotations above are unchanged;
+this block is the record.
+
+> **★ A dated note on this filing's own date.** The dispatch that
+> commissioned it was headed **2026-08-11**. It is **2026-08-12**:
+> `.git/logs/HEAD` timestamps `bb5d6b8` at epoch `1786527689 -0400` =
+> **2026-08-12 05:41:29 −04:00** and the three commits after it between
+> 06:20 and 06:55 the same morning *(verified — read)*; the environment
+> reports the date as 2026-08-12; and the corpus's ambiguity register
+> carries `revised: 2026-08-12` *(verified — read)*. **Every Pass 6 and
+> Pass 7 record in this project is dated 2026-08-12**, and the dispatch's
+> header is corrected rather than followed. It matters more than it
+> looks: eleven filings saying *"the same calendar day"* is a claim about
+> this project's history, and a twelfth would have made it false.
+
+**Commits.** **`3502cb7`** *"Pass 6: compiled transforms + the A4
+benchmark — done-when measured"*. **★ For the first time, a commit hash
+in a Pass record is corroborated by something in this repository rather
+than reported alone**: `.git/logs/HEAD` line 44 records exactly that
+hash and that subject line *(verified — read)*. **What is still not
+verified is the commit's CONTENTS.** What *is* verified is the working
+tree: `crates/iccce-cmm/src/compiled.rs` exists and is the type
+described below, and `crates/iccce-cli/src/main.rs` carries `cmd_bench`
+with the argument parsing, the timing and the twelve output lines quoted
+below *(both verified — read end to end)*.
+
+#### ★ The done-when, answered exactly — it is MET
+
+The clause is *"a 300 DPI A4 CMYK→RGB conversion completes in a stated
+time, and the compiled path's error against the uncompiled one is
+measured and stated."*
+
+| Clause | Verdict | The measurement, and its scope |
+|---|---|---|
+| **"a 300 DPI A4 CMYK→RGB conversion completes in a stated time"** | **★ MET** | **8 700 867 pixels** (2481 × 3507 — A4 at 300 DPI, and the constant is in `cmd_bench` where a reader can check the arithmetic) in **7.23 s** = **1.20 Mpix/s**, on **this machine**, **release** build. Grid build — **83 521 chain evaluations**, 17 points per axis over 4 input channels — **1.04 s**, paid once. Reference path **0.084 Mpix/s** over the same raster, timed in the same process; **speedup 14.4×**. **NC-105, NC-106, NC-107** |
+| **"the compiled path's error against the uncompiled one is measured and stated"** | **★ MET, and the error is `self-consistency`** | **0.003589 device units**, maximum over **off-node** probes, on **SWOP `A2B1` (`mft2`, 4-D) → sRGB matrix/TRC, media-relative, 17-point grid**. Both arms are iccce, so per `NUMERIC_CLAIMS.md` §1 this is **worthless as correctness evidence however small**, and `cmd_bench` prints that sentence in its own output rather than leaving it to a reader. **NC-108** |
+
+**Every figure above is `icc-engineer`'s report of an `iccce bench` run
+on this machine.** `icc-librarian` has no shell and ran nothing. **The
+raw `iccce bench` output block is not on record anywhere** — see the
+transcription-precision note in `NUMERIC_CLAIMS.md` §3.13.2, which is
+the one place these numbers are weaker than they look.
+
+#### ★★ The Pass's real work: the control that caught its own instrument, twice
+
+The done-when's second clause is the shape **DL-018** exists for, and
+**DL-023** predicted its failure mode by name at the previous filing: a
+transform compiled by *sampling* its reference path is *"the most likely
+null-by-construction row this project will ever write."*
+
+**The prediction was right and the trap was walked into anyway.**
+
+1. **The control's fixture nullified it.** `error_scales_with_grid_spacing`
+   was first written on **sRGB → sRGB**. A grid does not merely match an
+   identity chain at its nodes — **n-linear interpolation is exact on a
+   linear function, so it matches it everywhere.** Result: **1.1×10⁻¹⁵,
+   ratio 0.94, no `h²` scaling.** A magnificent number measuring
+   nothing, and **without the control it would have been reported as the
+   compiled path's cost.** Refixtured to **sRGB → AdobeRGB**, whose
+   differing TRCs make the composite genuinely curved.
+2. **Then the scaling law did not match the function.** The refixtured
+   control probed the whole axis and got **ratio 1.44** against an `h²`
+   prediction of 4. **Neither the code nor the fixture was wrong**:
+   sRGB's TRC joins a linear segment to a power curve at `0.04045`, and
+   interpolation error across a derivative discontinuity scales `h¹`.
+   The probes now sit in **`[0.2, 0.9]`**, off-node for both the 5- and
+   9-point grids, where `h²` is the right prediction; the accepted band
+   is **2×–8×**.
+
+**Both failures are recorded in the test's own doc comment** *(verified
+— read)*, which is where the next person to change the fixture will see
+them. Filed as **DL-025**, together with the observation that this is
+the **third** instrument in two days to catch something a competent
+engineer was about to ship — after **DL-016** (the off-by-one-sample
+curve, where the self-consistency round trip *would have passed*) and
+**DL-020** (GP-001, refused an hour before it was found).
+
+#### ★ The three inherited rules, and how each is discharged in the record
+
+| Rule | How Pass 6 discharges it |
+|---|---|
+| **DL-023** — say what the two arms were free to disagree about | **At a grid node they were free to disagree about NOTHING** — the node's value *is* a reference evaluation. `tests::identical_at_nodes_by_construction` asserts that identity and is labelled **"STRUCTURAL, NOT EVIDENCE"** in its own doc comment *(verified — read)*; it exists to catch a transposed indexing convention and for no other reason. **Every error number in this Pass is off-node**, in the unit tests and in `iccce bench` alike, and `cmd_bench`'s doc comment says why *(verified — read)*. Filed as **NC-110**, ungraded on purpose |
+| **DL-018** — an upper bound on a deliberate cost needs a prediction pin and a sensitivity control | The control is `error_scales_with_grid_spacing` and it is the subject of the section above. **It is the only reason NC-108 is a measurement rather than a decoration**, and its own two failures are the evidence that it can fail. **NC-109** |
+| **DL-021** — a behaviour is a fact about one direction and one path | **Named in every row.** NC-108 is **SWOP `A2B1`, `mft2`, 4-D → sRGB matrix/TRC, media-relative**; NC-109 is **sRGB → AdobeRGB matrix/TRC**. **Neither says anything about the B2A direction of either pair**, and the module header states that in as many words *(verified — read)* |
+
+#### ★ One measurement that was thrown away, and it belongs in the record
+
+**A first attempt at the reference timing measured the CLI end to end
+and reported ≈49 000 px/s.** That figure is **stdio text parsing**, not
+either transform — the `transform` subcommand reads and writes decimal
+text per pixel. The reference path is now timed **in-process**, over a
+bounded prefix of the *same* raster, so the comparison is
+transform-versus-transform. `cmd_bench` carries the reason in a comment
+*(verified — read)*.
+
+**Why a discarded number is worth a paragraph.** ≈49 k px/s and 84 k
+px/s are the same order of magnitude. **A speedup quoted against the
+wrong denominator would have been ~24× instead of 14.4×, and nothing
+about it would have looked wrong** — which is project rule 1 wearing a
+stopwatch. The recorded figure is the one whose denominator is a
+transform.
+
+#### Coverage — part of the claim, and it is narrow
+
+- **One machine.** Windows 11 Pro 10.0.26200 x86-64, MSVC **release**.
+  **No timing has ever been taken on any other machine, on any other
+  platform, or in a debug build**, and a throughput figure is a fact
+  about hardware, allocator and build flags before it is a fact about
+  iccce. **Still no Linux run of anything, by anyone, ever.**
+- **One run.** No repetition, no variance, no confidence interval, no
+  warm-up policy stated. **A single wall-clock sample.**
+- **One direction, one tag-type pair, one intent, one grid density.**
+  CMYK `mft2` A2B → RGB matrix/TRC at media-relative, 17 points per
+  axis.
+- **Two real profiles, both from this machine's colour directory** —
+  `USWebCoatedSWOP.icc` and the stock sRGB. Neither is committed
+  (LEGAL §3), so **every Pass 6 measurement skips on a machine without
+  them**, exactly as the unit tests do.
+- **No comparison against any other implementation.** **lcms2 was not
+  timed.** Nothing here says iccce is fast *relative to anything except
+  its own reference path*, and no row may be quoted as if it did.
+- **BPC is not in the compiled chain that was benchmarked** (the bench
+  builds a plain `Chain` at media-relative). A compiled path *can* fold
+  BPC in — that is what made rule 8's precondition interesting — but
+  **it was not exercised here.**
+
+#### What this Pass does NOT claim
+
+- **Not that the compiled path is correct.** `self-consistency` compares
+  iccce to iccce. **A grid built by sampling a wrong reference path
+  reproduces the wrong answer to 0.003589 device units.**
+- **Not that 0.003589 is a perceptual quantity.** It is device units,
+  and **no ΔE2000 translation of it has been measured.** Converting it
+  by intuition would be exactly the move DL-004 exists to forbid.
+- **Not that the 0.02 gate in the unit test is the measurement.** The
+  gate is a bound chosen to survive the CLUT's curvature while failing
+  on a grid-indexing error; **the reported number is `iccce bench`'s.**
+- **Not that any test passed.** **No `cargo test --workspace` outcome
+  has been reported at any of the last seven filings.** 116 `#[test]`
+  declarations now exist across 19 files under `crates/` *(verified —
+  counted, no result limit; 103 across 18 files at the previous
+  filing)*. **That is a count of declarations. It is not coverage and it
+  is not a pass result.**
+
+#### Owed by this Pass
+
+1. **★ `icc-conformance` — `TOLERANCES.md` §3.6.** It exists with **two
+   placeholder rows and every cell blank** *(verified — read; its file,
+   its call)*, and its two rows are stated in **ΔE2000**, which is a
+   unit **nothing in Pass 6 has measured**. Either the rows get a ΔE
+   translation of NC-108 or they get re-stated in device units.
+2. **★ The raw `iccce bench` output block, pasted somewhere.** Three
+   figures were transcribed at three precisions and their ratio does not
+   quite reproduce (§3.13.2). The evidence is twelve lines of text and
+   nobody has filed them.
+3. **A repeat run, and a second machine.** One wall-clock sample is the
+   whole timing record.
+4. **A ΔE2000 figure for the compiled path's cost**, so the
+   approximation can be priced in the unit the project's budgets are
+   stated in.
+5. **A compiled path measured in the B2A direction** — DL-021 makes it a
+   separate question, not a generalisation.
+6. **A compiled chain WITH BPC folded in**, which is the configuration
+   Pass 5 made legitimate and Pass 6 did not exercise.
+
 ## Pass 7 — named colours and spot
 
 `namedColor2Type`. The Pass `pdfce` is waiting for, because it is what
@@ -2769,10 +3124,255 @@ makes `Separation` and `DeviceN` colorimetric rather than approximated.
 >    a future validator: legacy `L* > 100` is *"shall not"* in 10.10 and
 >    *"should not"* in 10.17 (corpus spec-defect §4).
 
+### ★★ Pass 7 completion record — the spot colour reaches a real destination through the ORDINARY machinery, and the "reachable from nothing" finding this document filed TWICE is closed. Filed 2026-08-12 by `icc-librarian`
+
+**The second filing of 2026-08-12.** Plan text and the annotation above
+are unchanged; this block is the record.
+
+**Commits.** **`40cf384`** *"cmm: named colours — Pass 7 core, the
+pdfce-facing piece"* (2026-08-11, the core this document's annotation
+found in the tree undispatched) and **`f6203b8`** *"Pass 7: named
+colours wired — the pdfce-facing path is reachable"* (2026-08-12).
+**Both hashes and subject lines are corroborated by `.git/logs/HEAD`**
+*(verified — read)*; **`f6203b8` is the current tip of `master` and of
+`origin/master`** *(verified — both ref files read)*. Contents are not
+verified. What *is* verified is the working tree: `named_color.rs`
+carries `resolve_to_device`, `transform.rs` carries
+`convert_pcs_to_device` and `pcs_to_destination`, and `Chain::convert`
+calls the latter *(all verified — read)*.
+
+#### ★ The Pass has no numeric done-when, and that is worth saying out loud
+
+**Pass 7's plan text states no done-when clause** — unlike Passes 1–6
+and 9 — so **there is no clause to declare MET.** This record therefore
+does not say *"the done-when is met"*; it says **what was built, what
+was measured, and what was not**, and lets a reader judge. Writing a
+done-when retrospectively and then satisfying it would be the same move
+as tuning a tolerance.
+
+**What "done" means here**, stated plainly so it can be argued with:
+`namedColor2Type` is decoded (Pass 4 era), and **the operation `pdfce`
+actually needs — resolve a spot name to a destination's device values —
+exists, is reachable, and is exercised against real bytes.**
+
+#### ★ What was built, and the single design decision that carries the Pass
+
+`NamedColors::resolve_to_device(name, dst)` →
+`Chain::convert_pcs_to_device(dst, pcs)` →
+`Chain::new(dst, dst, MediaRelative)` → **`Chain::pcs_to_destination`**.
+
+**The decision is the last arrow.** `pcs_to_destination` is *the same
+method `Chain::convert` uses for its own destination half* — the
+destination arm was **de-duplicated in this commit**, and `convert` now
+calls the shared method with the comment *"ONE destination
+implementation, shared with the PCS-side entry point a named colour
+uses: a spot colour that took a different path from every other
+conversion would be exactly the kind of quiet divergence this project
+exists to avoid"* *(verified — read)*.
+
+**Why that is the whole Pass.** A spot colour is the **least acceptable
+place in the system for a sub-perceptual defect** — spot colours are
+brand matching, and the module says so. The failure mode that a private
+resolution path invites is not a crash; it is a `Separation` that
+renders 0.4 % off from every other object on the page, **on some
+profiles only**, and looks fine. Routing through the ordinary machinery
+means the spot inherits, by construction: the **sourced 8.10.2
+fallback** for choosing a destination model, the same B2A / `mAB ` /
+matrix / gray selection, the same refusals, and the same clamping. **It
+cannot drift from the rest of the CMM without the rest of the CMM
+drifting too.**
+
+**Three further properties, each a decision rather than an accident:**
+
+1. **Media-relative BY CONSTRUCTION, with no intent parameter at all.**
+   Table 66: *"PCS values shall be relative colorimetric."* So the spot's
+   colorimetry **is** the source, no source model is built, and **no
+   intent choice arises on the source side** — there is nothing for a
+   caller to get wrong. *(verified — the reasoning is in the doc
+   comment.)*
+2. **An unknown name returns `None`, not a guess.** In PDF that is
+   precisely the signal to fall back to the `/Alternate` space. **It is
+   not an error and not a substituted colour** — the CMM's form of "the
+   parser reports, it does not repair" (**DL-020**: refuse by name,
+   never substitute).
+3. **The legacy PCSLAB encoding, asserted by exact integer invariants
+   and never by ΔE.** `0xFF00/0x8000/0x8000` must decode to
+   `Lab(100, 0, 0)` **exactly**; the wrong (v4) decode gives **99.6109**
+   — *"sub-perceptual, invisible to ΔE, fatal to a brand colour"*
+   *(verified — read)*. This is **DL-005** and **DL-016** doing the job
+   they were written for.
+
+#### ★★ The finding this document filed TWICE is closed
+
+The Pass 4b annotation recorded, and the Pass 5 filing repeated, that
+`NamedColors` **was referenced by nothing outside its own file** — *"the
+consumer exists; no transform reaches it, and no comparison has ever
+touched it."*
+
+**`tests::spot_colour_resolves_into_a_real_destination` is the first
+thing outside `named_color.rs` to touch it** *(verified — read)*. It
+reads the committed fixture `fixtures/synthetic/v2-ncl2-named.icc`,
+parses the **real system sRGB profile** as the destination, and resolves
+**every spot in the table**, asserting each output channel lies in
+`[0.0, 1.0]`; then asserts that an unknown name yields `None`. **NC-111,
+NC-112.**
+
+**What that test is and is not.** It is a **behavioural
+`self-consistency`** check: nothing outside iccce supplied an expected
+value. **It is not a cross-check** — `transicc` was not run on a spot
+colour, and no ledger row compares iccce's spot resolution to anything.
+**It is not a ΔE claim**; it asserts range, not colour. **What it does
+establish** is the thing that was missing: the path executes end to end
+on real bytes and produces device values a caller could use.
+
+#### Coverage — part of the claim, and narrower than "Pass 7 is done" sounds
+
+- **One fixture**, and this project authored it. `v2-ncl2-named.icc` is
+  `tools/gen-profiles` output. **No real vendor `ncl2` profile has ever
+  been parsed by anything here** — no PANTONE library, no press
+  profile's spot table.
+- **One destination, and it is a matrix/TRC one.** The system sRGB
+  profile. **The LUT (`B2A`/`mBA `) and gray destination arms of
+  `pcs_to_destination` are reachable from a spot colour and have never
+  been exercised from one**, which is the same shape of hole Pass 4b
+  found on the gray axis.
+- **The `Lab ` arm only.** Table 66 permits **PCSXYZ and legacy 16-bit
+  PCSLAB**; `NamedColors::from_ncl2` implements both, and **only the Lab
+  branch is exercised** by the fixture.
+- **No `nDeviceCoords` comparison.** An `ncl2` entry carries the
+  vendor's *own* device values alongside its PCS coordinates. **Nothing
+  compares iccce's resolved device values against a profile's stored
+  ones** — which, on a profile whose own device space is the
+  destination, would be a genuine cross-check and is the cheapest one
+  available.
+- **The `ncl2` behavioural test owed since Pass 2 is STILL OWED.**
+  **NC-019's coverage line still rests on a source reading of lcms2**,
+  and a consumer existing does not change that. Do not let this Pass
+  tick that item off.
+- **No comparison against lcms2 on any part of this path.**
+
+#### Owed by this Pass
+
+1. **★ A cross-check that has an outside expectation in it.** The
+   cheapest: resolve a spot into **the spot's own profile** and compare
+   against the entry's **stored `nDeviceCoords`** — an expectation
+   written by whoever authored the file, not by iccce.
+2. **★ A spot resolved into a LUT destination and into a gray
+   destination**, which are reachable today and unexercised.
+3. **A PCSXYZ `ncl2` fixture**, so the second permitted encoding is not
+   carried on a source reading.
+4. **The Pass 2-era `ncl2` legacy-Lab behavioural test** (`NC-019`),
+   still owed, now for the fourth filing.
+5. **A `pdfce`-side consumer**, which is Pass 8 and lives in another
+   repository.
+
 ## Pass 8 — the pdfce bridge
 
 Built **in pdfce**, not here. `ICCBased`, output intents, and replacing
 the `/Alternate` fallback with a real conversion.
+
+### ★★ What remains, as of 2026-08-12 — the original scope is essentially complete, and the next real step is in another repository
+
+**Filed by `icc-librarian` at the Pass 6 + Pass 7 filing.** This block
+replaces nothing; it is the first time this document has stated the
+*whole* remaining picture in one place, because it is the first time the
+picture is small enough to fit.
+
+**Where every Pass stands** *(and every "DONE" carries the coverage
+statement in its own completion record — none of them mean "verified",
+and none of them mean "verified against ground truth")*:
+
+| Pass | Status |
+|---|---|
+| **0** scaffold + oracle | **DONE** (2026-08-11) |
+| **1** colorimetry | **DONE** — the project's only `published-ground-truth` row (NC-001, all 34 Sharma pairs) lives here, and it is about ΔE2000, **not about a transform** |
+| **2** profile parsing | **DONE** |
+| **3** matrix/TRC transforms | **DONE** |
+| **4** LUT transforms and intents | **★ STILL OPEN — two items, and only one of them is still blocked.** See below |
+| **5** black point compensation | **DONE on stated terms** (the estimators were never discriminated — DL-023), and its sourcing is now upgraded (the Pass 5 addendum above) |
+| **6** performance | **DONE** (2026-08-12) |
+| **7** named colours and spot | **DONE** (2026-08-12) |
+| **8** the pdfce bridge | **NOT STARTED, and it is built in `pdfce`, not here** |
+| **9** HDR (BT.2100) | **NOT STARTED.** Blocked on ITU-R documents entering the corpus, and *before that* on `icc-spec-librarian` establishing that `itu.int`'s terms permit retrieval (DL-007). **"The file is free" has never implied "automated retrieval is permitted"** — DL-002 exists because that exact inference was available and wrong |
+| **10** profile creation | **NOT STARTED, far-future, and its precondition is unsolved**: nothing has been chosen as a ground truth that is not iccce |
+
+#### ★ Pass 4 is the only original Pass still open, and its shape changed today
+
+Its done-when needs two things Pass 4b left unmeasured:
+
+1. **Saturation in the B2A direction** (`B2A2` is a distinct third
+   table). **Cheap, unblocked, and nobody has run it.** Not the same
+   item as Pass 5's saturation gap, which is a *capability* gap in
+   iccce's BPC estimation subset.
+2. **The ICC-absolute intent through a LUT destination.** **★ This item
+   is no longer operator-blocked.** `A4b` is **RESOLVED** by the
+   operator's `ICC.1:2001-04` download (Pass 4 addendum above), and it
+   resolved by the clause being **silent on readers**. What follows:
+   **the arithmetic can be measured now**, and whether the raw
+   comparison stays **REPORTED, NOT GRADED** under **DL-019** is a
+   judgement `icc-conformance` must now actually make rather than defer
+   — *"the authority does not exist"* was true yesterday and is not true
+   in the same way today. **A4c** (the residue: no clause requires a
+   profile's `wtpt` to agree with its colorants) is **SILENT**, and
+   **does not clear when A4b clears**.
+
+#### ★ Pass 8 is the real next step, and it is not this repository's work
+
+`ARCHITECTURE.md` §4 fixes the boundary and it does not move: **a thin
+bridge crate *in `pdfce`*, and `iccce` must not know what a PDF is.**
+The bridge maps `/ICCBased` streams to `iccce_profile::Profile`,
+`/Separation` and `/DeviceN` tint transforms to named-colour lookups,
+and PDF/X `/OutputIntent` to a destination profile.
+
+**What Pass 7 handed it**, precisely: `NamedColors::resolve_to_device`,
+returning **`None`** for an unknown name — which is exactly the
+`/Alternate` fallback signal a PDF consumer needs, and is deliberately
+not an error. **What this repository owes the bridge and has not
+delivered:** a spot resolved into a **LUT** destination (a press profile
+is the normal `/OutputIntent`, and it is a LUT profile), and any
+cross-check at all on the spot path.
+
+**One consequence worth stating before the bridge is written:** a PDF
+consumer will hand iccce **real-world profiles at scale**, including
+malformed ones. Rule 6 — *the parser reports, it does not repair* — has
+never been exercised by a caller that must keep going. **Nothing here
+knows what `pdfce` will do with a reported malformation**, and that is a
+`pdfce`-side design question this document should not answer for it.
+
+#### ★ The tail items — what is owed here regardless of Pass 8
+
+These are not a Pass. They are the standing debts, and **the first two
+are the two largest holes in the project**:
+
+1. **★★ No `published-ground-truth` row exists for any transform.** Not
+   one, across Passes 3, 4, 4b, 5, 6 and 7. Every transform claim is a
+   cross-check against lcms2, a derived expectation, or
+   self-consistency. **The cheapest route remains `IEC 61966-2-1`'s sRGB
+   primaries, and nobody has dispatched for it** — for the seventh
+   consecutive filing.
+2. **★★ No `cargo test --workspace` outcome has ever been reported.**
+   Not at any of the last seven filings. **116 `#[test]` declarations
+   exist across 19 files under `crates/`** *(verified — counted, no
+   result limit)*; **that is a count of declarations, not coverage and
+   not a pass result.** **NC-057 … NC-061 still have no reported
+   outcome at all.** And this project has already shipped **two commits
+   whose messages claimed a green suite while a test was red**.
+3. **The DL-014 citation audit**, never swept for `iccce-color` or
+   `iccce-profile`, which now **decides a ledger class** (NC-084) *and*
+   underwrites a **published** compliance claim (DL-024's third
+   pre-publication check).
+4. **A Linux run of anything at all.** Still nothing, by anyone, ever —
+   and the project is now public, where "works on Windows" is a
+   narrower claim than a reader will assume.
+5. **The non-zero-black v4 LUT fixture** (`tools/gen-profiles`), the
+   only instrument that can discriminate the two black-point estimators
+   and therefore the only route to **NA-009**'s cost.
+6. **`pass5.rs` has no unit tests**, so fourteen ledger rows rest on two
+   grids that nothing pins.
+7. **crates.io**: **name availability is still unchecked** by anyone,
+   and `THIRD_PARTY_LICENSES.md` via `cargo-about` is still owed before
+   a first publish. **A public git repository is not a published
+   crate** (DL-024).
 
 ---
 

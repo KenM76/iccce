@@ -6,8 +6,9 @@ as a standalone library with no PDF in it, because a CMM is a general
 piece of infrastructure and tying it to one document format would be a
 mistake that is hard to undo later.
 
-Its first consumer is [`pdfce`](../pdfce), which today has **no colour
-management at all** — that is the gap this project exists to close.
+Its first consumer is [`pdfce`](https://github.com/KenM76/pdfce), which
+today has **no colour management at all** — that is the gap this project
+exists to close.
 
 ---
 
@@ -123,9 +124,85 @@ found something.
 
 ## Status
 
-**Pass 0 complete (2026-08-11)** — workspace, Linux+Windows CI,
-header/tag-table parsing with malformation reporting, `iccce inspect`
-working on real system profiles, the lcms2 oracle pinned and
-smoke-tested, and the standards corpus's Tier 1 built. Colour maths
-does not exist yet; Pass 1 (colorimetry) is next. See
-`docs/ROADMAP.md` for the record and `docs/NEXT_SESSION.md` first.
+**Early, and in active development.** Version `0.0.1`. **Nothing has been
+published to crates.io**, the API is not stable, and no compatibility is
+promised between commits.
+
+Work is organised as numbered Passes. `docs/ROADMAP.md` is the record and
+states each Pass's verdict in its own words; the table below summarises
+it. **Pass numbers are filing order, not schedule order.**
+
+| Pass | Covers | State |
+|---|---|---|
+| 0 | Workspace, Linux+Windows CI, the lcms2 oracle pinned | **Done** |
+| 1 | Colorimetry — `iccce-color` | **Core complete and validated**, deliberately not called "done" — see below |
+| 2 | Profile parsing — `iccce-profile` | **Done** |
+| 3 | Matrix/TRC transforms | **Done** |
+| 4 | LUT transforms and rendering intents | **In progress** — saturation in `B2A`, and the ICC-absolute intent, remain |
+| 5 | Black point compensation | **Done on stated terms**, and the terms are load-bearing — see below |
+| 6 | Performance — compiled transforms | Code has landed; **its measurement is not yet filed in the ledger** |
+| 7 | Named colours and spot colour | Code has landed and is reachable; **not yet measured** |
+| 8 | The `pdfce` bridge — `ICCBased`, output intents | Built **in `pdfce`**, not in this repository |
+| 9 | HDR — BT.2100 PQ/HLG, BT.2020/2100 primaries | Planned; blocked on standards sourcing |
+| 10 | Profile creation from measurement data | Planned, not yet sized |
+
+**What "not done" means, in the two places it is easy to over-read:**
+
+- **Pass 1** is called core-complete rather than done because ΔE94 and
+  ΔE CMC(l:c) are not implemented, the von Kries (HPE) cone matrix in the
+  tree is a placeholder **marked DO NOT USE**, CAT02 is not sourced, and
+  the observer colour-matching-function tables are absent. Bradford
+  adaptation, XYZ/xyY/Lab/LCh, ΔE76 and CIEDE2000 are implemented.
+- **Pass 5** means the BPC scaling map, its direction, and the pipeline
+  it sits in — on **one synthetic fixture, at one intent, in two
+  directions, on one platform, against one oracle pin**, and explicitly
+  **not** the black-point *estimators*, which have never been
+  discriminated.
+
+## How correctness is established here, and what it is worth
+
+`docs/NUMERIC_CLAIMS.md` is an append-only ledger of every stated
+tolerance and every measured error, each tagged with an evidence class.
+`docs/TOLERANCES.md` is the budget those numbers are graded against. Two
+things a reader should take from them before trusting any figure:
+
+- **Exactly one claim in this project rests on published ground truth**:
+  CIEDE2000 agrees with all 34 pairs of the Sharma, Wu & Dalal (2005)
+  dataset (*Color Research & Application* 30(1):21–30) to within the
+  published data's own precision of 1×10⁻⁴.
+- **No transform in this project has a ground-truth row.** Transform
+  correctness is currently established by differential comparison against
+  lcms2 at a pinned commit, by expectations derived from ICC.1:2022
+  clause text, and by self-consistency checks — and the ledger labels
+  which is which, because they are not worth the same. Two
+  implementations agreeing is evidence that they read a clause the same
+  way; it is not evidence that the clause was read correctly.
+
+Every departure from exact colorimetry is named and its cost measured, in
+`docs/TOLERANCES.md`. The deliberate divergences from lcms2 are recorded
+the same way — including that **iccce never forces black point
+compensation on**, where lcms2 does for a v4 destination at the
+perceptual intent. Two defensible CMMs can produce different pictures by
+default; this one says so rather than matching quietly.
+
+## Repository map
+
+| Path | What it is |
+|---|---|
+| `crates/iccce-color` | CIE colorimetry. Depends on nothing — no siblings, no third-party crates |
+| `crates/iccce-profile` | ICC v2/v4 parsing. Reports malformations; repairs nothing |
+| `crates/iccce-cmm` | Transform construction and evaluation; where every approximation lives |
+| `crates/iccce-cli` | The `iccce` binary — `inspect`, `transform`, `bench` |
+| `tools/difftest` | The lcms2 differential harness. **Deliberately not a workspace member**, so no shipping crate can link the oracle |
+| `tools/gen-profiles` | The synthetic-fixture generator |
+| `docs/` | `ROADMAP.md`, `ARCHITECTURE.md` (with the dated decision log), `NUMERIC_CLAIMS.md`, `TOLERANCES.md`, `LEGAL.md` |
+
+**The workspace has no third-party dependencies.** `Cargo.lock` resolves
+to the four workspace crates and nothing else.
+
+## Licence
+
+**MIT** — see `LICENSE`. Dependency licensing is covered by
+`THIRD_PARTY_LICENSES.md`, generated by `cargo-about`; the analysis of
+lcms2's licensing, including the finding that it is **not** uniformly
+MIT, is in `docs/LEGAL.md` §4.

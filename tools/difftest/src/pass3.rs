@@ -628,9 +628,9 @@ fn de(model: &MatrixTrc, a: [f64; 3], b: [f64; 3]) -> f64 {
 /// loud stop rather than a plausible number.
 #[must_use]
 pub fn predicted_white_clamp_de(src: &MatrixTrc, dst: &MatrixTrc) -> f64 {
-    let w_src = src.matrix.apply([1.0, 1.0, 1.0]);
+    let w_src = src.matrix().apply([1.0, 1.0, 1.0]);
     let inv = dst
-        .matrix
+        .matrix()
         .inverse()
         .expect("MatrixTrc::from_profile refuses a singular colorant matrix");
     let linear = inv.apply(w_src);
@@ -639,7 +639,7 @@ pub fn predicted_white_clamp_de(src: &MatrixTrc, dst: &MatrixTrc) -> f64 {
         linear[1].clamp(0.0, 1.0),
         linear[2].clamp(0.0, 1.0),
     ];
-    let w_back = dst.matrix.apply(clamped);
+    let w_back = dst.matrix().apply(clamped);
     let lab = |v: [f64; 3]| {
         Lab::from_xyz(
             iccce_color::Xyz {
@@ -906,7 +906,7 @@ pub fn analyse(oracle: &Oracle, src_path: &Path, dst_path: &Path) -> Result<Anal
         .expect("grid() always contains device white — see its unit tests");
     let white_clamp_observed = de_roundtrip[white_idx];
     let dst_inv = dst_model
-        .matrix
+        .matrix()
         .inverse()
         .expect("MatrixTrc::from_profile refuses a singular colorant matrix");
     let clipped_points = grid
@@ -917,7 +917,7 @@ pub fn analyse(oracle: &Oracle, src_path: &Path, dst_path: &Path) -> Result<Anal
                 src_model.trc[1].eval(x[1]),
                 src_model.trc[2].eval(x[2]),
             ];
-            let l = dst_inv.apply(src_model.matrix.apply(lin_src));
+            let l = dst_inv.apply(src_model.matrix().apply(lin_src));
             l.iter().any(|&v| !(0.0..=1.0).contains(&v))
         })
         .count();

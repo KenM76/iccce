@@ -14,6 +14,18 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+# --- crates.io publication metadata (ARCHITECTURE.md DL-009) ---
+# See crates/iccce-color/Cargo.toml for why `readme` and `license-file`
+# point at the workspace root rather than at per-crate copies.
+readme = "../../README.md"
+license-file = "../../LICENSE"
+homepage = "https://github.com/KenM76/iccce"
+documentation = "https://docs.rs/iccce-cli"
+# Slugs verified against https://crates.io/api/v1/category_slugs,
+# 2026-08-12.
+categories = ["command-line-utilities", "graphics", "multimedia::images"]
+keywords = ["icc", "color", "colour", "profile", "cli"]
+
 [[bin]]
 name = "iccce"
 path = "src/main.rs"

@@ -2371,3 +2371,310 @@ what the two sides were free to disagree about (the entry should then
 gain the instance); or the non-zero-black fixture is authored, at which
 point Pass 5's negative result becomes a **measurable** question and
 **NA-009's cost comes due for the first time**.
+
+---
+
+### DL-024 — ★ **the project is published: `master` was pushed to `github.com/KenM76/iccce` on the operator's explicit go-ahead.** The event, the evidence for it, the pre-publication checks, and the sharp line between what was verified and what is the operator's word
+
+**Date:** 2026-08-12 · **Authorised by:** the operator (Ken), explicit
+current go-ahead *(reported by the dispatching engineer)* · **Performed
+by:** `icc-engineer` · **Filed by:** `icc-librarian` · **Relates to**
+**DL-009** (publication to crates.io is *intended*; the intent
+authorises nothing), **DL-001** and **DL-002** (the two things that had
+to stay out of an MIT repository), `docs/LEGAL.md` **§2.1** and **§3**,
+`ROADMAP.md` *"Publication — crates.io"*, and project rule 9
+
+#### The decision, and whose it was
+
+**Rule 9 says publishing is the operator's act.** `ROADMAP.md` has
+carried, since the scope questions were answered, the sentence *"'We
+decided in August that we'd publish eventually' is not that go-ahead,
+and no agent may treat this section as one."* That sentence is
+unchanged and still governs. **This entry records that the go-ahead
+itself arrived** — as a current, explicit instruction — and that the
+push was performed under it.
+
+**The entry does not claim the go-ahead's wording.** No agent here
+holds the operator's exact words for it; the dispatching engineer
+reports that it was given and was explicit. That is the same evidential
+footing as *"1 is done"* in the scope-questions block, and it is
+recorded at that strength and no higher.
+
+#### ★ The event, from files this librarian read directly
+
+**This is the first time in the project's history that any statement
+about its own repository rests on something other than a report.**
+`icc-librarian` has no shell and ran no git command; the following was
+read out of plain-text files under `D:\Dev\iccce\.git\` with the ordinary
+file reader, which is a different act from running `git`:
+
+| What was read | What it says |
+|---|---|
+| `.git/config` | `[remote "origin"]` · `url = https://github.com/KenM76/iccce.git` — so the declared `repository` in the workspace manifest and the configured remote are the same URL. *(verified — read)* |
+| `.git/logs/refs/remotes/origin/master` | **Exactly two lines, both `update by push`.** (1) `0000000…` → **`3502cb70…`** at epoch **`1786531877 -0400`** = **2026-08-12 06:51:17 −04:00**. The all-zero left-hand side means **the branch did not exist on the remote before this line** — *this line is the publication event*, and it carried the whole history up to and including Pass 6. (2) **`3502cb70…` → `f6203b8d…`** at epoch **`1786532090 -0400`** = **2026-08-12 06:54:50 −04:00** — Pass 7, pushed three seconds after it was committed. *(verified — read)* |
+| `.git/refs/heads/master` and `.git/refs/remotes/origin/master` | Both hold **`f6203b8df878f5af3a9bd9f8269e9bc3a2cac8aa`** — local and remote-tracking tips are the same commit, so nothing local is unpushed as of this reading. *(verified — read)* |
+| `.git/logs/HEAD` | **45 lines**: one `commit (initial)` (`f976a0e…`, epoch `1786458320 -0400` = 2026-08-11 10:25:20 −04:00) and 44 further `commit` lines. **No `reset`, `rebase`, `amend`, `checkout` or `merge` entry appears anywhere in the file.** *(verified — read end to end)* |
+
+#### ★ What that evidence establishes, and three things it does not
+
+**Establishes:** that a push to that URL succeeded, twice, at those two
+moments, and that the remote branch was created by the first of them.
+
+**Does NOT establish that the repository is public.** Repository
+visibility is a setting on GitHub's servers. **No file in this working
+tree records it**, and a push to a private repository produces exactly
+the same reflog. **That `github.com/KenM76/iccce` is public is the
+operator's report** and is carried at that strength everywhere in this
+filing. Anyone who needs it settled must open the URL in a browser
+while signed out.
+
+**Does NOT establish the commit count.** The dispatch reports **49
+commits**. The reflog records **45** HEAD advances from the initial
+commit to `f6203b8`, with no history-rewriting entry — which implies 45
+commits on `master`, *on the assumption* that no commit was authored in
+another clone and fetched (nothing evidences another clone) and that the
+reflog has not been pruned (implausible for a repository one day old).
+**45 ≠ 49, nobody here has run `git log`, and this entry asserts
+neither number as the truth.** It records the discrepancy so that
+whoever next has a shell can settle it in one command. See
+`NUMERIC_CLAIMS.md` §2.9.
+
+**Does NOT retire "no agent here has ever run git."** It is still true.
+What changed is narrower and worth stating precisely: **the repository's
+own log files are now a readable source**, and they *corroborate* the
+commit hashes that eight provenance blocks have carried as reports. That
+is a real strengthening of the ledger's provenance — and it immediately
+found an error (below).
+
+#### ★ The first thing the new evidence caught: a wrong hash this project has carried three times
+
+`.git/logs/HEAD` line 25 records the commit *"untrack tools/gen-profiles:
+in-progress agent work committed early"* as **`edce48bf32c81d472f5361f37147cb65523e8e67`** —
+**`edce48b`**. Three documents carry it as **`edcb60e`**
+(`ROADMAP.md` lines 1433 and 1705, `SESSION_LOG.md` lines 1406, 1590 and
+2052, `NEXT_SESSION.md`'s commit table), and one carries it correctly:
+`NUMERIC_CLAIMS.md` §2.6's platform row says `edce48b`, because it came
+by a different route — a transcription of `gen-profiles/README.md` §6.
+**`edcb60e` matches no prefix in the reflog.** *(all verified — read.)*
+
+**The correction is filed, not applied retroactively.** ROADMAP and
+SESSION_LOG are append-only; their old text stands and a dated
+correction sits with this filing. `NEXT_SESSION.md` is rewritten every
+session and carries the right hash from now on. **The lesson is the one
+this project keeps relearning:** a hash typed from a screen is a claim,
+it looks exactly like a right one, and it survives three documents
+because nothing could check it. Something can now.
+
+#### The pre-publication checks — which were verified here and which were not
+
+The dispatch reports three checks run before the push. **They are not
+equal in how far this librarian could confirm them**, and rounding them
+into one "checked" would be exactly the failure this project files
+entries about.
+
+| Check | Status here |
+|---|---|
+| **No vendor profiles tracked** | **★ VERIFIED, and stronger than the dispatch put it.** Every `.icc`/`.icm` in the tree was enumerated: **38 in `fixtures/synthetic/`**, all generated by `tools/gen-profiles`; the rest are under `tools/difftest/vendor/` (git-ignored by name) and `tools/difftest/out/` (caught by `.gitignore`'s `*.icc` rule, which is negated only for `fixtures/**`). **`fixtures/reference/PROVENANCE.md`'s table reads *"(none yet)"*** — no third-party profile has ever been admitted, so there is nothing for the check to have missed. *(verified — globbed and read.)* |
+| **The corpus is not in the repo** | **VERIFIED, as far as the file tree goes.** `D:\Dev\Rag-Specialized\ICC_Spec\` is outside this working tree and no path under it appears in it. That is what LEGAL §2.1 requires (*"`ICC_Spec` must stay on local disk … never in a git remote"*, on the ToS phrase *"any other … networked computer environment"*). **What was not checked: whether any corpus file was ever committed and later removed** — a deleted file stays in history, and that is a `git log`-shaped question nobody here can ask. |
+| **Spec quotation is short-with-citation (LEGAL §2.1)** | **REPORTED — and this is the one that must not be rounded up.** LEGAL §2.1's operative rule was verified as text: *"Summarise and cite. Short verbatim quotation with a clause citation is normal technical-reference practice … bulk verbatim transcription of clause text is not."* **That the whole tree complies with it has NOT been audited by this librarian**, and no such audit exists anywhere. It is a claim about every doc comment in `crates/`, every line of five documents in `docs/`, and `tools/difftest/README.md`. **DL-014's citation audit — owed since Pass 3 and still owed — is the audit that would settle it**, and it has now acquired a second reason to exist. |
+
+#### What this entry does NOT authorise
+
+- **It is not a crates.io publish, and does not become one.** DL-009's
+  intent is unchanged and still unexercised: **no crate has been
+  published**, crate-name availability on crates.io is **still
+  unchecked** by anyone, and `THIRD_PARTY_LICENSES.md` via `cargo-about`
+  is **still owed before a first publish**. A public git repository and
+  a published crate are different acts needing different go-aheads.
+- **It is not a tag or a release.** Neither exists; neither is
+  authorised.
+- **It does not lower rule 9 for anything else.** The next push, tag or
+  release needs its own current go-ahead. *"He said yes on the 12th"* is
+  not a standing permission, for exactly the reason *"we decided in
+  August"* was not.
+- **It does not make the numbers in this repository stronger.** A
+  stranger can now read `NUMERIC_CLAIMS.md` — which is the point of it —
+  and everything §1 says about evidence classes still holds. **The
+  project still has zero `published-ground-truth` rows for any
+  transform**, and publication does not change that by one row.
+
+#### What publication changes about how this project writes
+
+Three consequences, all of them now live rather than prospective:
+
+1. **The audience is no longer the four agents and the operator.** Every
+   hedge in these documents is now read by people who cannot ask what
+   was meant. The ledger's habit of stating coverage inside the claim
+   was written for exactly this reader.
+2. **A wrong claim is now a published wrong claim.** The
+   claim-bearing-copy discipline (verify the source, never invent a
+   plausible policy) applies to `README.md` badges and prose from today,
+   not from first publish.
+3. **The oracle's insulation is now load-bearing in public.**
+   `tools/difftest` is not a workspace member and `vendor/` is ignored,
+   which keeps GPL-3.0 lcms2 plugin source out of an MIT repository
+   (DL-001, LEGAL §4). **A future tidy-up that folds difftest into the
+   workspace would now do that in public.**
+
+**Evidence.** `.git/config`, `.git/logs/refs/remotes/origin/master`,
+`.git/logs/HEAD`, `.git/refs/heads/master`,
+`.git/refs/remotes/origin/master` *(all verified — read)*;
+`.gitignore`, `fixtures/reference/PROVENANCE.md`, `docs/LEGAL.md` §2.1
+*(all verified — read)*; the fixture enumeration *(verified — globbed)*.
+The operator's go-ahead and the repository's public visibility are
+**reported**. `NUMERIC_CLAIMS.md` §2.9; `SESSION_LOG.md`, 2026-08-12.
+
+**Revisit if:** the repository's visibility is ever changed; a crate is
+actually published to crates.io (which needs its own entry, not an
+amendment to this one); a third-party profile is proposed for
+`fixtures/reference/`; or the DL-014 audit finds a quotation that
+exceeds LEGAL §2.1's rule — in which case the third pre-publication
+check moves from *reported* to *failed*, in public, and this entry gains
+the dated instance.
+
+---
+
+### DL-025 — ★ **a sensitivity control is only as good as its FIXTURE, and the scaling law it asserts must match the SMOOTHNESS CLASS of the function under test.** Filed with the two consecutive failures that taught both halves, in the one Pass whose headline number would otherwise have been a spectacular measurement of nothing
+
+**Date:** 2026-08-12 (Pass 6 completion) · **Found by:** `icc-engineer`,
+by its own control failing twice · **Filed by:** `icc-librarian` ·
+**Relates to** **DL-018** (an upper-bound gate on a deliberate cost needs
+a prediction pin and a sensitivity control), **DL-023** (state what the
+two arms were free to disagree about, before the run), **DL-016**
+(sampled tables asserted by exact values), **DL-020** (a refusal
+discharged by a fixture that can fail), and `NUMERIC_CLAIMS.md` §3.13
+
+#### The decision
+
+**Two obligations, on top of DL-018's requirement that a control
+exist.** A control is an experiment, and an experiment can be null for
+reasons that have nothing to do with the code:
+
+1. **The control's FIXTURE must be one on which the effect is
+   present.** DL-018 asks *"would this gate get greener if the
+   requirement were deleted?"* DL-023 asks *"what were the two arms free
+   to disagree about?"* **Neither question is answered by the code alone
+   — both are answered by the code *and the fixture together*.** A
+   control run on a fixture where the effect is identically zero
+   satisfies both rules on paper and measures nothing.
+2. **The scaling law the control asserts must match the function's
+   smoothness class.** An error model of the form *"halving `h` should
+   cut the error 4×"* is a statement about a **twice-differentiable**
+   function. Probing across a derivative discontinuity gives `h¹`, not
+   `h²` — and the resulting failure is the *control being right about
+   the wrong region*, not the code being wrong.
+
+**Both are checked before the control's number is quoted, and both
+belong in the control's own doc comment, in the form "this failed, here
+is why" rather than as a rule stated in the abstract.**
+
+#### The two failures, in the order they happened, because the pair is the whole entry
+
+**Failure 1 — the fixture nullified the control.** The first draft of
+`compiled.rs`'s `error_scales_with_grid_spacing` used **sRGB → sRGB**.
+A compiled grid does not merely reproduce an identity chain *at its
+nodes*; **n-linear interpolation is exact on a linear function, so it
+reproduces it everywhere**. The measured error came out at
+**1.1×10⁻¹⁵** with a spacing ratio of **0.94** — pure `f64` noise, no
+`h²` scaling, no discrimination whatever.
+
+> **★ Had the control not existed, that 1.1×10⁻¹⁵ would have been
+> reported as "the compiled path's cost."** It is a spectacular number.
+> It is also *precisely* the failure DL-023 predicted for this Pass —
+> the ROADMAP's second Pass 6 annotation, written at the Pass 5 filing,
+> says a compiled transform built by sampling its reference is *"the
+> most likely null-by-construction row this project will ever write."*
+> **The prediction was correct and the trap was walked into anyway**,
+> which is the argument for mechanical controls over remembered rules.
+
+The fixture was changed to **sRGB → AdobeRGB**: different TRCs, so the
+composite is genuinely curved in device space and a grid can be wrong
+about it.
+
+**Failure 2 — the scaling law did not match the function.** The
+refixtured control probed the whole axis and returned a ratio of
+**1.44** against an `h²` prediction of 4. **The code was not wrong and
+the fixture was not wrong.** sRGB's TRC joins a linear segment to a
+power curve at `0.04045` — a derivative discontinuity — and
+interpolation error across a kink scales as `h¹`. The remedy was to
+probe the **smooth region** (`[0.2, 0.9]`, chosen off-node for both the
+5- and 9-point grids), where `h²` is the right prediction to test
+against. The accepted band is **2×–8×**: wide enough for a real curve's
+varying curvature, narrow enough to fail if the compiled arm were
+secretly the reference arm (ratio → 1) or the probes were accidentally
+on-node (both errors zero).
+
+**Both failures are recorded in the test's own doc comment** *(verified
+— read)*, which is where the next person to touch the fixture will
+actually see them.
+
+#### ★ The observation this entry exists to make
+
+**This is the third time in two days that a control or a test caught
+something a competent engineer was about to ship, and each time the
+catching instrument was of a different kind:**
+
+| Instance | What was about to ship | What caught it | Filed as |
+|---|---|---|---|
+| Pass 3 | A sampled-curve evaluator **off by one sample** | An **exact-value test at the sample points**. The self-consistency round trip **would have passed with the bug in place** | **DL-016** |
+| Pass 4 | An `mBA ` curve-count reading the corpus could not supply | A **refusal by name**, discharged an hour later by an **independently authored fixture** that could fail — **GP-001** | **DL-020** |
+| Pass 6 | A compiled-path error of **1.1×10⁻¹⁵** that measured nothing | A **sensitivity control**, which failed on its own fixture | **this entry** |
+
+**The generalisation is not "be careful."** It is that in this project
+the thing that catches an error is **never** a re-reading of the code
+that contains it, and **never** the number looking wrong — a 10⁻¹⁵ looks
+magnificent. It is always an **instrument constructed to fail**: an
+exact expected value, a fixture authored elsewhere, a scaling law with a
+predicted magnitude. Project rule 1 — *a wrong colour looks exactly like
+a right one* — has a corollary this project can now state from three
+worked instances: **a wrong measurement looks exactly like a right one,
+and the only defence is an apparatus that could have said no.**
+
+#### Why this is not already covered by DL-018 or DL-023
+
+- **DL-018** requires a sensitivity control to **exist**. Both of Pass
+  6's failures happened *inside a control that existed and was run.*
+- **DL-023** requires stating what the two arms were free to differ on
+  **before the run**. Pass 6 stated it — the ROADMAP annotation says it
+  in as many words — **and still shipped an identity fixture into the
+  control.** The statement was about the *method*; the nullity was in
+  the *fixture*.
+- **What is new here** is that the control is itself an experiment with
+  its own validity conditions, and that **its failures are evidence to
+  be published rather than debris to be cleaned up**. Failure 2 in
+  particular is a *correct* control disagreeing with an *incorrect*
+  expectation — the same shape as `TOLERANCES.md` §4's corrected
+  derivations, and it must not be mistaken for a tolerance being tuned.
+
+#### What this entry does NOT claim
+
+- **It does not claim the compiled path is correct.** The error it
+  finally measures is a **`self-consistency`** row (`NUMERIC_CLAIMS.md`
+  §1) — both arms are iccce — and is worthless as correctness evidence
+  however small. What the control buys is only that the number is *about
+  something*.
+- **It does not generalise across direction or tag type.** DL-021 still
+  binds: the control ran on **sRGB → AdobeRGB matrix/TRC**, and the cost
+  row on **SWOP `A2B1` (`mft2`, 4-D) → sRGB, media-relative**. Neither
+  says anything about the B2A direction of either pair.
+- **It does not claim every control in this project has been checked
+  this way.** It has not. The ones that should be re-read against both
+  obligations are named as owed work in `NUMERIC_CLAIMS.md` §7.9.
+
+**Evidence.** `crates/iccce-cmm/src/compiled.rs` — the module header's
+*"What the two arms are free to disagree about (DL-023)"* section, and
+the doc comments on `tests::error_scales_with_grid_spacing` (both
+failures, with the 1.1×10⁻¹⁵/0.94 and 1.44 figures) and
+`tests::identical_at_nodes_by_construction` (*"STRUCTURAL, NOT
+EVIDENCE"*) *(all verified — read)*; `crates/iccce-cli/src/main.rs`
+`cmd_bench`'s doc comment, which carries the same off-node reasoning to
+the shipped surface *(verified — read)*. `NUMERIC_CLAIMS.md` §3.13,
+rows **NC-108 … NC-110**. Commit **`3502cb7`** *(hash corroborated by
+`.git/logs/HEAD`; its contents are not verified)*.
+
+**Revisit if:** a control is quoted whose fixture has not been shown to
+carry the effect; a scaling-law control fails and is answered by
+widening its band rather than by asking which of the three things is
+wrong; or a fourth instance of the pattern in the table above appears,
+in which case the observation stops being an observation about three
+days and becomes a property of the method.

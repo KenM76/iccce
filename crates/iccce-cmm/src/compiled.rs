@@ -83,9 +83,9 @@ impl CompiledTransform {
         #[allow(clippy::cast_possible_truncation)]
         let dims = input_channels as u32;
         let Some(nodes) = grid_points.checked_pow(dims) else {
-            return Err(ChainError::ChannelMismatch {
-                expected: input_channels,
-                actual: input_channels,
+            return Err(ChainError::GridTooLarge {
+                grid_points,
+                dimensions: input_channels,
             });
         };
 

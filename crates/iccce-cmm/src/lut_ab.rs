@@ -196,7 +196,7 @@ impl LutAbModel {
             v = apply_curves(a, &v)?;
         }
         if let Some(clut) = &self.clut {
-            let mut out = vec![0.0f64; clut.outputs];
+            let mut out = vec![0.0f64; clut.outputs()];
             if !clut.eval(&v, &mut out) {
                 return None;
             }
@@ -239,7 +239,7 @@ impl LutAbModel {
             v = apply_curves(m, &v)?;
         }
         if let Some(clut) = &self.clut {
-            let mut out = vec![0.0f64; clut.outputs];
+            let mut out = vec![0.0f64; clut.outputs()];
             if !clut.eval(&v, &mut out) {
                 return None;
             }

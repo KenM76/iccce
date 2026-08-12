@@ -15,9 +15,37 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+# --- crates.io publication metadata (ARCHITECTURE.md DL-009) ---
+# See crates/iccce-color/Cargo.toml for why `readme` and `license-file`
+# point at the workspace root rather than at per-crate copies.
+readme = "../../README.md"
+license-file = "../../LICENSE"
+homepage = "https://github.com/KenM76/iccce"
+documentation = "https://docs.rs/iccce-cmm"
+# Slugs verified against https://crates.io/api/v1/category_slugs,
+# 2026-08-12.
+categories = ["graphics", "multimedia::images", "rendering"]
+keywords = ["icc", "cmm", "color-management", "color", "colour"]
+
 [dependencies]
-iccce-color = { path = "../iccce-color" }
-iccce-profile = { path = "../iccce-profile" }
+# ★ The `version` on each path dependency is REQUIRED to publish, and is
+# not optional stylistic noise: `cargo publish` refuses a path
+# dependency that carries no version requirement ("all dependencies must
+# have a version requirement specified when publishing"), because the
+# `path` key is stripped from the published manifest and the crates.io
+# release must name what it actually needs.
+#
+# MAINTENANCE HAZARD, stated because Cargo cannot enforce it: Cargo has
+# no way to inherit `workspace.package.version` into a *dependency*
+# requirement, so these literals are a second copy of the version number.
+# When `workspace.package.version` moves off 0.0.1, these must move with
+# it in the same commit, here and in crates/iccce-cli/Cargo.toml.
+#
+# PUBLISH ORDER follows from this: iccce-color and iccce-profile must be
+# on crates.io before iccce-cmm can be published, and iccce-cmm before
+# iccce-cli.
+iccce-color = { path = "../iccce-color", version = "0.0.1" }
+iccce-profile = { path = "../iccce-profile", version = "0.0.1" }
 
 [lints]
 workspace = true

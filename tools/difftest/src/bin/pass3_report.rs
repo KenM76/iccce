@@ -398,7 +398,7 @@ fn quantisation_experiment(a: &Analysis) {
             q16(src.trc[1].eval(q16(x[1]))),
             q16(src.trc[2].eval(q16(x[2]))),
         ];
-        let xyz_v = src.matrix.apply(linear);
+        let xyz_v = src.matrix().apply(linear);
         let xyz = iccce_color::Xyz {
             x: xyz_v[0],
             y: xyz_v[1],
@@ -522,8 +522,8 @@ fn white_point_clamp_experiment(a: &Analysis) {
         return;
     };
 
-    let sw = src.matrix.apply([1.0, 1.0, 1.0]);
-    let dw = dst.matrix.apply([1.0, 1.0, 1.0]);
+    let sw = src.matrix().apply([1.0, 1.0, 1.0]);
+    let dw = dst.matrix().apply([1.0, 1.0, 1.0]);
     println!("media white = colorant sum M*(1,1,1), as ENCODED in each file:\n");
     println!("  source (sRGB)      X={:.8} Y={:.8} Z={:.8}", sw[0], sw[1], sw[2]);
     println!("  dest   (AdobeRGB)  X={:.8} Y={:.8} Z={:.8}", dw[0], dw[1], dw[2]);
@@ -543,7 +543,7 @@ fn white_point_clamp_experiment(a: &Analysis) {
     // the clamp. TRC(1) = 1 exactly for a table whose last entry is 0xFFFF
     // and for any gamma, so no tone curve enters this prediction.
     let lin_dst = dst
-        .matrix
+        .matrix()
         .inverse()
         .expect("destination matrix is invertible")
         .apply(sw);
@@ -552,7 +552,7 @@ fn white_point_clamp_experiment(a: &Analysis) {
         lin_dst[1].clamp(0.0, 1.0),
         lin_dst[2].clamp(0.0, 1.0),
     ];
-    let back = dst.matrix.apply(clamped);
+    let back = dst.matrix().apply(clamped);
     println!(
         "\nsource white through M_dst^-1 : R={:.8} G={:.8} B={:.8}",
         lin_dst[0], lin_dst[1], lin_dst[2]
@@ -659,7 +659,7 @@ fn white_point_clamp_experiment(a: &Analysis) {
 
     // How many grid points are clipped at all, and where. A single clipped
     // corner would be a curiosity; a pattern is the thing to characterise.
-    let m_inv = dst.matrix.inverse().expect("invertible");
+    let m_inv = dst.matrix().inverse().expect("invertible");
     let mut clipped_points = Vec::new();
     for (i, x) in a.grid.iter().enumerate() {
         let lin_src = [
@@ -667,7 +667,7 @@ fn white_point_clamp_experiment(a: &Analysis) {
             src.trc[1].eval(x[1]),
             src.trc[2].eval(x[2]),
         ];
-        let l = m_inv.apply(src.matrix.apply(lin_src));
+        let l = m_inv.apply(src.matrix().apply(lin_src));
         let worst_excess = (0..3)
             .map(|c| {
                 if l[c] > 1.0 {

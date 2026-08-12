@@ -50,3 +50,21 @@ jobs:
         run: cargo fmt --all --check
       - name: clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+      # ★ rustdoc is a SEPARATE warning channel from rustc. The `RUSTFLAGS:
+      # -D warnings` above does NOT reach it — rustdoc reads RUSTDOCFLAGS —
+      # so broken intra-doc links were invisible to this job from the first
+      # commit. On 2026-08-12 an audit found 11 of them sitting in the tree
+      # (7 were `[0,1]` in prose, which rustdoc parses as a link target and
+      # silently drops from the rendered page; 2 pointed at `#[cfg(test)]`
+      # items that do not exist in a doc build; 2 pointed at private types).
+      #
+      # This matters more than a normal lint because docs.rs renders these
+      # crates for every published version and a dropped link is invisible
+      # in the source — you only see it as missing text on the page. Per
+      # DL-009 the docs are part of what gets published, so they get the
+      # same "a warning that survives to CI is a decision nobody made"
+      # treatment as the code.
+      - name: rustdoc (intra-doc links)
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps

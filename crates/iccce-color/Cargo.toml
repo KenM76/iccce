@@ -16,6 +16,39 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+# --- crates.io publication metadata (ARCHITECTURE.md DL-009) ---
+#
+# `readme` and `license-file` deliberately point OUT of the crate
+# directory at the workspace root. Cargo resolves both at package time
+# and copies the files into the .crate tarball as `README.md` and
+# `LICENSE` (verified with `cargo package --list`, 2026-08-12), so the
+# published crate carries the project README and the verbatim MIT text
+# without a duplicated copy of either living in the tree. Without
+# `license-file` the tarball ships NO licence text at all — `license =
+# "MIT"` is only an SPDX label in the metadata, not the notice MIT
+# itself requires be included in copies.
+#
+# ★ EXPECTED WARNING — do not "fix" it by deleting `license-file`.
+# `cargo publish` prints "only one of `license` or `license-file` is
+# necessary" because both are set. Both are set on purpose: `license =
+# "MIT"` (inherited from the workspace) is the SPDX expression crates.io
+# indexes and displays, and `license-file` is what actually puts the
+# licence TEXT in the tarball. Removing `license-file` silences the
+# warning and silently stops shipping the notice — verify with
+# `cargo package --list -p iccce-color`, which must show `LICENSE`.
+readme = "../../README.md"
+license-file = "../../LICENSE"
+homepage = "https://github.com/KenM76/iccce"
+documentation = "https://docs.rs/iccce-color"
+# Category slugs are a closed set; these were verified against
+# https://crates.io/api/v1/category_slugs on 2026-08-12. crates.io
+# rejects an unknown slug at publish time, not at `cargo package` time.
+categories = ["graphics", "mathematics", "science"]
+# Max 5 keywords, max 20 chars each. Both spellings are carried
+# deliberately: the project writes "colour", the ecosystem searches
+# "color".
+keywords = ["color", "colour", "colorimetry", "cie", "delta-e"]
+
 [dependencies]
 # Intentionally empty. See crate invariant above.
 

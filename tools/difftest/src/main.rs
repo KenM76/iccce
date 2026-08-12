@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass5,
+    pass3, pass4, pass4b, pass5, pass6,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -336,6 +336,25 @@ fn main() {
         ));
     }
     for r in p5_records {
+        report.push_record(r);
+    }
+
+    // Pass 6 — the compiled path, graded. **No oracle**: both arms are iccce,
+    // so this section runs on a machine with no lcms2 build. It still needs
+    // the two system profiles and the shipped binary (it drives `iccce bench`
+    // as a subprocess so the numbers it grades are the numbers that command
+    // prints) and skips with a reason when either is absent.
+    let (p6, p6_records) = pass6::run();
+    if let Some(a) = &p6 {
+        report.note(format!(
+            "pass6: {} | bench {:.3} Mpix/s vs reference {:.3} = {:.2}x              (run `cargo run --bin pass6_report` for the grid table)",
+            a.structure,
+            a.bench.megapixels_per_second,
+            a.bench.reference_megapixels_per_second,
+            a.bench.speedup
+        ));
+    }
+    for r in p6_records {
         report.push_record(r);
     }
 

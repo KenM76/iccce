@@ -155,7 +155,17 @@ impl From<CurveError> for ModelError {
 #[derive(Debug, Clone)]
 pub struct MatrixTrc {
     /// Columns are rXYZ, gXYZ, bXYZ as stored (media-relative, D50).
-    pub matrix: Mat3,
+    ///
+    /// ★ PRIVATE ON PURPOSE, with a read-only [`Self::matrix`]
+    /// accessor. It was `pub` until the pre-publication audit
+    /// (2026-08-12) pointed out the hazard: [`Self::matrix_inv`] is a
+    /// CACHE computed once at build, so a consumer assigning to a
+    /// public `matrix` field would leave `pcs_to_device` using the
+    /// stale inverse — **silently wrong colour with no signal**,
+    /// which is the exact failure mode this project is organised
+    /// against (CLAUDE.md rule 1). Making the pair unmutatable
+    /// together is cheaper than documenting the trap.
+    matrix: Mat3,
     /// Cached inverse (computed once at build; `f64`, from the stored
     /// forward values — same posture as the Bradford inverse).
     matrix_inv: Mat3,
@@ -170,6 +180,21 @@ pub struct MatrixTrc {
 }
 
 impl MatrixTrc {
+    /// The colorant matrix as stored (read-only — see the field's
+    /// note on why assignment is not offered).
+    #[must_use]
+    pub fn matrix(&self) -> Mat3 {
+        self.matrix
+    }
+
+    /// The cached inverse, for callers doing their own PCS→device
+    /// arithmetic (the differential harness does). Read-only for the
+    /// same reason: the two must move together or not at all.
+    #[must_use]
+    pub fn matrix_inverse(&self) -> Mat3 {
+        self.matrix_inv
+    }
+
     /// Build from a parsed profile. Consumes the FIRST entry per tag
     /// signature when duplicates exist — the recorded A13 choice,
     /// which the profile layer has already reported as a malformation.
