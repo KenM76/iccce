@@ -42,6 +42,68 @@
 //! work.** It is by far the most tempting reference in this subject
 //! area and it is copyleft; this project is MIT (`docs/LEGAL.md` §1).
 //! The hazard is recorded here because the temptation recurs.
+//!
+//! ## ★ Do not recompute `LAB_*` from `XYZ_*`. Use the file's own columns.
+//!
+//! A characterisation file typically prints **both** `XYZ_*` and
+//! `LAB_*` for every patch, which invites a consumer to keep one and
+//! derive the other. **Do not.** The two column groups are not
+//! guaranteed to have been produced under the white point *you* would
+//! use to convert between them, and in the most important real-world
+//! dataset they were not.
+//!
+//! Measured on **FOGRA51** (1 617 patches, read from the `targ` tag of
+//! `PSOcoated_v3.icc`, ISO 28178, `TARGET_TYPE "ISO12642-2"`, filter
+//! M1), converting the file's `LAB_*` back to XYZ and comparing against
+//! the file's own `XYZ_*`, counting a patch as agreeing within `0,005`
+//! (the half-ULP of the file's 2-decimal XYZ printing):
+//!
+//! | White point used for Lab→XYZ | Patches agreeing | Max residual |
+//! |---|---|---|
+//! | ICC PCS D50 — `96,42 / 100 / 82,49` | **651 / 1 617** | `0,0332` |
+//! | `96,422 / 100 / 82,521` | **1 617 / 1 617** | `0,0050` |
+//!
+//! The second row is a perfect fit at exactly the rounding limit, so
+//! **FOGRA51's Lab columns were computed with a D50 that is not ICC's.**
+//!
+//! The cost of ignoring this is bounded and non-trivial: recomputing
+//! Lab from the file's XYZ under ICC's D50 differs from the file's
+//! printed Lab by up to **`0,2146` ΔE76** (mean `0,0326`).
+//!
+//! **A subtlety worth stating, because it decides how you test this:
+//! only the Lab→XYZ direction has discriminating power.** Going
+//! XYZ→Lab, the two white points differ by `0,2146` vs `0,2140` ΔE76 —
+//! indistinguishable — because the 2-decimal quantisation of the `XYZ_*`
+//! columns swamps the white-point difference. A check run in that
+//! direction would have found nothing and concluded, wrongly, that the
+//! white points agree.
+//!
+//! Consequences for a consumer of this crate:
+//!
+//! - **Prefer `LAB_*` as authoritative** when the file provides it.
+//!   Those are the measured, published values.
+//! - **A round-trip test against FOGRA51 has a floor of ~`0,03` ΔE76**
+//!   from the data's own printed precision. A tolerance tighter than
+//!   that is measuring the file's decimal places, not your engine.
+//! - This crate does none of the above for you — it has **no colour
+//!   maths** by invariant. It hands you both column groups exactly as
+//!   parsed; which one is authoritative is the consumer's decision, and
+//!   this note exists so that decision is made knowingly.
+//!
+//! Verified 2026-08-12 by extracting the `targ` tag and doing the
+//! arithmetic **outside this crate**, so the finding does not depend on
+//! this parser being correct. Corpus:
+//! `ICC_Spec\cgats\cgats__ref__characterisation_data_sourcing.md`.
+//!
+//! ## Exercised against
+//!
+//! Besides the unit tests, this reader has been run over the real
+//! FOGRA51 `targ` payload above — 123 455 bytes, 11 fields, 1 617 data
+//! rows — and returned **1 617 rows with zero `Issue`s** and every
+//! `LAB_L` cell parsed. The file is **not committed**: its licence
+//! permits local use but its redistribution terms are unresolved
+//! (`docs/LEGAL.md`), so the corpus holds the archive and the tests
+//! here stay synthetic.
 
 use std::collections::BTreeMap;
 
