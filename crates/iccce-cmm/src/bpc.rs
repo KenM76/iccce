@@ -642,6 +642,72 @@ mod tests {
         assert!((0.0..=50.0).contains(&per.l));
     }
 
+    /// 4.2.5.4 with a CHROMATIC `InitialLab` — the case the neutral
+    /// test above structurally cannot see.
+    ///
+    /// ★ WHY THIS EXISTS. `straight_midrange_short_circuits_at_relative_only`
+    /// asserts the whole triple, but passes `InitialLab = (0,0,0)`, so
+    /// the expected `a`/`b` are zero **and so are every wrong answer's**.
+    /// It discriminates on `L*` alone. A regression that returned
+    /// `Lab { l: initial_lab.l, a: 0.0, b: 0.0 }` — i.e. re-neutralising
+    /// the chroma, the single most plausible way to reintroduce the
+    /// 2026-08-12 defect — would pass it unchanged. Evidence that could
+    /// not have come out differently is not evidence.
+    ///
+    /// The chromatic case is not hypothetical: this function's own
+    /// contract records that **the short-circuit is the only branch
+    /// that can return a chromatic black**, because 4.2.5.2.1 zeroes
+    /// chroma only for CMYK. On a Gray or RGB LUT destination ISO
+    /// itself yields a chromatic `DestinationBlackPoint`, so this test
+    /// covers a shape the standard produces, not one invented to be
+    /// awkward.
+    ///
+    /// EXPECTATION SOURCE: ISO/CD 18619 4.2.5.4 final paragraph,
+    /// verbatim — *"the DestinationBlackPoint shall be the same as
+    /// InitialLab"*. This is normative-rule conformance, not a measured
+    /// value and not a cross-check against lcms2.
+    ///
+    /// TOLERANCE: exact equality, deliberately. "Shall be the same as"
+    /// is an identity requirement, and the value is *carried*, never
+    /// computed — no arithmetic touches it on this path, so any epsilon
+    /// would only weaken a claim that holds bit-exactly. A failure here
+    /// means a branch started deriving what it should be passing through.
+    #[test]
+    fn straight_midrange_carries_chromatic_initial_lab_whole() {
+        // Neutral OUTPUT, straight in L*: chroma plays no part in the
+        // straightness test (it compares in_ramp/out_ramp L* only), so
+        // this still reaches the short-circuit while making the
+        // destination model itself chroma-destroying — the harshest
+        // setting for the claim, since nothing downstream of `bt` could
+        // reconstruct `a`/`b`. They can only survive by being carried.
+        let neutralising = |lab: Lab| Lab {
+            l: lab.l * 0.99 + 0.5,
+            a: 0.0,
+            b: 0.0,
+        };
+        // A plausible chromatic black: slightly blue, as a real
+        // display/RGB profile's darkest reproducible colour tends to be.
+        let initial = Lab {
+            l: 2.7,
+            a: 3.4,
+            b: -5.1,
+        };
+        let got = estimate_lut_destination_black(
+            initial,
+            EstimationIntent::RelativeColorimetric,
+            neutralising,
+        );
+        assert_eq!(
+            (got.l, got.a, got.b),
+            (2.7, 3.4, -5.1),
+            "4.2.5.4 short-circuit must carry InitialLab through whole, \
+             chroma included; got L*={} a={} b={}",
+            got.l,
+            got.a,
+            got.b
+        );
+    }
+
     /// The chroma clamp and the ramping-to-zero chroma (4.2.5.2.2)
     /// are observable: an InitialLab with |a| > 50 must be clamped,
     /// and the ramp's chroma must reach zero at L* = 100. Asserted
