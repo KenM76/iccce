@@ -390,6 +390,83 @@ that closes Pass 4. Two apparatus, one of them new.
 | **★ The suite was IN FLUX during these runs, and not because of this work** | Reported: a first full run gave **`pass=134 fail=0 skip=3 error=0`, exit 0**; a second, ~5 minutes later, gave **`pass=140 fail=2 skip=3 error=0`, exit 1**, with `pass5c`'s record count moving **8 → 16** between them. **The two failures are both `pass5c`** — `…/FINDING/lcms2-destination-black-is-NEUTRAL-too` (tol 0, obs 5.000000e0) and `…/ATTRIBUTION/pass5b-recovery-was-the-round-trip` (tol 1, obs 1.062074e0) — i.e. **another agent's Pass 5c work, mid-flight** *(corroborated here independently: `tools/difftest/src/pass5c.rs` is **untracked**, and `TOLERANCES.md` has gained a **§3.5.8 "Pass 5c"** section naming iccce at commit `95c04c1` and **WITHDRAWING** row Q3's CONFIRMED verdict — verified, read, and neither was in this filing's dispatch)*. **Do not read this filing as reporting a green suite, and do not read those two failures as a regression from Pass 4c**: the sixteen rows below pass in **both** runs and reproduce bit-identically. **Whoever files the Pass 5c work reports its own outcome** |
 | **★ What is NOT in this block, and it is the tenth time** | **No ground-truth row.** §3.14 and §3.15 are cross-checks against lcms2, self-consistency controls, and preconditions. **`TOLERANCES.md` §3.4.3's published-value row stays blank**, and **every transform this project has written still has zero `published-ground-truth` rows.** `TOLERANCES.md` §3.4.5 notes that `ICC.1:2022` Table D.2 *does* print an nCIEXYZ media white for SWOP within ~2×10⁻³ of this file's — **a published value for a white point is not a published value for a transform**, and it is a different characterization revision besides *(verified — read)* |
 
+> **★★ DATED ADDENDUM TO §2.10, made MINUTES after the block above was
+> written, because the tree moved underneath it — and the thing that
+> moved it is the SAME PROCESS SLIP this filing had already recorded
+> TWICE.**
+>
+> **The commit row above says "THERE IS NONE." That was true when
+> written and is now false.** While this filing was being written,
+> another agent committed **`5cfee17`** — *"difftest: the estimator
+> discrimination — and lcms2 has TWO estimators"*, 2026-08-12 **09:06:21
+> −04:00**, 23 files, +4 907 / −97 *(all verified — `git show --stat`
+> run)*. **It contains `tools/difftest/src/pass4c.rs` (+1 027), the CLI
+> help fix, `TOLERANCES.md` (+310) — and `docs/NUMERIC_CLAIMS.md`
+> (+691), which is THIS FILING, mid-write.**
+>
+> **★ It was then PUSHED**: `origin/master` is now **`5cfee17`**
+> *(verified — ref read)*, making **nine** `update by push` lines where
+> DL-024 records two.
+>
+> **What is now true, stated exactly:**
+> - **The Pass 4c apparatus IS committed**, at `5cfee17`. §3.15's rows
+>   have a commit anchor after all, and the *"anchored to a working
+>   tree"* warning above is **discharged for §3.14/§3.15**.
+> - **This filing is SPLIT across a commit and a working tree.** The
+>   ledger's §2.10/§3.14/§3.15/§3.16 text went in at `5cfee17`;
+>   `ROADMAP.md`, `ARCHITECTURE.md`, `SESSION_LOG.md` and
+>   `NEXT_SESSION.md` were still uncommitted at the time of writing.
+>   **A single filing spanning two provenance states is a first, and it
+>   is not a good first.**
+> - **The commit message describes the estimator work and says nothing
+>   about Pass 4c or about this ledger.** So **`git log` is now a
+>   misleading index of when Pass 4c and its filing landed** — findable
+>   only by `git log -- <path>`.
+>
+> **★★ THIRD INSTANCE OF ONE MECHANISM, IN ONE PROJECT, IN TWO DAYS.**
+> This filing had already recorded two: **`edce48b`** (§2.6 — *"untracked
+> in-progress `tools/gen-profiles` swept in by `d9e0b82`'s cwd-relative
+> pathspec — a process slip"*) and **`dechk.obj`** (§7.10 item 1 — a
+> stray object file swept into `aef7566` and published). **This is the
+> third, and the victim is another agent's in-flight document.** A
+> pattern that recurs three times in two days is **not a slip; it is the
+> default behaviour of the commit command being used**, and it now has a
+> demonstrated cost beyond untidiness: **it publishes work whose author
+> has not finished checking it.** The ledger's own rule — *rows are
+> never edited to make an old number look like a new one* — assumes the
+> filing agent controls when its text becomes the record. **Here it did
+> not.**
+>
+> **Owed to `icc-engineer`, and it is now the top process item:** commit
+> with **explicit pathspecs**, never `-A` or a bare `.` from the
+> repository root, while any other agent is working in the tree. **The
+> repository is public and the push is automatic in practice** — three
+> instances, three pushes, no review step between them.
+
+### 2.11 ★★ The ESTIMATOR DISCRIMINATION (Pass 5b + Pass 5c), the Pass 6 gate re-graded at a new default grid, and Pass 1's last remainder. **The first block whose headline finding resolves in OPPOSITE DIRECTIONS on two arms of the same experiment.** Added 2026-08-12
+
+An **eleventh** provenance block, the **third** dated 2026-08-12, and the
+one that closes the project's original scope. It carries three kinds of
+work that arrived together: a **conformance** result (the estimators,
+finally discriminated), a **re-grade** of a Pass that had already been
+filed (Pass 6, at a default the engineer moved rather than a tolerance he
+moved), and the **closure of Pass 1's four-item remainder** at its
+cheapest end.
+
+| | |
+|---|---|
+| **Passes** | **5b** and **5c** — the black-point **estimators** (`tools/difftest/src/pass5b.rs`, `pass5c.rs`; `TOLERANCES.md` §3.5.7, §3.5.8; `tools/difftest/README.md` §17, §19). **6** — the compiled path **re-graded at the new default grid of 33** (`TOLERANCES.md` §3.6, README §18.2's re-grade box). **1** — ΔE94 and ΔE CMC, the last remainder item that was blocked on sourcing rather than on engineering (`crates/iccce-color/src/delta_e.rs`). Plus three pieces of engineering with no Pass of their own: the **ISO estimator wired to a caller**, **four API soundness defects**, and the **API sealing split** |
+| **Date** | **2026-08-12** — the same calendar day as §2.9 and §2.10, and the project's **second** day |
+| **Commits** *(hashes and subject lines corroborated by `.git/logs/HEAD`, read; **contents unverified**)* | **`fc4727b`** *"Pre-publication audit: four API soundness defects fixed, metadata, CI"* — ★ **committed at 07:08:16 −04:00, i.e. BEFORE the Pass 6 + Pass 7 filing commit `5867f1a` (07:21:36), and §2.9 does not mention it**; **`c268261`** *"cmm: wire the ISO estimator — it had no caller (Pass 5b finding)"*; **`189e732`** *"Pass 6 gate: default grid 17 -> 33, because the number would not move"*; **`aef7566`** *"color: dE94 and CMC — Pass 1's last remainder, honestly labelled"*; **`95c04c1`** *"api: seal the byte readers, keep the ISO surface public — a stated split"*; **`5cfee17`** *"difftest: the estimator discrimination — and lcms2 has TWO estimators"* — **the current tip** |
+| **The repository, and exactly what is evidenced** | `.git/refs/heads/master` and `.git/refs/remotes/origin/master` both hold **`5cfee171…`** *(verified — both read)*. `.git/logs/HEAD` holds **52 lines**, all `commit`/`commit (initial)`, **no `reset`, `rebase`, `amend`, `checkout` or `merge` entry** *(verified — read end to end)*. **★ That corroborates the dispatch's "52 commits" by two independent routes**: the reflog line count, and §7.10's `git rev-list --count HEAD` = **51** at `95c04c1` plus the one commit since. **This is the first filing at which a dispatch's commit count and the file-derived count agree** — §2.9's disagreed (49 vs 45) and the file was right |
+| **★ Nine pushes now, not eight — and one that FAILED** | `.git/logs/refs/remotes/origin/master` holds **nine** `update by push` lines, the last at **09:06:55 −04:00** carrying `95c04c1` → **`5cfee171`** *(verified — read)*. §7.10 item 2's observation is **unchanged and now larger**: **nothing in any document records a go-ahead for pushes three through nine**, and rule 9 plus DL-024 both say publishing is the operator's act. **Recorded as an observation, not an accusation.** ★ Separately, the engineer reports a **transient `HTTP 408` on one push**, retried successfully over **HTTP/1.1**. **A failed push leaves no reflog line**, so the failure is **reported** and only the success is **evidenced** — which is the cleanest small example in this project of the difference the two words carry |
+| **★ THE LIBRARIAN HAD NO SHELL AT THIS FILING, AND HAD ONE AT THE LAST** | §2.10 corrected *"the librarian has no shell"* from a fact to a reading, having found a working `Bash` tool. **This session's tool grant contains no `Bash` tool at all** *(verified — the tool list)*. **So the correction does not generalise into a new standing fact**: shell availability is a property of a *session*, not of the agent, and both filings must be read with the date attached. Everything below marked *verified* was read in the working tree or in `.git/`'s plain-text files. **Three of §7.10's shell-derived items therefore could not be re-checked here and are labelled `unverified-this-filing`, not `owed`** (§7.10 item 8's own protocol, applied to itself the first time it could be) |
+| **Who measured** | **`icc-conformance`** — every Pass 5b, Pass 5c and Pass 6 number below, via `TOLERANCES.md` §3.5.7 / §3.5.8 / §3.6 and `tools/difftest/README.md` §17 / §18 / §19 *(all four documents read here as the source; this librarian ran nothing)*. **`icc-engineer`** — the ΔE94/CMC transcription and its **C probe** compiled against the pinned lcms2, the ISO wiring, the API audit, and the CI run |
+| **★ NO RUNNER OUTCOME accompanied this dispatch, and there is a specific reason to want one** | No `pass=`/`fail=` line and no `cargo test --workspace` count came with this filing. **The last runner outcome on record is §2.10's, and it was RED**: `pass=140 fail=2` with **both failures in `pass5c`**, mid-flight. Both have since been **re-formulated rather than widened** — the `…/FINDING/lcms2-destination-black-is-NEUTRAL-too` row is now `…/FINDING/divergence-chroma-follows-lcms2-BRANCH` (the needle moved from *"neutral"* to *"whatever the selected branch requires"*, which is the finding itself), and the attribution row is now **graded on the `swop` arm only**, on a stated units argument *(all verified — `TOLERANCES.md` §3.5.8.3 read)*. **This librarian's judgement: both re-formulations are defensible and neither is a moved tolerance** — the two constants (`0,0 exact` and `1,0`) are unchanged, and §3.5.8.3 gives the derivation for each. **But no run of the FINAL shape has been reported to anyone**, and eight ledger rows below rest on that shape |
+| **Independently checkable without a shell** | **121 `#[test]` declarations across 19 files under `crates/`** *(verified — counted, no result limit; 116 across 19 at §2.9)*. §2.10 reported **121 passed**. ★ **The two numbers agreeing is a coincidence of two different quantities and must not be read as per-test confirmation** — one is a count of declarations in today's tree, the other is a pass count reported from a run at `95c04c1`, and one commit has landed since |
+| **`dechk.obj`** | **Still present at the repository root** *(verified — the tree enumerated today)*. It is the **C probe's object file** from the ΔE94/CMC work — which is now traceable to its cause rather than merely to its commit. **Its TRACKED status and its presence in `origin/master` are §7.10's shell-verified findings and could not be re-verified here**; they are carried as **verified-then, unchecked-now** |
+| **★ What is NOT in this block, and it is the eleventh time** | **No ground-truth row.** Pass 5c is a **reimplementation cross-check**; Pass 6's re-grade is `self-consistency`; ΔE94 and ΔE CMC are **`impl_crosscheck` by construction and say so in their own module doc**, because CIE 116-1995 and BS 6923 are paywalled and **no published worked example was obtained for either**. **NC-001 remains the project's only `published-ground-truth` row, and it is about a metric, not about a transform** |
+
 ---
 
 ## 3. The claims

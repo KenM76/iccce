@@ -2678,3 +2678,184 @@ widening its band rather than by asking which of the three things is
 wrong; or a fourth instance of the pattern in the table above appears,
 in which case the observation stops being an observation about three
 days and becomes a property of the method.
+
+### DL-026 — ★★ **DL-019's premise EXPIRED, so NC-053 is RE-BASED OFF IT rather than left under it: the raw ICC-absolute comparison stays ungraded PERMANENTLY, because the standard binds READING profiles and not a CMM's computed output.** Filed with the measurement that made the judgement affordable, and with the wording rule that must survive every restatement
+
+**Date:** 2026-08-12 (Pass 4c) · **Judgement by:** `icc-conformance`,
+which the Pass 6 + Pass 7 handoff required to *decide rather than defer*
+· **Sourcing by:** `icc-spec-librarian`, same day · **Filed by:**
+`icc-librarian` · **Relates to** **DL-019** (the entry being re-based),
+**DL-021** (a behaviour is a fact about one direction until measured in
+the others), **DL-023** (state the disagreement space before the run),
+**DL-025** (a control is only as good as its fixture), and
+`NUMERIC_CLAIMS.md` **§3.15.6**, **§3.9.5**'s dated correction, and
+**NC-053 / NC-054 / NC-119 … NC-128**
+
+#### The decision, in four parts
+
+1. **NC-053 stays REPORTED, NOT GRADED.**
+2. **NC-054 stays GRADED at 5×10⁻².**
+3. **NC-053 is RE-BASED OFF DL-019.** It is no longer filed under
+   *"report-not-grade while the authority does not exist"*.
+4. **It is now PERMANENTLY ungraded**, on a different and stronger
+   basis — the **A16 / NC-056 pattern**: the standard is silent, two
+   named choices exist, the outcome is a **difference**, not an error.
+
+**Parts 1 and 2 look like "no change". Part 3 is the entry.**
+
+#### Why leaving it under DL-019 would have been WRONG even though the verdict is the same
+
+DL-019 is a **holding pattern**. Its condition is *"the mechanism is
+identified but its authority does not exist"*, and a holding pattern
+asserts something about the world: **that the project is waiting for a
+document.**
+
+**It is not waiting any more.** The operator's `ICC.1:2001-04` download
+landed, `A4b` resolved, and the corpus was read. **A row still filed
+under DL-019 would assert an unmeasured fact about the project's own
+state** — and that is precisely the error class this project has paid
+for twice: `NEXT_SESSION.md` §3 telling a session to run an experiment
+that was already finished (`NUMERIC_CLAIMS.md` §3.14), and the sibling
+project's `CLAUDE.md` carrying *"still unverified"* about a question one
+of its own corpus files had already answered.
+
+**A verdict that does not change is not the same as a basis that does
+not change**, and the basis is the part a future session reads to decide
+whether the verdict still holds.
+
+#### What replaced the missing authority — stronger, and permanent
+
+*(Sourced by `icc-spec-librarian`, 2026-08-12.)*
+
+| document | what it actually gates the `wtpt` rule on |
+|---|---|
+| **`ICC.1:2022` 9.2.36** | **device class — with NO version gate** |
+| **`ICC.1:2001-04` A.3.1.1** | **the adaptation condition — not on class at all**: *"If the viewer completely adapts to the white point of the medium (as is often the case with monitors) this tag should be set to Xi, Yi, Zi"* — **monitors are the typical case, not the condition** |
+
+**Therefore lcms2's predicate — `version < 0x4000000 && class ==
+'mntr'` — reproduces NO CLAUSE IN EITHER EDITION.** It is not a stricter
+reading of a rule; it is a **different rule**, assembled from one half
+of each edition. A.3.1.1 is additionally a **`should`**, and
+`ICC.1:2001-04` has **no defined verbal-form hierarchy**, so its deontic
+weight is **qualified**.
+
+**This is not "the authority is still missing."** It is **the authority
+found, read, and observed to be silent on the question** — which is a
+finding, and a permanent one. Documents do not become less silent.
+
+#### ★★ Why a graded row is not merely undesirable but UNAVAILABLE
+
+**The conformance clause (`ICC.1:2022` clause 5, `ICC.1:2001-04`
+clause 3) binds the ability to READ profiles. A CMM's computed output is
+not constrained by either.**
+
+Two consequences, and both are load-bearing:
+
+- **Neither implementation can be graded against the standard here.**
+  There is no clause to grade against. A tolerance would be a budget
+  with no derivation.
+- **Grading iccce against lcms2 would put a budget on a quantity nobody
+  controls.** That is exactly the *"widen to ~15 ΔE00 so it passes"*
+  alternative **DL-019 already rejected and wrote down** — reached by a
+  different route, and it must be rejected again for the same reason:
+  15 ΔE00 is a different colour, and such a gate would **silently absorb
+  any future arithmetic error in the absolute path.**
+
+#### ★★ The judgement was only DEFENSIBLE because its cost was removed FIRST — record the dependency
+
+**Before this Pass, the ICC-absolute path's ONLY gate was NC-054, a
+MODEL.** A model can absorb a genuine arithmetic error **along with the
+policy difference it was built to isolate**, and nothing in the suite
+could distinguish the two. Declining to grade NC-053 in that world would
+have left the absolute arithmetic **unwatched**.
+
+**Pass 4c supplies a raw, unmodelled, GRADED cross-check of that
+arithmetic** — **NC-120 at 8.900×10⁻⁵**, below its own media-relative
+floor (**NC-122, 1.080×10⁻⁴**) on the same pair, grid and destination
+table. **Leaving NC-053 ungraded now costs nothing.**
+
+> **★ The dependency is part of the decision, not background to it. If
+> NC-120 is ever removed or invalidated — the lcms2 pin moving would do
+> it — THIS JUDGEMENT MUST BE RE-MADE, NOT INHERITED.**
+
+**And the method that made NC-120 possible is the reusable part.**
+lcms2's substitution predicate is a **CONJUNCTION**, so choosing a pair
+in which **each profile fails a DIFFERENT half** makes the policy
+difference **structurally absent** rather than modelled or tolerated:
+the source (`fixtures/synthetic/v4-rgb-matrix-trc.icc`) is `'mntr'` but
+**v4.4**, failing the version half; the destination
+(`USWebCoatedSWOP.icc`) is v2.1 but **`'prtr'`**, failing the class
+half.
+
+> **★★ So the item was never blocked on a DOCUMENT. It was blocked on a
+> PROFILE PAIR — and the pair was in the committed fixture corpus the
+> whole time.** `ROADMAP.md` and `NEXT_SESSION.md` carried it for three
+> filings as *"blocked on a document only the operator can fetch"*.
+> **The generalisation, and it is the entry's most portable sentence:
+> when a comparison is confounded by an implementation's CONDITIONAL
+> behaviour, read the CONDITION — if it is a conjunction, the confound
+> may be removable by choosing INPUTS rather than by resolving the
+> disagreement.**
+
+#### ★★ A WORDING RULE that binds every document this project writes
+
+**Say lcms2 DIVERGES. Never "non-conforming."**
+
+The conformance clause binds **reading**, so *"non-conforming"* is a
+verdict **not available** on a CMM's computed output — in either
+direction, about either implementation. This mirrors the hedge
+`TOLERANCES.md` **§5.2** already carries for **NA-003 / A39b**, and it
+is stated here as a rule rather than a footnote because it is now needed
+in a second place, which is how a footnote becomes a rule.
+
+#### What this entry does NOT decide
+
+- **It does not decide who is right about `wtpt`.** Nobody is. The
+  standard is silent; both readings are named choices; the outcome is a
+  **difference**. Rule 7 applies unchanged.
+- **★ It does not clear A4c, and A4c does not ride along.** Whether a
+  profile's `wtpt` must agree with **its own colorants** is a separate
+  ambiguity and remains **SILENT**; the corpus's position is that
+  *"disclosure is the one option ICC.1 does not foreclose"*. **The
+  system sRGB profile is exactly such a self-inconsistent file** — D65
+  `wtpt` beside D50-adapted colorants — and **Pass 4c neither
+  adjudicates nor repairs it.** A4c did not clear when A4b cleared and
+  it does not clear now.
+- **It does not claim iccce's absolute arithmetic is correct.** NC-120
+  and NC-122 are **cross-checks**; two implementations can read 6.3.2.2
+  the same way and both be wrong. **Pass 4c creates no ground-truth
+  row.**
+- **It does not generalise past what was measured.** Two profile pairs,
+  one destination tag (`B2A1`), one grid (729 points), one machine, one
+  pin, two runs. **DL-021 binds.**
+
+#### ★ A citation hazard found while sourcing this, worth carrying past the entry
+
+iccce's docs and code cite the absolute conversion as **"Annex D,
+D.6/D.7"**. **Annex D is the INFORMATIVE restatement**; the normative
+statement is **`ICC.1:2022` clause 6.3.2.2, Equations (4)–(6)**. Worse,
+**the label is NOT edition-stable**: in `ICC.1:2001-04` Annex D the
+equations are **(D.1)–(D.6)**, **there is no (D.7)**, and that edition's
+**(D.6) is the single `Z` component of the INVERSE**. Since **every
+`wtpt` discussion in this project concerns a v2 file**, the ambiguity
+was live wherever the bare label appeared. Recommended form:
+`ICC.1:2022 6.3.2.2 Eq (4)–(6) [restated verbatim, D.6.1 Eq (D.7)]`.
+**A sweep is owed** (`NUMERIC_CLAIMS.md` §7.10), folded into the DL-014
+audit.
+
+**Evidence.** `docs/TOLERANCES.md` **§3.4.5** and its `§4` change-table
+rows, written by `icc-conformance` *(verified — read)*;
+`tools/difftest/src/pass4c.rs`, ten records *(verified — read; the ten
+ids appear twice, once emitted and once in the skip-fallback list)*;
+`NUMERIC_CLAIMS.md` **§3.15**. **★ There is NO COMMIT**: `pass4c.rs` is
+**untracked** *(verified — `git status --short` run; see
+`NUMERIC_CLAIMS.md` §2.10 on why a librarian was able to run it at
+all)*.
+
+**Revisit if:** the lcms2 pin moves (**NC-120 falls, and with it this
+entry's affordability**); an ICC document is published that binds a
+CMM's *computed output* rather than its ability to read profiles; a
+graded row is ever proposed for NC-053 (it needs a **derivation**, and
+this entry says where one would have to come from); or **A4c** acquires
+an authority, which would be a different entry and not an extension of
+this one.

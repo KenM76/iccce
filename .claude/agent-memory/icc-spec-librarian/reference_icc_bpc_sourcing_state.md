@@ -11,7 +11,46 @@ metadata:
 **Do not re-do the sourcing sweep. Do not re-open §7.1/§7.2/§7.3 — they are
 closed.**
 
-## The four things that changed on 2026-08-12
+## ★★★ 11th pass, 2026-08-12 (later) — the short-circuit return value
+
+**`icc-conformance` asked one clause question and it found a shipped iccce bug.**
+At **4.2.5.4**'s mid-range straightness short-circuit (no curve fitted),
+**ISO/CD 18619 returns `InitialLab`, unchanged — stated TWICE in `shall`
+language (4.2.5.1 Overview and 4.2.5.4's last paragraph) and NEVER in terms of
+`inRamp`/`outRamp`.** `outRamp[first]` occurs in the whole of 4.2.5 only as
+`MinL` and as the left side of the 4.2.5.3 validity test — **it is not a
+candidate for `DestinationBlackPoint` in any branch.** **lcms2 returns
+`InitialLab` and CONFORMS; iccce returned `outRamp[first]`.** Measured on
+`USWebCoatedSWOP` at rel.col.: **`8,166 8×10⁻² ΔE76`, 100 % `L*`** — small, and
+**100 % of the divergence on that fixture.** **Filed as a BUG, not an ambiguity
+row** (the two candidates are not two readings — one has no textual support).
+
+**Three consequences that generalise:**
+1. **On a real ink profile the quadratic fit NEVER RUNS** — both implementations
+   short-circuit. Everything about the shadow window, `n < 4` and vertex-vs-root
+   is **dead code on `USWebCoatedSWOP`**. Any prediction that named it is
+   untested, not confirmed.
+2. **§17.3's chroma prediction is INERT on CMYK** (4.2.5.2.1 zeroes `a*`/`b*`,
+   and lcms2's `BlackPointUsingPerceptualBlack` does the same). It needs a
+   **Gray/RGB LUT** destination. The scope line was right; a paraphrase of it in
+   `D:\Dev\iccce\docs\TOLERANCES.md` was not — **the sentence "precisely lcms2's
+   method-4 (quadratic-fit) territory", attributed there to §17.3, does not
+   exist in this corpus** (grepped three tokens, zero hits).
+3. **New ISO defect (`§4.6`): 4.2.5.4's opening sentence sends an *invalid*
+   `outRamp` to curve fitting, contradicting 4.2.5.3 and 4.2.5.1**, which both
+   `shall` it to `(0,0,0)`. Corpus adopts `(0,0,0)`, 2 clauses to 1. Also: the
+   source misspells `InitalLab` in 4.2.5.1 (both engines agree — it is theirs).
+4. **The short-circuit is the ONLY branch of 4.2.5 that can return a CHROMATIC
+   black** (4.2.5.3 → `(0,0,0)`, 4.2.5.5 → `(z,0,0)`), because 4.2.5.2.1 zeroes
+   chroma **only for CMYK**. Do not "fix" that to neutral.
+5. **`§5.4` step 4's "Not verifiable here" is RETRACTED** — lcms2's
+   `shall`-voice comment IS 4.2.5.4's final paragraph, near word-for-word.
+
+**Figure 1 (p.12, "DestinationBlackPoint computation logic sequence") has NO
+extractable text** — image only, `pdfminer.six` returns the caption alone. It
+cannot corroborate the prose; do not go looking again.
+
+## The four things that changed on 2026-08-12 (10th pass, earlier)
 
 1. **★ THE FORCING VERDICT — NO, and it does not change a shipped policy.**
    lcms2 forces `BPC = TRUE` at v4 perceptual/saturation *"following Adobe's

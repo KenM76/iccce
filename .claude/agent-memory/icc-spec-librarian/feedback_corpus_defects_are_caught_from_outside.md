@@ -1,13 +1,13 @@
 ---
 name: corpus-defects-are-caught-from-outside
-description: With n=7 corpus-made errors (C1, C1b, C2, C3, C4, A28's overstatement, and bpc.md §7.2's one-file constant sweep), not one was found by re-reading the corpus — arrange for external auditors (the primary document, an execution, a second consumer) rather than for more careful re-reading; includes the "a full-text search is evidence about vocabulary, not content" rule
+description: With n=8 corpus-made errors (C1, C1b, C2, C3, C4, A28's overstatement, bpc.md §7.2's one-file constant sweep, and the un-transcribed ISO 4.2.5.4 return value), not one was found by re-reading the corpus — arrange for external auditors (the primary document, an execution, a second consumer) rather than for more careful re-reading; includes the "a full-text search is evidence about vocabulary, not content" rule
 metadata:
   type: feedback
 ---
 
 **A corpus cannot audit itself. Optimise for how fast something *outside* it will disagree, not for how carefully it was re-read.**
 
-**Why:** as of 2026-08-11 the ICC_Spec corpus has made five recorded defects, and every one was overturned by a different mechanism than the one that let it through — **none by re-reading the corpus**:
+**Why:** as of 2026-08-12 the ICC_Spec corpus has made eight recorded defects, and every one was overturned by a different mechanism than the one that let it through — **none by re-reading the corpus**:
 
 | id | The claim | Overturned by |
 |---|---|---|
@@ -41,6 +41,21 @@ about the PATHS IT COVERED, and a sweep that does not name them reads as
 exhaustive.** Generalised rule now in the corpus: any list of "all the X in
 implementation Y" must state the files/functions searched. Cheap fix, and it
 converts a false negative into a stated scope.
+
+**★ n=8, added 2026-08-12 (11th pass): the corpus SUMMARISED ISO/CD 18619
+4.2.5.1's short-circuit return value (`icc__s__bpc_algorithm.md` §4.3, one
+clause of one sentence — "mid-range straight → `InitialLab`") and never
+TRANSCRIBED 4.2.5.4, so nothing in the corpus said `outRamp[first]` was wrong.
+An implementation shipped `outRamp[first]`, and it was caught by
+`icc-conformance` MEASURING the difference against lcms2** — `8,166 8×10⁻² ΔE76`
+— **not by anyone re-reading the summary.** **The lesson is specific and
+actionable: a summary of a normative sentence is not a substitute for the
+sentence, precisely because a summary reads as complete.** The tell was
+available and unnoticed: §4.3 mentioned the return value only in passing, inside
+a section about a *different* document's scoping defect, so it was filed under
+"Adobe's bug" rather than under "what the algorithm returns". **Where a clause
+states a RETURN VALUE, transcribe it verbatim at the place an implementer will
+grep for it, even if another section already paraphrased it.**
 
 **Note also what the ambiguity register did and did not do.** It tracked C1 correctly (as A1, flagged the whole time). It could not have tracked C4: the wrong sentence never became an `A` row because **it was never uncertain to its author**. A register only records the uncertainty someone thought to write down.
 

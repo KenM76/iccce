@@ -534,7 +534,7 @@ impl Chain {
                     crate::bpc::neutralise_and_clip(lab.l)
                 };
 
-                let l = crate::bpc::estimate_lut_destination_black(initial, intent, |lab| {
+                let black = crate::bpc::estimate_lut_destination_black(initial, intent, |lab| {
                     // BT: out with the user's intent, back with
                     // relative — the one place a "relative" appears
                     // that is not the caller's choice.
@@ -547,9 +547,16 @@ impl Chain {
                             b: 0.0,
                         })
                 });
-                // ISO returns a neutral (z, 0, 0); the map consumes
-                // XYZ, so convert through the PCS white.
-                Ok(iccce_color::Lab { l, a: 0.0, b: 0.0 }.to_xyz(D50))
+                // The map consumes XYZ. NOTE the black may legitimately
+                // be CHROMATIC: 4.2.5.4's short-circuit returns
+                // InitialLab unchanged, and 4.2.5.2.1 zeroes chroma
+                // only for CMYK — so a Gray/RGB LUT destination yields
+                // a chromatic DestinationBlackPoint by ISO's own
+                // design. Not neutralised here; 4.2.6 ignores a/b
+                // downstream anyway, so passing it through costs
+                // nothing and asserting neutrality would be a second,
+                // quieter departure from the clause.
+                Ok(black.to_xyz(D50))
             }
         }
     }

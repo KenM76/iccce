@@ -169,16 +169,40 @@ pub fn neutralise_and_clip(l: f64) -> Lab {
 /// **always relative colorimetric**, which is the one place a
 /// "relative" appears that is not the caller's choice.
 ///
-/// Returns the destination black `L*` (neutral by construction).
-/// Returns 0.0 for every ISO-specified give-up path: an invalid
+/// Returns the destination black point as a full `Lab`.
+///
+/// ★ CORRECTED 2026-08-12 — this returned only `L*`, and the
+/// straightness branch returned the wrong quantity entirely. ISO/CD
+/// 18619 4.2.5.4 final paragraph, VERBATIM: *"If the mid range is
+/// straight (as determined above) then the DestinationBlackPoint
+/// **shall be the same as InitialLab**."* 4.2.5.1's control-flow
+/// summary says it a second time. `outRamp[first]` — which this
+/// function used to return there — appears in clause 4.2.5 only as
+/// `MinL` (a threshold and `yRamp` anchor) and in 4.2.5.3's validity
+/// test, and **is not a candidate for the black point in any
+/// branch**. lcms2 conformed; iccce did not. Cost of the defect,
+/// measured before it was found: 0.0817 ΔE76 on USWebCoatedSWOP,
+/// which was 100 % of the two implementations' disagreement there.
+///
+/// The return type widened because of a corollary the same reading
+/// produces: **the short-circuit is the only branch that can return
+/// a CHROMATIC black.** 4.2.5.2.1 zeroes chroma only for CMYK, so on
+/// a Gray/RGB LUT destination ISO itself yields a chromatic
+/// `DestinationBlackPoint` — and neutralising it here would be a
+/// second, quieter departure. (4.2.6 ignores `a`/`b` downstream
+/// anyway, so the cost is zero today and the correctness is not.)
+///
+/// Gives up to `(0,0,0)` on every ISO-specified path: an invalid
 /// ramp (4.2.5.3), fewer than 3 shadow points, a non-positive
-/// discriminant.
+/// discriminant. Note ISO defect §4.6: 4.2.5.4's opening sentence
+/// would route an invalid ramp into curve fitting, contradicting
+/// 4.2.5.3 and 4.2.5.1; this follows the two clauses that agree.
 #[must_use]
 pub fn estimate_lut_destination_black(
     initial_lab: Lab,
     intent: EstimationIntent,
     bt: impl Fn(Lab) -> Lab,
-) -> f64 {
+) -> Lab {
     // 4.2.5.2.2: 256 equal steps from (0, ka, kb) to (100, 0, 0) —
     // chroma RAMPS TO ZERO (Adobe held it constant over 101 samples;
     // the corpus calls this substantive, not editorial), with the
@@ -217,7 +241,11 @@ pub fn estimate_lut_destination_black(
     // falls through to the fit and its give-up paths rather than
     // being silently treated as valid.
     if min_l >= max_l {
-        return 0.0;
+        return Lab {
+            l: 0.0,
+            a: 0.0,
+            b: 0.0,
+        };
     }
 
     // 4.2.5.4: the mid-range straightness test runs ONLY for relative
@@ -236,7 +264,12 @@ pub fn estimate_lut_destination_black(
             }
         }
         if straight {
-            return min_l.clamp(0.0, 50.0);
+            // 4.2.5.4 VERBATIM: "the DestinationBlackPoint shall be
+            // the same as InitialLab" — carried through unchanged,
+            // the whole triple. NOT outRamp[first] (which is MinL,
+            // the threshold anchor, and is never a black-point
+            // candidate in any branch of 4.2.5).
+            return initial_lab;
         }
     }
 
@@ -256,10 +289,18 @@ pub fn estimate_lut_destination_black(
     }
     // "If there are fewer than 3 points in SP … set to (0, 0, 0)."
     if xs.len() < 3 {
-        return 0.0;
+        return Lab {
+            l: 0.0,
+            a: 0.0,
+            b: 0.0,
+        };
     }
     let Some((a, b, c)) = fit_quadratic(&xs, &ys) else {
-        return 0.0;
+        return Lab {
+            l: 0.0,
+            a: 0.0,
+            b: 0.0,
+        };
     };
 
     // ★ The single largest delta from Adobe: take the ROOT, not the
@@ -269,19 +310,33 @@ pub fn estimate_lut_destination_black(
     // root exactly and adds the two guards the approximation needs:
     // the near-linear fallback (the vertex is UNBOUNDED as the fit
     // straightens — the common case) and the [0,50] clamp.
+    // 4.2.5.5 returns a NEUTRAL (z, 0, 0) on every fitted path.
+    let neutral = |z: f64| Lab {
+        l: z,
+        a: 0.0,
+        b: 0.0,
+    };
     if a.abs() < 1.0e-10 {
         if b == 0.0 {
-            return 0.0;
+            return Lab {
+                l: 0.0,
+                a: 0.0,
+                b: 0.0,
+            };
         }
-        return (-c / b).clamp(0.0, 50.0);
+        return neutral((-c / b).clamp(0.0, 50.0));
     }
     let d = b * b - 4.0 * a * c;
     if d <= 0.0 {
-        return 0.0;
+        return Lab {
+            l: 0.0,
+            a: 0.0,
+            b: 0.0,
+        };
     }
     // NOTE 1: "z has been assigned to the root of the quadratic with
     // the positive gradient."
-    ((-b + d.sqrt()) / (2.0 * a)).clamp(0.0, 50.0)
+    neutral(((-b + d.sqrt()) / (2.0 * a)).clamp(0.0, 50.0))
 }
 
 /// Least-squares fit of `y = a·x² + b·x + c` by the normal equations.
@@ -515,8 +570,10 @@ mod tests {
         // 0 and be indistinguishable from the give-up path — which is
         // exactly why Adobe's approximation is dangerous rather than
         // merely imprecise.
-        assert!(z > 0.0, "ISO must not return the give-up value here");
-        assert!(z < 50.0);
+        assert!(z.l > 0.0, "ISO must not return the give-up value here");
+        assert!(z.l < 50.0);
+        // 4.2.5.5 returns a NEUTRAL black on every fitted path.
+        assert_eq!((z.a, z.b), (0.0, 0.0));
     }
 
     /// 4.2.5.3 validity, verbatim: a non-increasing ramp is invalid
@@ -537,7 +594,7 @@ mod tests {
                 b: 0.0,
             },
         );
-        assert_eq!(z, 0.0);
+        assert_eq!((z.l, z.a, z.b), (0.0, 0.0, 0.0));
     }
 
     /// 4.2.5.4: a near-identity round trip is "straight" at relative
@@ -560,7 +617,17 @@ mod tests {
             EstimationIntent::RelativeColorimetric,
             identity_ish,
         );
-        assert!((rel - 0.5).abs() < 1e-9, "min of the ramp, got {rel}");
+        // ★ 4.2.5.4: the straight branch returns InitialLab
+        // UNCHANGED, not the ramp's minimum. This assertion was
+        // `(rel - 0.5) < 1e-9` — the ramp minimum — until the corpus
+        // read the clause verbatim on 2026-08-12 and found iccce had
+        // it wrong; the expectation moved to the clause, and lcms2
+        // had been right all along.
+        assert_eq!(
+            (rel.l, rel.a, rel.b),
+            (0.0, 0.0, 0.0),
+            "InitialLab carried through"
+        );
         // Perceptual: no straightness escape — it fits, and the fit
         // of a straight line hits the |a| < 1e-10 linear branch.
         let per = estimate_lut_destination_black(
@@ -572,7 +639,7 @@ mod tests {
             EstimationIntent::PerceptualOrSaturation,
             identity_ish,
         );
-        assert!((0.0..=50.0).contains(&per));
+        assert!((0.0..=50.0).contains(&per.l));
     }
 
     /// The chroma clamp and the ramping-to-zero chroma (4.2.5.2.2)

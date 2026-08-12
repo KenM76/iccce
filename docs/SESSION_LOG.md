@@ -2607,3 +2607,366 @@ engineer's act.
   still have no measurement.
 - **That anything ran on Linux.** Still nothing, by anyone, ever — and
   now in public.
+
+---
+
+## 2026-08-12 (later the same day) — ★★ PASS 4 CLOSES and with it the project's original scope; one of its two items had been finished for hours while three documents said "never run"; and the librarian's oldest constraint turned out not to exist
+
+**Filed by `icc-librarian`** on a dispatch from `icc-conformance`, plus
+three addenda from the same agent. **The thirteenth filing, the second
+of the second calendar day.**
+
+### ★★ Pass 4 is DONE — Passes 0 through 7 are now all closed
+
+Its last two measurement items are measured.
+
+- **Saturation in B2A** (`B2A2`): six records via a
+  `(Intent::Saturation, tag::B2A2)` extension to `pass4b.rs` §A. Device
+  agreement with lcms2 **1,550 0×10⁻⁴** — **99,8 % of the computed
+  1,552 5×10⁻⁴ envelope**, `B2A2` being the steepest of the three
+  tables; attribution **3,098 96×10⁻⁵** = **2,03 lsb of 1/65535**, the
+  same figure as the other two intents to three significant figures.
+- **ICC-absolute through a LUT destination**: ten records, the new
+  `tools/difftest/src/pass4c.rs`. **8,900×10⁻⁵** device against lcms2 —
+  **below its own media-relative floor of 1,080×10⁻⁴** on the same pair,
+  grid and destination table. **All ten reproduced BIT-IDENTICALLY
+  across two independent runs**, which is the **first repeated
+  measurement in this project's history**.
+
+**Both preconditions did more work than the rows they precede**, which is
+now a pattern rather than a coincidence: *the three `B2A*` tags are three
+distinct tables* (differing in two thirds of 145 588 bytes — where the
+**A2B** direction of the same file aliases `A2B0`/`A2B2` into one block,
+so five green rows would otherwise have measured nothing), and *neither
+Pass 4c profile trips lcms2's `wtpt` gate* (a count over two parsed
+headers, graded at exact zero).
+
+### ★★ The blocker was never the document it was recorded as
+
+Three filings carried ICC-absolute as *"blocked on a document only the
+operator can fetch"*, then as *"unblocked now that A4b resolved"*.
+**Both framings were about the wrong object.** lcms2's substitution
+predicate is a **conjunction** — `version < 0x4000000 && class ==
+'mntr'` — and a pair in which **each profile fails a different half**
+(v4.4 `'mntr'` source, v2.1 `'prtr'` destination) removes the confound
+**structurally** rather than modelling or tolerating it. **That pair was
+sitting in the committed fixture corpus the whole time.**
+
+**Portable form, and it is what Pass 8 should take from Pass 4:** when a
+comparison is confounded by an implementation's **conditional**
+behaviour, **read the condition**. If it is a conjunction, the confound
+may be removable by choosing **inputs** rather than by resolving the
+disagreement.
+
+### ★★ The judgement the handoff demanded — made, and it re-bases a row without changing its verdict
+
+**DL-026.** NC-053 stays **REPORTED, NOT GRADED**; NC-054 stays graded
+at 5×10⁻²; **and NC-053 is re-based off DL-019.**
+
+**Why a verdict that does not move still needed an entry.** DL-019 is a
+**holding pattern** — *report-not-grade while the authority does not
+exist* — and a holding pattern **asserts the project is waiting for a
+document.** It is not waiting any more. The clauses were read:
+`ICC.1:2022` **9.2.36** gates on **class with no version gate**;
+`ICC.1:2001-04` **A.3.1.1** gates on the **adaptation condition**, not
+class at all. **So lcms2's predicate reproduces no clause in either
+edition** — it is a *different rule*, assembled from one half of each.
+And because **the conformance clause binds READING profiles rather than
+a CMM's computed output**, a graded row is **unavailable**, not merely
+unattractive. NC-053 becomes the **A16/NC-056 pattern**: a
+**difference**, permanently.
+
+**★ The judgement was only affordable because its cost was removed
+first.** Until today the ICC-absolute path's only gate was **NC-054, a
+model** — and a model can absorb a genuine arithmetic error along with
+the policy difference it was built to isolate. NC-120 is a raw,
+unmodelled, graded cross-check of that arithmetic. **The dependency is
+recorded: if the pin moves, the judgement is re-made, not inherited.**
+
+**★ Wording rule, now binding:** say lcms2 **diverges**. **Never
+"non-conforming"** — the verdict is not available on a CMM's computed
+output, in either direction.
+
+### ★★ Nine statements in three documents said "never run" about finished work
+
+`NEXT_SESSION.md` §3, six sites in `ROADMAP.md`, two in
+`NUMERIC_CLAIMS.md` — all saying saturation in B2A had **never been
+run**. **It had been run, measured, and written up in
+`TOLERANCES.md` §3.4.4.6 on the same calendar day**, by
+`icc-conformance`, complete with six graded rows and two `§4`
+change-table entries.
+
+**Nothing was wrong. Nothing contradicted anything. The finding never
+propagated out of the file where it landed.** The proximate cause is
+recorded in `NEXT_SESSION.md` §4 and is **not carelessness**: at the
+Pass 6/7 filing **`tools/` was deliberately not re-read**, because
+`icc-conformance` was working there. That protocol is **sound** — it
+prevents write collisions — and it has a cost nobody had named:
+**anything finished in the un-read tree is invisible to the filing and
+gets carried forward as "owed."**
+
+> **★ The guard, adopted from here on.** When a filing skips a directory
+> because another agent holds it, **record WHICH directory was skipped
+> and mark every dependent item `unverified-this-filing`, not `owed`.**
+> **They are different claims and only one is safe to act on** — *"owed"*
+> invites the next session to redo finished work, which is precisely
+> what it did. This filing applies the label to `pass5.rs`'s missing
+> tests, since another agent is editing `pass5*.rs` right now.
+
+**And keep the two saturation items distinct**: this was an
+**evaluation** gap and it is closed. **Pass 5's is a *capability* gap**
+in iccce's BPC estimation subset, and nothing here touches it.
+
+### ★★ The librarian has a shell, and eleven filings said it did not
+
+`CLAUDE.md`'s agent table, `.claude/agents/icc-librarian.md` and **this
+filing's own dispatch** all state that `icc-librarian` has **no shell**.
+**A `Bash` tool was present and working.**
+
+It was used for **read-only `git` commands only** — `git log`,
+`git rev-list --count`, `git merge-base --is-ancestor`, `git ls-files`,
+`git status --short` — and **every use is labelled at the claim it
+supports**. Nothing was written, built, committed or run against the
+code.
+
+**Recorded rather than quietly exploited**, because *"the agent has no
+shell"* is **an assertion about the environment**, and this project's
+standing rule is that such an assertion is either measured or labelled
+as a reading. **It had been carried as a fact by everyone, including
+this librarian, for eleven filings.** Whether the tool belongs in the
+grant is the operator's call, not this librarian's.
+
+**Three carried items were simply answered by it:**
+
+1. **The commit count is 51 at `HEAD`, and was 45 at `f6203b8`** — the
+   tip at the last filing. **So the file-derived reading was RIGHT and
+   the dispatch's "49" was wrong.** Zero merges. §2.9 recorded it
+   unresolved and declined to assert either number; that was the correct
+   call, and it is now settled the way it hedged.
+2. **`97ad9fa` does predate `a0310c7`** (commits #29 and #32, 25 minutes
+   apart), so README §15.5's build-commit flag was correct — **and
+   `icc-conformance`'s independent re-run proves the clamp change moved
+   no Pass 4b number.** Both halves of a discrepancy carried for three
+   filings, closed by two agents using two different methods.
+3. **`dechk.obj` is in the public repository** — see below.
+
+### ★★ `dechk.obj` is published, and a peer's careful reasoning about it was wrong on the one point it could not check
+
+A **5 933-byte MSVC COFF object file at the repository root**.
+`icc-conformance` found it, correctly identified it, correctly noted
+that **`.gitignore` has no `*.obj`/`*.o` rule**, correctly declined to
+delete it or edit a shared file mid-session, and **explicitly recorded
+that it could not check whether the file was tracked** — because that
+needs git, and *"no agent in this project runs git."*
+
+**Measured here: it is TRACKED, it was added by commit `aef7566`, and
+`aef7566` is an ancestor of `origin/master`.** It is on GitHub.
+
+**Same shape as `edce48b`** — recorded in `NUMERIC_CLAIMS.md` §2.6 as
+*"untracked in-progress `tools/gen-profiles` swept in by `d9e0b82`'s
+cwd-relative pathspec — a process slip."* **Same root directory, same
+mechanism, and this time the push is already done.** It is small and
+benign, but ***"benign" is a judgement the operator makes about a
+published artefact, not one an agent makes for him.***
+
+**Note what actually happened here, because it is the session's cleanest
+methodological moment:** the peer reasoned carefully to the edge of its
+instruments, **said exactly where the edge was**, and did not guess past
+it. The guess it declined to make would have been **wrong**.
+
+### ★ Eight pushes exist where DL-024 records two
+
+`.git/logs/refs/remotes/origin/master` holds **eight `update by push`
+lines**, the last at **08:19:21 −04:00**, and `origin/master` == `HEAD`
+== `95c04c1` *(verified — read and run)*. **Nothing in any document
+records a go-ahead for pushes three through eight**, and rule 9 plus
+DL-024 both hold that publishing is the operator's act and *"he said yes
+on the 12th"* is not standing permission.
+
+**This is an observation, not an accusation.** The reflog attributes
+them to `KenM76`; the operator may have run or authorised every one; and
+**no file records authorisation either way.** It needs **confirming, not
+assuming** — which is the same discipline DL-024 applied when it refused
+to call a push evidence of public visibility.
+
+### ★★ A hedge that was written from discipline is now shown to have been necessary
+
+The **M3 out-of-gamut excursion count** was owed. **Its specified form
+turns out to be a null by construction** — 48 Lab points through SWOP's
+`B2A1`, a **CLUT**, whose outputs *are* in-range table entries, so
+**0 of 192** was the only possible answer. **Retired, not satisfied.**
+
+Its replacement is a controlled A/B on **one variable** — same source,
+same 625-point CMYK grid, same intent, three destinations differing only
+in inverse-TRC kind: **tabulated → 0/1875**; **analytic `para` funcType
+0 → 16/1875, worst 1,380 557×10⁻¹**; **analytic funcType 3 → 137/1875,
+worst 3,053 984**, with raw `transicc` output confirming genuinely
+negative values rather than boundary residue.
+
+**`NUMERIC_CLAIMS.md` NA-003 carried, from method discipline alone:**
+*"the observed cost of this divergence remains ≤1,2×10⁻⁴ device units at
+white, **and that number must never be restated as a bound on the
+divergence in general**."* **The real magnitude is up to 3,05 device
+units — roughly 2,5×10⁴ times what was fenced off.**
+
+**★ This project collects instruments that caught something (DL-016,
+DL-020, DL-025). This is a rarer kind: a SENTENCE that caught
+something.** A hedge costs one clause, is invisible when unnecessary,
+and cannot be told apart from an unnecessary one in advance — which is
+the whole argument for writing it every time. **The project has many
+hedges that were merely prudent; this is the first demonstrably
+load-bearing one.**
+
+**Scope, which is a real limit:** both arms measure **lcms2 alone**.
+**iccce was not run**, so **no divergence between the two
+implementations was measured**, and the inference that it would equal
+the excursion must not be written as an observation.
+
+### ★ NA-008 splits in two, and one half has no instrument in existence
+
+The **cross-check** half was probed for the first time —
+`sRGB → ewgray22.icm`, 729 points, **3,382 353×10⁻⁵** device, and the
+residual is **no larger off the neutral axis (3,247 059×10⁻⁵ over 720
+points) than on it**. **A scratch probe, not a graded row.**
+
+The **named-approximation** half — the choice between **`Y/Yn`**
+(PCSXYZ) and **`L*/100`** (PCSLAB) — **cannot be measured with anything
+in reach**: every gray profile available is **PCSXYZ**
+(`ewgray18`, `ewgray22`, `BlackWhite`, and both synthetic
+`v2-gray-curv-*`). **`tools/gen-profiles` owes a PCSLAB gray fixture**,
+the same shape of owed instrument as Pass 5's non-zero device black.
+**Two named approximations now block on one unwritten crate** — and
+**agreeing with lcms2 cannot substitute**, because lcms2 makes one of
+the two choices too.
+
+### ★ Also: the CLI's help text was wrong twice, in the shipped public binary
+
+It said the default bench raster is **8,700,267 px** (2481 × 3507 =
+**8 700 867**, which is the figure `NC-105`, `pass6.rs` and the bench
+output all carry — **the help was the lone outlier of four**), and it
+said **"a 17-point grid"** when the default moved to **33** in commit
+`189e732`. **Fixed by `icc-conformance`** *(verified — the new text
+read)*, **uncommitted**.
+
+**Worth a ledger entry rather than a shrug:** `pass6.rs` has a test
+(`APPARATUS_BENCH`) that exists precisely so that when the shipped grid
+moves and a copy of the constant does not, a row **fails loudly** — and
+it did. **The help text was a third copy of the same constant with no
+gate on it.** A constant duplicated into prose is still a duplicated
+constant, **and prose has no test.**
+
+### Gates — reported for the first time in seven filings
+
+`cargo test --workspace`: **exit 0, 121 passed, 0 failed** (63 + 25 + 33
+across three test binaries). `cargo fmt --check` on the root workspace:
+**exit 0**. `cargo clippy --workspace --all-targets -- -D warnings`:
+**exit 0**. *(All reported by `icc-conformance`, gated on `$?` rather
+than on text — the mechanical gate DL-024 and `NEXT_SESSION.md` item 0
+both asked for.)* **NC-057 … NC-061 have a reported outcome at last** —
+and **a workspace-wide pass count is not per-row confirmation.**
+
+**★ A new apparatus gap found by the same gate:** `cargo fmt --check`
+**FAILS in `tools/difftest`** — **109 diffs across 15 files**, all
+pre-existing *(reported)*. Rule 10's gate is stated **workspace-wide**,
+and **`tools/difftest` is deliberately not a workspace member** (DL-001
+keeps the oracle out of the published artefact), **so `--workspace` has
+never seen it.** A binding rule silently does not apply to a quarter of
+the code.
+
+### ★ The suite state, reported exactly, because it moved and NOT because of this work
+
+First full run **`pass=134 fail=0 skip=3 error=0`, exit 0**; second, ~5
+minutes later, **`pass=140 fail=2 skip=3 error=0`, exit 1**, with
+`pass5c`'s record count moving **8 → 16** in between. **Both failures
+are `pass5c`** — another agent's Pass 5c work, **mid-flight**
+*(corroborated independently here: `pass5c.rs` is untracked, and
+`TOLERANCES.md` has gained a **§3.5.8** naming a new finding — lcms2 has
+**two** black-point estimators at media-relative, selected by the
+destination's device class and colour space — and **withdrawing** row
+Q3's CONFIRMED verdict; neither was in this dispatch)*.
+
+**This filing does not record a green suite, and does not record those
+two failures as a regression from Pass 4c.** The sixteen new rows pass
+in **both** runs. **Whoever files the Pass 5c work reports its own
+outcome.**
+
+### ★ One prediction falsified, and it is the third — but of a new kind
+
+`NUMERIC_CLAIMS.md` §3.9.5 predicted: *"What settling A4b would do: one
+of the two implementations acquires a defect, and this becomes a graded
+row again."* **A4b settled and NEITHER implementation acquired a
+defect**, because the clause that settled it does not bind readers at
+all. Left standing, corrected by a dated note naming the evidence — the
+project's convention, third instance after **DL-011 → DL-012** and
+NA-006's *"tetrahedral"*.
+
+**★ What is new about this one:** DL-012 falsified a prediction about an
+**implementation**; NA-006's about an **algorithm**. This one falsified a
+prediction about **what a future document would do to the project's own
+record**. `NEXT_SESSION.md`'s operator table already warns *"treat 'it
+would settle X' as a prediction until the document is open"* — citing
+**this same document** as the worked example. **It has now done it
+twice, one level up.**
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A header status paragraph (**Pass 4 DONE; Passes 0–7 all closed**) carrying the **nine-site correction sweep** with every site named; the **Pass 4 completion record** (done-when clause by clause, what closed each item, the conjunction method, DL-026's judgement, the three side-closures, a coverage statement, six *does-not-claim* items, four owed); and a **dated update to the "what remains" block** re-scoring all seven tail debts and adding two new ones. **No plan text and no earlier block rewritten.** |
+| `NUMERIC_CLAIMS.md` | **§2.10** provenance — **the first block in this ledger with NO COMMIT ANCHOR**, the shell correction, the settled commit count, the gates, the `fmt` gap, and the suite-in-flux note; **§3.14** (**NC-113 … NC-118**, saturation) with the propagation-failure correction; **§3.15** (**NC-119 … NC-128**, Pass 4c) with the conjunction method, the below-the-floor relation, the exact counterfactual, the **two** guarded nulls, the direction-symmetry row, the **DL-019 re-basing**, and the citation correction; **§3.16** — three measurements filed **without** NC numbers, deliberately (M3, the gray probe, and why); a **dated correction** to §3.9.5's falsified prediction; **§3.13.8** on the CLI help text; a **second dated status** on **NA-008** (the two halves) and one on **NA-003** (the vindicated hedge); and **§7.10** re-checking every prior owed item — **three settled, one retired** — and adding eight. |
+| `ARCHITECTURE.md` §5 | **DL-026** — DL-019's premise expired, so NC-053 is **re-based off it**: the verdict holds, the basis changes, the row becomes **permanently** ungraded, and the wording rule (**diverges**, never *non-conforming*) is promoted from a footnote to a rule. DL-001 … DL-025 untouched. |
+| `SESSION_LOG.md` | This entry. |
+| `NEXT_SESSION.md` | Rewritten for a project whose original scope is **complete**. |
+
+**Not touched, by instruction and by ownership:** `docs/TOLERANCES.md`
+(`icc-conformance`'s, and §3.4.4.6 / §3.4.5 / the two §4 rows were
+**read as the source** for this filing, not written), everything under
+`tools/` and `crates/`, `fixtures/`, `README.md`, `LEGAL.md`, the
+corpus, every `Cargo.toml`, `.gitignore`. **Another agent is working in
+`tools/` and `crates/` right now** — `pass5c.rs`, `pass5*.rs`,
+`iccce-color`, `iccce-cmm/bpc.rs`. **Nothing was committed**; committing
+is the engineer's act. **Nothing was pushed, and this filing raises a
+question about pushes rather than making one.**
+
+### Left for the next session to not assume
+
+- **That `dechk.obj` is a triviality.** It is **published**. Removing it
+  from the tree does not remove it from history, and whether that
+  matters is **the operator's call**.
+- **That every push was authorised.** **Eight exist; two are recorded.**
+  Nothing says either way.
+- ~~**That the Pass 4c rows have a commit.**~~ **★ CORRECTED WHILE
+  FILING: they do now, and not by anyone's intent.** Commit **`5cfee17`**
+  (09:06:21, *"difftest: the estimator discrimination"*, 23 files,
+  +4 907) **swept in `pass4c.rs`, the CLI help fix, `TOLERANCES.md` and
+  `docs/NUMERIC_CLAIMS.md` — the last of these mid-write — and was
+  PUSHED**; `origin/master` is now `5cfee17`, a **ninth** push *(all
+  verified — `git show --stat`, refs read)*. **★ Third instance of one
+  mechanism in two days** (`edce48b`, `dechk.obj`, this), and the first
+  where the swept-in item was **another agent's unfinished document**.
+  **Three times is not a slip; it is the default behaviour of the
+  command being used**, and the cost is no longer untidiness — **it
+  publishes work whose author has not finished checking it.** **This
+  filing is therefore split across a commit and a working tree**, and
+  `5cfee17`'s message mentions neither Pass 4c nor this ledger, so
+  `git log` is a misleading index of when they landed.
+- **That the suite is green.** It was, then it was not, and the
+  difference is **another agent's in-flight work**.
+- **That Pass 4 being DONE means Pass 4 is verified.** Two profile
+  pairs, one destination tag, one grid each, one machine, one pin, and
+  **no `published-ground-truth` row — for this Pass or any transform in
+  this project.** Eighth consecutive filing.
+- **That the gray probe measured NA-008.** It measured the **other
+  half**. The named approximation **has no instrument in existence**.
+- **That M3's replacement measured a divergence.** **Both arms are
+  lcms2.** iccce was not run.
+- **That "121 passed" is coverage.** It is a workspace-wide pass count,
+  and **`tools/difftest` is not in that workspace** — where
+  `fmt --check` fails on 109 diffs and always has.
+- **That `pass5.rs` still has no tests.** **Carried as
+  `unverified-this-filing`**, not as `owed` — the distinction this
+  session had to invent after nine statements said "never run" about
+  finished work.
+- **That the librarian has no shell.** It did. **Three carried items
+  fell to five read-only commands.**
+- **That anything ran on Linux.** Still nothing, by anyone, ever.
