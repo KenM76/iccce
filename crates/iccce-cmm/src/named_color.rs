@@ -155,6 +155,34 @@ impl NamedColors {
     pub fn iter(&self) -> impl Iterator<Item = &NamedColor> {
         self.colors.iter()
     }
+
+    /// Resolve a named colour to a DESTINATION profile's device
+    /// values — the operation `pdfce` needs for `Separation` and
+    /// `DeviceN`, and the reason Pass 7 exists.
+    ///
+    /// The spot colour's PCS value is relative colorimetric by
+    /// definition (Table 66: "PCS values shall be relative
+    /// colorimetric"), so it enters the destination's PCS→device
+    /// model directly — no source model, no intent selection on the
+    /// source side. `dst` must be a chain-capable destination; the
+    /// [`Chain`](crate::transform::Chain) is reused so the
+    /// destination follows the same sourced 8.10.2 fallback as every
+    /// other conversion rather than a private path.
+    ///
+    /// Returns `None` when the name is unknown — a missing spot is
+    /// the caller's business (in PDF it means falling back to the
+    /// `/Alternate` space), not an error this layer should invent a
+    /// colour for.
+    pub fn resolve_to_device(
+        &self,
+        name: &str,
+        dst: &Profile,
+    ) -> Option<Result<Vec<f64>, crate::transform::ChainError>> {
+        let colour = self.find(name)?;
+        Some(crate::transform::Chain::convert_pcs_to_device(
+            dst, colour.pcs,
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -194,6 +222,54 @@ mod tests {
             ref other => panic!("{other:?}"),
         }
         assert!(c.device.is_empty()); // nDeviceCoords == 0: legal
+    }
+
+    /// ★ THE PASS 7 PATH, end to end on real bytes: a named colour
+    /// out of the committed `ncl2` fixture, resolved into a real
+    /// destination profile's device space — the operation `pdfce`
+    /// needs for `Separation`/`DeviceN`, and the first time anything
+    /// has reached `NamedColors` from outside its own file.
+    ///
+    /// Asserts on measured output: every spot resolves to in-gamut
+    /// device values, and an unknown name yields `None` (in PDF that
+    /// is the signal to fall back to `/Alternate` — not an error to
+    /// invent a colour for).
+    #[test]
+    fn spot_colour_resolves_into_a_real_destination() {
+        let fixture = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/synthetic/v2-ncl2-named.icc"
+        );
+        let srgb = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+        let bytes = std::fs::read(fixture).expect("committed fixture");
+        let Ok(dst_bytes) = std::fs::read(srgb) else {
+            eprintln!("skipped: system sRGB profile absent");
+            return;
+        };
+        let profile = Profile::parse(&bytes).unwrap();
+        let dst = Profile::parse(&dst_bytes).unwrap();
+        let table = NamedColors::from_profile(&profile).unwrap();
+
+        let mut resolved = 0;
+        for c in table.iter() {
+            let rgb = table
+                .resolve_to_device(&c.name, &dst)
+                .expect("name is from the table itself")
+                .expect("sRGB destination is chain-capable");
+            assert_eq!(rgb.len(), 3);
+            for (i, v) in rgb.iter().enumerate() {
+                assert!(
+                    (0.0..=1.0).contains(v),
+                    "{}: channel {i} = {v} out of device range",
+                    c.name
+                );
+            }
+            resolved += 1;
+        }
+        assert!(resolved > 0, "the fixture must carry spots");
+
+        // An unknown name is None, not a guess.
+        assert!(table.resolve_to_device("no such spot", &dst).is_none());
     }
 
     /// The committed synthetic fixture parses into a usable table.

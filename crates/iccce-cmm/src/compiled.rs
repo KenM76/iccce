@@ -18,7 +18,7 @@
 //!
 //! - **At a grid node the two arms are identical BY CONSTRUCTION.**
 //!   A test that samples nodes measures nothing about compilation;
-//!   [`tests::identical_at_nodes_by_construction`] asserts that
+//!   `tests::identical_at_nodes_by_construction` asserts that
 //!   identity and is labelled as a *structural* check, not evidence.
 //! - **Between nodes they are free to differ by the interpolation
 //!   error of the grid** — that, and only that, is the compiled
@@ -35,7 +35,7 @@
 //! deliberately coarser grid. n-linear error scales ≈ h², so halving
 //! the spacing should cut the error ≈ 4×; if it does not, the
 //! instrument cannot see grid error and the number is not evidence.
-//! [`tests::error_scales_with_grid_spacing`] is that control.
+//! `tests::error_scales_with_grid_spacing` is that control.
 //!
 //! ## What is NOT compiled
 //!

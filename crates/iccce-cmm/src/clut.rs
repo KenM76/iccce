@@ -131,7 +131,7 @@ impl Clut {
     }
 
     /// n-linear interpolation at `input` (each component clamped to
-    /// [0,1] — the CLUT's domain; out-of-domain handling beyond that
+    /// \[0,1\] — the CLUT's domain; out-of-domain handling beyond that
     /// is gamut policy, which lives with the transform, not here).
     ///
     /// Walks the 2^d corners of the containing cell; weight of a

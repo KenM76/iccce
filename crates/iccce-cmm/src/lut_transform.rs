@@ -36,7 +36,7 @@
 //!   spec + measured lcms2 behaviour M1); `lut8` uses the 8-bit
 //!   Tables 12/13 encoding (A10 resolved) and is NOT in the legacy
 //!   set. XYZ PCS uses u1Fixed15 (16-bit); the 8-bit XYZ form is
-//!   unsourced and refused by name. See [`PcsCodec`]'s variants.
+//!   unsourced and refused by name. See the private `PcsCodec`'s variants.
 //!
 //! ## Scope
 //!

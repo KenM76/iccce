@@ -389,6 +389,64 @@ impl Chain {
         }
     }
 
+    /// Convert a PCS value straight into a destination profile's
+    /// device space — the entry point a named colour needs (Pass 7),
+    /// where there is no source profile at all because the spot's
+    /// colorimetry IS the source.
+    ///
+    /// Builds the destination side through the ordinary [`Chain`]
+    /// machinery (same 8.10.2 fallback, same B2A/matrix/gray
+    /// selection) so a spot colour cannot silently take a different
+    /// path from every other conversion. Media-relative by
+    /// construction: Table 66 requires `ncl2` PCS values to be
+    /// relative colorimetric, so no intent choice arises here.
+    pub fn convert_pcs_to_device(dst: &Profile, pcs: PcsValue) -> Result<Vec<f64>, ChainError> {
+        // The destination-only chain: source is irrelevant, so build
+        // against `dst` on both sides and use the destination half.
+        let chain = Chain::new(dst, dst, Intent::MediaRelative)?;
+        let xyz = match pcs {
+            PcsValue::Xyz(x) => x,
+            PcsValue::Lab(lab) => lab.to_xyz(D50),
+        };
+        chain.pcs_to_destination(xyz)
+    }
+
+    /// The destination half of `convert`, exposed so a PCS-side
+    /// caller (named colour) reaches exactly the same code as a
+    /// device-side one.
+    pub fn pcs_to_destination(&self, xyz: Xyz) -> Result<Vec<f64>, ChainError> {
+        match &self.dst {
+            DestModel::MatrixTrc(m) => Ok(m.pcs_to_device(xyz)?.to_vec()),
+            DestModel::Lut16B2a(l) => {
+                let pcs_value = match l.pcs_kind() {
+                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
+                    PcsKind::Xyz => PcsValue::Xyz(xyz),
+                };
+                l.pcs_to_device(pcs_value)
+                    .ok_or(ChainError::ChannelMismatch {
+                        expected: 3,
+                        actual: 3,
+                    })
+            }
+            DestModel::LutAb(l) => {
+                let pcs_value = match l.pcs_kind() {
+                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
+                    PcsKind::Xyz => PcsValue::Xyz(xyz),
+                };
+                l.pcs_to_device(pcs_value)
+                    .ok_or(ChainError::ChannelMismatch {
+                        expected: 3,
+                        actual: 3,
+                    })
+            }
+            DestModel::Gray(g) => Ok(vec![g.pcs_to_device(xyz).map_err(|e| {
+                ChainError::NoSourcePath {
+                    matrix_trc_said: e.to_string(),
+                }
+            })?]),
+        }
+    }
+
     /// Destination device channel count (3 for matrix/TRC, the B2A
     /// tag's output count otherwise — e.g. 4 for CMYK).
     pub fn output_channels(&self) -> usize {
@@ -484,36 +542,12 @@ impl Chain {
         // inverse of the source side's unification, so an XYZ↔Lab pair
         // in the middle costs only f64 noise (the round trip is an
         // arithmetic identity, tested in iccce-color).
-        match &self.dst {
-            DestModel::MatrixTrc(m) => Ok(m.pcs_to_device(xyz)?.to_vec()),
-            DestModel::Lut16B2a(l) => {
-                let pcs_value = match l.pcs_kind() {
-                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
-                    PcsKind::Xyz => PcsValue::Xyz(xyz),
-                };
-                l.pcs_to_device(pcs_value)
-                    .ok_or(ChainError::ChannelMismatch {
-                        expected: 3,
-                        actual: 3,
-                    })
-            }
-            DestModel::LutAb(l) => {
-                let pcs_value = match l.pcs_kind() {
-                    PcsKind::Lab => PcsValue::Lab(iccce_color::Lab::from_xyz(xyz, D50)),
-                    PcsKind::Xyz => PcsValue::Xyz(xyz),
-                };
-                l.pcs_to_device(pcs_value)
-                    .ok_or(ChainError::ChannelMismatch {
-                        expected: 3,
-                        actual: 3,
-                    })
-            }
-            DestModel::Gray(g) => Ok(vec![g.pcs_to_device(xyz).map_err(|e| {
-                ChainError::NoSourcePath {
-                    matrix_trc_said: e.to_string(),
-                }
-            })?]),
-        }
+        //
+        // ONE destination implementation, shared with the PCS-side
+        // entry point a named colour uses: a spot colour that took a
+        // different path from every other conversion would be exactly
+        // the kind of quiet divergence this project exists to avoid.
+        self.pcs_to_destination(xyz)
     }
 }
 

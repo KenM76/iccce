@@ -280,7 +280,7 @@ pub enum Curve {
     /// and not as an inverse" (10.6, verbatim). Gamma 2.2 is stored
     /// as 0x0233 = 2.19921875 — not exactly 2.2, and cannot be.
     Gamma(U8Fixed8),
-    /// `count ≥ 2`: uniformly spaced samples over [0,1], 0x0000→0.0,
+    /// `count ≥ 2`: uniformly spaced samples over \[0,1\], 0x0000→0.0,
     /// 0xFFFF→1.0, increment 1/(n−1). Interpolation between entries
     /// is normatively LINEAR (10.6 verbatim; ambiguity A15 resolved —
     /// the first corpus pass wrongly called this silent).

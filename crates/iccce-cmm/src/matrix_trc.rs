@@ -279,7 +279,7 @@ impl MatrixTrc {
         )
     }
 
-    /// Device RGB (each component in [0,1]) → media-relative PCSXYZ.
+    /// Device RGB (each component in \[0,1\]) → media-relative PCSXYZ.
     /// F.3–F.6.
     #[must_use]
     pub fn device_to_pcs(&self, rgb: [f64; 3]) -> Xyz {
@@ -297,7 +297,7 @@ impl MatrixTrc {
     }
 
     /// Media-relative PCSXYZ → device RGB. F.8–F.16: each linear
-    /// component is clamped to [0,1] BEFORE its inverse TRC (see
+    /// component is clamped to \[0,1\] BEFORE its inverse TRC (see
     /// module doc for why the order is load-bearing).
     pub fn pcs_to_device(&self, xyz: Xyz) -> Result<[f64; 3], ModelError> {
         let linear = self.matrix_inv.apply([xyz.x, xyz.y, xyz.z]);

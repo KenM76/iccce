@@ -14,7 +14,7 @@
 //!   "Function values between the entries shall be obtained through
 //!   linear interpolation" — resolving A15; the corpus file is the
 //!   verification trail per DL-014).
-//! - **Parametric outputs are clipped to [0,1]**, normatively (clause
+//! - **Parametric outputs are clipped to \[0,1\]**, normatively (clause
 //!   10.18 verbatim via the same corpus file: "The domain and range of
 //!   each function shall be [0,0 1,0]. Any function value outside the
 //!   range shall be clipped" — resolving A19).
@@ -156,7 +156,7 @@ impl Trc {
         })
     }
 
-    /// Forward evaluation over the domain [0,1]. Input outside the
+    /// Forward evaluation over the domain \[0,1\]. Input outside the
     /// domain is clamped to it (clause 10.18's normative domain for
     /// parametrics; sampled tables have no values outside it to
     /// consult; behaviour outside the domain is otherwise A19

@@ -107,7 +107,7 @@ impl GrayTrc {
 
     /// Media-relative PCSXYZ → device gray. The connection scalar is
     /// recovered from the achromatic channel (Y/Yn; for a Lab-PCS
-    /// profile via L*/100 of the D50-relative Lab), clamped to [0,1],
+    /// profile via L*/100 of the D50-relative Lab), clamped to \[0,1\],
     /// then inverted per F.1 — chromatic content of the input is
     /// DISCARDED, which is what "the achromatic channel" means for a
     /// monochrome device; stated rather than hidden.

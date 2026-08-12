@@ -85,7 +85,7 @@ impl std::fmt::Display for LutAbError {
 /// been wrong. The counts are now settled from the PDF (mAB
 /// 10.12.2/4/6: B/M = output, A = input; mBA 10.13.2/4/6: B/M =
 /// input, A = output — conformance's direct reads, fixed in the
-/// profile layer), and both directions evaluate. The [`Direction`]
+/// profile layer), and both directions evaluate. The private `Direction`
 /// field makes calling the wrong method a `None`, not a wrong number.
 #[derive(Debug, Clone)]
 pub struct LutAbModel {
