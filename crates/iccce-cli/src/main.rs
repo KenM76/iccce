@@ -344,7 +344,10 @@ fn cmd_transform(args: &[String]) -> ExitCode {
 fn cmd_bench(args: &[String]) -> ExitCode {
     let mut src_path: Option<&String> = None;
     let mut dst_path: Option<&String> = None;
-    let mut grid = 17usize;
+    // 0 = "use the measured recommendation for this channel count"
+    // (resolved once the source's arity is known). An explicit
+    // --grid overrides it.
+    let mut grid = 0usize;
     // 300 DPI A4: 8.268 x 11.693 in → 2481 x 3507 px.
     let mut pixels = 2481usize * 3507;
     let mut i = 0;
@@ -384,7 +387,7 @@ fn cmd_bench(args: &[String]) -> ExitCode {
         eprintln!("iccce bench: --src and --dst are required\n\n{USAGE}");
         return ExitCode::from(2);
     };
-    if grid < 2 {
+    if grid == 1 {
         eprintln!("iccce bench: --grid must be >= 2");
         return ExitCode::from(2);
     }
@@ -412,6 +415,9 @@ fn cmd_bench(args: &[String]) -> ExitCode {
         }
     };
     let in_ch = chain.input_channels();
+    if grid == 0 {
+        grid = iccce_cmm::compiled::recommended_grid_points(in_ch);
+    }
     let out_ch = chain.output_channels();
 
     let t0 = std::time::Instant::now();

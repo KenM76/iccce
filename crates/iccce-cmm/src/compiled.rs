@@ -47,6 +47,45 @@
 use crate::clut::Clut;
 use crate::transform::{Chain, ChainError};
 
+/// Grid points per axis that keep the compiled path's cost inside
+/// what the two implementations already differ by on the same
+/// transform — measured, not chosen.
+///
+/// ★ MEASURED (icc-conformance, 2026-08-12, SWOP `A2B1` → sRGB,
+/// media-relative, ΔE2000 against the reference path):
+///
+/// | grid | ΔE2000 | build |
+/// |---|---|---|
+/// | 5 | 0.728 | — |
+/// | 9 | 0.405 | — |
+/// | **17** | **0.297** | 1.0 s |
+/// | **33** | **0.168** | 13.8 s |
+///
+/// The gate is Pass 4's own measured iccce-vs-lcms2 agreement on this
+/// pair, **0.25294 ΔE2000**: compiling must not move the answer
+/// further than the two implementations already disagree. **17 FAILS
+/// that gate by 17 %** — which is why this constant is 33 for 4-D and
+/// not the 17 the first implementation defaulted to.
+///
+/// The convergence order is **1.32, not the h²=2 a smooth function
+/// would give**: SWOP's `mft2` carries 256-entry input tables read by
+/// linear interpolation, i.e. 255 derivative kinks per axis, and
+/// `gcd(255, N) = 1` for every N tried, so no grid ever lands on
+/// them. **Doubling the grid costs ~15× the build and buys ~2.5×.**
+/// A caller who needs better than 0.168 should be told the honest
+/// answer — that this is the wrong lever — rather than handed 65.
+pub const fn recommended_grid_points(input_channels: usize) -> usize {
+    match input_channels {
+        // 1-D and 2-D are cheap; spend the nodes.
+        0..=2 => 129,
+        // 3-D at 33 is 35 937 nodes — the industry-standard size.
+        3 => 33,
+        // 4-D at 33 is 1 185 921 nodes (~27 MB, ~14 s to build) and
+        // is what the measurement above says is needed.
+        _ => 33,
+    }
+}
+
 /// A [`Chain`] folded into one interpolable grid.
 #[derive(Debug, Clone)]
 pub struct CompiledTransform {
