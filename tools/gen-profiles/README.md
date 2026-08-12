@@ -146,6 +146,94 @@ split above.
 curve type = ICC `funcType` **+ 1**. `v4-rgb-para-type3` is ICC type 3, which is
 lcms2 type 4.
 
+### 4.1 ★★ FINDING GP-002 — round, symmetric values make distinct quantities COINCIDE, and coincidence is zero power
+
+**Filed 2026-08-12 by `icc-conformance`, from a measurement rather than a
+review. This is a finding about the corpus itself, and it is the converse of
+`ARCHITECTURE.md` DL-020: authored bytes can discharge a doubt the corpus
+cannot, and authored bytes can also be *incapable of noticing* the thing they
+were authored to watch.**
+
+#### What happened
+
+On 2026-08-12 a real defect was found and fixed in `iccce-cmm`'s ISO/CD 18619
+**4.2.5.4** branch: it returned `outRamp[first]` where the clause says
+`InitialLab`. The two black-point arms of `tools/difftest`'s Pass 5c responded
+completely differently:
+
+| arm | fixture | `InitialLab` | `outRamp[first]` | movement on the fix |
+|---|---|---|---|---|
+| `swop` | `USWebCoatedSWOP.icc` (vendor, category (c)) | `L* 11,772 365` | `L* 16,489 806` | **4,717 441 `L*`** — the whole finding |
+| `synthetic` | `v4-rgb-mab-chromatic-black.icc` (**this corpus**) | `L* 20` | **`L* 20`** | **exactly zero** |
+
+**The authored fixture could not see the defect, could not see the fix, and
+would not see a regression.** Its reported figure (`5,000 000 ΔE76`) is
+unchanged in every configuration, because on this fixture the two quantities
+the clause distinguishes **are the same number**.
+
+#### Why they coincide, mechanically
+
+Nothing went wrong in the authoring. The coincidence falls out of three
+properties that were each chosen for a good reason:
+
+1. the forward model is **affine**, so a black-point ramp built from it is
+   straight;
+2. the `B2A` CLUT is the model's **exact closed-form inverse**, so the round
+   trip `A2B(B2A(·))` is the identity in gamut;
+3. the device black is the **darkest vertex**, so out-of-gamut dark inputs clamp
+   onto it.
+
+Together these make the round trip's floor *equal* to the neutralised darkest
+vertex — `L* 20` both ways. On a real ink set none of the three holds exactly,
+which is why the vendor profile separated them by 4,7 `L*` while the authored
+one separated them by 0.
+
+#### The general rule, which is the part worth carrying
+
+> **A synthetic fixture built from round, symmetric, exactly-invertible values
+> makes conceptually distinct quantities coincide — and a test cannot
+> distinguish two things a fixture has made equal.** Every coincidence is a
+> silent hole in the corpus's power, and it does not announce itself: the row
+> stays green, the number stays stable, and stability reads as confidence.
+
+Two corollaries for anyone authoring or pruning a fixture here:
+
+- **Ask what two quantities the test is meant to tell apart, and check the
+  fixture makes them different.** "Does this fixture *exercise* the path" is the
+  wrong question; the right one is "if the code returned the *other* candidate,
+  would this fixture's number move?"
+- **Roundness is a virtue for readability and a hazard for discrimination.**
+  `L* 20`, `a* 4`, `b* −3` are checkable by hand — §4's whole discipline — and
+  the same roundness is what let `InitialLab` and `outRamp[first]` land on one
+  another. When the two conflict, keep the round value **and add a second
+  fixture** whose values are deliberately offset; do not quietly make the
+  readable one irregular, because §4's hand-checkability is load-bearing for
+  every other claim the corpus makes.
+
+#### What must not happen to the corpus because of this
+
+`v4-rgb-mab-chromatic-black.icc` is **still the only fixture in reach that can
+exercise lcms2's `BlackPointAsDarkerColorant` branch at all**, and its zero
+power is confined to one quantity. It must not be deleted as "the arm that
+proves nothing".
+
+★ **The load-bearing detector for a 4.2.5.4 regression is the VENDOR profile,
+and it is category (c) — never committed, absent on any machine without the
+Windows colour directory.** On such a machine `pass5c/swop/*` **skips**, and
+every remaining Pass 5c row would stay green through a full reversion of commit
+`fd34a44`. Anyone pruning fixtures, or reading a green CI run on a Linux runner,
+must know that.
+
+#### How this is now visible without reading this document
+
+`tools/difftest` emits a **candidate separation** on every record
+(`lib.rs`, `Separation`): the value the row would have observed under a named
+rival reading, and the distance to it. The synthetic arm's row prints
+`sep=0.000000e0` and the verdict **`ZERO-SEPARATION`**, and the run's
+`separation` line names the id. The hole is now a number in the report rather
+than a paragraph in a README — which is the only form in which it will be
+noticed by whoever is not reading this.
+
 ---
 
 ## 5. ★ FINDING GP-001 — `mBA ` curve counts: iccce disagrees with ICC.1:2022 and with lcms2

@@ -237,6 +237,28 @@ pub const SRGB: &str = r"C:\Windows\System32\spool\drivers\color\sRGB Color Spac
 /// `pass4_report` §4 prints both, and §7 prints the per-point worst offenders
 /// so the claim can be checked rather than believed.
 ///
+/// ## ⚠ `0,254 23` is NOT `0,252 94`, and they are one crate apart
+///
+/// `pass6.rs`'s [`crate::pass6::COMPILED_DE`] is derived from **`0,252 94`
+/// ΔE2000**. The two numbers agree to 0,5 %, are about the same profile, the
+/// same intent and the same grid, and live in the same crate — so they are
+/// **exactly the pair somebody will quote for one another**, and they are
+/// different quantities:
+///
+/// | | `0,254 23` (here) | `0,252 94` (Pass 4's cross-check) |
+/// |---|---|---|
+/// | what | the **interpolation-method envelope** | the **observed iccce-vs-lcms2 residual** |
+/// | computed from | the 9⁴ table and the two algorithms | two programs' outputs |
+/// | is lcms2 the *program* in it? | **no** — no `transicc` runs | **yes** |
+/// | what it bounds | what two correct implementations may differ by | what these two implementations *did* differ by |
+///
+/// The near-agreement is itself a finding — it says the residual we observe is
+/// about the size of the method difference alone, i.e. that little else is
+/// going on — but it is a *conclusion*, and quoting either number for the other
+/// would turn that conclusion into an assumption. **Neither is wrong; the
+/// hazard is entirely in the quoting.** `pass6.rs`'s doc carries the mirror of
+/// this warning.
+///
 /// **The two tables are not equally smooth, and the difference is a factor of
 /// six.** The perceptual table's worst cell sits at
 /// CMYK (0.541, 0.442, 0.744, 0.972) — deep shadow at near-full black — where

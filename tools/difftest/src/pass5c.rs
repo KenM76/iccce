@@ -143,7 +143,7 @@ use iccce_profile::Profile;
 use iccce_profile::num::Signature;
 use iccce_profile::tag_types::TagData;
 
-use crate::{Kind, Metric, Record, Tolerance};
+use crate::{Kind, Metric, Record, SepUnits, Separation, Tolerance};
 
 pub mod tag {
     use iccce_profile::num::Signature;
@@ -846,6 +846,13 @@ pub struct Analysis {
     pub iso_black: Lab,
     /// lcms2's, from the reimplementation. No oracle in it.
     pub lcms2: Lcms2Detect,
+    /// ★ Which branch of `cmsDetectBlackPoint` this destination's header
+    /// selected. Kept as the enum, not only as the prose on
+    /// [`Lcms2Detect::initial_branch`], because the **candidate separation** on
+    /// the chroma row is "what the OTHER branch would have predicted", and
+    /// deriving that from a sentence by substring match is how an apparatus
+    /// starts lying.
+    pub branch: InitialLabBranch,
     /// §B: what `transicc` actually emits at input black with BPC on.
     pub observed_device: Vec<f64>,
     /// §B: `B2A1(black)` for each candidate black point.
@@ -930,6 +937,79 @@ impl Analysis {
     #[must_use]
     pub fn recovery_explained(&self) -> f64 {
         de76(self.roundtrip_of_reimpl, self.pass5b_recovered)
+    }
+
+    // -----------------------------------------------------------------------
+    // ★★★ The named alternative candidates — added 2026-08-12 (DL-033)
+    //
+    // Each of these is a value one of this section's rows WOULD have observed
+    // under a rival reading that was live at some point, and each is computed
+    // rather than typed. Together they are what `crate::Separation` needs in
+    // order to state, on the record itself, how much power the row has.
+    // -----------------------------------------------------------------------
+
+    /// **The alternative black point: `outRamp[first]`** — the quantity
+    /// `bpc.rs`'s 4.2.5.4 short-circuit returned until commit `fd34a44`.
+    ///
+    /// It is not a black-point candidate in any branch of ISO/CD 18619 4.2.5;
+    /// it is the floor of the monotonised round-trip ramp, and it is here
+    /// because **it is what this project's own code returned for two sessions**
+    /// — the definition of a plausible-at-the-time rival. Neutral, because
+    /// 4.2.3 neutralises and the ramp carries no chroma of its own.
+    #[must_use]
+    pub fn alt_black_outramp_first(&self) -> Lab {
+        Lab {
+            l: self.lcms2.min_l_iso,
+            a: 0.0,
+            b: 0.0,
+        }
+    }
+
+    /// What `estimators/black-points-in-lab` would have observed under that
+    /// alternative: `8,1668×10⁻²` on the `swop` arm, which is the number the
+    /// suite reported for two sessions.
+    #[must_use]
+    pub fn alt_estimator_divergence_de76(&self) -> f64 {
+        de76(self.alt_black_outramp_first(), self.lcms2.black)
+    }
+
+    /// ★★★ **The separation itself**: how far apart the two candidate black
+    /// points are, in ΔE76. `4,717 441` on `swop` — 57,8× the divergence the
+    /// defect was blamed for — and **exactly `0` on the synthetic arm**, whose
+    /// `InitialLab` and `outRamp[first]` are both `L* 20`.
+    #[must_use]
+    pub fn black_candidate_separation_de76(&self) -> f64 {
+        de76(self.iso_black, self.alt_black_outramp_first())
+    }
+
+    /// The chroma the **other** branch of `cmsDetectBlackPoint` would have
+    /// predicted for the divergence.
+    ///
+    /// `BlackPointUsingPerceptualBlack` forces the chroma to `0` (L174);
+    /// `BlackPointAsDarkerColorant` keeps the darkest colorant's. So whichever
+    /// branch fired, the rival's prediction differs from the actual one by
+    /// **the darkest colorant's chroma** — `0,834` on `USWebCoatedSWOP`,
+    /// `5,0` on the synthetic RGB fixture. Computed from the fixture's own
+    /// darkest colorant rather than from those two literals, which is the
+    /// §3.5.8.6 rule.
+    #[must_use]
+    pub fn other_branch_predicted_chroma(&self) -> f64 {
+        let colorant_chroma =
+            (self.darkest_lab.a.powi(2) + self.darkest_lab.b.powi(2)).sqrt();
+        match self.branch {
+            InitialLabBranch::PerceptualBlackDiscountingInk => colorant_chroma,
+            InitialLabBranch::DarkerColorant => 0.0,
+        }
+    }
+
+    /// The device separation between the two candidate blacks, at the point
+    /// where a black point is actually observable: `|B2A1(ISO) − B2A1(lcms2)|`.
+    /// `2,46×10⁻³` on `swop` — three orders above the shipped row's `10⁻⁶`
+    /// bound, which is the claim `SHIPPED_MATCHES_LIBRARY` used to make with a
+    /// typed literal and now makes with this.
+    #[must_use]
+    pub fn device_candidate_separation(&self) -> f64 {
+        max_abs(&self.predicted_from_iso, &self.predicted_from_lcms2)
     }
 }
 
@@ -1131,6 +1211,7 @@ pub fn analyse(
         iso_initial,
         iso_black,
         lcms2,
+        branch: branch_for(f.is_output_class, f.is_ink_space),
         observed_device,
         predicted_from_lcms2,
         predicted_from_iso,
@@ -1199,16 +1280,24 @@ pub const APPARATUS_RATIO: Tolerance = Tolerance::new(
 /// `0,0 — exact`, not an epsilon: both sides assign a literal `0.0`, so any
 /// non-zero value means a reimplementation took a branch the original does
 /// not. The obvious wrong branch, `BlackPointAsDarkerColorant`, would return
-/// this profile's darkest colorant with its chroma intact — **0,834** — which
-/// is four orders above anything a rounding argument could excuse.
+/// this profile's darkest colorant with its chroma intact, which is orders
+/// above anything a rounding argument could excuse.
+///
+/// ★ **That distance is no longer asserted here — it is the row's emitted
+/// candidate separation** ([`Analysis::other_branch_predicted_chroma`], the
+/// `separation` column). This justification used to spell it out as *"0,834 on
+/// USWebCoatedSWOP, 5,0 on the synthetic RGB fixture"*; both were true, and
+/// both are properties of *which fixture is loaded*, so a third arm would have
+/// made the sentence wrong without touching a line of it.
 pub const NEUTRAL_EXACT: Tolerance = Tolerance::new(
     0.0,
     "the chroma of the divergence MINUS what lcms2's selected branch says it must be, graded at \
      EXACTLY zero because both quantities are assigned literally rather than computed: ISO/CD \
      18619 4.2.3 returns a neutral black, and lcms2 returns InitialLab.a/.b verbatim (L590-591) \
      from a branch chosen by the destination's DEVICE CLASS and COLOUR SPACE. Not an epsilon: \
-     taking the OTHER branch changes this by the darkest colorant's whole chroma - 0.834 on \
-     USWebCoatedSWOP, 5.0 on the synthetic RGB fixture - which no rounding argument reaches. \
+     taking the OTHER branch changes this by the darkest colorant's WHOLE chroma, which no \
+     rounding argument reaches - and that distance is PRINTED as this row's candidate separation \
+     rather than asserted here, because it is a property of whichever fixture is loaded. \
      STRUCTURAL on the reimplementation's side; section B is what makes it evidence",
 );
 
@@ -1314,15 +1403,31 @@ pub const RECOVERY_EXPLAINED: Tolerance = Tolerance::new(
 ///
 /// `1×10⁻⁶`: the CLI prints device values to **six** decimals, so one printed
 /// lsb is `10⁻⁶` and the bound is that and nothing else. It cannot absorb a
-/// different black point — the two candidates in play here are `2,46×10⁻³`
-/// apart in this same quantity, three orders above the bound.
+/// different black point, and **how far it is from being able to is this row's
+/// emitted candidate separation** rather than a number in this sentence.
+///
+/// ## ★ A fourth stale literal, caught by the separation mechanism itself
+///
+/// Until 2026-08-12 (later) this justification asserted *"the two candidate
+/// blacks in play are `2,46×10⁻³` apart in this same quantity, **three orders**
+/// above the bound"*. When the separation was computed instead of typed, it
+/// came out at **`9,574×10⁻³`** — because `2,46×10⁻³` was the pre-`fd34a44`
+/// figure (README §19.10's table records `2,4639×10⁻³ → 9,9211×10⁻³` for the
+/// ISO-hypothesis residual on the same commit). The argument was unharmed and
+/// got *stronger*: the separation is **~9 600×** the bound, four orders, not
+/// three. It joins the three literals §3.5.8.6 already records, and it is the
+/// first one found **by an apparatus rather than by a person**, on the first
+/// run of the field that computes it.
 pub const SHIPPED_MATCHES_LIBRARY: Tolerance = Tolerance::new(
     1e-6,
     "the shipped `iccce transform --bpc` against B2A1(ISO black) computed in process. The CLI \
      prints device values to six decimals, so one printed lsb is 1e-6 and the bound is that and \
-     nothing else. It CANNOT absorb a different black point: the two candidate blacks in play are \
-     2.46e-3 apart in this same quantity, three orders above the bound. SUPERSEDES Pass 5b row \
-     Q8, whose premise (the estimator has no caller) no longer holds",
+     nothing else. It CANNOT absorb a different black point, and the distance to the rival \
+     candidate - the shipped binary reaching lcms2's black instead - is PRINTED as this row's \
+     candidate separation rather than asserted here. This string used to assert '2.46e-3, three \
+     orders above the bound'; computing it gave 9.574e-3 (the 2.46e-3 was the PRE-fd34a44 \
+     figure), so the claim was understated by a factor of 4 and was going to go on being wrong. \
+     SUPERSEDES Pass 5b row Q8, whose premise (the estimator has no caller) no longer holds",
 );
 
 pub const REPORTED: Tolerance = Tolerance::new(
@@ -1392,7 +1497,16 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.estimator_divergence_de76(),
                 a.l_star_bound() / a.estimator_divergence_de76(),
             ),
-        ),
+        )
+        .with_separation(Separation::none(
+            "both terms of this ratio are measured in THIS run from the same tables - the \
+             numerator is a device residual against transicc converted through a measured \
+             sensitivity, the denominator is the estimators' divergence. There is no rival \
+             READING of either; a rival would be a different apparatus, which is what section B \
+             already is. Note that the numerator and denominator can move independently and did \
+             (2026-08-12: the denominator grew 59x with the numerator unmoved), which is a \
+             different hazard from a small separation and is called out on the row itself",
+        )),
         Record::graded(
             format!("pass5c/{arm}/FINDING/divergence-chroma-follows-lcms2-BRANCH"),
             Kind::CrossCheck,
@@ -1425,7 +1539,16 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.expected_divergence_chroma(),
                 (a.divergence_chroma() - a.expected_divergence_chroma()).abs()
             ),
-        ),
+        )
+        .with_separation(Separation::against(
+            "the OTHER branch of cmsDetectBlackPoint (cmssamp.c L370-374): if the reimplementation \
+             had dispatched on the wrong one of BlackPointUsingPerceptualBlack (chroma FORCED to 0 \
+             at L174) and BlackPointAsDarkerColorant (chroma RETAINED), the predicted chroma would \
+             be the darkest colorant's instead of 0, or 0 instead of it",
+            (a.divergence_chroma() - a.other_branch_predicted_chroma()).abs(),
+            (a.divergence_chroma() - a.expected_divergence_chroma()).abs(),
+            SepUnits::SameAsMetric,
+        )),
         Record::graded(
             format!("pass5c/{arm}/FINDING/neither-implementation-fits-a-quadratic-here"),
             Kind::CrossCheck,
@@ -1460,7 +1583,19 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.lcms2.min_l_iso,
                 a.divergence_lightness(),
             ),
-        ),
+        )
+        .with_separation(Separation::against(
+            "the quadratic-fit path: Pass 5b section 17.3 asserted this configuration was \
+             'precisely lcms2's method-4 (quadratic-fit) territory', which is indicator 1 - a \
+             build in which either side stopped short-circuiting would land there",
+            1.0,
+            if a.lcms2.nearly_straight && a.lcms2.n_shadow == 0 {
+                0.0
+            } else {
+                1.0
+            },
+            SepUnits::SameAsMetric,
+        )),
         Record::graded(
             format!("pass5c/{arm}/estimators/black-points-in-lab"),
             Kind::CrossCheck,
@@ -1479,7 +1614,10 @@ pub fn records(a: &Analysis) -> Vec<Record> {
              lcms2's answer, and the CONFORMANT return value (InitialLab = 11.772365) sits \
              4.7991 L* from it. The defect's own magnitude - how far the old code was from the \
              new - is 4.717441 L*, i.e. 57.8x the divergence it was blamed for; it was very \
-             nearly INVISIBLE in the cross-check. AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF \
+             nearly INVISIBLE in the cross-check. (THAT DISTANCE IS NOW THIS ROW'S EMITTED \
+             CANDIDATE SEPARATION - the figures in this sentence are the dated 2026-08-12 \
+             measurement, the field is the live one, and if they ever disagree the field is \
+             right.) AGREEMENT WITH THE ORACLE WAS THE SYMPTOM OF \
              OUR DEFECT, AND CONFORMING TO THE CLAUSE MADE THE CROSS-CHECK WORSE. Both sides \
              now return a quantity their own document calls InitialLab; the entire remaining \
              divergence is that ISO/CD 18619 4.2.2.2 and lcms2's cmsDetectBlackPoint mean \
@@ -1495,7 +1633,27 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.divergence_chroma(),
                 a.estimator_divergence_de76(),
             ),
-        ),
+        )
+        // ★★★ THE ROW DL-033 IS ABOUT. The alternative is not hypothetical: it
+        // is what `bpc.rs` returned at 4.2.5.4 until commit fd34a44, and the
+        // suite reported its consequence (8.1668e-2) as this row's observed
+        // value for two sessions. `outRamp[first]` is not a black-point
+        // candidate in any branch of 4.2.5 — that is exactly why the distance
+        // to it is the measure of how nearly this cross-check missed.
+        //
+        // The distance is the ΔE76 between the two candidate BLACK POINTS
+        // rather than the difference of the two observed ΔE76s. They coincide
+        // here because both candidates are neutral and lcms2's is too, so the
+        // three points are collinear in Lab; the geometric form is used because
+        // it stays right when they are not.
+        .with_separation(Separation::against_distance(
+            "outRamp[first] (= MinL on ISO's index-0-included ramp), the quantity bpc.rs's 4.2.5.4 \
+             short-circuit returned until commit fd34a44 and which has no textual support in any \
+             branch of ISO/CD 18619 4.2.5",
+            a.alt_estimator_divergence_de76(),
+            a.black_candidate_separation_de76(),
+            SepUnits::SameAsMetric,
+        )),
         Record::graded(
             format!("pass5c/{arm}/validation/reimplementation-beats-the-rival-candidate"),
             Kind::CrossCheck,
@@ -1523,7 +1681,20 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.device_residual_lcms2() / a.device_residual_iso(),
                 a.divergence_lightness(),
             ),
-        ),
+        )
+        // The candidates ARE this row's subject, so the separation is real and
+        // large — but it is in normalised device units while the row's metric
+        // is a dimensionless ratio, so the blindness test must NOT be applied
+        // to it. Stating that is the point of SepUnits::Other: the number is
+        // information, the verdict would be arithmetic across incommensurable
+        // units (Pass 6 row R5, and this module's own ATTRIBUTION row).
+        .with_separation(Separation::against_distance(
+            "the ISO black as the explanation of transicc's output - i.e. B2A1(ISO black) instead \
+             of B2A1(reimplemented lcms2 black) at the input black",
+            a.device_residual_iso(),
+            a.device_candidate_separation(),
+            SepUnits::Other("normalised device (0..1); this row's metric is a dimensionless ratio"),
+        )),
         Record::graded(
             format!("pass5c/{arm}/validation/device-residual-against-transicc"),
             Kind::CrossCheck,
@@ -1542,7 +1713,14 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                  NOOPTIMIZE) and this harness evaluates iccce's Lut16Model in f64",
                 a.device_residual_lcms2()
             ),
-        ),
+        )
+        .with_separation(Separation::against(
+            "the residual under the ISO black - what this same quantity would be if the ISO \
+             candidate were the explanation of transicc's output",
+            a.device_residual_iso(),
+            a.device_residual_lcms2(),
+            SepUnits::SameAsMetric,
+        )),
         Record::graded(
             format!("pass5c/{arm}/ATTRIBUTION/pass5b-recovery-was-the-round-trip"),
             Kind::SelfConsistency,
@@ -1597,7 +1775,14 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.l_star_bound(),
                 a.recovery_explained() / a.l_star_bound(),
             ),
-        ),
+        )
+        .with_separation(Separation::none(
+            "BOTH SIDES OF THIS ROW ARE lcms2's - Pass 5b's recovered black and BT(the \
+             reimplemented lcms2 black) - so there is no rival READING for either term. The one \
+             thing that could have been named, 'Pass 5b's recovery WAS lcms2's black rather than \
+             its round trip', is not an alternative value this row could have observed: it is the \
+             hypothesis the row exists to test, and it is what the ratio itself reports",
+        )),
     ];
 
     // The shipped surface. Pass 5b row Q8 graded a refusal; the estimator has
@@ -1621,7 +1806,19 @@ pub fn records(a: &Analysis) -> Vec<Record> {
                 a.predicted_from_iso,
                 max_abs(dev, &a.predicted_from_iso)
             ),
-        )),
+        )
+        // The wiring hazard this row exists to catch, priced: a Chain that
+        // reached lcms2's black instead of ISO's would still convert and still
+        // look plausible, and this is how far its output would be. It replaces
+        // SHIPPED_MATCHES_LIBRARY's typed "2.46e-3" with the computed value.
+        .with_separation(Separation::against(
+            "the shipped binary reaching lcms2's black instead of the ISO estimator's - a wiring \
+             that passed a different InitialLab, or the perceptual BT instead of the relative one, \
+             would still convert and still look plausible",
+            max_abs(dev, &a.predicted_from_lcms2),
+            max_abs(dev, &a.predicted_from_iso),
+            SepUnits::SameAsMetric,
+        ))),
         (None, Some(err)) => out.push(Record::graded(
             format!("pass5c/{arm}/shipped/binary-reaches-the-iso-estimator"),
             Kind::SelfConsistency,
@@ -1631,7 +1828,11 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             "the shipped binary was expected to CONVERT this case since the ISO estimator was \
              wired into Chain::estimate_dst_black. It refused",
             format!("{ctx} | binary said: {}", crate::sanitise(err)),
-        )),
+        )
+        .with_separation(Separation::none(
+            "the binary produced no value, so there is nothing for an alternative candidate to be \
+             an alternative TO. The row is graded on the refusal itself",
+        ))),
         (None, None) => {}
     }
     out

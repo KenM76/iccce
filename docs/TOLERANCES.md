@@ -102,6 +102,62 @@ Numbers produced by lcms2 must not be pasted into an `iccce-color` unit
 test as an expected value. `CLAUDE.md` rule 3: a test whose expectation
 came from an implementation detects change, not error.
 
+### 1.1 ★★★ Candidate separation — the second thing a row must state, added 2026-08-12
+
+**The kind of a claim says how strong the *evidence* is. It says nothing about
+how much *power* the row has**, and on 2026-08-12 this document learned the
+difference the expensive way (§3.5.8.6, `ARCHITECTURE.md` DL-033).
+
+> A cross-check's power is bounded by **the distance between the answer it
+> observed and the answer it would have observed under a plausible rival
+> reading.** Agreement to 0,08 proves nothing if the wrong answers also sit
+> within 0,08; the same 0,08 is strong if they sit 5 apart. **Nothing in this
+> budget recorded that distance**, so the two situations were indistinguishable
+> in every row we keep.
+
+The incident, in one line: `bpc.rs`'s non-conformant 4.2.5.4 branch sat
+**0,082 `L*`** from lcms2's answer and the conformant one sits **4,799** away,
+so a **4,717 `L*`** defect produced an 0,082 signal — its own magnitude was
+**57,8× the divergence it was blamed for**, and the cross-check built to catch
+it was very nearly blind.
+
+`tools/difftest` now emits a **candidate separation** on every record
+(`lib.rs`'s `Separation`; the `separation` and `sep-power` columns; README §20).
+Three states, deliberately not collapsed:
+
+| state | meaning |
+|---|---|
+| **measured** | a **named** rival candidate exists — an intermediate the code already computes, a branch the other implementation might have dispatched to, the other document's reading of one word — with the value this row would have observed under it, and the distance |
+| **no named alternative** | somebody looked and there is none. **A real statement**, and it carries its reason |
+| **unstated** | nobody has considered this row yet. Prints as `UNSTATED`, not as a blank |
+
+And two automatic verdicts, both machine-detectable, neither of which changes a
+row's pass/fail status:
+
+- **`BLIND`** — the candidates are **closer together than the row's own
+  tolerance**, so it passes under either. Precisely the configuration that hid
+  the 4.2.5.4 defect.
+- **`ZERO-SEPARATION`** — the candidates are the *same number*. The row cannot
+  move at any tolerance. A blind row can be rescued by tightening a tolerance; a
+  zero-separation row can only be rescued by **a different fixture**
+  (`ARCHITECTURE.md` DL-036, `tools/gen-profiles/README.md` §4.1 — FINDING
+  GP-002).
+
+**Why a flag and not a failure.** A small separation is sometimes legitimate — an
+exact invariant, a null control — and auto-failing it would create pressure to
+stop stating separations at all, which is the opposite of the point. The counts
+and the offending ids are emitted on their own `separation` line; the `summary`
+line is unchanged.
+
+**Coverage of this mechanism, stated as §6 requires: 16 of 145 emitted rows
+carry a stated separation, all of them Pass 5c's**, on the run of 2026-08-12
+(`pass=142 fail=0 skip=3 error=0`; `unstated=129 no-named-alternative=4
+incommensurate=2 ungraded=3 zero-separation=1 blind=0 discriminating=6`). The
+other 129 are marked `UNSTATED` and that is an honest absence, not a claim that
+they are well separated. **A few real separations with the rest honestly marked
+is the design**; a scheme that invented one for every row would be a worse
+document than this one.
+
 ---
 
 ## 2. The perceptual anchor
@@ -1333,6 +1389,7 @@ drifting one justification at a time.
 | 2026-08-12 (later still) | **§3.5.8 rows T1, T3, T4, T6** — the black-point section, **re-measured on the corrected 4.2.5.4 code** | T6 **8,166 8×10⁻² ΔE76** on `swop`; T4 **1,714 7×10⁻¹**; T1 **3,043 1×10⁻¹**; T3's note *"ISO returns `outRamp[first]`"* | T6 **4,799 109**; T4 **4,258 5×10⁻²**; T1 **5,178 5×10⁻³**; T3's note corrected — **both sides return their own `InitialLab`** | `icc-conformance` | **★★★ NO TOLERANCE MOVED. THE ROW IS HERE BECAUSE A PREDICTED COLLAPSE CAME BACK AS A 58,8× GROWTH, AND THREE GREEN ROWS GOT GREENER FOR A BAD REASON.** `NUMERIC_CLAIMS.md` §3.24.4 predicted NC-142's 8,167×10⁻² would collapse once commit `fd34a44` fixed iccce's non-conformant 4.2.5.4 return; it grew to **4,799 109 ΔE76**. **The non-conformant value (`outRamp[first] = MinL = 16,489 806`) sat 0,082 `L*` from lcms2's answer; the conformant one (`InitialLab = 11,772 365`) sits 4,799 `L*` from it.** The defect's own magnitude — the distance between the two code paths — is **4,717 441 `L*`, 57,8× the divergence it was blamed for**; it was nearly invisible in the cross-check meant to detect it. **T1 and T4 both improved, and neither improvement is good news**: T1's error bar did not move (its *effect* grew 59×) and T4's numerator did not move (its *rival* got 4× worse). **NC-164a's attribution is right about the cause and wrong about the consequence** — *"this defect accounts for the whole of the disagreement"* and *"fixing it will end the disagreement"* are different claims and only the first was measured. Full finding, coverage and the consequence for **NA-009** (whose cost is now measurable at 4,799 109 / 5,000 000 ΔE76): **§3.5.8.6**. |
 | 2026-08-12 (later still) | **§3.6 row R3's justification** — the grid-dependence clause | *"**GRID-DEPENDENT**: the quantity is `O(h^1,32)` here, so the bound belongs to **grid 17** and to nothing else"* | *"grid-dependent in its **applicability**, not in its **derivation**"* — the derivation population contains no compiled grid at all; the applicable grid is **33** since `189e732` | `icc-conformance` | **★ A CONFLATION, NOT A STALE NUMBER — and the difference is why the row is worth writing.** `COMPILED_DE` is Pass 4's iccce-vs-lcms2 maximum over 341 CMYK points, and **Pass 4 never builds a `CompiledTransform`** — there is no grid in the bound to become stale, which is exactly why it survived the shipped default moving 17→33 untouched. What the grid governs is whether an *observation* may be compared to it, since the graded quantity is `O(h^1,32)`. Writing that as *"the bound belongs to grid 17"* invited the reading that the tolerance had a derivation population out of step with the shipped product; **it did not, and the corrected wording is what makes that checkable.** The row title now names the shipped default rather than freezing a number into it. |
 | 2026-08-12 (later still) | **§3.6.2's throughput bullet** — re-filed as **§3.6.3** | *"2,4–2,7 Mpix/s compiled vs 0,076–0,091 reference (**28–32×**, break-even **≈63 000–75 000 px**) … spread across four invocations ~10 %"* | **break-even ≈1,3×10⁶ px AT GRID 33**, with the grid mandatory; **the speedup is WITHDRAWN as a documented figure** | `icc-conformance` | **★★ TWO DEFECTS WITH DIFFERENT CAUSES IN ONE SENTENCE, AND ONLY ONE OF THEM IS "OUT OF DATE".** **(a)** The break-even was measured at the old default grid of **17**. `N = build ÷ (1/ref − 1/comp)` puts `build` in the numerator, and `build` is the only term the grid moves: measured over ten invocations, the two throughputs are indistinguishable at 17 and 33, while build goes **0,838 s → 12,444 s (14,8×)** and break-even goes **85 900 px → 1 273 800 px (14,8×)** — agreeing to three figures. **A break-even without a grid is like a tolerance without units**, and it is now stated with one. **(b)** The speedup was never reproducible. Ten invocations in **one session, one machine, one binary** span **12,44×–25,27×** (2,03×); across the day's sessions, **12,4×–32×**. The recorded "~10 % run-to-run spread" understated the variance by an order of magnitude, because it was a four-sample range from one sitting quoted as a property of the machine. **A wall-clock ratio on a loaded desktop is not a claim this project can carry**; the break-even is, and it is structurally the stabler statistic — since `1/comp ≪ 1/ref`, `N ≈ build × ref_rate` and the noisy arm barely enters (the compiled rate spanned 2,08× over the five grid-33 runs while the break-even computed from those same runs spanned 1,13×). **(c)** The reference arm's recorded 0,076–0,091 band does not contain today's 0,092–0,099 — but the reference arm is the **tightest** quantity measured (±4 % against the compiled arm's ±35 %), so that is the same error as (b) and not evidence of instability. |
+| 2026-08-12 (third filing) | **§5 NA-009 (new row, not a change)**; **§1.1 (new subsection)**; and **two justification STRINGS** in `tools/difftest/src/pass5c.rs` — `NEUTRAL_EXACT` and `SHIPPED_MATCHES_LIBRARY` | NA-009 absent from this table; `NEUTRAL_EXACT` asserted *"0,834 on USWebCoatedSWOP, 5,0 on the synthetic RGB fixture"*; `SHIPPED_MATCHES_LIBRARY` asserted *"the two candidate blacks are `2,46×10⁻³` apart, **three orders** above the bound"* | NA-009 registered with its measured cost; both strings now point at the row's **emitted candidate separation** instead of naming a figure | `icc-conformance` | **★★ NO TOLERANCE VALUE MOVED — `0,0` and `1×10⁻⁶` are unchanged, and the whole row is about what the justifications SAY.** The mechanism of §1.1 computes what those sentences asserted, and on its first run it caught a **fourth** stale literal to set beside §3.5.8.6's three: `2,46×10⁻³` was the **pre-`fd34a44`** device separation and the live value is `9,574×10⁻³`, so the claim was understated by 4× and the *"three orders"* was wrong by one. **The argument was never harmed — only the number was** (the separation is ~9 600× the bound, not ~2 500×), which is exactly why a claim-bearing figure the apparatus can compute must be interpolated and not typed. The `0,834`/`5,0` pair was still true and was replaced anyway: both are properties of *which fixture is loaded*, so a third arm would have falsified the sentence without touching it. |
 
 ---
 
@@ -1348,7 +1405,11 @@ are registered there and are deliberately not duplicated here** — this table
 carries the entries whose cost is a tolerance-budget question; NA-006 was added
 to it on 2026-08-11 (later) because Pass 4 turned its cost from a corpus-derived
 bound into a measurement, and a register entry whose "Measured?" column changes
-is exactly what this table is for. Costs are stated
+is exactly what this table is for. **NA-009 was added on 2026-08-12 for the same
+reason and only that reason** — it had carried *"cost UNMEASURED"* through four
+filings, Pass 5c measured it (§3.5.8.6), and the permission this section grants
+("*a cost of 'unmeasured' is permitted only while the entry is new*") had
+expired. Costs are stated
 in the units they were actually bounded in — **not** converted into ΔE2000
 to make the column tidy, because a conversion nobody performed is a number
 nobody can check.
@@ -1360,6 +1421,7 @@ nobody can check.
 | **NA-003** | **No clamping in the colour layer.** `f_inv` deliberately does not clamp below the linear segment; gamut policy is left to the CMM layer where it can be a named per-transform decision. ICC's own reference code makes negative-XYZ clamping a *compile-time option*. | `crates/iccce-color/src/lab.rs::f_inv` | **not an approximation — no ΔE cost.** A layering decision, registered so Pass 4 does not meet it as a surprise. | — | n/a. **★ The "But note" that stood here was WRONG ABOUT WHICH CLAUSE — corrected 2026-08-11, see §5.2. The original sentence is preserved there verbatim rather than edited away.** The layering decision itself is unaffected: it is still true that `iccce-color` does not clamp and that the CMM layer does (NA-004), and still true that one must not conclude from this crate's silence that iccce clamps nowhere. |
 | **NA-004** | **★ Gamut clipping at the CMM layer: `pcs_to_device` clamps each linear component to `[0,1]` before the inverse TRC** (ICC.1:2022 **Annex F.8–F.16**, normative), and `iccce-cmm::curve` clamps again at two further points (clause 10.18's domain in `Trc::eval`; F.1(b)'s attainable-range clip in `Trc::eval_inverse` / `invert_table`). **This is the named per-transform decision NA-003 deferred.** It is *conformance*, not an approximation — but it has a **cost**, because two profiles' encoded gamuts rarely nest exactly, and that cost is what is registered here. | `crates/iccce-cmm/src/matrix_trc.rs::pcs_to_device`; `crates/iccce-cmm/src/curve.rs::{eval, eval_inverse, invert_table}` | **1.8788×10⁻² ΔE2000** at device white for the sRGB → Adobe RGB (1998) pair, on **25 of 133** grid points overall. Closed-form prediction from the two colorant matrices and the clamp alone: **1.8782×10⁻²** — 0.03 % agreement. Driver: the two files' encoded media whites differ by 5/2/12 units of `s15Fixed16`'s 1/65536 lsb. | **measurement** (`tools/difftest`, §13.6.3) | **YES — measured 2026-08-11**, on **one profile pair, one direction, 133 points, one platform**. **The cost is corpus-specific**: it is a property of *which two files* are being converted between, not a constant of the engine, and any restatement must carry the pair. Two profiles with identical encoded whites would show ≈0 here. |
 | **NA-006** | **★ CLUT interpolation is n-linear** (multilinear; quadrilinear for a CMYK A2B), a choice inside an **ICC.1 SILENCE** — corpus **A16**: the specification says nothing whatever about how to interpolate between CLUT grid points. Registered in full in `NUMERIC_CLAIMS.md` §4 on the day the code landed, with its cost as a **corpus-derived bound of ~1 ΔE and the explicit statement that iccce had NOT measured it**. **This row exists because Pass 4 measured it.** | `crates/iccce-cmm/src/clut.rs::Clut::eval`, reached through `lut_transform::Lut16Model` | **max 1.5741 ΔE2000 (mean 0.043 86) on `USWebCoatedSWOP.icc`'s `A2B0`, and max 0.254 23 (mean 0.038 54) on its `A2B1`**, against **lcms2 2.19.1's own 4-D scheme** — which is *not* pure tetrahedral but a hybrid: linear along input channel 0, Sakamoto tetrahedral in channels 1–3 (`cmsintrp.c` `Eval4Inputs`, read at pin `21c582a`). Propagated end-to-end through the sRGB destination: **1.6639 ΔE2000** / **1.0751×10⁻² device**. **At a CLUT node the two schemes agree identically** (measured: 0.0 at all 16 corners). | **measurement** (`tools/difftest` §14.5.2), computed from the CLUT and the two algorithms alone — **no lcms2 output enters the envelope** | **YES — measured 2026-08-11**, on **one profile, two of its three A2B tags, 341 CMYK points, one platform**. Three things must survive every restatement: (1) the cost is a property of *this CLUT's curvature*, not a constant — a smoother table shows less, and the two tags in this one file differ by **6×**; (2) it is measured against **lcms2's scheme**, not against "tetrahedral" generally, and not against the true colour, which nothing here knows; (3) **~1.6 ΔE2000 is at or above the perceptibility anchor**, so this is the project's first named approximation whose cost is *visible*. |
+| **NA-009** | **★★ The black-point ESTIMATION step.** BPC needs a destination black point and **no published document defines how to estimate one**; `bkpt` is untrustworthy (the corpus's own cross-verified finding) and the silence is corpus **A42**. `iccce-cmm::bpc` implements **ISO/CD 18619 4.2.5** — a **committee draft** — where lcms2 implements its own unattributed procedure. Registered in full in `NUMERIC_CLAIMS.md` §4; **this row exists because the cost stopped being unmeasurable on 2026-08-12**, exactly as NA-006 joined this table when Pass 4 measured it. | `crates/iccce-cmm/src/bpc.rs::estimate_lut_destination_black`, reached through `Chain::estimate_dst_black` and the shipped `iccce transform --bpc` | **`4,799 109 ΔE76` (100 % `L*`) on `USWebCoatedSWOP.icc`** and **`5,000 000 ΔE76` (100 % chroma) on `v4-rgb-mab-chromatic-black.icc`**, both at media-relative. At the input black these carry to **`9,921×10⁻³`** and **`5,725×10⁻²`** of device range — ~1 % of ink on the SWOP arm. **The divergence is DEFINITIONAL, not an error by either side**: both implementations return a quantity their own document calls `InitialLab`, and ISO 4.2.2.2 means the darkest device **vertex** neutralised while lcms2's `cmsDetectBlackPoint` means the **perceptual black round trip** with chroma zeroed. | **cross-check** (`tools/difftest` §3.5.8.6, `README.md` §19.10) | **YES — measured 2026-08-12**, and **four caveats travel with the number, none optional.** (1) It is a cost **at the black point only** — BPC's effect tapers away from the shadow end and **nothing here measures the taper**. (2) It is relative to **lcms2, not to truth**. (3) ★ **There is no ground truth in this comparison at all**: no published black point exists for `USWebCoatedSWOP.icc`, and 18619 is a committee draft in this project's corpus — so this reads as an implementation-cross-check throughout and **must never be promoted**, however stable it looks. (4) **Coverage: two profiles, one intent, one direction, one pin, one platform** — and the `swop` arm is the only one with any power on the clause that produced the figure (`ZERO-SEPARATION` on the other; §1.1, DL-036). The register entry's previous *"UNMEASURED"* was correct while it stood and is superseded, not deleted. |
 
 ### 5.1 Why NA-001's cost cannot be compared to §2's anchor, even though it is tempting
 

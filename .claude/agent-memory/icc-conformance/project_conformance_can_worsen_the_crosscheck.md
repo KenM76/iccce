@@ -51,6 +51,12 @@ mean different things by one name. Neither is a bug.
 
 Filed in `docs/TOLERANCES.md` §3.5.8.6 and `tools/difftest/README.md` §19.10.
 
+**★ Answered 2026-08-12 (same day, later): the distance is now an emitted
+field on every record**, with an automatic `BLIND` / `ZERO-SEPARATION` verdict.
+See [[project-candidate-separation]] — including the two things it revealed
+immediately: the row carrying this finding is `UNGRADED`, and a fourth stale
+literal was hiding in a tolerance justification.
+
 Related: [[project-pass5c-estimator-branch-finding]],
 [[project-stale-claim-strings-in-emitted-records]],
 [[project-lcms2-findings-pass5-bpc]].

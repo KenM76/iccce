@@ -668,6 +668,14 @@ fn pass_or_fail(
         tolerance: tol,
         source: source.to_string(),
         detail,
+        // No candidate separation has been considered for any Pass 4c row.
+        // `Separation::Unstated` is the honest state and it prints as
+        // `UNSTATED`, so this omission is countable on the `separation` line
+        // rather than invisible. Pass 4c is a good candidate for one — its §A
+        // was built so lcms2's `wtpt` substitution CANNOT fire, and "the
+        // substitution fired" is precisely a named alternative reading — but it
+        // has not been derived and must not be invented here.
+        separation: crate::Separation::Unstated,
         outcome,
     }
 }

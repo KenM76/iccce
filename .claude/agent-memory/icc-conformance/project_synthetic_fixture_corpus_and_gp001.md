@@ -1,6 +1,6 @@
 ---
 name: project-synthetic-fixture-corpus-and-gp001
-description: fixtures/synthetic now exists (39 profiles from tools/gen-profiles, verify-able byte-for-byte); building it produced FINDING GP-001 — iccce mis-counts mBA curve sets — plus three ICC_Spec corpus gaps closable from the PDF.
+description: fixtures/synthetic now exists (39 profiles from tools/gen-profiles, verify-able byte-for-byte); building it produced FINDING GP-001 (iccce mis-counts mBA curve sets), three ICC_Spec corpus gaps, and GP-002 — a round-valued fixture makes distinct quantities coincide and has zero power.
 metadata:
   type: project
 ---
@@ -40,6 +40,36 @@ reproduces it exactly and NA-006 is not a confound. All three Lab values encode
 `iccce inspect` reports 0 malformations. Being square (3→3) it **cannot** catch
 GP-001, and its recipe says so. See
 [[project-pass5c-estimator-branch-finding]].
+
+**★★★ FINDING GP-002, 2026-08-12 — round, symmetric values make conceptually
+distinct quantities COINCIDE, and coincidence is zero power.**
+`v4-rgb-mab-chromatic-black.icc`'s `InitialLab` and `outRamp[first]` are **both
+`L* 20`**, so ISO/CD 18619 4.2.5.4's two candidate return values are one number
+on it. A real defect in that clause moved `USWebCoatedSWOP` by **4.717441 `L*`**
+and moved this fixture by **exactly zero**; it would stay green through a full
+reversion. **Not an authoring mistake** — it falls out of three properties each
+chosen for a good reason: the model is affine, the `B2A` is its exact inverse,
+and the black *is* the darkest vertex, so the round trip's floor equals the
+neutralised vertex. On a real ink set none of the three holds exactly.
+
+- **The right question is never "does this fixture exercise the path".** It is
+  *"if the code returned the other candidate, would this fixture's number
+  move?"*
+- ★ **The only load-bearing detector here is category (c)** — the vendor
+  profile, never committed. On a machine without the Windows colour directory
+  those rows **skip** and everything else stays green. A green CI run on a
+  Linux runner means less than it looks.
+- **Roundness is a virtue for hand-checkability (§4's whole discipline) and a
+  hazard for discrimination.** When they conflict, keep the round fixture and
+  **add a second one**; do not make the readable one irregular.
+- **Do not delete this fixture over it.** It is still the only profile in reach
+  that reaches lcms2's `BlackPointAsDarkerColorant` branch at all. A
+  distinct-values fixture is a NEW recipe (a `B2A` with a `G` floor for *every*
+  input lifts the round-trip floor while leaving `A2B(0,0,0)` alone); editing
+  these bytes would move NC-166's companion device figure `5.725e-2`.
+- Now machine-visible: the harness emits `ZERO-SEPARATION` on that row — see
+  [[project-candidate-separation]]. Filed as `tools/gen-profiles/README.md`
+  §4.1, in the recipe doc, and in the generated `MANIFEST.md`.
 
 **★★ Updated 2026-08-11 (later still, Pass 4b).** Three things:
 

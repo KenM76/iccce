@@ -145,6 +145,28 @@ const SRGB_BREAKPOINT: f64 = 0.040_45;
 /// one significant figure — `2,5×10⁻¹`. There is nothing else in it: no
 /// headroom factor, no safety multiple, no anchor.
 ///
+/// ## ⚠ `0,252 94` is NOT `0,254 23`, and the difference is which one lcms2 ran
+///
+/// `pass4.rs` L234 records **`0,254 23` ΔE2000** for what looks like the same
+/// thing — same profile, same intent, same grid, same crate, agreeing to
+/// 0,5 %. It is a different quantity and this tolerance must not be re-derived
+/// from it:
+///
+/// - **`0,252 94` (this one)** is the **observed residual** between iccce and
+///   lcms2 — two programs, both run, outputs compared. That is the right base
+///   for this tolerance, because the requirement is *"compiling must not move
+///   the result further than the two implementations already differ"*, and
+///   "already differ" means **did differ**, in a measurement.
+/// - **`0,254 23`** is the **interpolation-method envelope**, computed from the
+///   9⁴ CLUT and the two interpolation algorithms alone, with **lcms2 the
+///   program absent**. It bounds what two *correct* implementations are
+///   entitled to differ by — an entitlement, not an observation.
+///
+/// Substituting the envelope here would change the claim from *"compiling is
+/// smaller than a measured disagreement"* to *"compiling is smaller than a
+/// permitted disagreement"*, which is weaker and reads identically. `pass4.rs`
+/// carries the mirror of this warning.
+///
 /// **What it means to fail it.** Above this line, compiling is the *dominant*
 /// error term on this transform: the difference between a compiled iccce and an
 /// uncompiled one would exceed the difference between iccce and the reference

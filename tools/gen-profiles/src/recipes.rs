@@ -927,6 +927,56 @@ fn lab_to_rgb_chromatic_black(l: f64, a_star: f64, b_star: f64) -> (f64, f64, f6
 ///   black-point measurement made with it has no 3×4 offset in the chain to
 ///   attribute anything to.
 ///
+/// ## ★★ What this fixture CANNOT see — `InitialLab` and `outRamp[first]` are
+/// the same number here (FINDING GP-002, README §4.1)
+///
+/// **Read this before pruning, regenerating or "simplifying" this fixture, and
+/// before quoting any black-point number measured with it.**
+///
+/// ISO/CD 18619 **4.2.5.4** distinguishes two quantities: `InitialLab` (4.2.2.2's
+/// darkest device **vertex**, neutralised) and `outRamp[first]` (the floor of
+/// the monotonised round-trip ramp). On 2026-08-12 `iccce-cmm` was found to be
+/// returning the second where the clause says the first, and the correction
+/// (`fd34a44`) moved the `USWebCoatedSWOP` arm by **4,717 441 `L*`**.
+///
+/// **On this fixture it moved nothing at all, because here both quantities are
+/// `L* 20`.** That is not an authoring mistake — it follows from three
+/// properties chosen above for good reasons:
+///
+/// 1. the model is **affine**, so the ramp is straight;
+/// 2. [`lab_to_rgb_chromatic_black`] is its **exact** inverse, so the in-gamut
+///    round trip is the identity;
+/// 3. `SYNTH_BLACK_L` is the image of the **darkest vertex**, and dark
+///    out-of-gamut inputs clamp onto that vertex.
+///
+/// So the round trip's floor *is* the neutralised darkest vertex. On a real ink
+/// set none of the three holds exactly, which is why the vendor profile
+/// separates the two candidates and this one does not.
+///
+/// **Consequence, stated plainly:** `pass5c/synthetic/*` has **zero power** on
+/// the 4.2.5.4 question. It would stay green through a full reversion of that
+/// correction. The only differential evidence is `pass5c/swop/*`, whose profile
+/// is **category (c)** — never committed, absent on any machine without the
+/// Windows colour directory, where those rows **skip**. The harness now emits
+/// this as a machine-readable `ZERO-SEPARATION` verdict on the row itself
+/// (`tools/difftest/src/lib.rs`, `Separation`), so the hole is countable rather
+/// than merely documented.
+///
+/// **What this fixture is still the only instrument for** — and why it must not
+/// be deleted as "the arm that proves nothing" — is the branch question above:
+/// it is the only profile in reach that reaches `BlackPointAsDarkerColorant`,
+/// and its `5,000 000 ΔE76` is *authored chroma*, evidence for the **mechanism**
+/// and for nothing else.
+///
+/// **If a fixture with distinct values is wanted**, the cheapest construction
+/// that separates them without touching anything measured here is a `B2A` whose
+/// dark clamp cannot reach the darkest vertex — a floor on `G` for **every**
+/// input, not only out-of-gamut ones, which lifts the round-trip floor above
+/// `SYNTH_BLACK_L` while leaving `A2B(0,0,0)` alone. It belongs in a **new**
+/// recipe, not in this one: changing these bytes would move
+/// `NUMERIC_CLAIMS.md` NC-166's companion device figure (`5,725×10⁻²`) and
+/// several filed statements that are true of *this* fixture.
+///
 /// ## What it deliberately does not do
 ///
 /// The grid is **hypercubic** (9 per axis) rather than ragged: raggedness is
@@ -1671,7 +1721,20 @@ pub fn all() -> Vec<Recipe> {
                      that no profile on the authoring machine had. At PERCEPTUAL both implementations \
                      return the fixed A41 triple (L* ~ 3.1) WITHOUT reading the profile, so the fixture \
                      cannot discriminate them there; what it can do is measure how far that constant is \
-                     from this device's real black of L* 20.",
+                     from this device's real black of L* 20. \
+                     \u{2605}\u{2605} WHAT THIS FIXTURE CANNOT SEE, READ BEFORE PRUNING OR QUOTING IT \
+                     (FINDING GP-002, tools/gen-profiles/README.md \u{a7}4.1): ISO/CD 18619 4.2.5.4 \
+                     distinguishes InitialLab from outRamp[first], and ON THIS FIXTURE THEY ARE BOTH \
+                     L* 20 - the model is affine, the B2A is its exact inverse, and the black IS the \
+                     darkest vertex, so the round trip's floor equals the neutralised vertex. A defect \
+                     that returned the wrong one of the two moved USWebCoatedSWOP by 4.717441 L* on \
+                     2026-08-12 and moved this fixture by EXACTLY ZERO. pass5c/synthetic/* would stay \
+                     green through a full reversion of that correction; the only differential evidence \
+                     is pass5c/swop/*, and that profile is category (c) - never committed, and those \
+                     rows SKIP on a machine without the Windows colour directory. Do NOT delete this \
+                     fixture on that account: it is still the only profile in reach that reaches \
+                     lcms2's BlackPointAsDarkerColorant branch at all. A fixture with the two values \
+                     DISTINCT would be a NEW recipe, not an edit to this one.",
             build: v4_rgb_mab_chromatic_black,
         },
         Recipe {

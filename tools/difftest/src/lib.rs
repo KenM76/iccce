@@ -73,18 +73,87 @@
 //! encoding questions: **legacy-Lab correctness is asserted by exact-value
 //! integer invariants, never by ΔE.**
 //!
+//! ## ★★★ What changed on 2026-08-12: candidate separation is an emitted field
+//!
+//! On 2026-08-12 this suite established (DL-033, README §19.10) that
+//! **agreement with the oracle had been the symptom of one of our own
+//! defects**. `bpc.rs`'s non-conformant 4.2.5.4 branch returned `outRamp[first]
+//! = MinL = 16.489806`; lcms2's answer is `16.571474`. The wrong answer sat
+//! **0.082 ΔE76** from the oracle and the right one sits **4.799** away, so a
+//! **4.717441 `L*`** defect produced an 0.082 signal in the cross-check built
+//! to catch it — the defect's own magnitude was **57.8× the divergence it was
+//! blamed for.**
+//!
+//! The general statement, which is what this section exists to mechanise:
+//!
+//! > **A cross-check's power is bounded by the distance between the answer it
+//! > observed and the answer it would have observed under a plausible rival
+//! > reading.** Agreement to 0.08 is worth nothing if the wrong answers also
+//! > sit within 0.08, and is strong evidence if they sit 5 apart. Nothing in
+//! > this harness recorded that distance, so the difference between those two
+//! > situations was invisible in every record we keep.
+//!
+//! [`Separation`] makes it visible. Every [`Record`] carries one, and it has
+//! **three honest states** which are deliberately not collapsed:
+//!
+//! | state | meaning |
+//! |---|---|
+//! | [`Separation::Measured`] | a **named** rival candidate exists, and here is the value this row would have observed under it, and the distance |
+//! | [`Separation::NoNamedAlternative`] | somebody looked and there is no rival to name — **a real statement**, and it carries the reason |
+//! | [`Separation::Unstated`] | **nobody has considered this row yet.** The default, and it prints as `UNSTATED` rather than as a blank, because silence and "no alternative exists" are different claims |
+//!
+//! ### The blindness test, which is machine-detectable
+//!
+//! A row whose candidates are **closer together than its own tolerance** cannot
+//! discriminate them: it passes whichever answer the code produced. That is
+//! exactly the configuration that hid the 4.2.5.4 defect, and
+//! [`Record::separation_power`] flags it as [`SepPower::Blind`] with no human
+//! in the loop. Two guards on that test, both load-bearing:
+//!
+//! - **It is only applied when the separation is in the row's own metric's
+//!   units** ([`SepUnits::SameAsMetric`]). Comparing a separation in device
+//!   units against a tolerance on a dimensionless ratio is arithmetic about
+//!   incommensurable quantities — Pass 6 row R5's lesson — so that case reports
+//!   [`SepPower::Incommensurate`] and the number, and does **not** pretend to a
+//!   verdict.
+//! - **A row with an infinite tolerance is [`SepPower::Ungraded`], never
+//!   "blind".** It cannot fail, so no separation could have saved it; saying
+//!   `BLIND` there would blame the fixture for a decision the tolerance made.
+//! - ★★ **A separation of exactly zero is [`SepPower::ZeroSeparation`]**, which
+//!   outranks every other verdict: the two candidates *are the same number*, so
+//!   the row cannot move at any tolerance, in any units. This is the state
+//!   `pass5c/synthetic/*` is in — the authored fixture's `InitialLab` and
+//!   `outRamp[first]` are both `L* 20` — and it is the machine-readable form of
+//!   `ARCHITECTURE.md` DL-036. A blind row might be rescued by tightening a
+//!   tolerance; a zero-separation row can only be rescued by **a different
+//!   fixture**, which is why the two are counted and listed separately.
+//!
+//! **A flag is not a failure.** `BLIND` does not change `status` or the exit
+//! code, and that is deliberate: a small separation can be legitimate (an exact
+//! invariant, a null control), and auto-failing it would create pressure to
+//! stop stating separations at all — the precise opposite of the point. It is
+//! counted on the `separation` line and the offending ids are named there.
+//!
 //! ## Machine-readable output
 //!
 //! [`Report::emit`] writes one tab-separated record per check:
 //!
 //! ```text
-//! check<TAB>id<TAB>status<TAB>kind<TAB>metric<TAB>tolerance<TAB>observed<TAB>detail
+//! check<TAB>id<TAB>status<TAB>kind<TAB>metric<TAB>tolerance<TAB>observed<TAB>separation<TAB>sep-power<TAB>detail
 //! summary<TAB>pass=N<TAB>fail=N<TAB>skip=N<TAB>error=N
+//! separation<TAB>unstated=N<TAB>no-named-alternative=N<TAB>incommensurate=N<TAB>ungraded=N<TAB>zero-separation=N<TAB>blind=N<TAB>discriminating=N<TAB>sep-broken=N<TAB>blind-ids=…<TAB>zero-separation-ids=…
 //! ```
 //!
 //! TSV rather than JSON because the fields are all short, tab-free scalars,
 //! so TSV needs no escaping rules, no quoting decisions and no dependency.
-//! `detail` is free text with tabs and newlines stripped ([`sanitise`]).
+//! `detail` is free text with tabs and newlines stripped ([`sanitise`]), and it
+//! stays **last** so the machine-readable fields remain contiguous.
+//!
+//! **The `summary` line is byte-for-byte what it always was.** The separation
+//! aggregate is a *separate* line rather than four more fields on `summary`,
+//! because `pass=N fail=N skip=N error=N` is quoted in commit messages and in
+//! `SESSION_LOG.md` as a run's signature, and changing the shape of a line
+//! people compare by eye is a way to make two identical runs look different.
 //!
 //! **`status` is one of `PASS`, `FAIL`, `SKIP`, `ERROR`, and they are four
 //! different things.** `SKIP` means the check could not run (usually a
@@ -1218,6 +1287,198 @@ impl Tolerance {
     }
 }
 
+// ===========================================================================
+// Candidate separation — how far away the wrong answer would have been
+// ===========================================================================
+
+/// Whether a stated separation may be compared against the row's tolerance.
+///
+/// This exists because the blindness test in [`Record::separation_power`] is a
+/// comparison of two numbers, and two numbers may only be compared when they
+/// are in the same units. Pass 6 row R5 and Pass 5c's `ATTRIBUTION` row both
+/// record the same lesson from the other direction: **the unit the requirement
+/// is stated in is the one that may carry the tolerance**, and a ratio computed
+/// across incommensurable units is arithmetic, not evidence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SepUnits {
+    /// The separation is expressed in exactly the units [`Record::metric`]
+    /// reports, so separation and tolerance are directly comparable and the
+    /// blindness test means what it says.
+    SameAsMetric,
+    /// Different units, **named**. The separation is still emitted — it is
+    /// information — but no verdict is drawn from comparing it to the
+    /// tolerance, and the record says so rather than quietly skipping the test.
+    Other(&'static str),
+}
+
+impl SepUnits {
+    pub fn tag(self) -> &'static str {
+        match self {
+            SepUnits::SameAsMetric => "same-as-metric",
+            SepUnits::Other(u) => u,
+        }
+    }
+}
+
+/// **How far apart this row's two candidate answers are** — the quantity that
+/// bounds what a cross-check can prove. See the module header for the incident
+/// that made it a first-class field.
+///
+/// ## What "the alternative" means, precisely
+///
+/// It is *not* a rival tolerance and *not* an error bar. It is: **the value
+/// this row's own `observed` quantity would have taken had a named,
+/// plausible-at-the-time alternative reading been the one implemented.**
+/// Naming it is the whole discipline — "some other answer might have been
+/// closer" is not a separation. The alternatives that qualify are the ones a
+/// reader can go and check:
+///
+/// - an **intermediate** the code already computes (`MinL`, `outRamp[first]`,
+///   `InitialLab`) that could have been returned instead;
+/// - a **branch** the dispatching implementation might have taken
+///   (`BlackPointAsDarkerColorant` instead of `BlackPointUsingPerceptualBlack`);
+/// - an **anchor** a neighbouring clause supplies for the same name;
+/// - **the other document's reading** of one word — which is what the whole of
+///   Pass 5c turned out to be about.
+///
+/// ## Why `Unstated` is a variant and not an `Option`
+///
+/// `None` reads as "nothing to say here", and that is the failure this type
+/// exists to prevent. A row where somebody looked and found no rival is
+/// [`Separation::NoNamedAlternative`] **with the reason attached**; a row
+/// nobody has thought about is [`Separation::Unstated`] and prints as
+/// `UNSTATED`. The two are different claims about the evidence and the report
+/// keeps them apart.
+#[derive(Debug, Clone)]
+pub enum Separation {
+    /// Nobody has considered a rival candidate for this row yet. Prints as
+    /// `UNSTATED` — deliberately conspicuous, deliberately not a blank.
+    Unstated,
+    /// Considered, and there is no named rival. The `String` is the reason,
+    /// and it is required: "no alternative" without a reason is
+    /// indistinguishable from not having looked.
+    NoNamedAlternative(String),
+    /// A named rival exists, and here is what this row would have observed
+    /// under it.
+    Measured {
+        /// What the alternative *is*, in words a reader can verify against a
+        /// clause or a source file. Include the file and line if it is code.
+        alternative: String,
+        /// The value `observed` would have taken under that alternative.
+        alt_observed: f64,
+        /// The distance between the two candidate observations. Usually
+        /// `|observed − alt_observed|`, but supplied rather than derived,
+        /// because for a vector-valued candidate (two Lab points, say) the
+        /// distance is a ΔE and not the difference of two scalars.
+        distance: f64,
+        units: SepUnits,
+    },
+}
+
+impl Separation {
+    /// The common case: two scalar candidate observations, distance is their
+    /// difference.
+    pub fn against(
+        alternative: impl Into<String>,
+        alt_observed: f64,
+        observed: f64,
+        units: SepUnits,
+    ) -> Separation {
+        Separation::Measured {
+            alternative: alternative.into(),
+            alt_observed,
+            distance: (observed - alt_observed).abs(),
+            units,
+        }
+    }
+
+    /// As [`Separation::against`], but for a candidate whose distance is not
+    /// the difference of the two scalars — a ΔE between two Lab points, for
+    /// instance. The caller states the distance and is responsible for it
+    /// being in the units it claims.
+    pub fn against_distance(
+        alternative: impl Into<String>,
+        alt_observed: f64,
+        distance: f64,
+        units: SepUnits,
+    ) -> Separation {
+        Separation::Measured {
+            alternative: alternative.into(),
+            alt_observed,
+            distance,
+            units,
+        }
+    }
+
+    pub fn none(reason: impl Into<String>) -> Separation {
+        Separation::NoNamedAlternative(reason.into())
+    }
+
+    /// The distance, when there is one. Emitted in its own TSV column.
+    pub fn distance(&self) -> Option<f64> {
+        match self {
+            Separation::Measured { distance, .. } => Some(*distance),
+            _ => None,
+        }
+    }
+}
+
+/// What a row's separation says about its power to discriminate. Derived, never
+/// stored: it is a function of the separation **and the tolerance**, and
+/// deriving it means the two cannot drift apart.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SepPower {
+    /// No separation has been stated for this row. Not a verdict — an absence,
+    /// and one a reader should be able to count.
+    Unstated,
+    /// Stated, and there is no named rival candidate.
+    NoAlternative,
+    /// A separation exists but is in different units from the metric, so the
+    /// blindness test is **not applied**. The number is still emitted.
+    Incommensurate,
+    /// The tolerance is infinite: the row is reported, not graded, so it has no
+    /// discriminating power regardless of how far apart the candidates are.
+    /// **This is not the fixture's fault and is not `Blind`.**
+    Ungraded,
+    /// ★★ **The candidates are the same number.** The row cannot move whatever
+    /// the code does, at any tolerance, graded or not — so this outranks every
+    /// verdict below and is checked before them.
+    ///
+    /// It is a distinct state from [`SepPower::Blind`] because the remedy is
+    /// different: a blind row might be rescued by tightening its tolerance, and
+    /// a zero-separation row can only be rescued by **a different fixture**.
+    /// `pass5c/synthetic/*` is the worked example — that fixture's
+    /// `InitialLab` and `outRamp[first]` are both `L* 20`, so its 5.000000 was
+    /// unmoved by the correction that shifted the `swop` arm 58.8×
+    /// (`NUMERIC_CLAIMS.md` NC-166, `ARCHITECTURE.md` DL-036).
+    ZeroSeparation,
+    /// ★ **The alarm.** The candidates are closer together than the tolerance,
+    /// so this row would pass under either — it cannot see the difference it
+    /// looks like it is testing.
+    Blind,
+    /// The candidates are further apart than the tolerance: a wrong candidate
+    /// would have failed this row.
+    Discriminating,
+    /// The separation did not compute (NaN). Apparatus breakage, surfaced
+    /// rather than silently classified as one of the above.
+    Broken,
+}
+
+impl SepPower {
+    pub fn tag(self) -> &'static str {
+        match self {
+            SepPower::Unstated => "UNSTATED",
+            SepPower::NoAlternative => "NO-NAMED-ALTERNATIVE",
+            SepPower::Incommensurate => "INCOMMENSURATE",
+            SepPower::Ungraded => "UNGRADED",
+            SepPower::ZeroSeparation => "ZERO-SEPARATION",
+            SepPower::Blind => "BLIND",
+            SepPower::Discriminating => "DISCRIMINATING",
+            SepPower::Broken => "SEP-BROKEN",
+        }
+    }
+}
+
 /// One graded comparison: what to run, what to expect, how close is close
 /// enough, and where the expectation came from.
 #[derive(Debug, Clone)]
@@ -1325,6 +1586,12 @@ pub struct Record {
     /// Free text: what was compared, over what, with what settings. Tabs and
     /// newlines are stripped on emit.
     pub detail: String,
+    /// ★ **How far away the wrong answer would have been** — see
+    /// [`Separation`] and the module header. Defaults to
+    /// [`Separation::Unstated`] on every constructor, which prints as
+    /// `UNSTATED`: a row nobody has thought about must look different from a
+    /// row where somebody looked and found nothing.
+    pub separation: Separation,
     pub outcome: Outcome,
 }
 
@@ -1362,7 +1629,112 @@ impl Record {
             tolerance,
             source: source.into(),
             detail: detail.into(),
+            separation: Separation::Unstated,
             outcome,
+        }
+    }
+
+    /// ★ Attach a [`Separation`] — the builder half of the mechanism described
+    /// in the module header.
+    ///
+    /// It is a builder rather than a seventh positional argument on
+    /// [`Record::graded`] for one reason: **most rows do not have a named
+    /// alternative, and a required argument would have produced a corpus of
+    /// invented ones.** The engineer's brief on 2026-08-12 was explicit about
+    /// preferring a few real separations with the rest honestly marked over a
+    /// scheme that manufactures one everywhere, and the default of
+    /// [`Separation::Unstated`] is that preference expressed in the type.
+    #[must_use]
+    pub fn with_separation(mut self, separation: Separation) -> Record {
+        self.separation = separation;
+        self
+    }
+
+    /// The verdict [`Separation`] supports for this row, derived from the
+    /// separation **and this row's own tolerance**. See [`SepPower`].
+    ///
+    /// The order of the guards is the argument:
+    ///
+    /// 1. no separation stated → nothing to say;
+    /// 2. stated as absent → nothing to say, but somebody looked;
+    /// 3. NaN → apparatus breakage, said out loud rather than classified;
+    /// 4. **zero distance → `ZeroSeparation`**, checked before everything
+    ///    below it because a row whose candidates are the same number has no
+    ///    power at any tolerance and in any units;
+    /// 5. incommensurable units → the number is emitted, the test is not run;
+    /// 6. **infinite tolerance → `Ungraded`**, checked *before* the comparison,
+    ///    because `d <= inf` is true for every finite `d` and would label every
+    ///    reported row `BLIND` — blaming the fixture for a decision the
+    ///    tolerance made;
+    /// 7. otherwise the comparison, `<=` matching [`Record::graded`]'s own
+    ///    pass rule so that "the separation is exactly the tolerance" is read
+    ///    the same way in both places: as *not* discriminating.
+    #[must_use]
+    pub fn separation_power(&self) -> SepPower {
+        match &self.separation {
+            Separation::Unstated => SepPower::Unstated,
+            Separation::NoNamedAlternative(_) => SepPower::NoAlternative,
+            Separation::Measured {
+                distance, units, ..
+            } => {
+                if distance.is_nan() {
+                    SepPower::Broken
+                } else if *distance == 0.0 {
+                    SepPower::ZeroSeparation
+                } else if !matches!(units, SepUnits::SameAsMetric) {
+                    SepPower::Incommensurate
+                } else if !self.tolerance.value.is_finite() {
+                    SepPower::Ungraded
+                } else if *distance <= self.tolerance.value {
+                    SepPower::Blind
+                } else {
+                    SepPower::Discriminating
+                }
+            }
+        }
+    }
+
+    /// The separation, rendered for the `detail` column: the alternative's
+    /// name, its value, the distance, and — where the comparison is legitimate
+    /// — how many multiples of the tolerance that distance is.
+    ///
+    /// The ratio is **formatted from what the record already holds** rather
+    /// than typed anywhere, which is the rule §3.5.8.6 established after three
+    /// claim-bearing literals in this crate went false inside a day.
+    fn separation_detail(&self) -> String {
+        match &self.separation {
+            Separation::Unstated => "candidate separation: UNSTATED — no alternative candidate \
+                                     has been considered for this row"
+                .to_string(),
+            Separation::NoNamedAlternative(why) => {
+                format!("candidate separation: NO NAMED ALTERNATIVE — {why}")
+            }
+            Separation::Measured {
+                alternative,
+                alt_observed,
+                distance,
+                units,
+            } => {
+                let power = self.separation_power();
+                let ratio = if power == SepPower::Discriminating || power == SepPower::Blind {
+                    format!(
+                        "; distance is {:.4}x this row's tolerance",
+                        distance / self.tolerance.value
+                    )
+                } else {
+                    String::new()
+                };
+                format!(
+                    "candidate separation: {} — this row would have observed {:.6e} under that \
+                     alternative, {:.6e} away in {}{} -> {}",
+                    alternative,
+                    alt_observed,
+                    distance,
+                    units.tag(),
+                    ratio,
+                    power.tag()
+                )
+            }
         }
     }
 
@@ -1385,6 +1757,7 @@ impl Record {
             tolerance,
             source: source.into(),
             detail: reason.clone(),
+            separation: Separation::Unstated,
             outcome: Outcome::Skip { reason },
         }
     }
@@ -1406,6 +1779,7 @@ impl Record {
             tolerance,
             source: source.into(),
             detail: detail.clone(),
+            separation: Separation::Unstated,
             outcome: Outcome::Error { detail },
         }
     }
@@ -1428,6 +1802,7 @@ impl Record {
             tolerance: check.tolerance,
             source: check.source.to_string(),
             detail,
+            separation: Separation::Unstated,
             outcome,
         }
     }
@@ -1487,6 +1862,45 @@ impl Report {
         }
     }
 
+    /// ★ Count the rows by [`SepPower`], and **name** the two kinds of row that
+    /// cannot see: the blind ones and the zero-separation ones.
+    ///
+    /// The two id lists are kept apart because the remedies are different — a
+    /// blind row can be rescued by a tighter tolerance, a zero-separation row
+    /// only by a different fixture (see [`SepPower::ZeroSeparation`]).
+    ///
+    /// Returned as data rather than printed here so a caller (a report binary,
+    /// a future CI gate) can act on it without re-deriving the classification
+    /// and possibly deriving it differently.
+    #[must_use]
+    pub fn separation_counts(&self) -> (Vec<(SepPower, usize)>, Vec<&str>, Vec<&str>) {
+        let order = [
+            SepPower::Unstated,
+            SepPower::NoAlternative,
+            SepPower::Incommensurate,
+            SepPower::Ungraded,
+            SepPower::ZeroSeparation,
+            SepPower::Blind,
+            SepPower::Discriminating,
+            SepPower::Broken,
+        ];
+        let mut counts: Vec<(SepPower, usize)> = order.iter().map(|p| (*p, 0)).collect();
+        let mut blind = Vec::new();
+        let mut zero = Vec::new();
+        for r in &self.rows {
+            let p = r.separation_power();
+            if let Some(slot) = counts.iter_mut().find(|(k, _)| *k == p) {
+                slot.1 += 1;
+            }
+            match p {
+                SepPower::Blind => blind.push(r.id.as_str()),
+                SepPower::ZeroSeparation => zero.push(r.id.as_str()),
+                _ => {}
+            }
+        }
+        (counts, blind, zero)
+    }
+
     /// Write the TSV records described in the module header.
     pub fn emit<W: Write>(&self, w: &mut W) -> io::Result<()> {
         for n in &self.notes {
@@ -1499,30 +1913,63 @@ impl Report {
                 }
                 Outcome::Skip { .. } | Outcome::Error { .. } => "-".to_string(),
             };
-            // The `why` and the `source` travel on EVERY line, including
-            // skips and errors. A tolerance quoted without its justification
-            // is the thing this whole role exists to prevent, and a reader
-            // grepping one line out of a log must not have to go and find it.
+            let separation = match r.separation.distance() {
+                Some(d) => format!("{d:.6e}"),
+                None => "-".to_string(),
+            };
+            // The `why`, the `source` and now the candidate separation travel
+            // on EVERY line, including skips and errors. A tolerance quoted
+            // without its justification is the thing this whole role exists to
+            // prevent, and a reader grepping one line out of a log must not
+            // have to go and find it. The separation is in the prose as well as
+            // in its own column for the same reason: the column is for a
+            // machine, the sentence is for whoever is reading one line.
             let detail = format!(
-                "{} | tolerance because: {} | expectation source: {}",
-                r.detail, r.tolerance.why, r.source
+                "{} | tolerance because: {} | expectation source: {} | {}",
+                r.detail,
+                r.tolerance.why,
+                r.source,
+                r.separation_detail()
             );
             writeln!(
                 w,
-                "check\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "check\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 r.id,
                 r.outcome.tag(),
                 r.kind.tag(),
                 r.metric.tag(),
                 r.tolerance.value,
                 observed,
+                separation,
+                r.separation_power().tag(),
                 sanitise(&detail)
             )?;
         }
         let (pass, fail, skip, error) = self.counts();
+        // Unchanged in shape since Pass 3 and deliberately so — this line is
+        // quoted as a run's signature.
         writeln!(
             w,
             "summary\tpass={pass}\tfail={fail}\tskip={skip}\terror={error}"
+        )?;
+        let (counts, blind, zero) = self.separation_counts();
+        let fields: Vec<String> = counts
+            .iter()
+            .map(|(p, n)| format!("{}={}", p.tag().to_ascii_lowercase(), n))
+            .collect();
+        let list = |v: &[&str]| {
+            if v.is_empty() {
+                "none".to_string()
+            } else {
+                v.join(",")
+            }
+        };
+        writeln!(
+            w,
+            "separation\t{}\tblind-ids={}\tzero-separation-ids={}",
+            fields.join("\t"),
+            list(&blind),
+            list(&zero)
         )?;
         Ok(())
     }
@@ -1707,6 +2154,147 @@ mod tests {
     fn abs_max_component_is_the_max_not_the_mean() {
         let m = Metric::AbsMaxComponent;
         assert!((m.measure(&[1.0, 2.0, 3.0], &[1.0, 2.0, 3.5]) - 0.5).abs() < 1e-15);
+    }
+
+    // -----------------------------------------------------------------
+    // Candidate separation. These test the CLASSIFIER, not any colour: the
+    // whole value of the mechanism is that the blindness verdict is derived
+    // the same way every time, so the derivation is what is pinned.
+    // -----------------------------------------------------------------
+
+    fn row(tolerance: f64, sep: Separation) -> Record {
+        Record::graded(
+            "t/row",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            Tolerance::new(tolerance, "test fixture"),
+            0.0,
+            "test fixture",
+            "test fixture",
+        )
+        .with_separation(sep)
+    }
+
+    /// ★ The 2026-08-12 incident, reduced to its arithmetic. The observed
+    /// divergence was 0.0817 and the rival candidate — the conformant
+    /// `InitialLab` — sat 4.717 away; had the row been graded at 1.0 ΔE the
+    /// candidates would still have been 4.7x apart and a wrong answer would
+    /// have failed it. The same row graded at 5.0 could not have told them
+    /// apart, and that is the state this classifier exists to name.
+    #[test]
+    fn a_separation_smaller_than_the_tolerance_is_blind() {
+        let sep = || Separation::against("outRamp[first] = MinL", 4.799109, 8.1668e-2, SepUnits::SameAsMetric);
+        assert_eq!(row(1.0, sep()).separation_power(), SepPower::Discriminating);
+        assert_eq!(row(5.0, sep()).separation_power(), SepPower::Blind);
+        // Exactly equal counts as blind: `Record::graded` passes on
+        // `observed <= tolerance`, so a difference of exactly the tolerance is
+        // admitted there and must not be claimed as discriminated here.
+        assert_eq!(
+            row(1.0, Separation::against("x", 1.0, 0.0, SepUnits::SameAsMetric)).separation_power(),
+            SepPower::Blind
+        );
+    }
+
+    /// An infinite tolerance is `UNGRADED`, never `BLIND`. Reported rows
+    /// (`REPORTED` in every pass module) cannot fail, so no separation could
+    /// have rescued them; calling that blindness would blame the fixture for
+    /// a decision the tolerance made.
+    #[test]
+    fn an_infinite_tolerance_is_ungraded_not_blind() {
+        let r = row(
+            f64::INFINITY,
+            Separation::against("x", 10.0, 0.0, SepUnits::SameAsMetric),
+        );
+        assert_eq!(r.separation_power(), SepPower::Ungraded);
+    }
+
+    /// Different units means the number is emitted and the verdict is not
+    /// drawn. Pass 6 row R5's lesson, enforced by the type.
+    #[test]
+    fn incommensurable_units_do_not_get_a_verdict() {
+        let r = row(
+            1.0,
+            Separation::against("x", 10.0, 0.0, SepUnits::Other("normalised device (0..1)")),
+        );
+        assert_eq!(r.separation_power(), SepPower::Incommensurate);
+    }
+
+    /// Silence and "there is no alternative" are different claims, and the
+    /// default is the one that admits nobody has looked.
+    #[test]
+    fn unstated_is_distinct_from_no_alternative() {
+        let d = Record::graded(
+            "t/row",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            Tolerance::new(1.0, "test fixture"),
+            0.0,
+            "test fixture",
+            "test fixture",
+        );
+        assert_eq!(d.separation_power(), SepPower::Unstated);
+        assert_eq!(
+            row(1.0, Separation::none("both terms are measured in this run"))
+                .separation_power(),
+            SepPower::NoAlternative
+        );
+    }
+
+    /// ★★ Zero separation outranks everything, including the infinite
+    /// tolerance of a reported row: `pass5c/synthetic`'s two candidates are
+    /// both `L* 20`, and no tolerance decision can give that row power.
+    #[test]
+    fn zero_separation_outranks_ungraded_and_incommensurate() {
+        assert_eq!(
+            row(
+                f64::INFINITY,
+                Separation::against("outRamp[first] = L* 20 = InitialLab", 5.0, 5.0, SepUnits::SameAsMetric)
+            )
+            .separation_power(),
+            SepPower::ZeroSeparation
+        );
+        assert_eq!(
+            row(
+                1.0,
+                Separation::against_distance("x", 5.0, 0.0, SepUnits::Other("device"))
+            )
+            .separation_power(),
+            SepPower::ZeroSeparation
+        );
+    }
+
+    /// A separation that failed to compute is apparatus breakage and says so
+    /// rather than being classified as a healthy verdict.
+    #[test]
+    fn a_nan_separation_is_broken_not_discriminating() {
+        let r = row(
+            1.0,
+            Separation::against("x", f64::NAN, 0.0, SepUnits::SameAsMetric),
+        );
+        assert_eq!(r.separation_power(), SepPower::Broken);
+    }
+
+    /// The emitted line keeps `detail` last and carries both new columns, and
+    /// the `summary` line's shape is unchanged.
+    #[test]
+    fn emit_carries_the_separation_columns_and_leaves_summary_alone() {
+        let mut rep = Report::new();
+        rep.push_record(row(
+            1.0,
+            Separation::against("the other branch", 5.0, 0.0, SepUnits::SameAsMetric),
+        ));
+        let mut buf = Vec::new();
+        rep.emit(&mut buf).unwrap();
+        let text = String::from_utf8(buf).unwrap();
+        let check = text.lines().find(|l| l.starts_with("check\t")).unwrap();
+        let f: Vec<&str> = check.split('\t').collect();
+        assert_eq!(f.len(), 10, "check line is 10 fields: {check}");
+        assert_eq!(f[7], "5.000000e0");
+        assert_eq!(f[8], "DISCRIMINATING");
+        assert!(f[9].contains("candidate separation: the other branch"));
+        assert!(text.contains("summary\tpass=1\tfail=0\tskip=0\terror=0"));
+        assert!(text.contains("separation\tunstated=0"));
+        assert!(text.contains("blind-ids=none"));
     }
 
     /// TSV framing survives a detail string containing tabs and newlines.

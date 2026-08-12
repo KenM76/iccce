@@ -573,9 +573,17 @@ the workspace root**, or §13's seven records skip with that as their reason.
 Output is TSV:
 
 ```
-check<TAB>id<TAB>status<TAB>kind<TAB>metric<TAB>tolerance<TAB>observed<TAB>detail
+check<TAB>id<TAB>status<TAB>kind<TAB>metric<TAB>tolerance<TAB>observed<TAB>separation<TAB>sep-power<TAB>detail
 summary<TAB>pass=N<TAB>fail=N<TAB>skip=N<TAB>error=N
+separation<TAB>unstated=N<TAB>no-named-alternative=N<TAB>incommensurate=N<TAB>ungraded=N<TAB>zero-separation=N<TAB>blind=N<TAB>discriminating=N<TAB>sep-broken=N<TAB>blind-ids=…<TAB>zero-separation-ids=…
 ```
+
+★ **`separation` and `sep-power` were added 2026-08-12 — see §20.** They state
+how far this row's *rival* candidate answer sits, which is what bounds the power
+of the comparison. `detail` stays last so the machine-readable fields remain
+contiguous, and **the `summary` line is byte-for-byte what it always was**: it
+is quoted as a run's signature, so the new aggregate is a separate
+`separation` line rather than four more fields on it.
 
 | exit | meaning |
 |---|---|
@@ -607,6 +615,10 @@ could have produced a claim it does not support:
   changes the answer (§9), and — §12 — lcms2 turns BPC on by itself for
   v4 profiles at perceptual and saturation, so a record that does not say
   what was asked for cannot be interpreted later.
+- ★ **`Separation` has no `Option`, and its default prints.** A row nobody
+  has considered says `UNSTATED`; a row where somebody looked and found no
+  rival says so **with the reason attached**. `None` would have collapsed
+  those two into one blank, and the blank is what §20 exists to abolish.
 - **~~No ΔE.~~ ★ Superseded 2026-08-11 — see §13.2.** This entry read: *"The
   only metric is `abs-max-component`. Adding ΔE would mean either depending
   on `iccce-color` (grading iccce with iccce's own arithmetic — a coupling
@@ -3774,3 +3786,155 @@ the apparatus already computes. **A claim-bearing number the harness can
 compute must be formatted at run time, never typed into the prose beside the
 code that computes it** — a stale comment misleads a reader, a stale string in
 an emitted conformance record misleads the evidence.
+
+---
+
+## 20. ★★★ Candidate separation — how far away the *wrong* answer would have been
+
+**Added 2026-08-12 by `icc-conformance`, on `icc-engineer`'s dispatch, out of
+§19.10 / `ARCHITECTURE.md` DL-033. `TOLERANCES.md` §1.1 is the budget-side
+statement of the same thing; this section is the apparatus.**
+
+### 20.1 The incident that made it a field rather than a paragraph
+
+§19.10 established that **agreement with the oracle had been the symptom of one
+of our own defects**. `iccce-cmm`'s ISO/CD 18619 **4.2.5.4** branch returned
+`outRamp[first]` where the clause says `InitialLab`:
+
+| | `L*` | ΔE76 from lcms2's answer |
+|---|---|---|
+| what iccce returned (non-conformant) | `16,489 806` | **0,081 668** |
+| what iccce returns now (conformant) | `11,772 365` | **4,799 109** |
+| **the defect's own magnitude** | **`4,717 441`** | — |
+
+A **4,7 `L*`** defect produced an **0,08** signal in the cross-check built to
+find it — its own size was **57,8×** the divergence it was blamed for. It was
+found by reading the clause, not by the suite.
+
+The general statement:
+
+> **A cross-check's power is bounded by the distance between the answer it
+> observed and the answer it would have observed under a plausible rival
+> reading.** Agreement to 0,08 is worth nothing if the plausible wrong answers
+> also sit within 0,08, and is strong if they sit 5 apart. **No row in this
+> suite recorded that distance**, so the difference between those two situations
+> was invisible in every record we keep.
+
+### 20.2 The design, and the three things it refuses to do
+
+`lib.rs` grows a `Separation` on every `Record`, defaulting to `Unstated` and
+attached with `.with_separation(…)`.
+
+| state | constructor | meaning |
+|---|---|---|
+| **measured** | `Separation::against(name, alt_observed, observed, units)` or `::against_distance(…)` | a **named** rival exists; carries the value this row *would have observed* under it and the distance to it |
+| **no named alternative** | `Separation::none(reason)` | somebody looked and there is none — **a claim**, and it carries its reason |
+| **unstated** | the default | nobody has considered this row. Prints `UNSTATED` |
+
+`Record::separation_power()` derives the verdict from the separation **and the
+row's own tolerance**, in this order, and each guard is an argument:
+
+1. `UNSTATED` / `NO-NAMED-ALTERNATIVE` — nothing to compare;
+2. `SEP-BROKEN` — the distance is NaN. Apparatus breakage, said out loud rather
+   than silently classified as healthy;
+3. **`ZERO-SEPARATION`** — the candidates are the *same number*. Checked before
+   everything below it, because such a row cannot move at **any** tolerance, in
+   **any** units;
+4. `INCOMMENSURATE` — the separation is in different units from the metric. The
+   number is emitted; **the verdict is not drawn**. Comparing a device
+   separation against a tolerance on a dimensionless ratio is arithmetic across
+   incommensurable quantities — §18's row R5 lesson;
+5. `UNGRADED` — the tolerance is `∞`. Checked *before* the comparison, because
+   `d ≤ ∞` holds for every finite `d` and would label every reported row
+   `BLIND`, blaming the fixture for a decision the tolerance made;
+6. **`BLIND`** — `distance ≤ tolerance`. The row passes under either candidate:
+   it cannot see the difference it looks like it is testing. `≤` and not `<`,
+   matching `Record::graded`'s own pass rule, so "exactly the tolerance" is read
+   the same way in both places;
+7. `DISCRIMINATING` — otherwise, with the multiple of the tolerance printed.
+
+**Three deliberate refusals:**
+
+- **A flag is not a failure.** `BLIND` does not change `status` or the exit
+  code. A small separation is sometimes legitimate (an exact invariant, a null
+  control), and auto-failing it would create pressure to stop stating
+  separations at all — the exact opposite of the point.
+- **No separation is invented.** 129 of 145 rows say `UNSTATED`, and that is the
+  intended state, not a backlog to be filled with plausible-sounding rivals. A
+  named alternative a reader cannot go and check is worse than none.
+- **`Unstated` is not `Option::None`.** Silence and "there is no rival" are
+  different claims about the evidence and the report keeps them apart.
+
+### 20.3 What Pass 5c emits, on the run of 2026-08-12
+
+`pass=142 fail=0 skip=3 error=0`, unchanged by this work.
+
+| row (per arm) | tolerance | observed | separation | verdict |
+|---|---|---|---|---|
+| `apparatus/error-bar-is-smaller-than-the-effect` | 1,0 | — | — | `NO-NAMED-ALTERNATIVE` |
+| `FINDING/divergence-chroma-follows-lcms2-BRANCH` | 0,0 | 0 | **8,329 8×10⁻¹** *(swop)* / **5,000 000** *(synthetic)* | `DISCRIMINATING` |
+| `FINDING/neither-implementation-fits-a-quadratic-here` | 0,0 | 0 | 1,000 000 | `DISCRIMINATING` |
+| **`estimators/black-points-in-lab`** | ∞ | 4,799 109 / 5,000 000 | **★ 4,717 441** *(swop)* / **★ 0** *(synthetic)* | `UNGRADED` / **`ZERO-SEPARATION`** |
+| `validation/reimplementation-beats-the-rival-candidate` | 1,0 | 4,258×10⁻² | 9,574 6×10⁻³ device | `INCOMMENSURATE` |
+| `validation/device-residual-against-transicc` | ∞ | 4,224 9×10⁻⁴ | 9,498 7×10⁻³ | `UNGRADED` |
+| `ATTRIBUTION/pass5b-recovery-was-the-round-trip` | 1,0 / ∞ | — | — | `NO-NAMED-ALTERNATIVE` |
+| `shipped/binary-reaches-the-iso-estimator` | 1×10⁻⁶ | 3,86×10⁻⁷ | **9,574 5×10⁻³** | `DISCRIMINATING` (9 574×) |
+
+Aggregate line: `unstated=129 no-named-alternative=4 incommensurate=2
+ungraded=3 zero-separation=1 blind=0 discriminating=6 sep-broken=0`,
+`zero-separation-ids=pass5c/synthetic/estimators/black-points-in-lab`.
+
+**Two things fall straight out of that table.**
+
+**(a) The row that carries the whole finding is `UNGRADED`.** `4,717 441` is now
+a field rather than a sentence — but its row's tolerance is `∞`, so it could not
+have failed however far the candidates moved. The suite's power on the 4.2.5.4
+question lives entirely in §B's *device* rows, which is a much less obvious
+place than the row named `estimators/black-points-in-lab`. That is worth knowing
+and was not visible before.
+
+**(b) The authored fixture's zero power is now a machine-readable verdict.**
+`pass5c/synthetic/estimators/black-points-in-lab` prints `ZERO-SEPARATION` and
+is named on the aggregate line, because that fixture's `InitialLab` and
+`outRamp[first]` are both `L* 20` (`NUMERIC_CLAIMS.md` NC-166,
+`ARCHITECTURE.md` DL-036, and now `tools/gen-profiles/README.md` §4.1 —
+**FINDING GP-002**, where a fixture maintainer will meet it).
+
+### 20.4 ★ A fourth stale literal, found by the apparatus on the mechanism's first run
+
+§19.10 recorded three claim-bearing strings that had gone false inside a day.
+Computing the separations instead of asserting them produced a fourth
+immediately:
+
+> `SHIPPED_MATCHES_LIBRARY`'s justification said *"the two candidate blacks in
+> play are **2,46×10⁻³** apart in this same quantity, **three orders** above the
+> bound"*. The computed separation is **9,574×10⁻³**. `2,46×10⁻³` was the
+> **pre-`fd34a44`** figure — §19.10's own table records that residual moving
+> `2,4639×10⁻³ → 9,9211×10⁻³` on that commit — so the sentence had been stale
+> since the morning, and *"three orders"* was wrong by one (it is ~9 600×, four
+> orders).
+
+**The argument was never harmed; only the number was.** That is the pattern to
+expect: a stale literal in a justification usually *understates or overstates a
+margin that is still fine*, which is precisely why nobody notices it. The
+paired fix in `NEUTRAL_EXACT` is the same rule applied to a literal that was
+still **true** — `0,834` and `5,0` are correct today and are properties of
+*which fixture is loaded*, so a third arm would have falsified the sentence
+without anybody touching it.
+
+### 20.5 What this does NOT do, stated as prominently
+
+- **It does not make any row stronger.** No tolerance moved; no claim was
+  upgraded. It makes a pre-existing weakness *countable*.
+- **It does not cover the suite.** 16 of 145 rows carry a separation, **all of
+  them Pass 5c's**. Everything else is `UNSTATED` — an honest absence, not an
+  assertion of good separation. Pass 4c is the most obvious next candidate: its
+  §A was constructed so that lcms2's `wtpt` substitution *cannot* fire, and "the
+  substitution fired" is exactly a named alternative reading with a computable
+  value.
+- **It cannot detect an alternative nobody named.** The 4.2.5.4 rival was
+  identifiable only because somebody read the clause and saw two candidate
+  return values. A mechanism that grades named rivals does not generate them,
+  and a corpus of alternatives is only as good as the reading behind it.
+- **`blind=0` today is not a clean bill of health.** It is `blind=0` out of 16
+  stated rows. The other 129 have not been examined.
