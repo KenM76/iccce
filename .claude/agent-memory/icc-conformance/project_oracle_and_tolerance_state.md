@@ -1,9 +1,34 @@
 ---
 name: project-oracle-and-tolerance-state
-description: iccce oracle/harness state — the harness drives transicc and the shipped iccce binary (now with --bpc), computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md §3.1/§3.3/§3.4/§3.5/§5 are filled through Pass 5; what is still deliberately blank.
+description: iccce oracle/harness state — the harness drives transicc, the shipped iccce binary and `iccce bench`, computes ΔE2000 via a path dep on iccce-color, and TOLERANCES.md is filled through Pass 6 (§3.6 has TWO deliberate RED rows); what is still blank.
 metadata:
   type: project
 ---
+
+**★★★★ Updated 2026-08-12 (completion sweep).** Everything below still holds; add:
+
+- **`pass4b` §A now runs THREE intents.** `(Intent::Saturation, tag::B2A2)` was
+  added to its loop, plus a new precondition row
+  `pass4b/srgb-to-swop/b2a-tags-are-three-distinct-tables` graded at **0** (the
+  three `B2A*` tags differ in 66-71 % of their 145 588 bytes). `DEVICE_B2A`'s
+  **`why` string** was corrected to name saturation's larger envelope
+  (1,5525e-4); **the constant did not move**. `TOLERANCES.md` **§3.4.4.6**,
+  README **§15.8**.
+- **`pass5b` exists** (`src/pass5b.rs`, README **§17**, `TOLERANCES.md`
+  **§3.5.7**) — 8 records. See
+  [[project-pass5b-estimator-findings]].
+- **`pass6` exists** (`src/pass6.rs`, README **§18**, `TOLERANCES.md`
+  **§3.6**) — 11 records, **2 of them RED on purpose**. See
+  [[project-pass6-compiled-path-findings]].
+- **Suite: `pass=114 fail=2 skip=3 error=0`.** The two failures are Pass 6's
+  ΔE gate on both probe populations, and **they are the correct state**: a
+  shipped default grid does not meet a line derived from Pass 4's own measured
+  number. `TOLERANCES.md` §3.6.1 states the remedy is the grid, not the number.
+- **New in the harness:** `pass6` needs **no oracle** (both arms are iccce) but
+  drives `iccce bench` as a subprocess and reproduces its probe sequence exactly;
+  `pass5b` drives `iccce_cmm::bpc` **in process** because the shipped chain
+  cannot reach the ISO estimator.
+- Working practice: [[project-parallel-agent-build-collisions]].
 
 **★★★ Updated 2026-08-11 (after Pass 5).** Everything below still holds; add:
 

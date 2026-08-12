@@ -2308,6 +2308,104 @@ states exactly what they can and cannot be defeated by.
    statement from the one Pass 4 recorded, and it belongs next to it.
    `icc-librarian`'s file, not this one's.
 
+### 15.8 ★ §A extended 2026-08-12 — the SATURATION table (`B2A2`)
+
+**Run 2026-08-12 by `icc-conformance`**, same machine, same pin `21c582a`,
+iccce at commit `3502cb7`. Apparatus: the same `src/pass4b.rs` §A, with
+`(Intent::Saturation, tag::B2A2)` added to its intent loop, so the six records
+below come out of the identical pipeline as the perceptual and media-relative
+ones and share their four tolerance constants unchanged.
+
+**§15.7 item 4 and Pass 4's done-when clause are closed for saturation.**
+ICC-absolute is not, and stays out of scope for §15.2's reason.
+
+#### 15.8.1 ★ The assumption that had put saturation out of scope, and why it was wrong
+
+§15.2's doc comment said, in as many words:
+
+> *"Saturation and ICC-absolute are out of scope: saturation adds a third copy
+> of the same shape…"*
+
+**One direction away in the same file, that is true.** Pass 4 found `A2B0` and
+`A2B2` in `USWebCoatedSWOP.icc` sharing **one** block of tag data at **one**
+offset (both at 432, both 41 478 B), which is exactly why
+`pass4/swop/perceptual-equals-saturation` is graded at *exactly zero* — the two
+intents there are the same bytes through the same code, and any difference is a
+tag-selection defect.
+
+**In the `B2A` direction the same file is not built that way**, and the new row
+`pass4b/srgb-to-swop/b2a-tags-are-three-distinct-tables` measures it from the
+raw file bytes with no parser in the way:
+
+| pair | bytes differing | of |
+|---|---|---|
+| `B2A0` @83 392 vs `B2A1` @228 980 | 103 978 | 145 588 (**71,4 %**) |
+| `B2A0` vs `B2A2` @374 568 | 96 354 | 145 588 (**66,2 %**) |
+| `B2A1` vs `B2A2` | 102 424 | 145 588 (**70,4 %**) |
+
+The graded quantity is the **count of byte-identical pairs**, and it must be
+zero. Its tolerance is `0,0 — exact`, which is honest here for a reason worth
+stating because §15's own row B0 says the opposite about a different row: the
+quantity is a count of integer comparisons on file bytes, not a floating-point
+residual, so there is nothing for a tolerance to absorb. **`0,0` is unavailable
+for arithmetic and available for counting.**
+
+Had the two tags aliased, the three intent runs below would have reproduced each
+other bit for bit, the suite would have gained six green lines that measured
+nothing, and the coverage sentence "saturation was run in the B2A direction"
+would have been simultaneously true and worthless. **The null was identified
+before it was collected rather than explained afterwards**, which is the whole of
+what this row is for.
+
+#### 15.8.2 The numbers
+
+| id | tolerance | observed | note |
+|---|---|---|---|
+| `…/b2a-tags-are-three-distinct-tables` | **0,0** | **0** | the precondition, above |
+| `…/saturation/apparatus-lut8-matches-iccce-cmm` | 1×10⁻⁹ | **0,0** | the harness's `lut8` pipeline is the crate's |
+| **`…/saturation/device-vs-lcms2`** | 5×10⁻⁴ | **1,550 0×10⁻⁴** | against a computed envelope of **1,552 5×10⁻⁴** — **99,8 % accounted for** |
+| `…/saturation/device-mean` | ∞ | 2,470 4×10⁻⁵ | reported |
+| **`…/saturation/device-lcms2-arithmetic-modelled`** | 5×10⁻⁵ | **3,098 96×10⁻⁵** | **2,03 lsb of 1/65535** |
+| `…/saturation/roundtrip-lab-de2000` | 5×10⁻² | **7,062 75×10⁻³** | through SWOP's own `A2B1` |
+| `…/saturation/counterfactual-tetrahedral` | ∞ | **2,960 0×10⁻²** | **191×** the observed residual |
+
+Three of these are worth more than their size.
+
+**★ `B2A2` is the steepest of the three tables, and the tolerance's story had to
+change while its number did not.** `DEVICE_B2A`'s `why` string named two
+computed envelopes — 1,330×10⁻⁴ at media-relative and 9,602×10⁻⁵ at perceptual.
+Saturation's is **1,552 5×10⁻⁴**, larger than either. The constant stays at
+`5×10⁻⁴` (now ~222 % headroom over the worst of the three instead of ~276 % over
+the worst of two) and **the string was corrected to name the new maximum**. The
+direction of travel is the diagnostic one: *the justification moved toward the
+observation while the number stayed put.* The reverse would have been tuning.
+
+**★ The attribution lands on the same two roundings for the fourth time.**
+3,098 96×10⁻⁵ is 2,03 lsb of `1/65535`, which is what perceptual (3,100×10⁻⁵),
+media-relative and the PCS-side row all measured. Four independent comparisons,
+three different tables, one answer: **what remains after modelling lcms2's
+arithmetic is lcms2's *fixed-point* arithmetic, and nothing else.**
+
+**★ And the control could have seen a failure 191× larger.** lcms2 forces
+trilinear for a Lab-PCS LUT (§15.2.2), so the interpolation-method envelope is
+identically zero here; `counterfactual-tetrahedral` says what the disagreement
+*would* have been had it not. 2,960 0×10⁻² against an observed 1,550 0×10⁻⁴ —
+this is not a null from an instrument that could not tell.
+
+#### 15.8.3 Coverage — what "saturation verified" is allowed to mean
+
+> Saturation is verified **in the `B2A` direction**, on **one** profile pair
+> (`sRGB Color Space Profile.icm → USWebCoatedSWOP.icc`), **one** tag type
+> (`mft1`/`lut8`, 3 in / 4 out, 33 nodes per axis, 8-bit tables), **213** RGB
+> points, `-c0`, Windows/MSVC, oracle pin `21c582a`, iccce commit `3502cb7`.
+> The three `B2A*` tags are **measured** to be three distinct blocks of file
+> bytes, so this is a third table and not a restatement.
+
+It says **nothing** about: saturation in the `A2B` direction (where this file
+aliases `A2B0`/`A2B2`, so the intent is untested there **by construction**);
+saturation through a **v4** `mBA ` element pipeline; **ICC-absolute** in any
+direction; or any second profile.
+
 ---
 
 ## 16. ★ Pass 5 — black point compensation
@@ -2732,3 +2830,457 @@ perceptual (**A27**).
 6. **The saturation intent**, if iccce's estimation subset is ever widened to
    admit it — at which point S3 acquires a second arm and lcms2's forcing can be
    measured in a second place.
+
+---
+
+## 17. ★★ Pass 5b — the black-point ESTIMATORS, and a pre-registered prediction
+
+**Run 2026-08-12 by `icc-conformance`**, oracle pin `21c582a`, iccce at commit
+`3502cb7`. Apparatus: `src/pass5b.rs`. Tolerances: `docs/TOLERANCES.md`
+**§3.5.7**.
+
+Pass 5's coverage statement (§16.7 (C)) says it plainly:
+
+> *"Both sides estimate the same two black points in every scenario in reach, so
+> this is agreement about the MAP and the pipeline, not about the ESTIMATORS."*
+
+§16.8 item 4 said closing that needed a synthetic v4 LUT fixture with a non-zero
+device black. **That turns out to be the right instrument for the *v4
+perceptual* arm and not for this one.** Two things changed: the operator
+obtained ISO/CD 18619:2013 and `crates/iccce-cmm/src/bpc.rs` now implements
+clause 4.2.5; and the corpus recorded a prediction **before** anything ran.
+
+### 17.1 ★★ The finding that comes before any number: the ISO estimator has no caller
+
+`bpc::estimate_lut_destination_black` is implemented, documented and unit
+tested. **Nothing outside its own `mod tests` calls it.**
+`crates/iccce-cmm/src/transform.rs`, `Chain::estimate_dst_black`, still reads:
+
+```rust
+DestModel::Lut16B2a(_) | DestModel::LutAb(_) => {
+    if self.dst_major >= 4 && self.intent == Intent::Perceptual {
+        Ok(crate::bpc::PERCEPTUAL_BLACK)
+    } else {
+        Err(ChainError::BpcEstimationUnsupported)
+    }
+}
+```
+
+— the pre-ISO subset, unchanged. So the case ISO 4.2.5 exists for, **a v2 CMYK
+LUT destination at media-relative**, is still refused by the shipped binary, and
+record `pass5b/coverage/shipped-chain-cannot-reach-the-iso-estimator` grades that
+refusal on its exact `Display` wording.
+
+**This is not a criticism of the landing; it is the scope of every number
+below.** §17.3's rows drive `iccce_cmm::bpc`'s **library function** in process.
+They do **not** grade `iccce transform --bpc`. That is the same distinction
+§15.2 draws between its end-to-end rows and its PCS-side row, and it is on every
+record rather than left to a reader to work out.
+
+### 17.2 The two estimators, read at the pin before anything was run
+
+| | ISO/CD 18619 4.2.5 (iccce) | lcms2 2.19.1, `src/cmssamp.c` |
+|---|---|---|
+| `InitialLab` | darkest **vertex** (4.2.2.2), then **neutralised and clipped** (4.2.3) | `cmsDetectBlackPoint` at relative → `cmsXYZ2Lab`, chroma kept (L465–472) |
+| ramp | 256 samples, **chroma ramps to zero**: `(t·100, ka(1−t), kb(1−t))` | 256 samples, **chroma held constant** at `clamp(±50, InitialLab.a/.b)` (L491–500) |
+| monotonic pass | downward, preserving the lightest | `outRamp[l] = min(outRamp[l], outRamp[l+1])` — identical |
+| validity | `outRamp[0] < outRamp[255]` else give up | identical |
+| fit | least squares quadratic, **the root** | `RootOfLeastSquaresFitQuadraticCurve` — **also the root** |
+| **returned chroma** | **`(L, 0, 0)`, NEUTRAL** | **`Lab.a = InitialLab.a; Lab.b = InitialLab.b`** (L590–592) |
+
+**The prediction's mechanism is therefore established by reading, not inferred
+from the size of a residual** — §16's first carried-forward lesson, applied.
+
+Two things fall out of the same two pages that were *not* predicted:
+
+1. **iccce's "root, not vertex" correction is a correction of Adobe, not of
+   lcms2.** lcms2 already takes the root. Anyone reading `bpc.rs`'s doc comment
+   as a divergence from the oracle would be wrong.
+2. **★ lcms2 clamps the chroma to ±50 for the ramp and returns the *unclamped*
+   `InitialLab.a`/`.b`.** Two different numbers inside one function. **READ, not
+   RUN** — no profile in reach has a darkest colorant with |a\*| or |b\*| above
+   50, so nothing here triggers it. Worth a corpus entry beside §7.2's list.
+
+### 17.3 The measurement
+
+Fixture: `USWebCoatedSWOP.icc` as **destination**, system sRGB as source,
+**media-relative**, 21-step neutral ramp. No new fixture was needed: SWOP's
+darkest colorant is emphatically not `XYZ(0,0,0)`, and this configuration is
+precisely lcms2's method-4 (quadratic-fit) territory — the one Pass 5 could not
+reach because iccce refused.
+
+**The two black points:**
+
+| | `L*` | `a*` | `b*` | chroma |
+|---|---|---|---|---|
+| ISO 4.2.5 (iccce, in process) | **16,489 8** | 0 | 0 | **0** |
+| lcms2 2.19.1, recovered | **17,215 0** | 0,347 2 | 0,300 1 | **0,458 9** |
+| difference | −0,725 2 | −0,347 2 | −0,300 1 | **0,858 17 ΔE76** |
+
+For context: SWOP's darkest **vertex** is all four inks at 1,0, giving
+`Lab(11,772 4 · 0,765 6 · 0,328 1)`; `InitialLab` after 4.2.3 is
+`(11,772 4 · 0 · 0)`.
+
+#### 17.3.1 ★ How lcms2's black point was obtained, and the row that failed twice
+
+`transicc` has no flag that prints a black point. It is therefore **recovered**:
+with BPC on and a source whose black is `XYZ(0,0,0)`, BPC's second constraint
+sends PCS zero to the destination black **exactly** (Pass 5 row P3 graded that at
+3,33×10⁻¹⁶), so lcms2's CMYK at source black is `B2A1(black)` and `A2B1` carries
+it back. `A2B1 ∘ B2A1` is not the identity, so that needs an error bar, and **the
+error bar failed twice before it passed**:
+
+| version | what it measured | bound | result |
+|---|---|---|---|
+| **v1** | round trip over `L* ∈ [0, 20]` | 2,0 ΔE76 | **FAIL 16,49** |
+| **v2** | the same, maximised over 15 `L*` above the black, as a **ratio** | 1,0 | **FAIL 1,107** |
+| **v3** | the **local** residual at the two estimated blacks, as a ratio | 1,0 | **PASS 0,948** |
+
+**v1's failure is the instructive one.** SWOP's black sits at `L* ≈ 16,5`, so
+most of `[0, 20]` is **outside the destination's gamut** — `B2A1` clips, `A2B1`
+returns the gamut floor, and the "round-trip error" being graded was the gamut
+boundary. §0's procedure in order: the code is not wrong, there is no
+expectation, **the fixture was wrong — and the fixture here is the probe.**
+
+**v2's bound is the one that survived**, and it has no free parameter: *an error
+bar is readable exactly when it is smaller than the effect it bounds.* Below 1
+the recovery can discriminate; at or above 1 every row in §17.4 sits inside its
+own uncertainty and the section is **void**, not merely worse. What changed
+between v2 and v3 is not the constant — it is that a maximum over a 15-`L*`
+neighbourhood prices in curvature the recovery never touches, while the recovery
+evaluates `A2B1(B2A1(·))` at exactly two points.
+
+**It passes at 0,948 — by 5 %, and that is said out loud.** The recovery error
+(0,813 7 ΔE76) is 95 % of the effect (0,858 17). Pass 5b's black-point
+comparison is **marginal**, and which of its conclusions survive is decided
+claim by claim below rather than by this row being green.
+
+### 17.4 ★★ The prediction, claim by claim — three different verdicts
+
+> **The corpus, before the run:** *ISO ignores the black points' chroma, lcms2
+> retains it, so at input black the divergence should equal the detected
+> destination black's `√(a*²+b*²)` — 2–6 ΔE76 — decaying to zero at white, on
+> relative colorimetric with a LUT destination.*
+
+**A single verdict on a four-part prediction would have been wrong whichever way
+it went.**
+
+#### Claim 1 — the mechanism — **CONFIRMED**, and labelled structural
+
+`|chroma component of the divergence − detected chroma| = 0,0` exactly. But the
+row is labelled **structural on iccce's side and that is the point**: ISO 4.2.3
+returns a neutral black, so `Δa* = −a*_lcms2` *identically*. **What it grades is
+that clause 4.2.3 is implemented** — a build that had quietly kept the chroma
+fails it — not that the prediction's substance was right. A green line whose
+greenness is by construction has to say so.
+
+#### Claim 2 — the magnitude — **★★ FALSIFIED**, and robustly
+
+Predicted **2–6 ΔE76**. Measured **0,458 9** — an order of magnitude below the
+band's lower edge.
+
+**Why the prediction was wrong is more useful than that it was**: the band
+assumed a *chromatic* printer black. SWOP's darkest colorant is only **0,834**
+off neutral, so **no estimator reading this profile could have produced a number
+in the predicted band**, whatever it did with the chroma. The prediction was a
+statement about profiles as much as about estimators, and its profile was
+imagined.
+
+**This falsification survives §17.3.1's error bar arithmetically**: even if the
+*entire* 0,813 7 recovery error fell in chroma, `0,459 + 0,814 = 1,273` is still
+below 2,0.
+
+#### Claim 3 — the shape — **NOT ESTABLISHED**, and deliberately not called a falsification
+
+The measured `L*` term (0,725 2) is **1,58×** the chroma term (0,458 9), which
+looks like a clean falsification of "the divergence **is** the chroma". It is not
+offered as one, for two reasons:
+
+1. **The `L*` term is inside the error bar.** 0,725 2 against 0,813 7.
+2. **★ The obvious mechanism was measured oracle-free and is 13× too small.**
+   The only structural difference that could move `L*` is the ramp's chroma
+   profile (lcms2 constant, ISO ramping to zero). Running **the same ISO
+   function** on the *unneutralised* darkest colorant — no lcms2 output anywhere
+   in the experiment — moves the fitted root from **16,489 8 to 16,544 1**, i.e.
+   the ramp's chroma is worth **0,054 3 `L*`**. It cannot account for 0,725.
+
+So the `L*` term is **unattributed and most probably apparatus**. Recording that
+is worth more than a third "FALSIFIED" headline the evidence does not support,
+and it names the experiment that would settle it (§17.6 item 1).
+
+#### Claim 4 — the decay to white — **★ CONFIRMED**
+
+| `k` (sRGB neutral) | 0 | 0,25 | 0,50 | 0,75 | 1 |
+|---|---|---|---|---|---|
+| divergence, ΔE76 | **0,087 8** | 0,053 1 | 0,013 5 | 0,008 8 | **0,000 0** |
+
+Monotone, to exactly zero. This is not decoration: BPC is anchored on `D50`
+**exactly** at the white end (Pass 5 row P3, 3,33×10⁻¹⁶), so whatever the two
+estimators disagree about at the black end **must** vanish there. **Had it not
+decayed, the divergence would not be in the black point at all** and every other
+row in this section would be attributing it to the wrong thing.
+
+### 17.5 ★ The number an integrator actually cares about, and it is not the black point
+
+The two estimated blacks are **0,858 ΔE76** apart in the PCS. At input black, end
+to end, what survives is **0,087 8 ΔE76 / 0,059 2 ΔE2000 / 2,464×10⁻³ device** —
+**the destination absorbs 90 % of it.**
+
+The mechanism is measured and printed on the record: `A2B1(B2A1(Lab(0,0,0)))`
+returns `L* = 16,489 8`, which is this profile's **gamut floor** — and, to four
+decimals, *the ISO estimate itself*. Both blacks are at or below it, so `B2A1`
+clips them toward the same ink combination.
+
+**A disagreement about the black point is not the same size as a disagreement
+about the output, and on a CMYK destination the gamut boundary is what decides
+which.** That is the sentence a reader should take away from §17, and neither the
+prediction nor Pass 5 contains it.
+
+### 17.6 What §17 owes
+
+1. **A harness reimplementation of `cmsDetectDestinationBlackPoint`** —
+   constant-chroma ramp, its own `BlackPointAsDarkerColorant` — modelled from
+   `cmssamp.c` at the pin, exactly as §15 modelled `cmsReverseToneCurveEx`. It
+   would remove §17.3.1's error bar entirely and turn claim 3 from *unattributed*
+   into a finding either way. **The single highest-value item left in Pass 5's
+   family.**
+2. **Wiring the ISO estimator into `Chain::estimate_dst_black`** — engineering,
+   not conformance, but until it happens `iccce transform --bpc` has exactly the
+   coverage Pass 5 recorded and §17's rows describe a function no caller reaches.
+3. **A corpus entry for lcms2's clamp/return asymmetry** (§17.2 item 2), beside
+   §7.2's list of unattributed constants.
+4. **A corpus correction to the prediction**, recording that its magnitude band
+   assumed a chromatic printer black and that a coated CMYK profile has not got
+   one. A pre-registered prediction that is quietly dropped teaches nothing; one
+   that is falsified in writing teaches the thing it got wrong.
+5. **The v4 perceptual arm**, which still needs §16.8 item 4's synthetic v4 LUT
+   fixture with a non-zero device black. **Not built this session** — Pass 5b
+   found a real-profile route to the *media-relative* arm, which is a different
+   arm, and the v4 one is untouched.
+6. **A `NUMERIC_CLAIMS.md` mirror**, `icc-librarian`'s file, not this one's.
+
+---
+
+## 18. ★ Pass 6 — the compiled path, graded
+
+**Run 2026-08-12 by `icc-conformance`**, iccce at commit `3502cb7`. Apparatus:
+`src/pass6.rs`. Tolerances: `docs/TOLERANCES.md` **§3.6**. **No oracle is
+consulted** — both arms are iccce — but the two system profiles and the shipped
+binary are still needed.
+
+`crates/iccce-cmm/src/compiled.rs` folds a whole `Chain` into one device→device
+grid; `iccce bench` prints what that costs and what it buys. This section grades
+those numbers, because three things about them are not, on their own, claims this
+project may make:
+
+1. **`error.max_device_offnode` is a device number and a device number is not a
+   colour claim.** 3,589×10⁻³ of sRGB is invisible in the highlights and enormous
+   in the shadow.
+2. **A cost with no tolerance is an observation, not a gate.**
+3. **DL-018:** an upper bound on a deliberate cost is worthless if deleting the
+   precision would make it greener.
+
+### 18.1 The pair, the probes, and why they are the benchmark's own
+
+`USWebCoatedSWOP.icc` `A2B1` (`mft2`, 4-D CMYK, 9 nodes per axis, `Lab ` PCS) →
+the system sRGB profile, **media-relative** — `iccce bench`'s default pair,
+Pass 4's pair, and `compiled.rs`'s own CMYK test's pair. **DL-021: the direction
+and tag type are part of the claim.**
+
+`iccce bench` builds a raster with `v = ((p·7 + c·131) mod 1024) / 1023` and
+samples every `pixels/512`-th pixel. §18 **reproduces that sequence exactly**
+(513 probes) rather than inventing a grid, so its ΔE is a *translation of the
+number the shipped binary prints*. Record
+`pass6/apparatus/harness-reproduces-bench` checks it across a process boundary
+and observes **2,537×10⁻¹⁰** against a 10⁻⁹ bound (the CLI's own nine-decimal
+print floor).
+
+**★ That sequence is off-node for every grid used here, and it is arithmetic
+rather than luck.** `k/1023 = m/N` needs `N·k = 1023·m`; `1023 = 3·11·31` so
+`gcd(N, 1023) = 1` for `N ∈ {4, 8, 16, 32}`, forcing `m` to be a multiple of `N`
+— i.e. `v ∈ {0, 1}`. Exactly two of the 1024 sample values are nodes, at the two
+ends. A probe set that had landed on nodes would have measured zero and meant
+nothing, which is the trap `compiled.rs`'s own control hit on its first run.
+
+### 18.2 ★★ The gate, and it FAILS
+
+| grid | device max | **ΔE2000 max** | build |
+|---|---|---|---|
+| 5 | 2,770 3×10⁻² | 7,284 4×10⁻¹ | 0,006 s |
+| 9 | 4,972 8×10⁻³ | 4,045 6×10⁻¹ | 0,080 s |
+| **17 (shipped default)** | **3,588 962×10⁻³** | **★ 2,970 2×10⁻¹** | 0,950 s |
+| 33 | 2,012 4×10⁻³ | 1,677 3×10⁻¹ | 13,845 s |
+
+**Tolerance `2,5×10⁻¹` ΔE2000. Observed `2,970 17×10⁻¹`. FAIL, by 17 %.**
+
+The derivation — and **the derivation that was rejected is worth as much as the
+one chosen**:
+
+- *Rejected:* "an order of magnitude below §2's provisional 1,0 ΔE2000
+  perceptibility anchor." That presumes the engine's approximations sum below the
+  anchor. **They do not: NA-006 alone was measured by Pass 4 at 1,574 ΔE2000** on
+  `A2B0` of this same file. A budget derived from a total already exceeded is a
+  number with a story attached.
+- *Chosen:* **compiling must not move the result further than the two
+  implementations already differ on the same transform.** Pass 4 measured iccce
+  against lcms2 2.19.1 on this exact pair at media-relative: **0,252 94 ΔE2000**
+  (§14.7). The tolerance is that, to one significant figure. **No headroom
+  factor, no safety multiple, no anchor, no free parameter.**
+
+**And the line is checked on the antecedent's own population too.** Pass 4's
+0,252 94 is a maximum over its **341-point** grid; the observation above is a
+maximum over **513** raster probes. A maximum over one population is not a
+maximum over another, so `…/compiled-cost-de2000-on-pass4-grid` runs the same two
+arms over `pass4::grid()` and observes **2,962 90×10⁻¹** — within 0,25 % of the
+other. **The failure is a property of the transform, not of a probe set.**
+
+The maximum sits at CMYK `(0,0196 0,1476 0,2757 0,4037)`, where the reference
+`L*` is 62,53 — a **midtone**, not the shadow. Mean over the probes is
+5,359×10⁻².
+
+#### 18.2.1 What must not happen next
+
+1. **The remedy is the grid, not the number.** Grid **33** measures
+   **1,677×10⁻¹**, inside the line, for 1 185 921 nodes and 13,8 s of build.
+   Whether that trade is acceptable is the engineer's and the operator's call.
+   What is *not* available is moving `2,5×10⁻¹`, because it is Pass 4's measured
+   figure and there is nothing in it to move.
+2. **Refining is dearer than an `h²` intuition suggests** — see §18.3.
+3. **A red suite is the correct state.** §0's procedure was followed and stopped
+   at step 1: the code is not wrong (apparatus 2,5×10⁻¹⁰, node identity exactly
+   0, the control passes), there is no expectation involved, and the fixture is
+   the benchmark's own. **The suite is red because a shipped default does not
+   meet a justified line**, which is what a conformance suite is for.
+
+#### 18.2.2 Why the device row is REPORTED and not graded
+
+The device bound implied by the ΔE tolerance is `2,5×10⁻¹ ÷ 136 = 1,84×10⁻³`,
+using sRGB's *shadow* sensitivity (§15's row C3 chain: below the 0,040 45
+breakpoint a device difference divides by 12,92 into linear light and CIELAB's
+own linear segment multiplies by `da*/dX = 4038`, so `Δa* ≈ 136 δ`). That is
+**tighter than the observed 3,589×10⁻³** — while the observed maximum is a
+midtone, where the sensitivity is nowhere near 136. Grading the device row there
+would fail runs the ΔE row passes and assert something neither row means.
+
+**Recording that arithmetic is worth more than quietly picking `5×10⁻³`:** *the
+same physical event has a different size in two units, and the unit in which the
+requirement is stated is the one that may carry the tolerance.*
+
+### 18.3 ★★ The sensitivity control — both the estimator and the justification were wrong
+
+DL-018 requires the same measurement on a deliberately coarser grid. The first
+draft graded `max(err at coarse) / max(err at fine)` against a band `[2, 8]`,
+justified as "`h²` predicts 4×, and the band accommodates CLUT-node alignment".
+**Both halves were wrong, and the second is the more useful.**
+
+**The estimator.** `h²` is a statement about **a fixed point** as `h` shrinks.
+Two maxima need not be at the same point, and as the grid refines *which* probe
+is worst moves:
+
+| halving | max-of-max | **paired median** |
+|---|---|---|
+| 5 → 9 | **5,57** | 2,69 |
+| 9 → 17 | **1,39** | 2,47 |
+| 17 → 33 | **1,78** | 2,51 |
+
+The max-of-max wanders over a factor of 4; the paired median is **2,5 ± 0,02
+across three octaves**. `compiled.rs`'s unit test uses the max-of-max over
+**seven** probes — its `[2, 8]` band passed there by luck of the fixture, not
+because the instrument is sound.
+
+**The justification, and the attribution that was tested and falsified.** The
+first draft blamed the gamut clamp (NA-004) and sRGB's breakpoint: two
+hypersurfaces aligned with no grid at any density, cutting cells and making the
+composite `C⁰`. It is a good hypothesis and **it is wrong.** Classifying a cell as
+smooth only when all **16** of its corners evaluate strictly inside
+`(0,040 45, 1)` — decided by evaluating the *reference* path, so the
+classification does not depend on the arm being graded — leaves 448 of 513
+probes, and the smooth-cell ratios are **1,39 and 1,78**: *identical to the
+whole-population ones.* 65/513 probes are out of gamut and they are not the
+cause.
+
+**What the measurement actually says** is that the observed convergence order is
+**`log₂ 2,5 = 1,32`** — between `h¹` and `h²`, and stable. That is the signature
+of a smooth envelope with **unresolvable fine-scale kinks**, and SWOP's `A2B1`
+has them by construction: it is an `mft2` whose **256-entry input tables are
+interpolated linearly**, putting **255 derivative discontinuities per axis at
+`k/255`**. `gcd(255, N) = 1` for `N ∈ {4, 8, 16, 32}`, so **no compiled grid in
+reach aligns with them** and every cell at every density contains dozens.
+
+**The band was therefore re-derived to assert only what a band can honestly
+assert — that the order lies in `[1, 3]`:**
+
+- **ratio ≥ 2** (order ≥ 1): below this the error is not grid-driven at all and
+  no number from this instrument is evidence. Ratio → 1 is exactly what
+  `compiled.rs`'s control hit on an sRGB→sRGB identity chain, which a grid
+  reproduces *everywhere*.
+- **ratio ≤ 8** (order ≤ 3): multilinear interpolation cannot beat `h²` on a
+  non-degenerate function, so a measured `h³` means the probes are collapsing
+  onto nodes.
+
+Graded on the paired median over 9→17 and 17→33, the band violation is **0,0**.
+The max-of-max version is kept as
+`pass6/control/max-of-max-is-the-wrong-estimator`, reported at 6,144×10⁻¹, so the
+falsified instrument is on file next to the one that replaced it.
+
+**The practical consequence, which belongs next to §18.2.1:** doubling the grid
+density costs **~15× the build** and buys **~2,5×** the accuracy, not 4×. Anyone
+budgeting a default grid from an `h²` assumption will overestimate what
+refinement buys.
+
+### 18.4 The speed, reported and graded nowhere
+
+Across four invocations in one session on this machine (Windows/MSVC, release,
+single-threaded): compiled **2,4–2,7 Mpix/s**, reference **0,076–0,091 Mpix/s**,
+ratio **28–32×**, build 0,79–0,95 s at grid 17, break-even **≈63 000–75 000 px**.
+
+The engineer's recorded figures — 1,20 Mpix/s and 14,4× — were taken on the same
+machine and are within the same order; the ~2× spread between sessions is why
+**this is reported in the record's context field and graded nowhere.** A
+wall-clock number from one machine is not a tolerance-bearing claim, and a suite
+that gated on it would fail on a busy laptop and pass on an idle one.
+
+The number that *is* stable and useful is the **break-even pixel count**: below
+~70 000 px, compiling costs more than it saves.
+
+### 18.5 Coverage — what "Pass 6 verified" is allowed to mean
+
+> **(A)** The compiled path is **identical to the reference path at grid nodes** —
+> by construction, structurally checked at 0,0 over 251 four-dimensional lattice
+> nodes, which grades the index arithmetic and nothing else.
+>
+> **(B)** Off node, at the shipped default grid of 17, compiling
+> `USWebCoatedSWOP A2B1 → sRGB` at **media-relative** costs **3,588 962×10⁻³
+> device / 2,970 17×10⁻¹ ΔE2000** over the benchmark's own 513 probes and
+> **2,962 90×10⁻¹ ΔE2000** over Pass 4's 341-point grid. **That exceeds the
+> 2,5×10⁻¹ line derived from Pass 4's own iccce-vs-lcms2 measurement, and the two
+> rows that grade it are RED.**
+>
+> **(C)** The measurement is a **translation of what `iccce bench` prints** — the
+> harness reproduces its device figure to 2,537×10⁻¹⁰, its own nine-decimal print
+> floor.
+>
+> **(D)** The error is **grid-driven**, at a measured convergence order of
+> **1,32**, stable to ~1 % over three halvings, on the paired-median estimator.
+> Grid 5/9/17/33 cost 0,728/0,405/0,297/0,168 ΔE2000 for builds of
+> 0,006/0,080/0,950/13,8 s.
+
+Everything outside those four paragraphs is **not** verified. In particular
+Pass 6 says nothing about: the **`B2A`** direction or any intent but
+media-relative; **any pair but one**; the compiled path **with BPC** in the
+chain; **throughput** as a graded claim; `convert_buffer`'s shape refusals or the
+`GridTooLarge` path; or any platform but Windows/MSVC. And **every row is
+`self-consistency`** — both arms are iccce, so no number here is evidence that
+either arm is *correct*, however small it is. Pass 4 is what says the reference
+path agrees with lcms2 on this pair.
+
+### 18.6 What §18 owes
+
+1. **A decision on the default grid**, which is not this document's to make.
+   §18.2.1 states the options and the measured cost of each.
+2. **The `B2A` direction compiled**, where NA-006's cost is zero (§15.2.2) and
+   the composite's kink structure is entirely different.
+3. **The compiled path with BPC on**, now that Pass 5 exists.
+4. **A `NUMERIC_CLAIMS.md` mirror**, including the correction that the compiled
+   path's convergence order on this pair is **1,32 and not 2** —
+   `icc-librarian`'s file, not this one's.

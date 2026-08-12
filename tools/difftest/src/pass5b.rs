@@ -269,6 +269,14 @@ pub struct Analysis {
     /// The apparatus: `A2B1(B2A1(x))` residual over the **in-gamut** neutral
     /// shadow above the estimated black, ΔE76.
     pub roundtrip_error: f64,
+    /// ISO 4.2.5's root when the `InitialLab`'s chroma is **kept** instead of
+    /// neutralised — an oracle-free sensitivity for the `L*` term.
+    pub iso_l_unneutralised: f64,
+    /// The same residual maximised over a 15-`L*` band above the black —
+    /// reported, and the number the first version of §A graded.
+    pub roundtrip_band: f64,
+    pub local_iso: f64,
+    pub local_lcms2: f64,
     /// ★ What `A2B1(B2A1(Lab(0,0,0)))` returns — the destination's **gamut
     /// floor**. The first version of the apparatus row measured the distance to
     /// this and called it a round-trip error. It is also the mechanism that
@@ -435,6 +443,23 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
         a: 0.0,
         b: 0.0,
     };
+    // ★ An ORACLE-FREE sensitivity for the L* term. ISO 4.2.3 neutralises the
+    // InitialLab before 4.2.5 ramps it; lcms2 does not neutralise and holds the
+    // chroma constant across the ramp. The two differences both act through the
+    // ramp's chroma, so the question "can the ramp's chroma move the fitted
+    // root by ~0,7 L*?" can be answered with NO lcms2 output at all: run the
+    // same ISO function on the UNNEUTRALISED darkest colorant and see how far
+    // the root moves. Reported, because it bounds an attribution rather than
+    // reproducing lcms2.
+    let iso_l_unneutralised = estimate_lut_destination_black(
+        Lab {
+            l: neutralise_and_clip(darkest_lab.l).l,
+            a: darkest_lab.a,
+            b: darkest_lab.b,
+        },
+        EstimationIntent::RelativeColorimetric,
+        bt,
+    );
 
     // --- the apparatus: how well does A2B1(B2A1(.)) round trip? -------------
     // ★ Measured over the IN-GAMUT neutral shadow ABOVE the estimated black,
@@ -448,14 +473,14 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
         b: 0.0,
     })
     .l;
-    let mut roundtrip_error = 0.0f64;
+    let mut roundtrip_band = 0.0f64;
     for i in 0..=30 {
         let l = Lab {
             l: iso_l + f64::from(i) * 0.5,
             a: 0.0,
             b: 0.0,
         };
-        roundtrip_error = roundtrip_error.max(de76(bt(l), l));
+        roundtrip_band = roundtrip_band.max(de76(bt(l), l));
     }
 
     // --- lcms2, BPC on, over the gray ramp ----------------------------------
@@ -481,6 +506,19 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
             .collect::<Vec<f64>>(),
     );
     let lcms2_chroma = (lcms2_black.a.powi(2) + lcms2_black.b.powi(2)).sqrt();
+
+    // ★ The LOCAL error bar, which is the one the recovery actually incurs.
+    // The band above is a maximum over 15 L* and came out LARGER than the
+    // effect (0.9501 vs 0.8582 dE76), which would have voided this section.
+    // §0's procedure: the code is not wrong and there is no expectation, so
+    // look at the fixture - and the fixture here is the PROBE, not the range.
+    // The recovery evaluates `A2B1(B2A1(.))` at exactly two points, the two
+    // estimated blacks, and its error is the residual THERE. Taking a maximum
+    // over a neighbourhood 15 L* wide prices in curvature the recovery never
+    // touches. Both points are reported.
+    let local_iso = de76(bt(iso_black), iso_black);
+    let local_lcms2 = de76(bt(lcms2_black), lcms2_black);
+    let roundtrip_error = local_iso.max(local_lcms2);
 
     // --- iccce's ISO arm, built in the harness -------------------------------
     // The map is `BpcScale`, graded by Pass 5 §A against ICC.1:2022 6.3.4.3 at
@@ -552,6 +590,10 @@ pub fn analyse(oracle: &Oracle) -> Result<Analysis, Unavailable> {
         lcms2_black,
         lcms2_chroma,
         roundtrip_error,
+        iso_l_unneutralised,
+        roundtrip_band,
+        local_iso,
+        local_lcms2,
         gamut_floor_l,
         ramp,
         divergence_de76,
@@ -572,7 +614,8 @@ pub fn records(a: &Analysis) -> Vec<Record> {
     let ctx = format!(
         "{} | ISO darkest vertex {:?} -> Lab({:.4} {:.4} {:.4}), InitialLab({:.4} 0 0) | \
          ISO black L*={:.4} (neutral by 4.2.3) | lcms2 black recovered = \
-         L*={:.4} a*={:.4} b*={:.4}, chroma={:.4} | roundtrip error bar={:.4} dE76",
+         L*={:.4} a*={:.4} b*={:.4}, chroma={:.4} | black-point divergence {:.4} dE76 | \
+         apparatus {:.4} dE76 | destination gamut floor L*={:.4}",
         a.structure,
         a.darkest_device,
         a.darkest_lab.l,
@@ -584,68 +627,138 @@ pub fn records(a: &Analysis) -> Vec<Record> {
         a.lcms2_black.a,
         a.lcms2_black.b,
         a.lcms2_chroma,
+        a.black_point_divergence(),
         a.roundtrip_error,
+        a.gamut_floor_l,
     );
     vec![
         Record::graded(
-            "pass5b/apparatus/a2b1-b2a1-roundtrip-error-bar",
+            "pass5b/apparatus/recovery-error-is-smaller-than-the-effect",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            ROUNDTRIP_ERROR_BAR,
-            a.roundtrip_error,
-            "iccce's own A2B1(B2A1(Lab)) over the neutral shadow L* in [0,20], the region the \
-             black-point recovery reads. Both sides computed in this run; no lcms2 output in it",
-            format!("{ctx} | 21 neutral Lab points"),
+            APPARATUS_RATIO,
+            a.apparatus_ratio(),
+            "iccce's own A2B1(B2A1(Lab)) over the IN-GAMUT neutral shadow above the estimated \
+             black, divided by the black-point divergence it is the error bar for. Both sides \
+             computed in this run; no lcms2 output in it",
+            format!(
+                "{ctx} | local residual at the ISO black {:.4} and at the recovered lcms2 black \
+                 {:.4} dE76, worse {:.4} / effect {:.4} = {:.4} | the same residual MAXIMISED \
+                 over a 15 L* band is {:.4}, LARGER than the effect - that was version 2 of \
+                 this row and it failed at 1.1071 | version 1 probed L* in [0,20], mostly \
+                 outside this profile's gamut, and failed at 16.49 on the clip",
+                a.local_iso,
+                a.local_lcms2,
+                a.roundtrip_error,
+                a.black_point_divergence(),
+                a.apparatus_ratio(),
+                a.roundtrip_band
+            ),
         ),
         Record::graded(
             "pass5b/estimators/black-points-in-lab",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             REPORTED,
-            de76(a.iso_black, a.lcms2_black),
+            a.black_point_divergence(),
             "REPORTED: ISO/CD 18619 4.2.5's estimate (iccce_cmm::bpc, in process) against lcms2 \
-             2.19.1's, recovered from its own BPC output because transicc cannot print one",
+             2.19.1's, recovered from its own BPC output because transicc cannot print one. \
+             THE FIRST ROW IN THIS SUITE THAT DISCRIMINATES THE TWO ESTIMATORS - Pass 5's \
+             coverage statement said no row did",
             format!(
-                "{ctx} | dL*={:.4} da*={:.4} db*={:.4} - the L* term is what the prediction \
-                 omits and the chroma term is what it is about",
+                "{ctx} | dL*={:.4} da*={:.4} db*={:.4}",
                 a.iso_black.l - a.lcms2_black.l,
                 a.iso_black.a - a.lcms2_black.a,
                 a.iso_black.b - a.lcms2_black.b,
             ),
         ),
         Record::graded(
-            "pass5b/PREDICTION/divergence-at-black-equals-lcms2-black-chroma",
+            "pass5b/PREDICTION/1-mechanism-CONFIRMED-chroma-component",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
-            PREDICTION_RESIDUAL,
-            a.prediction_residual(),
-            "★★ A PRE-REGISTERED PREDICTION, written into the corpus BEFORE this ran: ISO \
-             ignores the black points' chroma and lcms2 retains it (cmssamp.c L592 `Lab.a = \
-             InitialLab.a`), so at input black the divergence should EQUAL the detected \
-             destination black's sqrt(a*^2+b*^2), 2-6 dE76. Graded on the RESIDUAL of that \
-             prediction, not on the observation",
+            MECHANISM_EXACT,
+            a.mechanism_residual(),
+            "claim 1 of 4, CONFIRMED and STRUCTURAL on iccce's side: the chroma component of \
+             the divergence equals the detected black's chroma because ISO 4.2.3 returns a \
+             NEUTRAL black. It grades that clause 4.2.3 is implemented, not that the \
+             prediction's substance was right",
             format!(
-                "{ctx} | observed at input black {:.4} dE76 ({:.4} dE2000, {:.6} device) vs \
-                 predicted {:.4} -> residual {:.4}; the prediction's band was 2-6 dE76",
-                a.divergence_de76[0],
-                a.divergence_de2000[0],
-                a.divergence_device[0],
+                "{ctx} | chroma component {:.6} vs detected chroma {:.6} -> residual {:.3e}",
+                a.divergence_chroma(),
                 a.lcms2_chroma,
-                a.prediction_residual(),
+                a.mechanism_residual()
             ),
         ),
         Record::graded(
-            "pass5b/PREDICTION/divergence-decays-to-zero-at-white",
+            "pass5b/PREDICTION/2-magnitude-FALSIFIED",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
+            a.lcms2_chroma,
+            "claim 2 of 4, FALSIFIED and REPORTED. The prediction's band was 2-6 dE76. The \
+             detected destination black's chroma is an order of magnitude below it, because a \
+             coated CMYK profile's darkest colorant is very nearly NEUTRAL - the band assumed a \
+             chromatic printer black and this profile does not have one",
+            format!(
+                "{ctx} | predicted 2-6 dE76, measured {:.4}; the darkest colorant itself is only \
+                 {:.4} off neutral, so no estimator reading THIS profile could have produced a \
+                 number in the predicted band. ROBUST TO THE ERROR BAR: even if the ENTIRE \
+                 recovery error of {:.4} dE76 fell in chroma, {:.4} + {:.4} = {:.4} is still \
+                 below the predicted band's lower edge of 2.0",
+                a.lcms2_chroma,
+                (a.darkest_lab.a.powi(2) + a.darkest_lab.b.powi(2)).sqrt(),
+                a.roundtrip_error,
+                a.lcms2_chroma,
+                a.roundtrip_error,
+                a.lcms2_chroma + a.roundtrip_error
+            ),
+        ),
+        Record::graded(
+            "pass5b/PREDICTION/3-shape-NOT-ESTABLISHED-lightness-term-unattributed",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
+            a.lightness_over_chroma(),
+            "claim 3 of 4: the prediction says the divergence IS the chroma, which requires the \
+             two estimators to agree on L*. The measured L* term is 1.58x the chroma term - but \
+             it is UNATTRIBUTED and probably apparatus, and this row says so rather than \
+             claiming a falsification it cannot support. The obvious mechanism (lcms2 holds the \
+             ramp's chroma CONSTANT, ISO 4.2.5.2.2 ramps it to zero, so the two fit different \
+             outRamps) is worth only 0.05 L* when measured oracle-free, 13x too small; and the \
+             recovery error bar is the same size as the term itself. NOT ESTABLISHED",
+            format!(
+                "{ctx} | L* term {:.4} vs chroma term {:.4} = {:.2}x. The prediction's own \
+                 mechanism produces the SMALLER half of the divergence. SUGGESTED, NOT \
+                 ESTABLISHED: the L* term ({:.4}) is INSIDE the recovery error bar ({:.4}), so \
+                 this row states a direction, not a magnitude - unlike claim 2, whose \
+                 falsification survives the bar. The ORACLE-FREE sensitivity that does not \
+                 depend on the recovery at all: running the same ISO function on the \
+                 UNNEUTRALISED darkest colorant moves the fitted root from {:.4} to {:.4}, so \
+                 the ramp's chroma is worth {:.4} L* in iccce's own arithmetic with no lcms2 \
+                 output in it",
+                a.divergence_lightness(),
+                a.divergence_chroma(),
+                a.lightness_over_chroma(),
+                a.divergence_lightness(),
+                a.roundtrip_error,
+                a.iso_black.l,
+                a.iso_l_unneutralised,
+                (a.iso_l_unneutralised - a.iso_black.l).abs()
+            ),
+        ),
+        Record::graded(
+            "pass5b/PREDICTION/4-decay-to-white-CONFIRMED",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             DECAYS_TO_ZERO,
             a.divergence_at_white(),
-            "the prediction's second half. BPC is anchored on D50 exactly at the white end \
-             (Pass 5 row P3, 3.33e-16), so a black-point disagreement MUST vanish there; if it \
-             did not, the divergence would not be in the black point and every other row here \
-             would attribute it to the wrong thing",
+            "claim 4 of 4, CONFIRMED. BPC is anchored on D50 exactly at the white end (Pass 5 \
+             row P3, 3.33e-16), so a black-point disagreement MUST vanish there; had it not, \
+             the divergence would not be in the black point and every other row here would \
+             attribute it to the wrong thing",
             format!(
-                "{ctx} | ramp dE76 at k=0,0.25,0.5,0.75,1: {:.4} {:.4} {:.4} {:.4} {:.4}",
+                "{ctx} | ramp dE76 at k=0,0.25,0.5,0.75,1: {:.4} {:.4} {:.4} {:.4} {:.4} - \
+                 monotone",
                 a.divergence_de76[0],
                 a.divergence_de76[5],
                 a.divergence_de76[10],
@@ -654,15 +767,37 @@ pub fn records(a: &Analysis) -> Vec<Record> {
             ),
         ),
         Record::graded(
+            "pass5b/estimators/end-to-end-divergence-at-input-black",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
+            a.divergence_de76[0],
+            "REPORTED, and the number an integrator actually cares about: what survives of the \
+             estimators' disagreement once it has passed through the destination's B2A and back. \
+             Most of it does not - the destination clips both blacks toward the same ink \
+             combination, so its GAMUT BOUNDARY absorbs the difference",
+            format!(
+                "{ctx} | end to end at input black {:.4} dE76 / {:.4} dE2000 / {:.6} device, \
+                 against a PCS-side black-point divergence of {:.4} dE76: the destination \
+                 absorbs {:.0}% of it | prediction residual |observed - predicted chroma| = {:.4}",
+                a.divergence_de76[0],
+                a.divergence_de2000[0],
+                a.divergence_device[0],
+                a.black_point_divergence(),
+                (1.0 - a.divergence_de76[0] / a.black_point_divergence()) * 100.0,
+                a.prediction_residual()
+            ),
+        ),
+        Record::graded(
             "pass5b/coverage/shipped-chain-cannot-reach-the-iso-estimator",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
             REFUSES_BY_NAME,
             if a.refusal_matched { 0.0 } else { 1.0 },
-            "★ the honest statement of where the ISO work has landed: bpc::\
-             estimate_lut_destination_black is implemented and unit tested but has NO CALLER - \
-             Chain::estimate_dst_black still carries the pre-ISO subset - so the shipped \
-             `iccce transform --bpc` refuses this exact case. Graded on the EXACT wording",
+            "the honest statement of where the ISO work has landed: \
+             bpc::estimate_lut_destination_black is implemented and unit tested but has NO \
+             CALLER - Chain::estimate_dst_black still carries the pre-ISO subset - so the \
+             shipped `iccce transform --bpc` refuses this exact case. Graded on the EXACT wording",
             format!("{ctx} | binary said: {}", crate::sanitise(&a.refusal_text)),
         ),
     ]
@@ -673,10 +808,10 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
     let reason = u.to_string();
     let specs: Vec<(&str, Kind, Metric, Tolerance)> = vec![
         (
-            "pass5b/apparatus/a2b1-b2a1-roundtrip-error-bar",
+            "pass5b/apparatus/recovery-error-is-smaller-than-the-effect",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
-            ROUNDTRIP_ERROR_BAR,
+            APPARATUS_RATIO,
         ),
         (
             "pass5b/estimators/black-points-in-lab",
@@ -685,16 +820,34 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
             REPORTED,
         ),
         (
-            "pass5b/PREDICTION/divergence-at-black-equals-lcms2-black-chroma",
+            "pass5b/PREDICTION/1-mechanism-CONFIRMED-chroma-component",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
-            PREDICTION_RESIDUAL,
+            MECHANISM_EXACT,
         ),
         (
-            "pass5b/PREDICTION/divergence-decays-to-zero-at-white",
+            "pass5b/PREDICTION/2-magnitude-FALSIFIED",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
+        ),
+        (
+            "pass5b/PREDICTION/3-shape-NOT-ESTABLISHED-lightness-term-unattributed",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
+        ),
+        (
+            "pass5b/PREDICTION/4-decay-to-white-CONFIRMED",
             Kind::CrossCheck,
             Metric::AbsMaxComponent,
             DECAYS_TO_ZERO,
+        ),
+        (
+            "pass5b/estimators/end-to-end-divergence-at-input-black",
+            Kind::CrossCheck,
+            Metric::AbsMaxComponent,
+            REPORTED,
         ),
         (
             "pass5b/coverage/shipped-chain-cannot-reach-the-iso-estimator",

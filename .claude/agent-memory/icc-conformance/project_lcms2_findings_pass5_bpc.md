@@ -11,6 +11,13 @@ record: `tools/difftest/README.md` **§16**; tolerances `docs/TOLERANCES.md`
 `pass=90 fail=0 skip=3 error=0` (Pass 5 contributes 21 graded + 5
 reported-only).
 
+> **★ SUPERSEDED IN PART, 2026-08-12.** The paragraph below is still true of
+> **Pass 5**, but "no row discriminates the two ESTIMATORS" is no longer true of
+> the suite: **Pass 5b** does, on `USWebCoatedSWOP` at media-relative, by driving
+> `bpc::estimate_lut_destination_black` in process. See
+> [[project-pass5b-estimator-findings]]. The **v4 perceptual** arm and the
+> synthetic non-zero-black v4 LUT fixture are still untouched.
+
 **★ THE HEADLINE IS A NEGATIVE RESULT, AND IT WAS PREDICTED BEFORE THE RUN.**
 *Everywhere iccce will do BPC at all, lcms2's estimator reduces to the same two
 values* — zero on a matrix/TRC or gray side (its darkest-colorant estimate is

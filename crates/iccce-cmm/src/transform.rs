@@ -195,6 +195,48 @@ pub struct Chain {
     /// estimation rule keys on them.
     src_major: u8,
     dst_major: u8,
+    /// The DESTINATION profile's device→PCS direction, captured at
+    /// build solely so BPC's ISO/CD 18619 4.2.5.2.3 round trip has
+    /// its outward leg. Unused by any conversion.
+    dst_a2b: Option<SourceModel>,
+}
+
+/// Device channel count of a captured A2B model.
+fn a2b_channels(m: &SourceModel) -> usize {
+    match m {
+        SourceModel::MatrixTrc(_) => 3,
+        SourceModel::Lut16(l) => l.input_channels(),
+        SourceModel::LutAb(l) => l.device_channels(),
+        SourceModel::Gray(_) => 1,
+    }
+}
+
+/// Evaluate a captured A2B model to Lab (the BT round trip's return
+/// leg, and the darkest-vertex search's probe).
+fn a2b_to_lab(m: &SourceModel, device: &[f64]) -> Option<iccce_color::Lab> {
+    let xyz = match m {
+        SourceModel::MatrixTrc(mt) => {
+            if device.len() < 3 {
+                return None;
+            }
+            mt.device_to_pcs([device[0], device[1], device[2]])
+        }
+        SourceModel::Lut16(l) => match l.device_to_pcs(device)? {
+            PcsValue::Xyz(x) => x,
+            PcsValue::Lab(lab) => return Some(lab),
+        },
+        SourceModel::LutAb(l) => match l.device_to_pcs(device)? {
+            PcsValue::Xyz(x) => x,
+            PcsValue::Lab(lab) => return Some(lab),
+        },
+        SourceModel::Gray(g) => {
+            if device.is_empty() {
+                return None;
+            }
+            g.device_to_pcs(device[0])
+        }
+    };
+    Some(iccce_color::Lab::from_xyz(xyz, D50))
 }
 
 impl Chain {
@@ -202,6 +244,17 @@ impl Chain {
     /// fallback (module doc); destination must currently be
     /// matrix/TRC.
     pub fn new(src: &Profile, dst: &Profile, intent: Intent) -> Result<Chain, ChainError> {
+        Chain::new_inner(src, dst, intent, true)
+    }
+
+    /// `capture_dst_a2b` is false only for the internal build of the
+    /// destination's own A2B side, which must not recurse.
+    fn new_inner(
+        src: &Profile,
+        dst: &Profile,
+        intent: Intent,
+        capture_dst_a2b: bool,
+    ) -> Result<Chain, ChainError> {
         // Destination: B2Ax → B2A0 → matrix/TRC (the same 8.10.2
         // fallback, B-side). A lut16 B2A's input side is the PCS, so
         // in an XYZ-PCS profile the 3×3 matrix APPLIES (A21) —
@@ -353,6 +406,23 @@ impl Chain {
 
         let src_white = read_wtpt(src);
         let dst_white = read_wtpt(dst);
+        // The destination's OWN A2B side, for BPC's round trip only
+        // (ISO/CD 18619 4.2.5.2.3). Built by the same fallback used
+        // for a real source, so it cannot diverge from how the
+        // destination would behave as a source. `None` is fine — it
+        // only narrows which black points are estimable.
+        //
+        // NOTE the recursion guard: this must NOT call `Chain::new`,
+        // which would build its own `dst_a2b` and never terminate.
+        // (Written that way first; caught at compile-and-think time,
+        // before it could run.)
+        let dst_a2b = if capture_dst_a2b {
+            Chain::new_inner(dst, dst, Intent::MediaRelative, false)
+                .ok()
+                .map(|c| c.source)
+        } else {
+            None
+        };
         Ok(Chain {
             source,
             dst: dst_model,
@@ -362,6 +432,7 @@ impl Chain {
             bpc: None,
             src_major: src.header.version.major(),
             dst_major: dst.header.version.major(),
+            dst_a2b,
         })
     }
 
@@ -409,11 +480,76 @@ impl Chain {
             DestModel::MatrixTrc(m) => Ok(m.device_to_pcs([0.0, 0.0, 0.0])),
             DestModel::Gray(g) => Ok(g.device_to_pcs(0.0)),
             DestModel::Lut16B2a(_) | DestModel::LutAb(_) => {
+                // v4 perceptual: the fixed black, which both
+                // implementations return without searching (A41).
                 if self.dst_major >= 4 && self.intent == Intent::Perceptual {
-                    Ok(crate::bpc::PERCEPTUAL_BLACK)
-                } else {
-                    Err(ChainError::BpcEstimationUnsupported)
+                    return Ok(crate::bpc::PERCEPTUAL_BLACK);
                 }
+                // ★ Otherwise: the ISO/CD 18619 4.2.5 procedure —
+                // WIRED 2026-08-12. It was implemented in `bpc` and
+                // reachable from nothing; icc-conformance's Pass 5b
+                // sweep found it had no caller, so the shipped
+                // binary still refused exactly the case ISO 4.2.5
+                // exists for (a v2 CMYK LUT destination at media
+                // relative). "An unused capability is not a feature"
+                // — the lesson this project carried in from its
+                // sibling, demonstrated on its own code.
+                //
+                // BT (4.2.5.2.3) needs BOTH directions of the
+                // destination: Lab→device with the user's intent,
+                // then device→Lab with RELATIVE always. The A2B side
+                // is captured at build for exactly this.
+                let a2b = self
+                    .dst_a2b
+                    .as_ref()
+                    .ok_or(ChainError::BpcEstimationUnsupported)?;
+                let intent = match self.intent {
+                    Intent::MediaRelative | Intent::Absolute => {
+                        crate::bpc::EstimationIntent::RelativeColorimetric
+                    }
+                    Intent::Perceptual | Intent::Saturation => {
+                        crate::bpc::EstimationIntent::PerceptualOrSaturation
+                    }
+                };
+                // 4.2.5.2.1 InitialLab: perceptual/saturation start
+                // at (0,0,0); relative starts from the destination's
+                // own darkest colour, neutralised and clipped (4.2.3).
+                let initial = if intent == crate::bpc::EstimationIntent::PerceptualOrSaturation {
+                    iccce_color::Lab {
+                        l: 0.0,
+                        a: 0.0,
+                        b: 0.0,
+                    }
+                } else {
+                    let channels = a2b_channels(a2b);
+                    let darkest = crate::bpc::darkest_vertex(channels, |v| {
+                        a2b_to_lab(a2b, v).unwrap_or(iccce_color::Lab {
+                            l: 100.0,
+                            a: 0.0,
+                            b: 0.0,
+                        })
+                    });
+                    let lab =
+                        a2b_to_lab(a2b, &darkest).ok_or(ChainError::BpcEstimationUnsupported)?;
+                    crate::bpc::neutralise_and_clip(lab.l)
+                };
+
+                let l = crate::bpc::estimate_lut_destination_black(initial, intent, |lab| {
+                    // BT: out with the user's intent, back with
+                    // relative — the one place a "relative" appears
+                    // that is not the caller's choice.
+                    self.pcs_to_destination(lab.to_xyz(D50))
+                        .ok()
+                        .and_then(|device| a2b_to_lab(a2b, &device))
+                        .unwrap_or(iccce_color::Lab {
+                            l: 0.0,
+                            a: 0.0,
+                            b: 0.0,
+                        })
+                });
+                // ISO returns a neutral (z, 0, 0); the map consumes
+                // XYZ, so convert through the PCS white.
+                Ok(iccce_color::Lab { l, a: 0.0, b: 0.0 }.to_xyz(D50))
             }
         }
     }
@@ -710,6 +846,39 @@ mod tests {
                 .err(),
             Some(ChainError::BpcNotApplicable)
         );
+    }
+
+    /// ★ THE ISO ESTIMATOR IS REACHED (regression for the defect
+    /// icc-conformance's Pass 5b sweep found): a v2 CMYK LUT
+    /// destination at media-relative is exactly the case ISO/CD 18619
+    /// 4.2.5 exists for, and the shipped binary REFUSED it because
+    /// `estimate_lut_destination_black` had no caller. It converts
+    /// now, and BPC must move the answer.
+    #[test]
+    fn iso_estimator_is_reached_for_a_lut_destination() {
+        let srgb = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+        let swop = r"C:\Windows\System32\spool\drivers\color\USWebCoatedSWOP.icc";
+        let (Ok(s), Ok(d)) = (std::fs::read(srgb), std::fs::read(swop)) else {
+            eprintln!("skipped: system profiles absent");
+            return;
+        };
+        let src = Profile::parse(&s).unwrap();
+        let dst = Profile::parse(&d).unwrap();
+        let plain = Chain::new(&src, &dst, Intent::MediaRelative).unwrap();
+        let bpc = Chain::new(&src, &dst, Intent::MediaRelative)
+            .unwrap()
+            .with_bpc()
+            .expect("ISO 4.2.5 estimates this; it used to be BpcEstimationUnsupported");
+        let probe = [0.05, 0.05, 0.05];
+        let a = plain.convert(&probe).unwrap();
+        let b = bpc.convert(&probe).unwrap();
+        assert_eq!(a.len(), 4, "CMYK destination");
+        let moved = a
+            .iter()
+            .zip(&b)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0f64, f64::max);
+        assert!(moved > 0.0, "BPC must change a dark value; moved {moved}");
     }
 
     /// Gray THROUGH THE CHAIN (the librarian's audit found both gray

@@ -937,20 +937,24 @@ pub fn records(a: &Analysis) -> Vec<Record> {
         ),
         // --- ★ the attribution: WHY the whole population does not scale h^2 --
         Record::graded(
-            "pass6/control/h2-fails-on-the-whole-population-and-here-is-why",
+            "pass6/control/max-of-max-is-the-wrong-estimator",
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
             REPORTED,
             a.band_violation_all_probes(),
-            "REPORTED, NOT GRADED: the band violation over ALL probes, beside the fraction of \
-             them that are out of the destination's gamut. The composite being compiled is C0, \
-             not C2, wherever the gamut clamp (NA-004) or sRGB's 0.04045 breakpoint cuts a cell \
-             - two hypersurfaces aligned with NO grid at ANY density",
+            "REPORTED, NOT GRADED. The band violation on the MAX-OF-MAX ratio, kept on file \
+             because that is the estimator compiled.rs's own unit test uses and it is the wrong \
+             one: it divides one maximum by another and the two maxima are not at the same \
+             probe, so it measures where the worst point moved as much as it measures the law. \
+             A CLAMP ATTRIBUTION WAS TESTED HERE AND FALSIFIED - restricting to cells whose 16 \
+             corners are all in gamut and above sRGB's 0.04045 breakpoint changed the ratios \
+             not at all",
             format!(
                 "{ctx} | {}/{} probes are out of the destination gamut (a reference output \
-                 component clamped at 0 or 1) | only {}/{} probes sit in a cell that is smooth \
-                 at 9, 17 AND 33 | so refining buys LESS than h^2: whole-population 9/17={:.2} \
-                 17/33={:.2} against smooth-cell {:.2} and {:.2}",
+                 component clamped at 0 or 1) and only {}/{} sit in a cell smooth at 9, 17 AND \
+                 33 - yet whole-population 9/17={:.2} 17/33={:.2} and smooth-cell {:.2} {:.2} \
+                 are the SAME NUMBERS, so neither the clamp nor the breakpoint is the cause. \
+                 The paired-median row is where the law is actually tested",
                 a.clamped_probes,
                 a.probes,
                 a.smooth_probes,
@@ -1101,7 +1105,7 @@ pub fn unavailable_records(u: &Unavailable) -> Vec<Record> {
             COMPILED_DE,
         ),
         (
-            "pass6/control/h2-fails-on-the-whole-population-and-here-is-why".into(),
+            "pass6/control/max-of-max-is-the-wrong-estimator".into(),
             Kind::SelfConsistency,
             Metric::AbsMaxComponent,
             REPORTED,

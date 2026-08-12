@@ -1,8 +1,11 @@
 # icc-conformance — memory index
 
+- [Pass 6 compiled-path findings](project_pass6_compiled_path_findings.md) - the gate FAILS at grid 17 (0.297 vs 0.253); order is 1.32 not 2; max-of-max is the wrong estimator.
+- [Pass 5b estimator findings](project_pass5b_estimator_findings.md) - the ISO estimator has NO CALLER; the pre-registered prediction split 2/1/1; the gamut absorbs 90%.
+- [Parallel-agent build collisions](project_parallel_agent_build_collisions.md) - crates/ breaks mid-session and the engineer sweeps your files into their commits; use a detached worktree.
 - [Oracle and tolerance state](project_oracle_and_tolerance_state.md) — harness now drives transicc AND the shipped iccce binary; ΔE allowed; §3.1/§3.3/§5 filled; what is still blank.
 - [Synthetic fixture corpus + GP-001](project_synthetic_fixture_corpus_and_gp001.md) — fixtures/synthetic exists (38 profiles); iccce mis-counts mBA curve sets; three ICC_Spec gaps closable.
-- [Pass 5 BPC findings](project_lcms2_findings_pass5_bpc.md) — lcms2 drops BPC below 0.002/~0.41 L* (constant not in corpus); T5 measured; the estimators cannot be discriminated.
+- [Pass 5 BPC findings](project_lcms2_findings_pass5_bpc.md) — lcms2 drops BPC below 0.002/~0.41 L* (constant not in corpus); T5 measured; the estimators could not be discriminated (superseded by Pass 5b).
 - [Pass 4b lcms2 findings](project_lcms2_findings_pass4b_direction_dependence.md) — lcms2 forces trilinear in the B2A direction (NA-006's cost is zero there); forced BPC is the DESTINATION's version; the 4096-entry reverse TRC.
 - [Pass 4 lcms2 findings](project_lcms2_findings_pass4_interpolation_and_v2_wtpt.md) — the 4-D CLUT scheme is a hybrid, not tetrahedral; D50 substituted for a v2 display profile's wtpt (11 ΔE at absolute).
 - [Pass 3 lcms2 findings](project_lcms2_findings_pass3_quantisation_and_clamping.md) — 16-bit quantisation of tabulated tone curves in float; device values >1.0 when the dst TRC inverse is analytic.
