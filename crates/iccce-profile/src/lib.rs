@@ -188,6 +188,116 @@ mod tests {
         b
     }
 
+    /// A deterministic 32-bit LCG. Numerical Recipes' constants
+    /// (`a = 1664525`, `c = 1013904223`, modulus 2^32).
+    ///
+    /// Hand-rolled rather than pulled in, because this crate's
+    /// `[dependencies]` is empty by invariant and a robustness test is
+    /// not a reason to spend that. Determinism is the requirement, not
+    /// statistical quality: a failure here must be reproducible from
+    /// the seed alone, on any machine, forever. A `rand` crate whose
+    /// algorithm changes between versions would make a past failure
+    /// unreproducible, which is the one property this test cannot lose.
+    struct Lcg(u32);
+    impl Lcg {
+        fn next(&mut self) -> u32 {
+            self.0 = self.0.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            self.0
+        }
+    }
+
+    /// ★ THE PARSER MUST NOT PANIC ON ANY INPUT, EVER.
+    ///
+    /// `Profile::parse` reads **untrusted files**. A malformed profile
+    /// arrives from a customer's press, an email attachment, an
+    /// embedded stream inside a PDF — none of it authored by us, some
+    /// of it hostile. The contract this crate advertises is *report,
+    /// do not repair*: a malformation becomes a `Malformation` entry or
+    /// an `Err`. **A panic is neither.** It is an unhandled third
+    /// outcome that takes the caller's process down and, in a library
+    /// that a GUI or a server might embed, converts a bad file into an
+    /// availability bug.
+    ///
+    /// This matters here more than in most parsers because
+    /// `header.rs`'s field reads are deliberately `.expect("caller
+    /// guarantees >= 132 bytes")` — assertions documenting a contract
+    /// rather than handling a reachable case. **That is sound only for
+    /// as long as the contract actually holds on every path**, and
+    /// nothing before this test checked that claim against anything but
+    /// hand-written examples. An `expect` justified by a comment is a
+    /// proof obligation, not a proof.
+    ///
+    /// WHAT THIS IS AND IS NOT. It is a deterministic, seeded mutation
+    /// sweep — not a fuzzer. It cannot prove absence of panics; it can
+    /// only fail. Real coverage of that claim wants `cargo-fuzz`, which
+    /// needs nightly and is not wired into this project. **Stated
+    /// plainly so nobody reads a green tick here as "the parser is
+    /// proven total."** What it does buy is that the cheap, dense,
+    /// highest-yield region of the input space — truncations and single
+    /// byte flips around a *valid* profile, which is exactly where
+    /// length/offset arithmetic breaks — is swept on every CI run.
+    ///
+    /// THE ASSERTION IS THE ABSENCE OF A PANIC. A panic in a Rust test
+    /// fails it, so calling `parse` is itself the check; there is
+    /// deliberately no `assert!` on the *result*, because both `Ok` and
+    /// `Err` are correct answers here and asserting which one would be
+    /// asserting something this test does not know.
+    #[test]
+    fn parser_never_panics_on_mutated_input() {
+        let seed = minimal_profile();
+
+        // (1) Every truncation, including empty. Truncation is the
+        //     single most productive malformation for a format built
+        //     from offset+size pairs: every bound check gets exercised
+        //     against a buffer that ends before the structure does.
+        for n in 0..=seed.len() {
+            let _ = Profile::parse(&seed[..n]);
+        }
+
+        // (2) Every byte position, against values chosen to hit the
+        //     edges of the arithmetic rather than the middle: 0, 1,
+        //     0x7f, 0x80, 0xff make u32/i32 boundaries and sign flips
+        //     out of length and offset fields.
+        for i in 0..seed.len() {
+            for v in [0x00u8, 0x01, 0x7f, 0x80, 0xff] {
+                let mut m = seed.clone();
+                m[i] = v;
+                if let Ok(p) = Profile::parse(&m) {
+                    // Walk the tags too — a panic hiding in tag_data's
+                    // slicing would otherwise never be reached, since
+                    // parse() alone does not read every tag's payload.
+                    for t in &p.tags {
+                        let _ = p.tag_data(t);
+                    }
+                }
+            }
+        }
+
+        // (3) Multi-byte random damage, seeded. Catches interactions
+        //     that single-byte edits cannot: a plausible tag count
+        //     together with a plausible-but-wrong offset, for instance.
+        let mut rng = Lcg(0x1CCC_E000);
+        for _ in 0..4096 {
+            let mut m = seed.clone();
+            let edits = 1 + (rng.next() % 8) as usize;
+            for _ in 0..edits {
+                let i = (rng.next() as usize) % m.len();
+                m[i] = (rng.next() >> 24) as u8;
+            }
+            // Sometimes truncate as well, so the two mutation classes
+            // compose rather than only ever appearing alone.
+            if rng.next() % 4 == 0 {
+                let n = (rng.next() as usize) % (m.len() + 1);
+                m.truncate(n);
+            }
+            if let Ok(p) = Profile::parse(&m) {
+                for t in &p.tags {
+                    let _ = p.tag_data(t);
+                }
+            }
+        }
+    }
+
     #[test]
     fn minimal_profile_parses_clean() {
         let p = Profile::parse(&minimal_profile()).unwrap();
