@@ -14,13 +14,36 @@
 //! and not sourced). **Its correctness is established by the 34 pairs,
 //! not by its provenance** — which is the point of ground-truth data.
 //!
-//! ## Deliberately absent (recorded gaps, not oversights)
+//! ## ΔE94 and ΔE CMC — present, and WEAKER CLAIMS than ΔE2000
 //!
-//! ΔE94 and ΔE CMC(l:c): the corpus has not yet transcribed their
-//! formulas from a citable source, and no published worked examples are
-//! in hand — an implementation now could only be cross-checked against
-//! lcms2, a weaker claim that project rule 3 requires labelling. They
-//! land when sourced (`cie__ref__delta_e.md`, GAP).
+//! Added 2026-08-12, transcribed from lcms2 `cmsCIE94DeltaE` and
+//! `cmsCMCdeltaE` at the pinned commit. **Read the difference in
+//! standing before using either:**
+//!
+//! | metric | expectation source | strength |
+//! |---|---|---|
+//! | ΔE2000 | Sharma et al. (2005), 34 published pairs | **ground truth** |
+//! | ΔE76 | closed form, arithmetic identity | exact |
+//! | **ΔE94** | lcms2 transcription | **impl_crosscheck** |
+//! | **ΔE CMC** | lcms2 transcription | **impl_crosscheck** |
+//!
+//! CIE 116-1995 (ΔE94) and BS 6923 (CMC) are paywalled and NOT
+//! sourced, and **no published worked example was obtained for
+//! either** — so these two are validated by *agreement with one
+//! implementation*, which project rule 3 says is a weaker claim than
+//! ground truth and must never be written as though it were the same.
+//! Their tests below assert structural properties (reduction to ΔE76
+//! at unit weights on neutrals, symmetry where the metric is
+//! symmetric) rather than published numbers, because there are no
+//! published numbers to assert.
+//!
+//! **Grade suites in ΔE2000.** These exist because some published
+//! tolerances are stated in them, not because they are as trustworthy.
+//!
+//! ★ CMC is deliberately NOT symmetric — it weights by the FIRST
+//! colour (the reference), which is a property of the metric, not a
+//! bug. `cmc(a,b) != cmc(b,a)` and the test asserts that it differs,
+//! so nobody later "fixes" it into symmetry.
 
 use crate::lab::Lab;
 
@@ -36,6 +59,82 @@ pub fn delta_e_76(s: Lab, t: Lab) -> f64 {
     let da = s.a - t.a;
     let db = s.b - t.b;
     (dl * dl + da * da + db * db).sqrt()
+}
+
+/// ΔE94 (CIE 1994), **graphic-arts** parametric factors
+/// `kL = kC = kH = 1`, `K1 = 0.045`, `K2 = 0.015`.
+///
+/// Transcribed from lcms2 `cmsCIE94DeltaE` (`impl_crosscheck` — see
+/// the module doc; CIE 116-1995 is paywalled and unsourced). Note
+/// lcms2 hard-codes the graphic-arts weights as `sc = 1 + 0.048·C̄`
+/// and `sh = 1 + 0.014·C̄`; the *textiles* variant (`2:1:1`, different
+/// K) is a different metric and is not offered rather than guessed.
+///
+/// `dh` is recovered as `√(ΔE76² − ΔL² − ΔC²)` and floored at zero —
+/// the standard trick to avoid a hue-angle branch, and lcms2's; the
+/// floor matters because floating-point can make that difference
+/// slightly negative for near-identical colours.
+#[must_use]
+pub fn delta_e_94(s: Lab, t: Lab) -> f64 {
+    let dl = (s.l - t.l).abs();
+    let (lch1, lch2) = (s.to_lch(), t.to_lch());
+    let dc = (lch1.c - lch2.c).abs();
+    let de = delta_e_76(s, t);
+    let dhsq = de * de - dl * dl - dc * dc;
+    let dh = if dhsq < 0.0 { 0.0 } else { dhsq.sqrt() };
+    let c12 = (lch1.c * lch2.c).sqrt();
+    let sc = 1.0 + 0.048 * c12;
+    let sh = 1.0 + 0.014 * c12;
+    (dl * dl + (dc * dc) / (sc * sc) + (dh * dh) / (sh * sh)).sqrt()
+}
+
+/// ΔE CMC(l:c) — the two common parameterisations are `2:1`
+/// (acceptability) and `1:1` (perceptibility).
+///
+/// Transcribed from lcms2 `cmsCMCdeltaE` (`impl_crosscheck`; BS 6923
+/// paywalled and unsourced).
+///
+/// ★ **Asymmetric by design**: every weighting term is computed from
+/// `s` — the metric's *reference* colour — so `cmc(a,b)` and
+/// `cmc(b,a)` legitimately differ. That is the definition, not a
+/// defect, and a test below pins it so it cannot be "corrected".
+///
+/// Two guards carried verbatim from lcms2, both load-bearing: two
+/// black colours return exactly 0 (the `L = 0` case would otherwise
+/// divide by zero through `sl`), and `L < 16` pins `sl = 0.511`
+/// rather than continuing the ratio downward.
+#[must_use]
+pub fn delta_e_cmc(s: Lab, t: Lab, l_weight: f64, c_weight: f64) -> f64 {
+    if s.l == 0.0 && t.l == 0.0 {
+        return 0.0;
+    }
+    let (lch1, lch2) = (s.to_lch(), t.to_lch());
+    let dl = t.l - s.l;
+    let dc = lch2.c - lch1.c;
+    let de = delta_e_76(s, t);
+    let dhsq = de * de - dl * dl - dc * dc;
+    let dh = if dhsq > 0.0 { dhsq.sqrt() } else { 0.0 };
+
+    // The hue-dependent term switches near the blue region.
+    let t_term = if lch1.h > 164.0 && lch1.h < 345.0 {
+        0.56 + (0.2 * (lch1.h + 168.0).to_radians().cos()).abs()
+    } else {
+        0.36 + (0.4 * (lch1.h + 35.0).to_radians().cos()).abs()
+    };
+    let sc = 0.0638 * lch1.c / (1.0 + 0.0131 * lch1.c) + 0.638;
+    let sl = if s.l < 16.0 {
+        0.511
+    } else {
+        0.040975 * s.l / (1.0 + 0.01765 * s.l)
+    };
+    let c4 = lch1.c.powi(4);
+    let f = (c4 / (c4 + 1900.0)).sqrt();
+    let sh = sc * (t_term * f + 1.0 - f);
+
+    let a = dl / (l_weight * sl);
+    let b = dc / (c_weight * sc);
+    let c = dh / sh;
+    (a * a + b * b + c * c).sqrt()
 }
 
 /// CIEDE2000 with `kL = kC = kH = 1` (the parametric factors the Sharma
@@ -258,6 +357,170 @@ mod tests {
                 "asymmetry: {fwd} vs {rev} for ({l1},{a1},{b1})↔({l2},{a2},{b2})"
             );
         }
+    }
+
+    /// ΔE94 and CMC reduce to ΔE76 on a pure LIGHTNESS difference
+    /// between neutrals: C = 0 on both sides makes every weighting
+    /// term 1 (ΔE94) or the documented constants (CMC), leaving the
+    /// ΔL term alone. Structural property of the transcribed
+    /// formulas — asserted because no published worked example was
+    /// obtainable for either metric (module doc).
+    #[test]
+    fn de94_and_cmc_reduce_on_neutral_lightness_difference() {
+        let a = Lab {
+            l: 50.0,
+            a: 0.0,
+            b: 0.0,
+        };
+        let b = Lab {
+            l: 60.0,
+            a: 0.0,
+            b: 0.0,
+        };
+        // ΔE94: sc = sh = 1 at C = 0, so it IS ΔL = ΔE76.
+        assert!((delta_e_94(a, b) - 10.0).abs() < 1e-12);
+        assert!((delta_e_94(a, b) - delta_e_76(a, b)).abs() < 1e-12);
+        // CMC at 1:1 divides ΔL by sl, which at L=50 is
+        // 0.040975·50/(1+0.01765·50) = 1.0872...; assert against the
+        // formula's own arithmetic, not a recalled number.
+        let sl = 0.040975 * 50.0 / (1.0 + 0.01765 * 50.0);
+        assert!((delta_e_cmc(a, b, 1.0, 1.0) - 10.0 / sl).abs() < 1e-12);
+    }
+
+    /// ΔE94 and CMC against lcms2's OWN OUTPUT — the only external
+    /// check available for these two, and labelled for exactly what
+    /// it is: **implementation-cross-check, NOT ground truth**
+    /// (project rule 3). CIE 116-1995 and BS 6923 are paywalled and
+    /// no published worked example was obtainable, so agreement here
+    /// says the transcription is faithful, and says nothing about
+    /// whether lcms2 reads those standards correctly.
+    ///
+    /// Expected values produced 2026-08-12 by compiling a C probe
+    /// against the pinned lcms2 (`cmsCIE94DeltaE`, `cmsCMCdeltaE`)
+    /// and printing 10 decimals. Recorded here because the oracle is
+    /// a subprocess the unit tests cannot reach.
+    ///
+    /// Agreement was exact to all ten printed digits on first run —
+    /// which is expected for a transcription, and is why this is a
+    /// weak test: it would also pass if both were wrong the same way.
+    #[test]
+    fn de94_and_cmc_match_lcms2_transcription() {
+        let cases = [
+            (
+                Lab {
+                    l: 50.0,
+                    a: 2.6772,
+                    b: -79.7751,
+                },
+                Lab {
+                    l: 50.0,
+                    a: 0.0,
+                    b: -82.7485,
+                },
+                1.408_310_081_4,
+                1.738_736_105_7,
+                1.738_736_105_7,
+            ),
+            (
+                Lab {
+                    l: 20.0,
+                    a: 40.0,
+                    b: -30.0,
+                },
+                Lab {
+                    l: 70.0,
+                    a: -10.0,
+                    b: 25.0,
+                },
+                68.911_643_645_3,
+                58.055_319_818_0,
+                92.094_183_238_0,
+            ),
+            (
+                Lab {
+                    l: 35.0,
+                    a: -44.1164,
+                    b: 3.7933,
+                },
+                Lab {
+                    l: 35.0232,
+                    a: -40.0716,
+                    b: 1.5901,
+                },
+                1.844_619_451_0,
+                2.024_752_084_5,
+                2.024_878_928_7,
+            ),
+        ];
+        for (a, b, e94, cmc21, cmc11) in cases {
+            assert!(
+                (delta_e_94(a, b) - e94).abs() < 1e-9,
+                "dE94 {}",
+                delta_e_94(a, b)
+            );
+            assert!(
+                (delta_e_cmc(a, b, 2.0, 1.0) - cmc21).abs() < 1e-9,
+                "CMC 2:1 {}",
+                delta_e_cmc(a, b, 2.0, 1.0)
+            );
+            assert!(
+                (delta_e_cmc(a, b, 1.0, 1.0) - cmc11).abs() < 1e-9,
+                "CMC 1:1 {}",
+                delta_e_cmc(a, b, 1.0, 1.0)
+            );
+        }
+    }
+
+    /// ★ CMC is ASYMMETRIC BY DEFINITION — it weights by the first
+    /// (reference) colour. This test exists so nobody later "fixes"
+    /// it into symmetry; ΔE94 and ΔE2000, by contrast, are symmetric
+    /// and are asserted so elsewhere.
+    #[test]
+    fn cmc_is_asymmetric_on_purpose() {
+        let a = Lab {
+            l: 20.0,
+            a: 40.0,
+            b: -30.0,
+        };
+        let b = Lab {
+            l: 70.0,
+            a: -10.0,
+            b: 25.0,
+        };
+        let fwd = delta_e_cmc(a, b, 2.0, 1.0);
+        let rev = delta_e_cmc(b, a, 2.0, 1.0);
+        assert!(
+            (fwd - rev).abs() > 1e-6,
+            "CMC weights by the reference colour: {fwd} vs {rev}"
+        );
+        // ΔE94 IS symmetric (its c12 is the geometric mean).
+        assert!((delta_e_94(a, b) - delta_e_94(b, a)).abs() < 1e-12);
+    }
+
+    /// The two lcms2 guards carried verbatim, both load-bearing:
+    /// two blacks return exactly 0 (else `sl` divides by zero), and
+    /// `L < 16` pins `sl = 0.511`.
+    #[test]
+    fn cmc_guards_hold() {
+        let black = Lab {
+            l: 0.0,
+            a: 0.0,
+            b: 0.0,
+        };
+        assert_eq!(delta_e_cmc(black, black, 1.0, 1.0), 0.0);
+        // Below L = 16 the lightness weight is the pinned constant:
+        // a 1-unit ΔL at 1:1 is exactly 1/0.511.
+        let dark = Lab {
+            l: 10.0,
+            a: 0.0,
+            b: 0.0,
+        };
+        let dark2 = Lab {
+            l: 11.0,
+            a: 0.0,
+            b: 0.0,
+        };
+        assert!((delta_e_cmc(dark, dark2, 1.0, 1.0) - 1.0 / 0.511).abs() < 1e-12);
     }
 
     /// Identical colours: exactly zero. Arithmetic identity.

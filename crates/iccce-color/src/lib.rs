@@ -48,7 +48,7 @@ pub mod mat3;
 pub mod xyz;
 
 pub use adapt::{BRADFORD, adaptation_matrix};
-pub use delta_e::{delta_e_76, delta_e_2000, delta_e_2000_k};
+pub use delta_e::{delta_e_76, delta_e_94, delta_e_2000, delta_e_2000_k, delta_e_cmc};
 pub use illuminant::{D50, D65_XY};
 pub use lab::{Lab, Lch};
 pub use mat3::Mat3;
