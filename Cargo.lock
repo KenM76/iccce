@@ -24,5 +24,9 @@ name = "iccce-color"
 version = "0.0.1"
 
 [[package]]
+name = "iccce-measure"
+version = "0.0.1"
+
+[[package]]
 name = "iccce-profile"
 version = "0.0.1"

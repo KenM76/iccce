@@ -1,0 +1,39 @@
+# iccce-measure — measurement-data interchange (CGATS / IT8.7).
+#
+# PRE-WORK for a future Pass 10 (profile creation), added 2026-08-12 at
+# the operator's direction. It exists now, ahead of any profiler,
+# because the parsing half of a profiler needs no measurement hardware
+# and can therefore be built and tested today — while the half that
+# needs hardware waits.
+#
+# INVARIANT: this crate contains NO ICC. A measurement file is not a
+# profile; keeping the reader separate means a future profiler and a
+# future measurement tool can share it, and means this crate's tests
+# never need an ICC fixture.
+
+[package]
+name = "iccce-measure"
+description = "CGATS/IT8.7 measurement-data files: read colour target measurements. No ICC, no colour maths."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# --- crates.io publication metadata (ARCHITECTURE.md DL-009) ---
+# See crates/iccce-color/Cargo.toml for why `readme` and `license-file`
+# point at the workspace root rather than at per-crate copies.
+readme = "../../README.md"
+license-file = "../../LICENSE"
+homepage = "https://github.com/KenM76/iccce"
+documentation = "https://docs.rs/iccce-measure"
+categories = ["parser-implementations", "graphics", "science"]
+keywords = ["cgats", "it8", "color", "colour", "measurement"]
+
+[dependencies]
+# Intentionally empty — same posture as iccce-color and iccce-profile.
+# A measurement reader is text parsing; it needs nothing.
+
+[lints]
+workspace = true

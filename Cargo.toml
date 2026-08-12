@@ -21,6 +21,7 @@ members = [
     "crates/iccce-profile",
     "crates/iccce-cmm",
     "crates/iccce-cli",
+    "crates/iccce-measure",
 ]
 
 [workspace.package]
