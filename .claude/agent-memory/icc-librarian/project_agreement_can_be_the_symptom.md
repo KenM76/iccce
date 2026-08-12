@@ -54,9 +54,22 @@ with chroma zeroed. **Two documents, one name, neither side wrong.**
 as evidence a value is right, ask **how far apart the two candidate
 answers were**. A small residual is evidence of **proximity**, not
 correctness. Where the two implementations share an intermediate
-(`MinL` here), the check may have no power at all. **Candidate-
-separation statements are OWED on every cross-check row in the ledger
-and none of them has one** — the highest-value item in §7.13.
+(`MinL` here), the check may have no power at all.
+
+**★★ UPDATED 2026-08-12 (seventeenth filing) — the "none of them has
+one" clause is now WRONG, and the correction has a fraction attached.**
+`tools/difftest` emits a candidate separation on every record
+(**DL-037**, [[iccce-disclosure-is-not-enforcement]]). ★ **The gap is
+closed for Pass 5c and open everywhere else: 16 of 145 rows, all Pass
+5c's; 129 print `UNSTATED`.** DL-033's *"Revisit if"* asked for a worked
+positive example and now has one. ★★★ **And the instrument's first act
+was to show that the row carrying THIS ENTIRE FINDING is graded at
+INFINITY** — a DL-019 report-don't-grade row — **so it could never have
+failed, whatever the candidates did.** Its separation is `4,717 441`,
+the defect magnitude above. **DL-033 said the cross-check was "nearly
+blind, now merely uninformative"; the emitted field says something
+stricter — on that row it was never a check at all.**
+
 DL-033 is the **mirror of DL-028**
 ([[iccce-apparatus-fault-under-every-hypothesis]]) and the more
 dangerous half: DL-028's failure announces itself, this one is silent.

@@ -3856,6 +3856,268 @@ ever said the reference arm drifted.
 - ★ **No CI run has been observed by this librarian, in any filing**,
   and the Linux debt is untouched.
 
+### 3.28 ★★★ The separation apparatus's first run — DL-033's gap is closed on **16 of 145 rows**, and the first thing it found was that **the row carrying the whole 4.2.5.4 finding could never have failed**
+
+*(Filed 2026-08-12 at the third filing of the session, tip **`e26d9ba`**
+*(verified — `.git/refs/heads/master` read; it says nothing about
+whether that tip has been pushed)*. **Row figures and the census are
+CARRIED from the engineer's dispatch, which states it ran the runner on
+current code.** ★ **The mechanism, the two design guards and the two
+corrected literals are VERIFIED from source** —
+`tools/difftest/src/lib.rs` and `src/pass5c.rs`, read at the tip. Where
+this section says *verified* it means this librarian read the file; where
+it says *carried* it means a number arrived in a dispatch and **this
+librarian has no shell**, fourth consecutive filing.)*
+
+**§7.13 newly-owed 1** asked for candidate-separation statements on the
+cross-check rows and called itself the highest-value item on the list.
+`tools/difftest` now emits one on **every** record. This section records
+what the first run produced, what it found, and — because a partial
+closure read as a total one is the failure this ledger exists to
+prevent — **exactly how much of the suite is covered.**
+
+#### 3.28.1 The three rows, and the only one of them that is a tolerance story
+
+| Claim | Row | Kind | Tolerance | Observed | **Candidate separation** | **Power** |
+|---|---|---|---|---|---|---|
+| **★★★ NC-176** | `pass5c/swop/estimators/black-points-in-lab` | **implementation-cross-check** | **`inf`** (REPORTED, NOT GRADED) | `4,799 109×10⁰` | **`4,717 441×10⁰`** | **UNGRADED** |
+| **★★ NC-177** | `pass5c/synthetic/estimators/black-points-in-lab` | **implementation-cross-check** | **`inf`** | `5,000 000×10⁰` | **`0,000 000×10⁰`** | **ZERO-SEPARATION** |
+| **★ NC-178** | `pass5c/swop/shipped/binary-reaches-the-iso-estimator` | **implementation-cross-check** | **`1×10⁻⁶`** | `3,862 262×10⁻⁷` | **`9,574 451×10⁻³`** | **DISCRIMINATING** |
+
+- **NC-176 is the finding of this filing.** The row that carries the
+  entire 4.2.5.4 result is graded at **infinity** — it is a **REPORTED,
+  NOT GRADED** row under **DL-019** — so **however far the two candidate
+  answers moved, it could not have failed.** Its separation
+  (**`4,717 441 L*`**, which is DL-033's defect magnitude to six
+  figures) is real power that **no gate consumes**. ★ **The suite's
+  actual power on that question lives in §B's *device* rows**, which is a
+  far less obvious place than the row named *"estimators"*, and anyone
+  reading the row names to find the guard would find the wrong one.
+- **NC-177 is the GP-002 row.** Separation exactly zero: the two
+  candidates are the **same number**, so the row cannot move at any
+  tolerance and cannot be rescued by tightening one. **This is DL-036
+  and §3.25.4 restated as an emitted field** rather than as a paragraph
+  somebody has to remember.
+- **NC-178 is the healthy case, and it is here as the positive
+  control.** The separation is **`9 574,451×`** this row's own bound
+  *(**DERIVED** by this librarian — `9,574 451×10⁻³ ÷ 1×10⁻⁶`; the
+  engineer computed the same ratio independently and reported *"~9 574×,
+  four orders"*, and the two agree)*. **Four orders, not the three the
+  code used to assert** — §3.28.3.
+
+> **★★ What NC-176 and NC-177 must NOT be read as saying.** Neither is a
+> defect in Pass 5c, and neither downgrades **NC-165** or **NC-166**.
+> An `inf` tolerance was the *correct* call under DL-019 — the
+> divergence is definitional and nobody can adjudicate it, so grading it
+> would have invented an authority. **The finding is not that the
+> tolerance is wrong; it is that a REPORTED row's separation was
+> invisible, so "we measured it" and "we could have caught a regression
+> in it" were indistinguishable in the record.** They are now two
+> different printed states.
+
+#### 3.28.2 ★★★ Coverage — and `blind=0` is out of **16**, not out of 145
+
+The aggregate line, **quoted exactly as emitted** *(carried)*:
+
+```
+unstated=129  no-named-alternative=4  incommensurate=2  ungraded=3
+zero-separation=1  blind=0  discriminating=6  sep-broken=0
+blind-ids=none  zero-separation-ids=pass5c/synthetic/estimators/black-points-in-lab
+```
+
+**The engineer's phrasing, preserved because it is the honest one:**
+*"16 of 145 rows carry a separation, all Pass 5c's. `blind=0` is out of
+16, not out of 145."*
+
+★ **And this ledger owes one refinement in the same direction, not the
+other** *(**DERIVED** from the aggregate above; `lib.rs`'s
+`separation_counts` was read and it iterates **every** row, so 145 is
+the whole census)*:
+
+| Population | Count | What it means |
+|---|---|---|
+| Rows in the run | **145** | `142 + 3 skipped`; the aggregate sums to 145 |
+| Rows stating **anything** about a rival candidate | **16** | `145 − 129 unstated` — the engineer's figure |
+| Of those, rows with a **measured** separation | **12** | `16 − 4 no-named-alternative` |
+| Of those, rows that **reached the blind-vs-discriminating comparison** | **6** | `12 − 2 incommensurate − 3 ungraded − 1 zero-separation` |
+
+**So `blind=0` is strictly a statement about SIX rows.** The other six
+measured rows were diverted by a guard *before* the comparison ran and
+were never eligible to be blind at all. ★ **This is not a criticism of
+the figure — it is the same discipline the figure itself is an instance
+of**, and it is recorded here so that a later restatement cannot walk
+`blind=0` up from "6 rows compared" to "the suite is not blind."
+**89 % of the suite (129 of 145) has had no rival candidate considered
+at all.**
+
+> **★★ A COLLISION HAZARD, filed before it can bite: `unstated=129` and
+> the workspace unit-test count `129` are UNRELATED NUMBERS ON ONE
+> TREE.** **DL-031** exists because three green results on this
+> repository read **129, 36 and 142** and two of them were briefly
+> compared; `cargo test --workspace` is the **129**. The separation
+> aggregate now prints its own **129**, from a different apparatus,
+> counting different things, one day later. **Any restatement of either
+> must name its runner in the same sentence**, and nobody may reason
+> from their equality — it is a coincidence and it will not survive the
+> next test being written.
+
+#### 3.28.3 ★★ A FOURTH stale literal, and this one was found by an apparatus rather than by a person
+
+**`SHIPPED_MATCHES_LIBRARY`'s justification asserted the two candidates
+were `2,46×10⁻³` apart, *"three orders above the bound"*. Computed, it
+is `9,574 451×10⁻³` — four orders.** `2,46×10⁻³` was the
+**pre-`fd34a44`** figure *(verified — `pass5c.rs` L1409–L1431 read at
+the tip; the doc comment now carries the correction and the constant's
+own string carries it too)*.
+
+★ **The argument was never harmed, only the number** — the corrected
+separation is *larger*, so the claim was **understated** by a factor of
+four. **That is precisely why nobody notices a stale literal inside a
+justification**: it is load-bearing for the conclusion's *direction*,
+which stayed right, and wrong only in its magnitude, which nothing
+re-reads. **A literal that goes stale in the direction that weakens your
+own argument is the hardest kind to find, because the argument still
+works.**
+
+**`NEUTRAL_EXACT`'s `0,834` / `5,0` were replaced by the emitted field
+too** *(verified — `pass5c.rs` L1286–L1291)*, and the reason is a
+different one worth keeping separate: **both were true on the day of
+this filing.** They are properties of *which fixture is loaded*, so **a
+third arm would have falsified the sentence with nobody touching a line
+of it.** ★ **One literal was corrected; the other was removed while
+still true, on the grounds that it was only accidentally true.**
+
+**Count, stated with its provenance:** `icc-conformance` calls this the
+**fourth** instance of **DL-034**. `lib.rs` L1697–L1703 records *"three
+claim-bearing literals in this crate went false inside a day"*
+*(verified — read)*, and **DL-034's own entry names two of them**. **This
+ledger names the fourth and does not re-derive the enumeration of the
+first three** — a count is not an inventory, and this one is carried as
+a count.
+
+#### 3.28.4 ★★ The `skip=3` enumeration — a principled refusal to grade, not a concealed failure
+
+**Owed since §7.12 and blocked on a shell in three successive filings.**
+The engineer enumerated it from the run. **The three ids:**
+
+| Id | Kind | Metric |
+|---|---|---|
+| `pass4/swop-to-srgb/icc-absolute/pcs-lab-vs-lcms2` | cross-check | `dE2000-max(kL=kC=kH=1,D50)` |
+| `pass4/swop-to-srgb/icc-absolute/pcs-lab-emulated-geometry` | cross-check | *(same)* |
+| `pass4/swop-to-srgb/icc-absolute/pcs-lab-corners-interpolation-free` | cross-check | *(same)* |
+
+**Three rows, ONE cause**, expectation source *"not comparable at this
+intent"*. The reason, quoted from the emitted detail field *(carried —
+and ★ **corroborated in source**: `pass4.rs` L1210 carries *"which would
+be modelling the oracle rather than measuring it"*, and L1861 carries
+`"not comparable at this intent"`, both read at the tip)*:
+
+> *"PCS-side records SKIP at icc-absolute: transicc `-o*Lab4 -t3`
+> applies the D.6/D.7 media-white scale to the PCS on lcms2's side, and
+> iccce's A2Bx evaluation is media-relative by construction, so the two
+> are not the same quantity. Comparing them would require reproducing
+> lcms2's absolute handling in the harness, which would be modelling the
+> oracle rather than measuring it. The end-to-end records DO run at
+> absolute; only the PCS isolation is withheld."*
+
+★ **File it as what it is: a refusal to grade a quantity the harness
+cannot compare without becoming its own oracle.** It is **DL-019's
+report-don't-grade** applied one step earlier — the row is not even
+reported, because there is nothing commensurable to report. `fail=0`
+could not have told anyone this, which is the entire reason the item was
+opened.
+
+**Two limits on this discharge, and neither is pedantry:**
+
+1. ★ **This enumerates the skips of the run at tip `e26d9ba`. The item
+   was opened against NC-160's `skip=3`, at an EARLIER tip.** The count
+   matches and the cause is structural in `pass4.rs`, so they are very
+   probably the same three rows — **but "probably the same three" is not
+   "the same three", and nothing here establishes it.** The item is
+   discharged **for the current tip**, and NC-160's own three are
+   inferred, not verified.
+2. `icc-conformance` **re-derived the same three ids independently**
+   *(carried)*. That is a second reader, not a second apparatus — both
+   read the same run.
+
+#### 3.28.5 ★★★ The gap that is a RISK and not merely coverage — the corrected clause is documented but **undefended on any clean machine**
+
+**Carried from `icc-conformance`, and it is the most important sentence
+in this filing.**
+
+The only differential arm with power on the 4.2.5.4 correction is
+**category (c) — a Windows system profile.** On CI, or on any machine
+without that directory, **those rows skip and everything else stays
+green through a full reversion of the fix.**
+
+| | |
+|---|---|
+| What grades the clause today | the **`swop`** arm (**NC-165**), plus `bpc.rs`'s two unit tests, which are behavioural and run on **constructed** input |
+| What has **zero** power on it | the **synthetic** arm (**NC-166**, **NC-177**, GP-002) |
+| What happens on a machine without the vendor profile | **the differential detector is absent and the suite is green** |
+
+★ **So the corrected clause is currently *documented* rather than
+*defended*.** This sharpens **§7.13 newly-owed 4** from *"state which
+detector is load-bearing"* to *"the load-bearing detector is
+machine-dependent and absent on the one platform this project has never
+run on"* — and it collides with the **Linux debt**, owed since Pass 0
+and never discharged in any filing.
+
+The engineer has **commissioned a third, purpose-built arm**, with the
+requirement that its power be **demonstrated by injecting the reverted
+behaviour**, not asserted. ★ **That requirement is the right one and is
+recorded as a commitment, not as a result** — DL-020's fixture-that-can-
+fail discipline and DL-018's prediction-pin discipline arriving at the
+same place. **Nothing is measured yet, and this ledger asserts nothing
+about the third arm's existence.**
+
+#### 3.28.6 GP-002 — the blindness was **implied, not designed**, and the fixture was deliberately NOT regenerated
+
+*(Filed by `icc-conformance` in `tools/gen-profiles/README.md` §4.1, the
+recipe doc, and the generated MANIFEST — **verified** that §4.1 exists
+and is titled *"round, symmetric values make distinct quantities
+COINCIDE, and coincidence is zero power"*, and that
+`tools/gen-profiles/src/recipes.rs` L931 and L1726 cite **FINDING
+GP-002** by name. The register entry's contents are `icc-conformance`'s.)*
+
+The zero separation on the synthetic arm **fell out of three properties
+each chosen for a good reason** — an affine model, an exact closed-form
+inverse `B2A`, and black being the darkest vertex — so the round trip's
+floor **equals** the neutralised vertex. ★ **Nobody designed the
+blindness; it was implied by three defensible decisions**, which is the
+same shape as DL-025's identity fixture nullifying its own control.
+
+**The fixture was deliberately NOT regenerated**, and the reason belongs
+in this ledger specifically: **changing it would move NC-166's companion
+figure and statements filed hours earlier the same day.** `verify`
+reports **39 identical, 0 not identical, no fixture byte moved**
+*(carried)*. ★ **A fixture is a claim's substrate**; regenerating one to
+fix an unrelated blindness silently re-bases every number measured
+through it, and the right move was to file the finding and leave the
+bytes alone.
+
+#### 3.28.7 Coverage of §3.28, stated because a number without it is not a claim
+
+- **One run, one machine, one tip** (`e26d9ba`), Windows, and ★ **this
+  librarian did not run it** — fourth consecutive filing without a
+  shell.
+- **The separation field covers 16 of 145 rows, all of them Pass 5c's.**
+  **No Pass 0 – Pass 4, Pass 5, Pass 5b, Pass 6 or Pass 7 row states a
+  separation**, and DL-033's operational item 1 is **open for all of
+  them**.
+- ★ **The runner is not named in the dispatch.** DL-031 requires a count
+  to arrive with its apparatus; `pass=142` and the 145-row aggregate are
+  attributed here to **`tools/difftest`** on the strength of the row ids
+  being `pass4/…` and `pass5c/…`, **which is an inference from the ids,
+  not a stated invocation.** The exact binary and command line are
+  **not** on file.
+- **The `summary` line is byte-for-byte unchanged** from before the
+  apparatus was added *(carried)* — deliberately, because it is quoted
+  elsewhere as a run signature. **Nothing in this filing should be read
+  as a change to the census.**
+- **No CI run has been observed by this librarian, in any filing**, and
+  §3.28.5 is why that now costs something specific.
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -4490,6 +4752,46 @@ moment it exists, not the moment a Pass measures it.)*
 > the register failing. The failure mode it warned about — *"a named
 > approximation's register must not carry a bug as though it were a
 > priced departure"* — **was avoided**, and the price is now known.
+
+> **★★ FIFTH dated note, 2026-08-12 (third filing of the session, tip
+> `e26d9ba`) — the cost now has a TOLERANCE-BUDGET row, and the row that
+> produced the cost turns out to have been UNGRADEABLE.** Two separate
+> facts; the second is the one nobody asked for.
+>
+> **1. `TOLERANCES.md` §5 now carries NA-009** *(**verified** — read at
+> the tip; §5's preamble records *"NA-009 was added on 2026-08-12 for the
+> same reason and only that reason"*, i.e. the permission *"a cost of
+> 'unmeasured' is permitted only while the entry is new"* had expired
+> after four filings)*. **This entry and that row are now two views of
+> one approximation and must move together.** The §5 row carries
+> **four** caveats where the fourth dated note above carries three — the
+> added one is **coverage**: *"two profiles, one intent, one direction,
+> one pin, one platform"*, plus the note that **the `swop` arm is the
+> only one with any power on the clause that produced the figure.** ★
+> **Anyone restating NA-009's cost reads BOTH.** The §5 row also states
+> the cost in device range (`9,921×10⁻³` on the SWOP arm, `5,725×10⁻²`
+> on the synthetic one) — figures this ledger has **read but not
+> re-derived**, and which belong to `icc-conformance`.
+>
+> **2. ★★★ The row that produced this cost is graded at INFINITY, so it
+> could never have failed** (§3.28.1, **NC-176**). That was the correct
+> call under **DL-019** — the divergence is definitional and nobody can
+> adjudicate it — **but it means the number in this entry arrived from a
+> row with no gate on it.** Its candidate separation is
+> **`4,717 441 L*`**, real power that nothing consumes. **The cost is
+> not weakened by this; the REGRESSION STORY is.** A future change that
+> moved this quantity would be *reported*, not *caught*, on that row.
+>
+> **3. ★★ And the synthetic arm's row is ZERO-SEPARATION** (**NC-177**,
+> GP-002): its two candidates are the same number, so **it cannot move
+> at any tolerance and only a different fixture can rescue it.** The
+> fourth dated note above already said the measurement's power came from
+> the vendor profile (**DL-036**); this is that statement promoted from
+> prose into an emitted, machine-detectable field.
+>
+> **What is NOT changed by any of this:** the cost figures
+> (**NC-165**, **NC-166**), the definitional-divergence reading, and the
+> three caveats. **Nothing above is edited.**
 
 ### NA-010 — the fixed v4 perceptual black follows **the implementations' triple**, not ICC.1 Table 16's printed decimals. A deviation from printed spec text whose cost is **corpus-derived, not measured here**
 
@@ -5605,6 +5907,76 @@ prediction that opened it**.
 
 ---
 
+### 7.14 Status of §7 … §7.13, re-checked 2026-08-12 at the **candidate-separation apparatus** filing
+
+No list above is edited. **This is the sixth status pass of the same
+calendar day and the seventeenth filing overall** *(derived — §7.13
+records itself as the sixteenth, and this is the next one)*. ★ **It is
+the fourth consecutive filing taken WITHOUT a shell.** An item settled by
+running a command in an earlier filing is **verified-then,
+unchecked-now**, and is never restated as though it had been
+re-examined.
+
+★ **What is different about this status pass: an item three filings old
+is discharged with an ENUMERATION rather than a count** — and the
+dispatch that discharged it **cited the wrong item number**, which is
+recorded below rather than quietly corrected.
+
+| Item | Status now |
+|---|---|
+| §7.12 newly-owed **3** / §7.13 newly-owed 3 — **enumerate NC-160's `skip=3`** | **★★★ DISCHARGED for the current tip, with the ids AND the reason** (§3.28.4). Three rows, **one cause**: `pass4/swop-to-srgb/icc-absolute/` `pcs-lab-vs-lcms2`, `pcs-lab-emulated-geometry`, `pcs-lab-corners-interpolation-free`, all `cross-check`, expectation source *"not comparable at this intent"*. ★ **It is a principled refusal to grade, not a concealed failure** — grading it would require reproducing lcms2's absolute handling, *"which would be modelling the oracle rather than measuring it"* *(the reason is carried from the run; the phrase is **corroborated in `pass4.rs` L1210 and L1861**, read at the tip)*. ★ **Two limits: the enumeration is of the run at `e26d9ba`, and NC-160's `skip=3` was an EARLIER tip** — same count, structurally the same cause, **not established as the same three rows** |
+| ★ **A dispatch mis-citation, recorded not corrected away** | The dispatch discharging the item above called it **"§7.12 item 4"**. **§7.12's newly-owed 4 is the `README.md` throughput sweep**, which §7.13 already discharged in the *"there was nothing there"* direction; the skip enumeration is **§7.12's newly-owed 3** *(verified — §7.12's numbered list read at the tip)*. **Nothing turns on it and both items are real** — it is recorded because §2.12's tally of dispatch-vs-tree disagreements is only useful if the small instances go in too. **The dispatch's "open since the eleventh filing" traces to this ledger's own `SESSION_LOG.md` line** *(verified — "Eleventh filing; still blocked on a shell")*, so it is **our phrase, not theirs**, and this filing does not re-derive the count |
+| §7.13 newly-owed 1 — **candidate-separation statements on the cross-check rows (DL-033)** | **★★★ PARTIALLY DISCHARGED, AND THE FRACTION IS PART OF THE DISCHARGE.** Every record now carries a separation field with three stated states and an automatic verdict. **16 of 145 rows state one; all 16 are Pass 5c's.** ★ **`blind=0` is out of 16 — and strictly, out of the SIX rows that reached the comparison at all** (§3.28.2). **129 rows have had no rival candidate considered.** The item stays open for Pass 0 – Pass 5b, Pass 6 and Pass 7, and **must not be closed on the strength of the mechanism existing** |
+| §7.13 newly-owed 5 — **a `TOLERANCES.md` §5 row for NA-009** | **★★ DISCHARGED, and this librarian VERIFIED it this time rather than deferring.** §7.13 said *"whether a §5 row exists is `icc-conformance`'s to state; this ledger did not audit §5"*. **It has now been read: the row exists, carries both arms' costs, and carries FOUR caveats** — the three from §3.25.5 plus **coverage** *(verified — `TOLERANCES.md` §5 table read at the tip)*. Pointer filed as NA-009's **fifth dated note**. ★ **`TOLERANCES.md` §1.1 is new too** and states the governing rule: **a row's KIND measures evidence strength and says nothing about POWER** |
+| §7.13 newly-owed 4 — **a regression that would FAIL if the 4.2.5.4 branch regressed** | **★★★ NOT DISCHARGED — and it got WORSE, in the useful sense of being better understood.** §3.28.5: the only differential arm with power is **category (c), a Windows system profile**. **On CI or any machine without it, those rows skip and the suite stays green through a full reversion of the fix.** The corrected clause is **documented, not defended, on any clean machine.** A third purpose-built arm is **commissioned**, with its power to be **demonstrated by injecting the reverted behaviour** — ★ **recorded as a commitment, not a result** |
+| §7.13 newly-owed 2 — **the `iccce bench`-vs-`pass6.rs` harness question** | **Still owed, untouched.** Nothing this filing went near timing |
+| §7.11 newly-owed 3 — **the A41 constant's error, measured** | **Still owed, untouched, third filing.** The fixture exists; the measurement does not |
+| §7.11 newly-owed 4 / §7.1 item 6 — **the CI evidence, and a Linux run** | **★★ Still owed — and it now has a NAMED COST.** **No CI run has been observed by this librarian in seventeen filings.** §3.28.5 makes the debt concrete rather than hygienic: **the platform this project has never run on is the platform where the 4.2.5.4 detector is absent** |
+| §7.10 item 6 / §7.8 item 1 — **the PCSLAB gray fixture; the non-zero-black v4 LUT fixture** | **Still owed. ★ The second one is now the SAME REQUEST as §7.13 newly-owed 4** — §3.28.6 shows the synthetic arm's blindness was *implied* by three defensible design choices (GP-002), and the fixture was **deliberately not regenerated** so that NC-166's companion figures would not move. **NA-008's PCSLAB gray arm remains the oldest UNMEASURED entry in §4** |
+| §7.10 item 7 / **the DL-014 citation audit** | **★ Still owed, TWELFTH filing.** Unchanged |
+| §7.10 item 1 — **`dechk.obj` in the public repository** | **Carried, `unverified-this-filing`.** The repository root was not enumerated |
+| §7.10 item 2 / §7.11 — **pushes without a recorded go-ahead** | **Carried, `unverified-this-filing`.** ★ **One narrow thing is newly evidenced:** `.git/refs/heads/master` reads **`e26d9baa286169857aa41bee4ca9930807437c12`** *(verified — read)*, corroborating the dispatch's tip. **It says nothing about whether that tip has been pushed.** Rule 9 and **DL-024** unchanged |
+| §7.10 item 5 — **`cargo fmt --check` in `tools/difftest`** | **Carried, `unverified-this-filing`.** Two runners, one gate |
+| §7.1 item 4 — **a ground-truth row for chromatic adaptation** | **Still owed. Still not due** *(no adaptation code changed; not re-grepped)* |
+| **`published-ground-truth` for any transform** | **★★ UNCHANGED, TWELFTH consecutive filing.** NA-009's cost has now acquired a §5 tolerance-budget row **and still has no ground-truth arm at all**. **`IEC 61966-2-1` is still the cheapest route and still nobody has dispatched for it** |
+
+**Newly owed as of this filing:**
+
+1. **★★★ Separation statements on the other 129 rows — and a stated
+   POLICY for which rows can never have one.** The mechanism exists;
+   **89 % of the suite has not been through it.** ★ **The second half
+   matters more than the first**: some rows genuinely have no named
+   rival, and `no-named-alternative` is a *real* state with a reason
+   attached. **A sweep that converts `unstated` to `no-named-alternative`
+   without a reason per row would destroy the field's meaning** while
+   making the aggregate look finished.
+2. **★★★ The third differential arm for 4.2.5.4, with its power
+   demonstrated by injecting the reverted behaviour.** Commissioned, not
+   built. **Until it exists, a reversion of `fd34a44` is invisible on
+   any machine without a Windows system profile** (§3.28.5). **This is
+   the highest-value item on the list**, and it is the successor to
+   §7.13 newly-owed 4.
+3. **★★ A decision on whether a REPORTED (`inf`-tolerance) row should be
+   required to state its separation.** NC-176 shows why the question is
+   live: the row carrying the whole 4.2.5.4 finding has **`4,717 441`**
+   of real separation and **no gate that can consume it**. ★ **`BLIND`
+   deliberately does not affect status or exit code** — auto-failing it
+   would create pressure to stop stating separations at all — **so the
+   remedy, if there is one, is not a gate on this row; it is naming
+   which OTHER row is the load-bearing detector.**
+4. **★ Confirm that NC-160's `skip=3` is the same three rows enumerated
+   in §3.28.4.** The count matches and the cause is structural, **and
+   that is an inference.** Cheap to settle the next time anyone has a
+   shell and the older tip.
+5. **★ Name the runner.** `pass=142` and the 145-row separation
+   aggregate arrived **without the binary or command line** (§3.28.7).
+   **DL-031 is the entry this violates**, and it is the entry whose
+   founding instance was three green counts on one tree — one of which
+   was **129**, the number the new aggregate now also prints for an
+   unrelated quantity.
+
+---
+
 ## 8. Related
 
 - `docs/TOLERANCES.md` — the tolerance budget (`icc-conformance`).
@@ -5720,7 +6092,20 @@ prediction that opened it**.
   both `L* 20`, so swapping them changed nothing (**§3.25.4**,
   **NC-166**). ★ **The stated converse of DL-020** — an authored fixture
   discharges the doubt it was authored for **and nothing adjacent to
-  it**.
+  it**. **DL-037** *(added 2026-08-12)* — ★★★ **candidate separation is
+  an EMITTED FIELD with its own guard order, and the guards ARE the
+  decision**: `UNGRADED` is tested **before** the comparison (because
+  `d <= inf` holds for every finite `d` and would brand every DL-019
+  REPORTED row `BLIND`, blaming the fixture for a decision the tolerance
+  made), and `ZERO-SEPARATION` **outranks everything** (a blind row is
+  rescued by tightening a tolerance, a zero-separation row only by a
+  different fixture). **`BLIND` deliberately does not affect status or
+  exit code** — DL-018 read from the other end: **a disclosure mechanism
+  and an enforcement mechanism must not be the same mechanism**, or the
+  cheapest response to a blind row is to stop stating separations
+  (**§3.28**, **NC-176 … NC-178**). It is the **worked positive
+  example** DL-033's *"Revisit if"* asked for, and it closes DL-033's
+  operational item 1 **for Pass 5c only — 16 of 145 rows**.
 - `tools/difftest/README.md` — the oracle, its pin and its licence (§2–§3),
   the smoke record (§8), the harness and its one registered check (§11),
   and **§12, the legacy-Lab experiment and the BPC finding** — the

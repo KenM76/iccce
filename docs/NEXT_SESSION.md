@@ -5,6 +5,33 @@ filing — the fifth of the second calendar day and the sixteenth
 overall.** Replaces the estimator-discrimination edition entirely.
 **Overwrite this file once acted on.**
 
+> **★★★ AMENDED 2026-08-12 at the candidate-separation filing
+> (seventeenth overall, tip `e26d9ba`) — NOT rewritten.** Two targeted
+> changes below: `icc-conformance`'s `TOLERANCES.md` §5 item is **struck
+> through as done**, and **one new item outranks everything else on this
+> page.** Everything else stands as written.
+>
+> **★★★ THE ONE NEW THING: the 4.2.5.4 fix is DOCUMENTED BUT NOT
+> DEFENDED on any clean machine.** The only differential arm with power
+> over that clause is a **Windows system profile** (fixture category
+> **(c)**). On CI — or any machine without that directory — **those rows
+> skip and the suite stays green through a full reversion of
+> `fd34a44`.** ★ **This is the same defect this file's headline section
+> is about, and the project currently could not detect its return.** A
+> third purpose-built arm is **commissioned, not built**; its power is
+> to be **demonstrated by injecting the reverted behaviour.**
+> `NUMERIC_CLAIMS.md` **§3.28.5**.
+>
+> **And DL-033's instrument now exists** — candidate separation is an
+> emitted field on every record (**DL-037**, `ARCHITECTURE.md` §5, now
+> **thirty-seven** entries). ★ **Read its coverage before quoting it:
+> 16 of 145 rows carry a separation, all Pass 5c's; `blind=0` is out of
+> 16 — strictly, out of the SIX rows that reached the comparison.
+> 129 rows print `UNSTATED`.** ★★ **Its first act was to show that the
+> row carrying the entire 4.2.5.4 finding is graded at INFINITY and
+> could never have failed** (**NC-176**). Add **§3.28** and **§7.14** to
+> the read order, and `SESSION_LOG.md` now has **seventeen** entries.
+
 > **★★★ THE ORIGINAL SCOPE IS DONE. Passes 0 through 7 are closed and
 > filed.** This file is therefore shaped differently from every edition
 > before it: it is **not** a work queue for finishing a plan. It says
@@ -297,9 +324,21 @@ such expectation anywhere on the spot path.
 ### `icc-conformance`
 
 - **Kind 4 items 0, 1, 3, 4, 5 and 6.**
-- **★ A `TOLERANCES.md` §5 row for NA-009 now that its cost EXISTS.**
-  The register carried "UNMEASURED" for four filings and that
-  justification has expired.
+- ~~**A `TOLERANCES.md` §5 row for NA-009**~~ — **★ DONE, 2026-08-12
+  (third filing)** *(verified — §5's table read at the tip `e26d9ba`)*.
+  It carries **four** caveats, the fourth being **coverage**. Struck
+  through rather than deleted so nobody files it twice.
+- **★★★ THE THIRD DIFFERENTIAL ARM FOR 4.2.5.4 — the highest-value item
+  anywhere on this page.** The only arm with power today is a **Windows
+  system profile**; on CI or any clean machine **those rows skip and a
+  full reversion of `fd34a44` stays green.** Commissioned, not built.
+  **Its power must be demonstrated by injecting the reverted behaviour,
+  not asserted** (`NUMERIC_CLAIMS.md` §3.28.5).
+- **★★ Separation statements on the other 129 rows — with a POLICY for
+  the rows that can never have one.** `no-named-alternative` is a real
+  state and carries a reason; **a sweep that converts `unstated` to it
+  without a reason per row destroys the field's meaning** while making
+  the aggregate look finished.
 - **A compiled path in the B2A direction** (DL-021 makes it a separate
   question) and **a compiled chain with BPC folded in**.
 - **A second machine.** Everything timed here is one Windows box.

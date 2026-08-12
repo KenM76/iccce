@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; 4.2.5.4 corrected and RE-MEASURED, the divergence GREW 58.8x; speedup WITHDRAWN; next free NC-176; DL-036 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot 2026-08-12 (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; 4.2.5.4 corrected, re-measured, and now DOCUMENTED BUT UNDEFENDED on any clean machine; separation apparatus live at 16/145; next free NC-179; DL-037 newest) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -121,7 +121,34 @@ ever** (CI is a *report*). Plus: **no test asserts the corrected 4.2.5.4
 branch** — the defect shipped through exactly that gap, past 63
 `iccce-cmm` tests.
 
-Related: [[iccce-count-needs-its-apparatus]],
+**★★★ UPDATED 2026-08-12, SEVENTEENTH FILING (tip `e26d9ba`) — DL-033's
+gap now has an INSTRUMENT, and the most important thing it produced is a
+RISK.** Candidate separation is an emitted field on every conformance
+record (**DL-037**, [[iccce-disclosure-is-not-enforcement]]). ★ **Read
+its coverage before quoting it: 16 of 145 rows, all Pass 5c's;
+`blind=0` is out of 16 — strictly, out of the SIX that reached the
+comparison; 129 print `UNSTATED`.**
+
+★★★ **THE STANDING RISK TO CARRY INTO EVERY FUTURE SESSION: the
+corrected 4.2.5.4 clause is DOCUMENTED BUT NOT DEFENDED on any clean
+machine.** The only differential arm with power is a **Windows system
+profile** (fixture category **(c)**); on CI or any machine without that
+directory **those rows skip and a full reversion of `fd34a44` stays
+green.** A third purpose-built arm is **commissioned, not built**, with
+its power to be **demonstrated by injecting the reverted behaviour**.
+This collides with the Linux debt (still: **no Linux run by anyone,
+ever**). ★ **`skip=3` IS NOW ENUMERATED** — three Pass 4 `icc-absolute`
+PCS rows, one cause, a **principled refusal to grade** (see
+[[iccce-count-needs-its-apparatus]]).
+
+**Ledger now: NC-176 … NC-178 filed; next free NC-179. DL-037 filed;
+37 decision-log entries. `SESSION_LOG.md` has 17 entries.**
+`TOLERANCES.md` **§5 now carries NA-009** (four caveats — the fourth is
+**coverage**) and a new **§1.1** stating that *a row's KIND measures
+evidence strength and says nothing about POWER*.
+
+Related: [[iccce-disclosure-is-not-enforcement]],
+[[iccce-count-needs-its-apparatus]],
 [[iccce-git-files-readable-without-shell]],
 [[iccce-apparatus-fault-under-every-hypothesis]],
 [[iccce-direction-scoped-behaviour]],

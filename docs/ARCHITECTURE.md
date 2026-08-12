@@ -3518,6 +3518,35 @@ whose candidate separation is stated in advance, at which point this
 rule has a worked positive example instead of only its founding
 negative one.
 
+> **★★ Dated note, 2026-08-12 (third filing of the session, tip
+> `e26d9ba`) — the "Revisit if" clause above has FIRED, and operational
+> item 1 is CLOSED FOR PASS 5c AND OPEN EVERYWHERE ELSE. Nothing above
+> is edited.**
+>
+> `tools/difftest` now emits a candidate separation on every record,
+> with three stated states and an automatic verdict *(verified —
+> `lib.rs` read at the tip)*. **The worked positive example this entry
+> asked for exists and is filed as `DL-037`**, which also records the
+> two design guards that make the mechanism honest rather than merely
+> present.
+>
+> ★★★ **The closure is PARTIAL and the fraction is part of it:
+> `16 of 145` rows state a separation, and all 16 are Pass 5c's.** No
+> Pass 0 – Pass 5b, Pass 6 or Pass 7 row states one — **129 rows print
+> `UNSTATED`**, which is the mechanism working, not the mechanism
+> finished. **Item 1 remains owed for every Pass but 5c**
+> (`NUMERIC_CLAIMS.md` §7.14 newly-owed 1).
+>
+> ★★ **And the first thing the mechanism found was about this entry's
+> own founding measurement**: the row carrying the whole 4.2.5.4
+> finding is **`UNGRADED`** — tolerance `inf` — so **it could never
+> have failed, whatever the candidates did.** Its separation is
+> **`4,717 441`**, the defect magnitude in the table above, to six
+> figures. **This entry said the cross-check was "nearly blind, and is
+> now merely uninformative"; the emitted field says something stricter
+> — on that row it was never a check at all.** `NUMERIC_CLAIMS.md`
+> **§3.28**, **NC-176**.
+
 ---
 
 ### DL-034 — ★★ **a claim-bearing number the harness can COMPUTE is FORMATTED AT RUN TIME, never typed into prose beside the code that computes it.** A stale comment misleads a reader; a stale string inside an emitted conformance record misleads the EVIDENCE
@@ -3582,6 +3611,41 @@ string forced the sentence to be re-read, which is what found the other.
 **Revisit if:** a claim-bearing figure is found in an emitted record
 that the harness genuinely cannot compute at run time (the rule needs an
 explicit exception clause, stating how such a figure is dated instead).
+
+> **★★ Dated note, 2026-08-12 (third filing of the session, tip
+> `e26d9ba`) — a FOURTH instance, and it is the first found by an
+> APPARATUS rather than by a person.** Nothing above is edited.
+>
+> `SHIPPED_MATCHES_LIBRARY`'s justification asserted the two candidate
+> blacks were **`2,46×10⁻³` apart, "three orders above the bound"**.
+> Computed by the new separation field on its first run:
+> **`9,574 451×10⁻³`** — **four** orders. `2,46×10⁻³` was the
+> **pre-`fd34a44`** figure *(verified — `pass5c.rs` L1409–L1431 read at
+> the tip)*.
+>
+> ★★★ **The argument was never harmed, only the number — and the stale
+> figure UNDERSTATED the claim by a factor of four.** That is why this
+> kind is the hardest to find: **a literal inside a justification is
+> load-bearing for the conclusion's direction, which stayed right, and
+> wrong only in a magnitude nothing re-reads.** A stale number that
+> weakens your own argument raises no suspicion at all.
+>
+> **A companion fix of a different kind, worth distinguishing:**
+> `NEUTRAL_EXACT`'s `0,834` / `5,0` were replaced by the emitted field
+> although **both were still true**. They are properties of *which
+> fixture is loaded*, so **a third arm would have falsified the sentence
+> with nobody touching a line of it** *(verified — `pass5c.rs`
+> L1286–L1291)*. ★ **One literal was stale; the other was only
+> accidentally true. This rule covers both, and the second case is the
+> one the rule's original wording does not obviously reach** — it is
+> not that the harness *can* compute the number, it is that the number
+> is a property of the run rather than of the claim.
+>
+> **Count, with provenance:** `icc-conformance` calls this the fourth
+> instance; `lib.rs` L1697–L1703 records *"three claim-bearing literals
+> in this crate went false inside a day"* *(verified)*, and **this entry
+> names two of them.** The fourth is named here; **the enumeration of
+> the first three is not re-derived** — a count is not an inventory.
 
 ---
 
@@ -3710,3 +3774,116 @@ or a synthetic fixture is authored that *does* separate `InitialLab`
 from `outRamp[first]`, which would give the authored corpus the power it
 lacked here and is the cheapest way to make this entry's warning
 concrete rather than historical.
+
+---
+
+### DL-037 — ★★★ **candidate separation is an EMITTED FIELD with its own guard order, and the guards are the decision.** `UNGRADED` is tested **before** the comparison and `ZERO-SEPARATION` **outranks everything**, because otherwise the mechanism blames the fixture for a decision the tolerance made
+
+**Date:** 2026-08-12 · **Occasioned by:** **DL-033**'s own *"Revisit
+if"* clause — *"a cross-check is built whose candidate separation is
+stated in advance, at which point this rule has a worked positive
+example instead of only its founding negative one"* · **Designed and
+built by:** `icc-conformance` · **Filed by:** `icc-librarian` from
+`tools/difftest/src/lib.rs`, read at the tip `e26d9ba` *(verified — the
+`SepPower` enum at L1441–L1476, the guard chain at L1653–L1695, and
+`separation_counts` at L1865–L1902)* · **Relates to** **DL-033** (the
+rule this implements), **DL-019** (report-don't-grade), **DL-018** (a
+gate must not reward deletion), **DL-031** (a count needs its
+apparatus), **DL-036** and `NUMERIC_CLAIMS.md` **§3.28**
+
+#### The decision
+
+> **Every conformance record states how far away the nearest plausible
+> RIVAL answer was, in the same units as the metric, as a field the
+> harness computes — not as prose. Three stated states, no fourth:
+> `measured` (a named rival, its value, the distance), `no named
+> alternative` (somebody looked, and the reason is carried), and
+> `unstated` (nobody has considered this row). A blank is not one of
+> them.**
+
+#### ★★★ The guard order, which is the load-bearing part
+
+The classification runs in this order, and **each position is an
+argument** *(verified — `lib.rs::separation_power`)*:
+
+| # | Guard | Why it sits there |
+|---|---|---|
+| 1–2 | `Unstated` / `NoNamedAlternative` | nothing to compare; state 2 records that a **person looked** |
+| 3 | `NaN` → **`sep-broken`** | apparatus breakage is **said out loud**, never classified into a verdict |
+| 4 | distance `== 0` → **`ZERO-SEPARATION`** | ★ **checked before everything below it**, because a row whose candidates are the same number has no power **at any tolerance and in any units** |
+| 5 | incommensurable units → **`incommensurate`** | the number is emitted, **the test is not run** |
+| 6 | tolerance not finite → **`UNGRADED`** | ★★★ **checked BEFORE the comparison** |
+| 7 | `distance <= tolerance` → **`BLIND`**, else **`DISCRIMINATING`** | `<=` deliberately matches `Record::graded`'s own pass rule, so *"the separation is exactly the tolerance"* reads identically in both places: **not** discriminating |
+
+**Why 6 must precede 7, stated as the arithmetic it is:** `d <= inf` is
+true for **every** finite `d`. A naive implementation that compared
+first would brand **every REPORTED row `BLIND`** — ★ **blaming the
+fixture for a decision the TOLERANCE made.** Under **DL-019** this
+project deliberately reports-and-does-not-grade wherever a disagreement's
+authority does not exist, so that mislabelling would have fired on
+exactly the rows DL-019 created, and the new mechanism's very first
+output would have been a systematic slander of the corpus.
+
+**Why 4 outranks the rest:** the two states differ **in their remedy,
+not in their severity**. *A blind row can be rescued by tightening a
+tolerance; a zero-separation row can only be rescued by a different
+fixture.* Collapsing them would put a fixture-authoring job into a
+bucket labelled "adjust a number". The two id lists are emitted
+**separately** for the same reason.
+
+#### ★★ `BLIND` does not affect status or exit code, and that is deliberate
+
+A blind row **passes**, and the aggregate says so in a line nobody's CI
+gate reads. **This is not an oversight and it is not weakness.**
+
+> **If stating a separation could turn a green row red, the cheapest
+> response to a blind row is to stop stating separations.** The field is
+> voluntary in exactly the way that keeps it honest: **`unstated` is
+> printed as `UNSTATED`, not as a blank**, so declining to state one is
+> *visible* — but it is never *punished*.
+
+★ **This is DL-018 read from the other end.** DL-018 says an upper-bound
+gate on a deliberate cost must be paired with a prediction pin, because
+otherwise **deleting the requirement makes the gate greener**. Here the
+same pressure is removed at the source: there is no gate to make
+greener, so there is no incentive to delete the evidence. **A
+disclosure mechanism and an enforcement mechanism must not be the same
+mechanism.**
+
+#### What the first run found, and it was about our own instruments
+
+1. **The row carrying the entire 4.2.5.4 finding is `UNGRADED`** —
+   tolerance `inf`, separation `4,717 441`, **so it could never have
+   failed however far the candidates moved.** The suite's real power on
+   that question lives in §B's *device* rows, **which is not where
+   anyone would look**: the row named `estimators` is the one that
+   cannot grade estimators. `NUMERIC_CLAIMS.md` **NC-176**.
+2. **A fourth instance of DL-034**, found **by the apparatus rather than
+   by a person**, on the first run of the field that computes it
+   (**NC-178**, §3.28.3).
+
+#### What this entry does NOT decide
+
+- **It does not close DL-033's operational item 1.** **16 of 145 rows**
+  state a separation, all of them Pass 5c's. See the dated note under
+  DL-033.
+- **It does not make `blind=0` a statement about the suite.** It is a
+  statement about the **six** rows that reached guard 7.
+- **It does not make a stated separation TRUE.** The rival candidate is
+  named by a human, from the two implementations' sources; **a wrong or
+  missing rival produces a confidently wrong separation**, and nothing
+  here detects that. **DL-023** — *state what the two implementations
+  were free to disagree about, from their sources, before the run* — is
+  the discipline that guards the input, and it is unchanged and
+  unaided by this.
+- **It does not apply to `machine-timing` rows**, where the rival
+  candidate is not a different answer but a different run, and
+  **NC-173**'s withdrawal is the precedent for what to do there instead.
+
+**Revisit if:** a `sep-broken` row ever appears (the NaN state has never
+fired and its handling is untested by anything but a unit test); or a
+row's stated rival is later found to have been the wrong rival, which is
+the failure mode this entry explicitly does not cover and would need its
+own rule; or `BLIND` is ever proposed as a gating condition, at which
+point the pressure argument above must be answered rather than
+overlooked.

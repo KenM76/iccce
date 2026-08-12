@@ -3625,3 +3625,120 @@ against the file rather than transcribed from the dispatch.
   unchanged.
 - **That the librarian has a shell.** **Three filings in a row without
   one.** Ask, per session; never inherit.
+
+---
+
+## 2026-08-12 — the **candidate-separation apparatus** filing (third of the session, seventeenth overall)
+
+**Tip:** `e26d9ba` *(**verified** — `.git/refs/heads/master` read; it
+says **nothing** about whether that tip has been pushed)*.
+**Filed by:** `icc-librarian`, **without a shell — fourth consecutive
+filing.** **Dispatched by:** `icc-engineer`, with provenance tagged
+throughout, which is what made this filing cheap.
+
+### What arrived, and how it was treated
+
+| Provenance | Content | What this librarian did |
+|---|---|---|
+| **VERIFIED by the engineer** (it ran the runner) | `pass=142 fail=0 skip=3 error=0`; the `separation` aggregate; three row figures; the `9 574×` margin | **Carried.** No shell here. Recorded as carried, per row |
+| **VERIFIED by the engineer** (it enumerated them) | the three `skip` ids and their verbatim reason | **Carried — and the REASON's key phrases corroborated in `pass4.rs` L1210 and L1861**, read at the tip |
+| **CARRIED** from `icc-conformance` | the apparatus design, GP-002, `TOLERANCES.md`'s new rows, the CI-power risk | **The MECHANISM was verified from source rather than accepted**: `lib.rs` L1441–L1476, L1653–L1695, L1865–L1902; `pass5c.rs` L1286–L1291, L1409–L1431; `TOLERANCES.md` §1.1 and §5; `tools/gen-profiles/README.md` §4.1 and `recipes.rs` L931/L1726 |
+
+### The three findings worth carrying out of this session
+
+1. **★★★ The row carrying the entire 4.2.5.4 finding is `UNGRADED`** —
+   tolerance `inf`, separation `4,717 441`. **It could never have
+   failed.** The `inf` was the *correct* call under DL-019; the finding
+   is that a REPORTED row's separation was invisible, so *"we measured
+   it"* and *"we could catch a regression in it"* were
+   indistinguishable in the record. **They are now two printed states.**
+2. **★★★ The corrected clause is documented, not defended, on any clean
+   machine.** The only differential arm with power is a **Windows system
+   profile**; on CI it skips and **a full reversion of `fd34a44` stays
+   green.** A third arm is **commissioned, with its power to be
+   demonstrated by injecting the reverted behaviour** — recorded as a
+   commitment, **not as a result**.
+3. **★★ A fourth stale literal, found by an apparatus rather than by a
+   person** — and it **understated** its own argument by 4×, which is
+   why nobody finds this kind by reading.
+
+### ★ Two disagreements between the dispatch and the tree, both small, both recorded
+
+- **The dispatch cited "§7.12 item 4"** for the skip enumeration.
+  **§7.12's newly-owed 4 is the `README.md` throughput sweep**, already
+  discharged at the sixteenth filing; the skip item is **newly-owed 3**
+  *(verified — §7.12's numbered list read)*. **Nothing turns on it.
+  Recorded because §2.12's tally is only useful if the small instances
+  go in too** — this is the sixth.
+- **"Open since the eleventh filing"** traces to **this librarian's own
+  `SESSION_LOG.md` line** *(verified — *"Eleventh filing; still blocked
+  on a shell"*)*. **It is our phrase, not the engineer's**, and this
+  filing did not re-derive the count.
+
+### ★★ What this librarian refused to round up
+
+- **`blind=0` is out of 16, not out of 145** — the engineer's own
+  phrasing, preserved verbatim on request. ★ **And this ledger sharpened
+  it in the same direction, not the other:** strictly it is out of the
+  **six** rows that reached the blind-vs-discriminating comparison; the
+  other six measured rows were diverted by a guard before it.
+- **The skip enumeration is discharged FOR THE CURRENT TIP.** The item
+  was opened against **NC-160's** `skip=3`, at an **earlier** tip. Same
+  count, structurally the same cause, **not established as the same
+  three rows** — re-listed as newly-owed 4.
+- **"The fourth instance of DL-034" is carried as a COUNT.** DL-034's
+  entry names two; `lib.rs` records three. **The enumeration of the
+  first three was not re-derived** — a count is not an inventory.
+- **The runner is not named.** `pass=142` and the 145-row aggregate
+  arrived **without a binary or command line**; the attribution to
+  `tools/difftest` is an **inference from the row ids**. **DL-031 is the
+  entry this violates**, and ★ **its founding instance included the
+  number `129` — which the new aggregate now also prints, for a
+  completely unrelated quantity.** Filed as a collision hazard before it
+  can bite.
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `NUMERIC_CLAIMS.md` | **§3.28** — the apparatus's first run: **NC-176** (the UNGRADED row), **NC-177** (the ZERO-SEPARATION row, GP-002), **NC-178** (the healthy control at `9 574,451×` its bound); the coverage decomposition **145 → 16 → 12 → 6**; the `129` collision hazard; the fourth stale literal; the `skip=3` enumeration with its two limits; **§3.28.5's CI-power RISK**; GP-002 and the deliberate non-regeneration of the fixture; a coverage statement. A **fifth dated note on NA-009** carrying the `TOLERANCES.md` §5 pointer and its **fourth** caveat. **§7.14** — five items moved, five added. **§8** extended through **DL-037**. |
+| `ARCHITECTURE.md` | **§5** — **DL-037** (candidate separation is an emitted field; the guard order is the decision; `BLIND` deliberately does not gate). **Dated notes appended to DL-033** (its "Revisit if" has fired; item 1 closed for Pass 5c, open elsewhere, 16/145) **and to DL-034** (the fourth instance, and the `NEUTRAL_EXACT` case the rule's original wording does not obviously reach). **DL-001 … DL-036 bodies untouched — appended to, never rewritten.** |
+| `ROADMAP.md` | A dated block: the instrument, the UNGRADED row, the 16/145 coverage, the undefended-clause risk, the skip enumeration, the fourth stale literal. **No plan text and no earlier block rewritten.** |
+| `SESSION_LOG.md` | This entry. |
+
+**Not touched, by instruction and by ownership:** `README.md`,
+`TOLERANCES.md`, everything under `tools/`, `crates/` and `fixtures/`,
+every `Cargo.toml`, the corpus, `LEGAL.md`. ★ **`tools/difftest/src/lib.rs`,
+`src/pass5c.rs`, `src/pass4.rs`, `tools/gen-profiles/README.md`,
+`src/recipes.rs` and `docs/TOLERANCES.md` were read as THE SOURCE for
+this filing, not written** — the dispatch named them as already
+committed and off-limits, and every figure attributed to them here was
+checked against the file.
+
+### Left for the next session to not assume
+
+- **That the suite would catch a 4.2.5.4 regression.** ★ **On a machine
+  without a Windows system profile it would not** — the rows skip and
+  everything stays green. **This is the most load-bearing sentence in
+  the filing.**
+- **That the third differential arm exists.** It is **commissioned**.
+  Nothing has been measured, and this ledger asserts nothing about it.
+- **That the separation field covers the suite.** **16 of 145**, all
+  Pass 5c's. **129 rows print `UNSTATED`.**
+- **That `blind=0` means the suite is not blind.** It is a statement
+  about **six** rows.
+- **That converting `unstated` to `no-named-alternative` is progress.**
+  Without a reason **per row** it destroys the field's meaning while
+  making the aggregate look finished (§7.14 newly-owed 1).
+- **That NC-160's three skips are the three enumerated here.** Same
+  count, same structural cause, **not established**.
+- **That the `129` in the separation aggregate has anything to do with
+  the `129` in `cargo test --workspace`.** Two apparatus, two
+  quantities, one coincidence.
+- **That a CI run has ever been observed here.** **Seventeen filings,
+  none.** The Linux debt now has a named cost.
+- **That the tip is pushed, or that any push was authorised.** The hash
+  is corroborated from `.git/refs/heads/master`; that says **nothing**
+  about pushing. Rule 9 and DL-024 unchanged.
+- **That the librarian has a shell.** **Four filings in a row without
+  one.** Ask, per session; never inherit.

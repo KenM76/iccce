@@ -46,8 +46,30 @@ that needs the record *shape* attached**, because rows get reformulated.
   on all five) validates the **denominator** — nothing was filtered or
   `#[ignore]`d — and says nothing about pass/fail or coverage.
 - **A green census can still hide things**: `skip=3` was reported and
-  never enumerated. A skip is the runner declining to grade, and it is
-  invisible in `fail=0`.
+  never enumerated for three filings. ★ **Enumerated 2026-08-12 (tip
+  `e26d9ba`): three rows, ONE cause** — the Pass 4 `icc-absolute`
+  PCS-isolation rows, withheld because `transicc` applies the D.6/D.7
+  media-white scale on lcms2's side while iccce's A2Bx is media-relative
+  by construction. Grading them would mean **modelling the oracle rather
+  than measuring it**. **A principled refusal to grade, not a concealed
+  failure** — and `fail=0` could never have said so. **Caveat that
+  survives: those are the skips of the CURRENT tip; the item was opened
+  against an earlier run's `skip=3`, and same-count-same-cause is not
+  same-rows.**
+
+**★★ UPDATE 2026-08-12 (seventeenth filing) — A NUMBER COLLISION THIS
+ENTRY PREDICTED.** The new candidate-separation aggregate prints
+**`unstated=129`**. The workspace unit suite is also **129**. **Two
+apparatus, two unrelated quantities, one tree, one day apart.** Nothing
+may be inferred from their equality and it will not survive the next
+test being written. ★ **This is the exact failure this entry exists to
+prevent, arriving from a direction nobody watched** — not a stale count
+re-quoted, but a *fresh* count that happens to equal an old one. **Name
+the runner in the same sentence as the number, always.** And in that
+same dispatch the runner producing `pass=142` and the 145-row aggregate
+was **not named at all** — the attribution to `tools/difftest` is an
+inference from the row ids (`pass4/…`, `pass5c/…`), which is recorded in
+the ledger as a gap rather than glossed.
 
 Related: [[iccce-pass-status]], [[iccce-verify-own-draft-too]],
 [[iccce-git-files-readable-without-shell]].

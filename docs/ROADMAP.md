@@ -525,6 +525,75 @@ DL-020: an authored fixture discharges *the doubt it was authored for*
 
 ---
 
+### 2026-08-12, later still — **DL-033 gets its instrument, and the instrument's first act was to tell us our best row could never have failed**
+
+*(Third filing of the day's third session, tip **`e26d9ba`**. **No plan
+text and no earlier block is rewritten.** Row figures and the census are
+**carried** from `icc-conformance` via the engineer; the mechanism, the
+guards and the corrected literals are **verified from source**. This
+librarian has no shell — fourth consecutive filing.)*
+
+**★★★ 1. Candidate separation is now an emitted field on every
+conformance record.** DL-033 said a cross-check's power is bounded by
+the distance between the two **candidate** answers, not by the tightness
+of its residual — and left that as prose nobody could enforce.
+`tools/difftest` now prints, per row, the named rival candidate, the
+value the row would have observed under it, and the distance. **Two
+design guards are the entry** (`ARCHITECTURE.md` **DL-037**):
+**`UNGRADED` is tested BEFORE the comparison**, because `d ≤ ∞` holds
+for every finite `d` and a naive test would brand every DL-019
+report-don't-grade row `BLIND` — blaming the fixture for a decision the
+**tolerance** made; and **`ZERO-SEPARATION` outranks everything**,
+because a blind row is rescued by tightening a number and a
+zero-separation row only by **a different fixture**. ★ **`BLIND` does
+not affect status or exit code, deliberately** — if disclosing a
+weakness could turn a row red, the cheapest response is to stop
+disclosing.
+
+**★★★ 2. And the first run's finding is about our own instruments, not
+about colour.** The row carrying the **entire 4.2.5.4 result** —
+`pass5c/swop/estimators/black-points-in-lab` — **is graded at infinity**,
+so it **could never have failed however far the candidates moved.** Its
+separation is **`4,717 441`**, the defect magnitude to six figures, and
+**no gate consumes it.** The suite's real power on that question lives
+in **§B's *device* rows**, which is a far less obvious place than the
+row named *"estimators"*. `NUMERIC_CLAIMS.md` **§3.28**, **NC-176**.
+
+**★★ 3. Coverage, and it is not to be rounded up: 16 of 145 rows carry
+a separation, all Pass 5c's.** `blind=0` is out of **16** — strictly,
+out of the **six** rows that reached the comparison at all. **129 rows
+have had no rival candidate considered.** DL-033's operational item is
+**closed for Pass 5c and open everywhere else**, and it must not be read
+as closed because the mechanism exists.
+
+**★★★ 4. A RISK, not merely a coverage gap: the corrected 4.2.5.4
+clause is documented but UNDEFENDED on any clean machine.** The only
+differential arm with power is a **Windows system profile**. On CI — or
+any machine without that directory — **those rows skip and everything
+stays green through a full reversion of the fix.** A third, purpose-built
+arm is **commissioned**, with the requirement that its power be
+**demonstrated by injecting the reverted behaviour** rather than
+asserted. ★ **This collides with the Linux debt owed since Pass 0**: the
+one platform never run on is the platform where the detector is absent.
+
+**★ 5. `skip=3` is enumerated at last**, owed for three filings and
+blocked on a shell each time. **Three rows, one cause** — the Pass 4
+`icc-absolute` PCS-isolation rows, withheld because `transicc` applies
+the D.6/D.7 media-white scale on lcms2's side and iccce's A2Bx is
+media-relative by construction. **Grading them would mean reproducing
+lcms2's absolute handling, i.e. modelling the oracle rather than
+measuring it.** ★ **A principled refusal to grade, not a concealed
+failure** — and `fail=0` could never have said so.
+
+**★ 6. A fourth stale literal, found by an apparatus rather than a
+person** (**DL-034**'s fourth instance): a justification asserted the
+candidates were `2,46×10⁻³` apart, *"three orders above the bound"*;
+computed, `9,574 451×10⁻³` — **four**. **The argument was never harmed,
+only the number**, and the stale figure **understated** the claim — which
+is exactly why nobody notices a stale literal inside a justification.
+
+---
+
 ## Pass 0 — scaffold and the oracle
 
 **STATUS: DONE — 2026-08-11.** Evidence in the block below the done-when.
