@@ -18,13 +18,13 @@
 //! here on the item.
 
 /// Read a big-endian `u16` at `off`.
-pub fn u16_be(bytes: &[u8], off: usize) -> Option<u16> {
+pub(crate) fn u16_be(bytes: &[u8], off: usize) -> Option<u16> {
     let b = bytes.get(off..off + 2)?;
     Some(u16::from_be_bytes([b[0], b[1]]))
 }
 
 /// Read a big-endian `u32` at `off`.
-pub fn u32_be(bytes: &[u8], off: usize) -> Option<u32> {
+pub(crate) fn u32_be(bytes: &[u8], off: usize) -> Option<u32> {
     let b = bytes.get(off..off + 4)?;
     Some(u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
 }
@@ -35,7 +35,7 @@ pub fn u32_be(bytes: &[u8], off: usize) -> Option<u32> {
 /// element `[0]` the high word (`icc__s__number_encodings.md`), which is
 /// byte-identical to one big-endian `u64` — so a single 8-byte read is
 /// faithful. Only `header.attributes` uses this type in ICC.1.
-pub fn u64_be(bytes: &[u8], off: usize) -> Option<u64> {
+pub(crate) fn u64_be(bytes: &[u8], off: usize) -> Option<u64> {
     let b = bytes.get(off..off + 8)?;
     Some(u64::from_be_bytes([
         b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
@@ -58,7 +58,7 @@ pub struct S15Fixed16(pub i32);
 
 impl S15Fixed16 {
     /// Read at `off`. The `as i32` cast is the sign-extension step.
-    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+    pub(crate) fn read(bytes: &[u8], off: usize) -> Option<Self> {
         #[allow(clippy::cast_possible_wrap)] // the wrap IS the decode: two's complement
         u32_be(bytes, off).map(|raw| Self(raw as i32))
     }
@@ -80,7 +80,7 @@ impl S15Fixed16 {
 pub struct U8Fixed8(pub u16);
 
 impl U8Fixed8 {
-    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+    pub(crate) fn read(bytes: &[u8], off: usize) -> Option<Self> {
         u16_be(bytes, off).map(Self)
     }
 
@@ -101,7 +101,7 @@ impl U8Fixed8 {
 pub struct Signature(pub u32);
 
 impl Signature {
-    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+    pub(crate) fn read(bytes: &[u8], off: usize) -> Option<Self> {
         u32_be(bytes, off).map(Self)
     }
 
@@ -147,7 +147,7 @@ pub struct DateTimeNumber {
 }
 
 impl DateTimeNumber {
-    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+    pub(crate) fn read(bytes: &[u8], off: usize) -> Option<Self> {
         Some(Self {
             year: u16_be(bytes, off)?,
             month: u16_be(bytes, off + 2)?,
@@ -182,7 +182,7 @@ pub struct XyzNumber {
 }
 
 impl XyzNumber {
-    pub fn read(bytes: &[u8], off: usize) -> Option<Self> {
+    pub(crate) fn read(bytes: &[u8], off: usize) -> Option<Self> {
         Some(Self {
             x: S15Fixed16::read(bytes, off)?,
             y: S15Fixed16::read(bytes, off + 4)?,

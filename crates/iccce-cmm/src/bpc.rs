@@ -99,6 +99,16 @@ pub enum EstimationIntent {
 /// 4.2.2.2, VERBATIM sets: Gray `{(0) (1)}`, RGB `{(0,0,0) (1,1,1)}`,
 /// CMYK `{(0,0,0,0) (1,1,1,1) (0,0,0,1) (1,1,1,0)}`.
 ///
+/// ★ PUBLIC DELIBERATELY, unlike the byte-level readers in
+/// `iccce-profile::num` which were sealed to `pub(crate)` in the same
+/// pre-publication pass. The distinction: those decode *our* file
+/// format and a consumer has no business calling them, whereas this
+/// and its three siblings are a faithful implementation of a
+/// *published algorithm* that a caller may legitimately want to drive
+/// with its own black points, its own profiles, or no profiles at
+/// all. The clause citations in these doc comments are the point of
+/// exposing them.
+///
 /// ISO NOTE 2 is why this is a SEARCH rather than a constant:
 /// "Determining the darkest colour in this way works for profiles
 /// with both the normal polarity and inverse polarity." Adobe used a
