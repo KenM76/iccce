@@ -390,9 +390,22 @@ pub fn srgb_white_d65() -> Option<Xyz> {
 /// `rXYZ`/`gXYZ`/`bXYZ` and all three TRC tables are BYTE-IDENTICAL to
 /// the 1998 HP profile's.** Only the header, `wtpt`, `bkpt` and `chad`
 /// differ. It is the same nine numbers in a corrected wrapper, so
-/// checking against it is not a second opinion — **there is still
-/// exactly one lineage for the D50-adapted sRGB colorants, and no
-/// document publishes them at all.**
+/// checking against it is not a second opinion — **there is exactly one
+/// FILE lineage for the D50-adapted sRGB colorants.**
+///
+/// ★★ **That sentence used to end "…and no document publishes them at
+/// all", and it survived the rewrite seventy lines above that names the
+/// document which does.** Caught by `icc-librarian` reading the source,
+/// not by me editing it.
+///
+/// The mechanism is worth more than the correction: **the clause was
+/// still true right up to its last six words.** One lineage among
+/// *files* remains a fact; "no document publishes them" became false the
+/// moment `srgb.pdf` arrived. A reader scanning for staleness checks
+/// whether a sentence is wrong, and this one reads correct until the
+/// end — which is precisely why a retraction has to hunt the *claim*
+/// through every clause that carries part of it, not just the paragraph
+/// that states it.
 #[must_use]
 pub fn srgb() -> MatrixTrc {
     // These unwraps are on sourced, non-degenerate constants. If either
@@ -733,6 +746,46 @@ mod tests {
     /// strictly stronger than either of the two classes this model could
     /// previously be checked against.
     ///
+    /// ## ★★★ Ground truth for the CONSTRUCTION, not for the colorimetry
+    ///
+    /// **This rider is mandatory and must travel with any quotation of
+    /// this row.** ICC is the definer of *the artifact* — sRGB itself has
+    /// no D50 colorants; only an ICC profile's encoding of sRGB does — so
+    /// ICC's values are authoritative for **what an sRGB ICC profile
+    /// should contain**. They are not thereby the more accurate
+    /// colorimetry, and on the evidence they are the less accurate:
+    ///
+    /// - ICC's §A.7 matrix **descends from W3C 1996's 4-decimal print**
+    ///   (`inv(§A.7)` reproduces that 4-dp matrix to `4.7×10⁻⁸`, and
+    ///   re-inverting and rounding to 7 dp reproduces all nine cells of
+    ///   §A.7). iccce builds its D65 matrix **exactly** from BT.709-6's
+    ///   chromaticities.
+    /// - ICC's published `chad` **does not map D65 onto D50** — it maps
+    ///   the *rounded* white `(0.9505, 1.0000, 1.0890)` that §A.4 states,
+    ///   which is why it misses ICC's own stated D50 by `≈4.9×10⁻⁵`.
+    ///
+    /// **So this test asserts INTEROPERABILITY with ICC's published
+    /// encoding, not accuracy against it.** Do not let it be written as
+    /// the latter — that would be the exact claim-inflation this project
+    /// exists to prevent, and it would be inflating in the wrong
+    /// direction.
+    ///
+    /// ## ★★ And a related trap: ICC's `chad` is NOT ICC.1's Bradford
+    ///
+    /// Eigendecomposing the published `chad` recovers a cone matrix whose
+    /// `M_A[0][0]` is **`0.8950`**. **ICC.1:2022 Annex E.3 Eq. (E.1)
+    /// prints `0.8951`.** Exact reconstruction confirms it: `0.8951`
+    /// leaves `5.66×10⁻⁶` (0.371 ULP), `0.8950` leaves `5.7×10⁻¹⁶` —
+    /// exact. The discriminating digit was in the corpus all along, as
+    /// the row-sum check: E.1's first row sums to `1.0001`, the recovered
+    /// one to `1.0000`.
+    ///
+    /// It is below one `s15Fixed16` step so no colour changes, **but the
+    /// statement "recompute Annex E.3's Bradford and you get ICC's
+    /// recommended `chad`" is false.** iccce uses E.3's `0.8951`, which
+    /// is why the two differ at all.
+    /// *(Established by `icc-spec-librarian`, 2026-08-17.)*
+    ///
     /// ★ The document was obtained by the operator on 2026-08-17 from
     /// `color.org`, whose terms bar automated retrieval. Held at
     /// `ICC_Spec/_sources/srgb_bt709/`.
@@ -763,9 +816,9 @@ mod tests {
     /// A 7-decimal print of a matrix whose cells are of order 1–3 admits
     /// a half-ULP of `5×10⁻⁸` per cell, which propagates through the
     /// inversion and the adaptation to the few-ULP level observed. The
-    /// bound sits just above the measured `3.02` so a real change in the
-    /// construction moves it, and it is far below the `11.13` the shipped
-    /// file exhibits — **so this test also distinguishes our construction
+    /// bound sits just above the **measured `3.02`** so a real change in
+    /// the construction moves it, and it is far below the `11.13` the
+    /// shipped file exhibits — **so this test also distinguishes our construction
     /// from the file's, which is the discrimination that matters.**
     ///
     /// This needs no corpus and cannot skip: the expectation is
@@ -793,6 +846,10 @@ mod tests {
         const ULP: f64 = 1.0 / 65536.0;
         const TOLERANCE_ULPS: f64 = 4.0;
 
+        // ★ Quote the PAIR, never the bound alone: "within 4 ULP" reads
+        // as a number someone chose; "3.02 observed against a 4 ULP
+        // bound" is a tolerance with its margin visible. Printed every
+        // run so the margin cannot become folklore.
         let ours = srgb().matrix();
         let mut worst = 0.0_f64;
         let mut worst_cell = (0, 0);
@@ -805,6 +862,9 @@ mod tests {
                 }
             }
         }
+        println!(
+            "constructed sRGB vs ICC's published colorants: {worst:.4} ULP worst              (cell {worst_cell:?}), bound {TOLERANCE_ULPS} ULP"
+        );
         assert!(
             worst <= TOLERANCE_ULPS,
             "constructed sRGB colorants differ from ICC's PUBLISHED values by {worst:.2} ULP at              cell {worst_cell:?}, over the {TOLERANCE_ULPS} ULP bound. The expectation is ICC's              own document, not a file — if this fails, the CONSTRUCTION is what to check."
