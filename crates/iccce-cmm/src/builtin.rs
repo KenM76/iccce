@@ -77,10 +77,16 @@
 //!
 //! ★ It is **not** byte-identical to the shipped HP/`sRGB2014` profile
 //! either, and that is now known to be the file's problem: the file
-//! misses ICC's published values by **11.13 ULP** in `bXYZ.Z` while this
-//! construction misses them by **0.90 ULP**. Do not restore a test
-//! against the file — see [`srgb`] for why that framing was wrong for
-//! most of a day.
+//! misses ICC's published values by **11.13 ULP** at its worst cell
+//! while this construction misses them by **3.02 ULP**. Do not restore
+//! a test against the file — see [`srgb`] for why that framing was
+//! wrong for most of a day.
+//!
+//! ★★ **Compare worst cells, not `bXYZ.Z`.** An earlier version of this
+//! paragraph contrasted the file's `11.13` with this construction's
+//! `0.90` in that one cell. Both numbers are correct and the comparison
+//! is not: **our `0.90` is a partial cancellation of two ≈2.5 ULP
+//! terms**, not a small error. See [`srgb`] for the decomposition.
 
 use crate::curve::Trc;
 use crate::matrix_trc::MatrixTrc;
@@ -347,18 +353,52 @@ pub fn srgb_white_d65() -> Option<Xyz> {
 /// mis-attribution survived because the number itself was correct. **We
 /// had the right residual and the wrong owner for it.**
 ///
-/// ## What the remaining 3.02 ULP actually is — fully explained
+/// ## What the remaining 3.02 ULP actually is — TWO terms, not one
 ///
 /// ICC's construction is exactly recoverable from ICC's own two printed
 /// matrices: **their published `chad` × the inverse of their §A.7
 /// XYZ(D65)→RGB matrix reproduces their published colorants to
 /// `0.00 ULP`** *(verified 2026-08-17, exact rational arithmetic)*.
 ///
-/// So the difference is entirely accounted for by **which D65 matrix
-/// each side starts from**: ICC inverts their own matrix as *printed to
-/// 7 decimals*; iccce builds it *exactly* from BT.709-6's chromaticities
-/// by Grassmann's laws. iccce's route carries no transcription of a
-/// rounded intermediate, which is why it is kept.
+/// ★★ **This section said the difference was "entirely accounted for by
+/// which D65 matrix each side starts from". That was wrong**, and
+/// `icc-conformance` caught it while deriving Pass I's bound. Measured
+/// by substituting one side at a time, exactly:
+///
+/// | combination | worst cell | `bXYZ.Z` |
+/// |---|---|---|
+/// | **ours** (our `chad` × our D65) | **3.020 ULP** | **−0.897** |
+/// | ICC's `chad` × our D65 | 2.480 ULP | +1.586 |
+/// | our `chad` × ICC's D65 | 2.482 ULP | −2.482 |
+/// | ICC's × ICC's | **0.000** | +0.000 |
+///
+/// **Both terms are real and they are the same size:**
+///
+/// - **The D65 term** — ICC inverts their §A.7 matrix *as printed to 7
+///   decimals*; iccce builds it *exactly* from BT.709-6's chromaticities.
+/// - **The `chad` term** — ICC's published matrix is not linear Bradford
+///   as ICC.1 Annex E.3 prints it (see below); iccce's is.
+///
+/// ## ★★★ And the `bXYZ.Z` figure is a CANCELLATION, not closeness
+///
+/// The **`−0.897 ULP`** in blue-Z — the cell this module elsewhere
+/// contrasts favourably with the shipped file's `11.13` — is
+/// **`−2.483` from our `chad` plus `+1.585` from our D65**, partially
+/// cancelling. It is not evidence that either term is small; it is two
+/// terms of ≈2.5 ULP happening to have opposite signs in that cell.
+///
+/// **Do not quote `0.90 ULP` as a merit of this construction.** The
+/// defensible figure is the **worst cell, 3.02 ULP**, which is what the
+/// test bounds and what the changelog states. A number that looks like
+/// accuracy and is actually a coincidence of signs is precisely the
+/// shape this project exists to catch — and it survived here for hours
+/// because it pointed the flattering way.
+///
+/// ★ Registered as **NA-010** in `docs/TOLERANCES.md`. And a
+/// consequence worth stating: **adopting ICC's `0.8950` cone matrix
+/// would make this WORSE** (`4.686594×10⁻⁵` against the current
+/// `4.607402×10⁻⁵`), because it removes one of the two cancelling terms
+/// rather than both.
 ///
 /// ★ A related finding worth knowing before trusting the published
 /// `chad` blindly: **it does not map D65 exactly onto ICC's own stated

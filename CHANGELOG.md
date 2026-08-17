@@ -114,12 +114,27 @@ the measurements that say how far to trust it.
 
   | | worst cell | `bXYZ.Z` |
   |---|---|---|
-  | **this construction** | **3.02 ULP** | **0.90 ULP** |
+  | **this construction** | **3.02 ULP** | 0.90 ULP † |
   | the shipped HP 1998 / `sRGB2014.icc` file | **11.13 ULP** | **11.13 ULP** |
 
   The long-standing ~12 ULP blue-Z residual is **the file's error**, not
   iccce's. The gap in the literature had been silently treated as
   evidence that the file *was* the reference.
+
+  > **† Corrected after tagging — compare worst cells, not `bXYZ.Z`.**
+  > Both numbers are right; the juxtaposition is not. Measured by
+  > substituting one side at a time, this construction's `0.90 ULP` in
+  > blue-Z is **a partial cancellation of two terms of ≈2.5 ULP**
+  > (`−2.483` from our chromatic adaptation, `+1.585` from our D65
+  > matrix) — not a small error. **The defensible figure is the worst
+  > cell, `3.02 ULP`**, which is what the test bounds and what the
+  > release notes quote.
+  >
+  > Left in place rather than deleted: removing a number is worse than
+  > annotating it, and *a figure that looks like accuracy and is actually
+  > a coincidence of signs* is exactly the failure this project exists to
+  > catch. It survived a day because it pointed the flattering way.
+  > Registered as **NA-010**.
 
 ### Measured
 
