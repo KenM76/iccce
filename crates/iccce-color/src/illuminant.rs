@@ -35,9 +35,30 @@ pub const D50: Xyz = Xyz {
 
 /// D65 chromaticity — the sRGB / BT.709 white point.
 ///
-/// Source: lcms2 `cmsvirt.c` verbatim (`{ 0.3127, 0.3290, 1.0 }`).
-/// **SINGLE SOURCE — not cross-verified** (`cie__ref__colorimetry_core.md`
-/// §2, recorded gap: an independent D65 source). Exposed as
+/// **Source: Rec. ITU-R BT.709-6 (06/2015), item 1.4**, corroborated by
+/// W3C's 1996 sRGB proposal Table 0.2, by W3C CSS Color 4, and by lcms2
+/// `cmsvirt.c` (`{ 0.3127, 0.3290, 1.0 }`). **Four publications, zero
+/// disagreement** — `cross_verified_2src`, and the primary source is a
+/// standards body that is neither IEC nor an implementation.
+///
+/// ★★ **This comment said "SINGLE SOURCE — not cross-verified" until
+/// 2026-08-17, and that had become false.** It mattered more than a
+/// stale note usually does: **lcms2 is this project's differential
+/// oracle**, so while D65 rested on lcms2 alone, anything built on it —
+/// notably `iccce_cmm::builtin::srgb` — would have put the oracle's own
+/// white point underneath every conversion iccce then checks *against
+/// that oracle*, and the resulting agreement would have been evidence of
+/// nothing. **BT.709-6 is what broke that circularity**, and it was one
+/// `curl` away for five days while the corpus recorded `itu.int` as
+/// blocking agents — a finding that turned out to be an artifact of the
+/// User-Agent string.
+///
+/// ★ **Do not "improve" this with CIE's own 5-figure `0.312 72 /
+/// 0.329 03`.** That is a *different number*; the sRGB matrix is defined
+/// by the 4-figure value and substituting CIE's changes every cell while
+/// looking like a precision upgrade.
+///
+/// Exposed as
 /// chromaticity, which is what the source states; the XYZ form is
 /// derived by the caller via [`crate::xyz::XyY`], keeping the
 /// derivation visible instead of baking an unsourced XYZ triple in as
