@@ -82,6 +82,102 @@ jobs:
         run: cargo doc --workspace --no-deps
 
   # ===================================================================
+  # wasm32 — a CONSUMER'S gate, enforced here so it cannot break there
+  # ===================================================================
+  #
+  # ★ WHY THIS EXISTS, and why "it passes today" was not good enough.
+  #
+  # `pdfce` — a PDF engine, the consumer this project's README names
+  # first — must compile `pdfce-core` and `pdfce-render` for
+  # `wasm32-unknown-unknown`, and it enforces that in ITS CI. It is the
+  # whole reason its GUI is a separate crate.
+  #
+  # So: **any dependency added to a library crate here can break a
+  # consumer's CI gate, in their repository, on a commit they did not
+  # write.** Before this job existed, iccce could only offer a DATED
+  # OBSERVATION — "measured 2026-08-17 at tip e21154c, exit 0" — which
+  # is not a guarantee, and which was reported to pdfce as explicitly
+  # not one. It was recorded as owed across four consecutive filings.
+  #
+  # This converts the observation into a gate. That is the difference
+  # between telling a consumer "we checked once" and "we check every
+  # time".
+  #
+  # ★ WHY ONLY THE LIBRARY CRATES. `iccce-cli` is a binary: it reads
+  # files, writes stdout and returns an ExitCode, none of which exists
+  # on `wasm32-unknown-unknown` as a bare target. It is not what a
+  # consumer links, and requiring it to cross would force exactly the
+  # kind of cfg contortion that makes a codebase worse to protect a
+  # property nobody needs.
+  #
+  # ★ WHY `build` AND NOT `test`. There is no test runner on bare
+  # wasm32. `cargo test --target wasm32-unknown-unknown` would need
+  # wasm-bindgen-test and a browser or node harness — a real dependency,
+  # added to protect a check that the build already makes. The claim
+  # being gated is "this compiles and links for the web target", and
+  # `build` is exactly that claim.
+  #
+  # ★ THE STRUCTURAL CHECK IS THE OTHER HALF. A successful wasm build
+  # today does not prove the tree is still dependency-free tomorrow —
+  # a pure-Rust dependency would cross wasm32 happily and still be a
+  # supply-chain and licence event for a consumer that classifies every
+  # dependency before adding it. `cargo tree` is therefore asserted
+  # separately, and it is the check with the longer reach.
+  wasm32:
+    name: wasm32-unknown-unknown (library crates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build the library crates for wasm32
+        run: >
+          cargo build --target wasm32-unknown-unknown
+          -p iccce-color -p iccce-profile -p iccce-cmm -p iccce-measure
+      # ★ The dependency graph must stay OURS. Not "small" — ours.
+      # `pdfce` takes no copyleft anywhere in a dependency tree and
+      # classifies every dependency before adding it; the strongest
+      # thing iccce can offer is a tree with nothing in it to classify.
+      #
+      # The gate is: every line of `cargo tree` names an `iccce-*` crate
+      # AND carries a local path. Anything else — however permissive,
+      # however small — is a decision that must be made deliberately by
+      # a human reading a licence, not acquired by a `cargo add`. This
+      # job's failure message is that sentence.
+      #
+      # ★ THE PATTERN REQUIRES THE PARENTHESISED PATH, and that is not
+      # decoration. The first version matched on the name alone
+      # (`^iccce-`), and injection testing found the hole: a crate
+      # PUBLISHED TO crates.io as `iccce-evil` would have passed, because
+      # it is named like ours. `cargo tree` renders a path dependency as
+      #     iccce-cmm v0.0.1 (/path/to/crates/iccce-cmm)
+      # and a registry dependency with no parenthesised location at all,
+      # so requiring the path distinguishes "our crate" from "a crate
+      # that chose our prefix". Name-based trust is exactly the
+      # assumption a typosquat is built to exploit.
+      #
+      # Verified by injection before this job was committed: a permissive
+      # dep, a copyleft dep, a transitive dep, a prefix-lookalike
+      # (`iccceX-evil`) and a registry namesake (`iccce-evil`) are all
+      # caught; the real tree stays green.
+      - name: The dependency tree contains only iccce crates
+        run: |
+          set -eu
+          tree=$(cargo tree --workspace --target wasm32-unknown-unknown --prefix none --no-dedupe)
+          echo "$tree"
+          foreign=$(echo "$tree" | awk 'NF && $0 !~ /^iccce-[a-z]+ v[0-9][0-9.]* \(/ {print $1}' | sort -u || true)
+          if [ -n "$foreign" ]; then
+            echo "::error::A non-iccce crate has entered the dependency tree:"
+            echo "$foreign"
+            echo "pdfce takes NO copyleft anywhere in a dependency tree and classifies every"
+            echo "dependency before adding it. Adding one here is an operator decision (rule 8),"
+            echo "not something acquired by a cargo add. If this is intended, update this job."
+            exit 1
+          fi
+          echo "OK: every crate in the tree is an iccce crate."
+
+  # ===================================================================
   # tools/ — 71 tests that gated NOTHING until 2026-08-12
   # ===================================================================
   #
