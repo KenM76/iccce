@@ -83,6 +83,103 @@ pub enum DestModel {
     Gray(Box<crate::gray_trc::GrayTrc>),
 }
 
+/// ★★ What the caller is handing over as the destination — and, when it
+/// is handing over nothing, **why** it has nothing.
+///
+/// # Why this is not an `Option<&Profile>`
+///
+/// This is the single most safety-relevant type in the crate, and the
+/// reason is worth the words. `docs/DEFAULT_DESTINATION.md` §2 states
+/// the contract the operator's decision carries:
+///
+/// > **"Doesn't exist" must mean *absent*, never *unresolved*.**
+///
+/// A colour-managed document very often **declares** its destination. A
+/// PDF/X file's `/OutputIntents` names a print condition and embeds the
+/// profile. If a caller hands iccce a document whose declared
+/// destination *failed to parse*, or *was not looked for*, or *was found
+/// and then dropped*, and iccce quietly substitutes sRGB, the result is:
+///
+/// - a plausible-looking image,
+/// - rendered to the wrong destination,
+/// - with the document's own declared print condition silently
+///   discarded,
+/// - **and no error anywhere.**
+///
+/// That is this project's founding hazard — *a wrong colour looks
+/// exactly like a right one* — and it would be **caused** by the
+/// fallback rather than caught by it.
+///
+/// **An `Option` being `None` cannot distinguish "there was none" from
+/// "I failed to get one."** Only the caller knows which, because only
+/// the caller knows whether it looked. So the API makes the caller
+/// *say*. That is the whole purpose of this enum, and it is why
+/// [`Self::None`] is spelled out rather than inferred.
+///
+/// A destination that was declared and could not be parsed remains a
+/// **named refusal** — the caller propagates its parse error and does
+/// not reach this type at all.
+#[derive(Debug, Clone, Copy)]
+pub enum Destination<'a> {
+    /// The caller has a destination profile. **It is used. Always.**
+    /// No exception, no override, no "improvement".
+    Profile(&'a Profile),
+    /// The caller looked, and there is genuinely no destination to use.
+    /// iccce constructs sRGB from published constants
+    /// ([`crate::builtin::srgb`]) and the chain records that it did, so
+    /// the substitution is disclosed rather than silent.
+    ///
+    /// ★ **Do not reach for this as recovery from a failure to obtain a
+    /// destination.** Doing so converts a loud, correct refusal into a
+    /// quiet, wrong picture. If the document declared a destination and
+    /// you could not use it, that is a refusal to report, not a reason
+    /// to substitute a different destination.
+    None,
+}
+
+/// Where a built [`Chain`]'s destination came from.
+///
+/// # Why this exists: rule 6 has a CMM analogue
+///
+/// *The parser reports; it does not repair.* Silently substituting a
+/// destination is the transform-layer version of a silently corrected
+/// tag — it hides a material fact from the only layer that could
+/// disclose it.
+///
+/// The fallback is **not an error**; the operator decided it should
+/// happen. But it is a *fact about the conversion*, and a consumer must
+/// be able to log it, surface it in a preflight report, or gate on it. A
+/// renderer that cannot tell whether a page went to a document-declared
+/// destination or to iccce's default cannot honestly report what it did.
+///
+/// **This is the difference between a default and a cover-up, and it
+/// costs one accessor to stay on the right side of it.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DestinationProvenance {
+    /// A caller-supplied profile was used.
+    CallerSupplied,
+    /// No destination was supplied and iccce constructed sRGB.
+    BuiltInSrgb,
+}
+
+impl DestinationProvenance {
+    /// A short human-readable disclosure, suitable for a log line or a
+    /// preflight report. `None` when nothing needs disclosing.
+    #[must_use]
+    pub fn note(self) -> Option<&'static str> {
+        match self {
+            Self::CallerSupplied => None,
+            Self::BuiltInSrgb => Some(
+                "no destination profile was supplied: converted to iccce's built-in sRGB, \
+                 constructed from ITU-R BT.709-6 primaries and W3C-published transfer-function \
+                 constants and Bradford-adapted to the D50 PCS (ICC.1:2022 Annex E.3). This is \
+                 NOT the document's declared output intent — if one was declared, it was not \
+                 passed to iccce",
+            ),
+        }
+    }
+}
+
 /// Chain build/run errors.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChainError {
@@ -129,6 +226,29 @@ pub enum ChainError {
         grid_points: usize,
         dimensions: usize,
     },
+    /// ★★ A compiled grid whose node count is a perfectly ordinary
+    /// `usize` and whose ALLOCATION is not survivable.
+    ///
+    /// Distinct from [`Self::GridTooLarge`], which is the arithmetic
+    /// overflow case. This one is the case that actually happens: on a
+    /// 64-bit machine `33^7` nodes is a fine number and 0.93 TiB is not a
+    /// fine allocation.
+    ///
+    /// **Why it is an error at all rather than "let the allocator
+    /// decide":** the allocator's decision is `abort()`. A `Vec`
+    /// allocation failure kills the process — not a catchable panic, a
+    /// hard exit (`0xC0000409` on Windows). For a library that is
+    /// unacceptable: it takes the consumer's process down and the
+    /// consumer had no way to see it coming. Turning it into a named
+    /// refusal is rule 6 applied at the allocation layer.
+    ///
+    /// Found by Pass H on ICC's own published seven-channel
+    /// `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc`, 2026-08-17.
+    GridExceedsBudget {
+        nodes: usize,
+        bytes: usize,
+        budget_bytes: usize,
+    },
 }
 
 impl std::fmt::Display for ChainError {
@@ -164,6 +284,17 @@ impl std::fmt::Display for ChainError {
                 f,
                 "compiled grid {grid_points}^{dimensions} exceeds addressable memory; refused"
             ),
+            Self::GridExceedsBudget {
+                nodes,
+                bytes,
+                budget_bytes,
+            } => write!(
+                f,
+                "compiled grid would need {nodes} nodes = {bytes} bytes, over iccce's \
+                 {budget_bytes}-byte budget; refused rather than allowed to abort the process. \
+                 Pass a smaller --grid, or use the reference path (`transform`), which has no \
+                 grid at all"
+            ),
         }
     }
 }
@@ -171,6 +302,48 @@ impl std::fmt::Display for ChainError {
 impl From<ModelError> for ChainError {
     fn from(e: ModelError) -> Self {
         Self::Model(e)
+    }
+}
+
+/// ## Why this impl exists, and why its absence was a real defect
+///
+/// `iccce_profile::ParseError` has implemented [`std::error::Error`]
+/// since the parser was written; `ChainError` did not. The asymmetry was
+/// **noticed but unscoped** for several sessions and looked cosmetic.
+///
+/// It is not cosmetic. Without this impl, a consumer cannot write
+///
+/// ```ignore
+/// fn convert(..) -> Result<(), Box<dyn std::error::Error>> {
+///     let chain = Chain::with_destination(src, dst, intent)?;   // E0277
+/// }
+/// ```
+///
+/// which is the single most common error-handling shape in Rust, and the
+/// one a library consumer reaches for first. The gap therefore forced
+/// every caller to hand-wrap, or — far worse — to `.ok()` the result and
+/// lose the named refusal entirely. **A refusal that is inconvenient to
+/// propagate is a refusal that gets discarded**, and every variant of
+/// this enum exists precisely so that a failure is reported rather than
+/// guessed at.
+///
+/// ★ It was caught by a **doc example** written for
+/// [`Chain::with_destination`]: the example did the ordinary thing, and
+/// the doctest refused to compile. That is the value of a doc example
+/// that is compiled — it exercises the API as a stranger would, which no
+/// amount of internal review does.
+///
+/// `source` is implemented rather than defaulted so a caller
+/// walking the chain reaches the underlying [`ModelError`] and, through
+/// it, any [`CurveError`](crate::curve::CurveError) beneath — the
+/// specific clause-level refusal is usually the part worth logging, and
+/// a flat error would strand it behind a `Display` string.
+impl std::error::Error for ChainError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Model(e) => Some(e),
+            _ => None,
+        }
     }
 }
 
@@ -199,6 +372,11 @@ pub struct Chain {
     /// build solely so BPC's ISO/CD 18619 4.2.5.2.3 round trip has
     /// its outward leg. Unused by any conversion.
     dst_a2b: Option<SourceModel>,
+    /// Whether the destination was caller-supplied or constructed.
+    /// Read via [`Chain::destination_provenance`]; see
+    /// [`DestinationProvenance`] for why disclosing this is mandatory
+    /// rather than a nicety.
+    dst_provenance: DestinationProvenance,
 }
 
 /// Device channel count of a captured A2B model.
@@ -247,77 +425,77 @@ impl Chain {
         Chain::new_inner(src, dst, intent, true)
     }
 
-    /// `capture_dst_a2b` is false only for the internal build of the
-    /// destination's own A2B side, which must not recurse.
-    fn new_inner(
+    /// Build with an explicit statement of what the destination is —
+    /// including the case where the caller has none.
+    ///
+    /// This is [`Chain::new`]'s superset and the entry point a consumer
+    /// that may lack a destination should use. See [`Destination`] for
+    /// why the "no destination" case is a named variant rather than an
+    /// `Option`, and [`DestinationProvenance`] for why the result
+    /// discloses which case occurred.
+    ///
+    /// ```no_run
+    /// # use iccce_cmm::transform::{Chain, Destination};
+    /// # use iccce_cmm::matrix_trc::Intent;
+    /// # fn f(src: &iccce_profile::Profile) -> Result<(), Box<dyn std::error::Error>> {
+    /// let chain = Chain::with_destination(src, Destination::None, Intent::MediaRelative)?;
+    /// if let Some(note) = chain.destination_provenance().note() {
+    ///     eprintln!("iccce: {note}");   // disclosed, not silent
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub fn with_destination(
         src: &Profile,
-        dst: &Profile,
+        dst: Destination<'_>,
         intent: Intent,
-        capture_dst_a2b: bool,
     ) -> Result<Chain, ChainError> {
-        // Destination: B2Ax → B2A0 → matrix/TRC (the same 8.10.2
-        // fallback, B-side). A lut16 B2A's input side is the PCS, so
-        // in an XYZ-PCS profile the 3×3 matrix APPLIES (A21) —
-        // input_is_pcs_xyz is keyed on the destination's PCS.
-        let dst_intent_tag = match intent {
-            Intent::Perceptual => tag::B2A0,
-            Intent::MediaRelative | Intent::Absolute => tag::B2A1,
-            Intent::Saturation => tag::B2A2,
-        };
-        let mut dst_model = None;
-        for sig in [dst_intent_tag, tag::B2A0] {
-            if dst_model.is_some() {
-                break;
-            }
-            let Some(entry) = dst.tags.iter().find(|t| t.sig == sig) else {
-                continue;
-            };
-            if let Some(Ok(decoded)) = dst.decode_tag(entry) {
-                let (pcs, input_is_xyz) = if dst.header.pcs == tag::PCS_LAB {
-                    (PcsKind::Lab, false)
-                } else {
-                    (PcsKind::Xyz, true)
-                };
-                match decoded.data {
-                    TagData::Lut16(l) => {
-                        if let Ok(m) = Lut16Model::from_lut16(&l, input_is_xyz, pcs) {
-                            if m.input_channels() == 3 {
-                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
-                            }
-                        }
-                    }
-                    // Real press profiles ship mft1 B2A tables (SWOP
-                    // does); Lab-8-bit per Tables 12/13 (A10 resolved).
-                    TagData::Lut8(l) => {
-                        if let Ok(m) = Lut16Model::from_lut8(&l, input_is_xyz, pcs) {
-                            if m.input_channels() == 3 {
-                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
-                            }
-                        }
-                    }
-                    TagData::LutBToA(l) => {
-                        if let Ok(m) = crate::lut_ab::LutAbModel::from_mba(&l, pcs) {
-                            dst_model = Some(DestModel::LutAb(Box::new(m)));
-                        }
-                    }
-                    _ => {}
-                }
-            }
+        match dst {
+            Destination::Profile(p) => Chain::new_inner(src, p, intent, true),
+            Destination::None => Chain::new_builtin_srgb_dest(src, intent),
         }
-        let dst_model = match dst_model {
-            Some(m) => m,
-            // 8.10.2 step 4 has two shapes: three-component
-            // matrix/TRC (F.3) or grayTRC (F.2) — clause 8's
-            // per-class requirements decide which tags exist.
-            None => match MatrixTrc::from_profile(dst) {
-                Ok(m) => DestModel::MatrixTrc(Box::new(m)),
-                Err(matrix_err) => match crate::gray_trc::GrayTrc::from_profile(dst) {
-                    Ok(g) => DestModel::Gray(Box::new(g)),
-                    Err(_) => return Err(ChainError::Model(matrix_err)),
-                },
-            },
-        };
-
+    }
+    /// Derive the SOURCE half's device→PCS model, per the 8.10.2
+    /// fallback: the intent's own `A2Bx`, then `A2B0`, then the
+    /// matrix/TRC model (F.3), then `grayTRC` (F.2).
+    ///
+    /// ## Why this is a separate function
+    ///
+    /// ★ **Extracted 2026-08-17 to fix a real defect, and the defect is
+    /// worth recording because the symptom was a plausible lie.**
+    ///
+    /// `Chain::with_destination(src, Destination::None, ..)` originally
+    /// obtained the source model by building a scaffold chain
+    /// `src → src` and discarding its destination half. That works
+    /// whenever the source can also serve as a destination — which every
+    /// profile tested at the time could.
+    ///
+    /// It fails for a profile carrying an `A2B` tag but **no `B2A`, no
+    /// colorant matrix and no `grayTRC`** — a perfectly conformant shape
+    /// (clause 8 requires a `B2A` only for classes that need the reverse
+    /// direction). Four such profiles are in ICC's own published set: the
+    /// colour-vision-deficiency simulation profiles, which are `scnr`
+    /// class, Lab PCS, and one-directional by design.
+    ///
+    /// **The symptom was the dangerous part.** The scaffold's destination
+    /// derivation failed and surfaced its own error:
+    ///
+    /// ```text
+    /// matrix/TRC model requires PCSXYZ (Annex F.3, normative); profile PCS is 'Lab '
+    /// ```
+    ///
+    /// — a correct, clause-cited message **about a model iccce was about
+    /// to throw away.** A caller reads that as *"my source profile is
+    /// unusable"*, which is false: the source was fine, and the
+    /// destination it was complaining about was never going to be used.
+    /// A refusal that names the wrong clause is worse than a vague one,
+    /// because the citation makes it persuasive.
+    ///
+    /// Deriving the source half directly removes the phantom
+    /// destination, so the built-in path now succeeds on exactly the
+    /// profiles it should. Sharing this function with `new_inner` is the
+    /// point: the 8.10.2 dispatch is the most intricate logic in the
+    /// crate and a second copy would be free to drift.
+    fn derive_source_model(src: &Profile, intent: Intent) -> Result<SourceModel, ChainError> {
         // 8.10.2 step 2: the intent's own A2Bx; step 3: A2B0.
         let intent_tag = match intent {
             Intent::Perceptual => tag::A2B0,
@@ -403,6 +581,147 @@ impl Chain {
                 },
             },
         };
+        Ok(source)
+    }
+
+    /// Build against the constructed sRGB destination.
+    ///
+    /// ## Why this does not go through `new_inner`
+    ///
+    /// `new_inner` derives the destination model by walking a parsed
+    /// profile's `B2Ax` tags through the 8.10.2 fallback. There is no
+    /// profile here and no tags to walk — the model is *computed*. So
+    /// the destination half is supplied directly and the source half
+    /// comes from [`Chain::derive_source_model`], which `new_inner` also
+    /// uses.
+    ///
+    /// ★ Sharing that function rather than duplicating it is deliberate:
+    /// the 8.10.2 dispatch is the most intricate logic in the crate and a
+    /// second copy would be free to drift. **An earlier version obtained
+    /// the source model by building a scaffold `src → src` chain and
+    /// discarding its destination — see `derive_source_model`'s doc for
+    /// why that was wrong and what it reported instead.**
+    fn new_builtin_srgb_dest(src: &Profile, intent: Intent) -> Result<Chain, ChainError> {
+        // The source half only. No phantom destination is derived, so a
+        // profile that cannot serve as a destination — an A2B-only
+        // profile with no B2A, no colorant matrix and no grayTRC — is
+        // still a perfectly good SOURCE here.
+        let source = Chain::derive_source_model(src, intent)?;
+
+        let srgb = crate::builtin::srgb();
+        // The destination's own device→PCS direction, needed only by
+        // BPC's round trip. For a matrix/TRC destination this IS the
+        // forward model, so it is exact rather than approximated.
+        let dst_a2b = Some(SourceModel::MatrixTrc(Box::new(srgb.clone())));
+
+        Ok(Chain {
+            source,
+            dst: DestModel::MatrixTrc(Box::new(srgb)),
+            intent,
+            src_white: read_wtpt(src),
+            // The constructed sRGB is D50-adapted and self-consistent:
+            // its media white IS the PCS white. Unlike the shipped HP
+            // profile, this needs no caveat.
+            dst_white: Some(D50),
+            bpc: None,
+            src_major: src.header.version.major(),
+            // The constructed model is v4-shaped. ★ This field is
+            // consulted ONLY by the perceptual black-point estimation
+            // rule, and only for LUT-backed destinations; a matrix/TRC
+            // destination takes its black from `device_to_pcs([0,0,0])`
+            // directly, so this value is not reachable on this path. It
+            // is stated rather than left to a default so that a future
+            // change to the estimation rule cannot silently pick up an
+            // unconsidered 0.
+            dst_major: 4,
+            dst_a2b,
+            dst_provenance: DestinationProvenance::BuiltInSrgb,
+        })
+    }
+
+    /// Where this chain's destination came from — **caller-supplied or
+    /// constructed by iccce**.
+    ///
+    /// Always check this when the chain may have been built with
+    /// [`Destination::None`]. `DestinationProvenance::note()` gives
+    /// ready-to-log wording.
+    #[must_use]
+    pub fn destination_provenance(&self) -> DestinationProvenance {
+        self.dst_provenance
+    }
+
+    /// `capture_dst_a2b` is false only for the internal build of the
+    /// destination's own A2B side, which must not recurse.
+    fn new_inner(
+        src: &Profile,
+        dst: &Profile,
+        intent: Intent,
+        capture_dst_a2b: bool,
+    ) -> Result<Chain, ChainError> {
+        // Destination: B2Ax → B2A0 → matrix/TRC (the same 8.10.2
+        // fallback, B-side). A lut16 B2A's input side is the PCS, so
+        // in an XYZ-PCS profile the 3×3 matrix APPLIES (A21) —
+        // input_is_pcs_xyz is keyed on the destination's PCS.
+        let dst_intent_tag = match intent {
+            Intent::Perceptual => tag::B2A0,
+            Intent::MediaRelative | Intent::Absolute => tag::B2A1,
+            Intent::Saturation => tag::B2A2,
+        };
+        let mut dst_model = None;
+        for sig in [dst_intent_tag, tag::B2A0] {
+            if dst_model.is_some() {
+                break;
+            }
+            let Some(entry) = dst.tags.iter().find(|t| t.sig == sig) else {
+                continue;
+            };
+            if let Some(Ok(decoded)) = dst.decode_tag(entry) {
+                let (pcs, input_is_xyz) = if dst.header.pcs == tag::PCS_LAB {
+                    (PcsKind::Lab, false)
+                } else {
+                    (PcsKind::Xyz, true)
+                };
+                match decoded.data {
+                    TagData::Lut16(l) => {
+                        if let Ok(m) = Lut16Model::from_lut16(&l, input_is_xyz, pcs) {
+                            if m.input_channels() == 3 {
+                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                            }
+                        }
+                    }
+                    // Real press profiles ship mft1 B2A tables (SWOP
+                    // does); Lab-8-bit per Tables 12/13 (A10 resolved).
+                    TagData::Lut8(l) => {
+                        if let Ok(m) = Lut16Model::from_lut8(&l, input_is_xyz, pcs) {
+                            if m.input_channels() == 3 {
+                                dst_model = Some(DestModel::Lut16B2a(Box::new(m)));
+                            }
+                        }
+                    }
+                    TagData::LutBToA(l) => {
+                        if let Ok(m) = crate::lut_ab::LutAbModel::from_mba(&l, pcs) {
+                            dst_model = Some(DestModel::LutAb(Box::new(m)));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let dst_model = match dst_model {
+            Some(m) => m,
+            // 8.10.2 step 4 has two shapes: three-component
+            // matrix/TRC (F.3) or grayTRC (F.2) — clause 8's
+            // per-class requirements decide which tags exist.
+            None => match MatrixTrc::from_profile(dst) {
+                Ok(m) => DestModel::MatrixTrc(Box::new(m)),
+                Err(matrix_err) => match crate::gray_trc::GrayTrc::from_profile(dst) {
+                    Ok(g) => DestModel::Gray(Box::new(g)),
+                    Err(_) => return Err(ChainError::Model(matrix_err)),
+                },
+            },
+        };
+
+        let source = Self::derive_source_model(src, intent)?;
 
         let src_white = read_wtpt(src);
         let dst_white = read_wtpt(dst);
@@ -433,6 +752,7 @@ impl Chain {
             src_major: src.header.version.major(),
             dst_major: dst.header.version.major(),
             dst_a2b,
+            dst_provenance: DestinationProvenance::CallerSupplied,
         })
     }
 

@@ -45,6 +45,7 @@
 //! decode, A26). Still to come: compiled transforms (Pass 6).
 
 pub mod bpc;
+pub mod builtin;
 pub mod clut;
 pub mod compiled;
 pub mod curve;

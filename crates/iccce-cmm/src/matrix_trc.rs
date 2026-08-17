@@ -195,6 +195,60 @@ impl MatrixTrc {
         self.matrix_inv
     }
 
+    /// Build from computed parts rather than from a file — the entry
+    /// point [`crate::builtin`] uses to construct sRGB.
+    ///
+    /// ## Why this exists and why it is shaped this way
+    ///
+    /// The `matrix` field is private specifically so that `matrix` and
+    /// its cached `matrix_inv` can never drift apart (see the field's
+    /// note: a stale inverse is silently wrong colour with no signal).
+    /// A constructed model needs *some* way in, so this is it — and it
+    /// preserves the invariant by **computing the inverse itself**
+    /// rather than accepting one. There is deliberately no setter.
+    ///
+    /// `white_point_inconsistent` is not a parameter: it is *derived*
+    /// here by the same colorant-sum comparison [`Self::from_profile`]
+    /// applies to a parsed file. A constructed model does not get to
+    /// declare itself coherent — it is measured, on the same terms as
+    /// everything else. If a future built-in space is built wrong, the
+    /// A4c disclosure fires on it exactly as it would on a bad file.
+    ///
+    /// Returns `ModelError::SingularMatrix` if the colorant matrix
+    /// cannot be inverted.
+    pub(crate) fn from_constructed(
+        matrix: Mat3,
+        trc: [Trc; 3],
+        media_white: Option<Xyz>,
+    ) -> Result<MatrixTrc, ModelError> {
+        let matrix_inv = matrix.inverse().ok_or(ModelError::SingularMatrix)?;
+        let colorant_sum = {
+            let s = matrix.apply([1.0, 1.0, 1.0]);
+            Xyz {
+                x: s[0],
+                y: s[1],
+                z: s[2],
+            }
+        };
+        // Same 1e-3 per-component threshold and same reasoning as
+        // `from_profile`. A constructed space carries no `chad` because
+        // it has no file to carry one in; the adaptation is already
+        // baked into the matrix, which is exactly the situation the
+        // threshold is calibrated for.
+        let white_point_inconsistent = media_white.is_some_and(|w| {
+            (w.x - colorant_sum.x).abs() > 1e-3
+                || (w.y - colorant_sum.y).abs() > 1e-3
+                || (w.z - colorant_sum.z).abs() > 1e-3
+        });
+        Ok(MatrixTrc {
+            matrix,
+            matrix_inv,
+            trc,
+            media_white,
+            white_point_inconsistent,
+        })
+    }
+
     /// Build from a parsed profile. Consumes the FIRST entry per tag
     /// signature when duplicates exist — the recorded A13 choice,
     /// which the profile layer has already reported as a malformation.
@@ -706,3 +760,21 @@ mod tests {
         assert!(err.to_string().contains("Annex F.3"));
     }
 }
+
+/// See [`ChainError`](crate::transform::ChainError)'s impl for why this
+/// matters: without it, `ChainError::source()` cannot expose the
+/// clause-level refusal underneath, and a consumer using
+/// `Box<dyn Error>` loses the reason a conversion was declined.
+impl std::error::Error for ModelError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Curve(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+/// The leaf of the refusal chain: a tone curve that could not be
+/// converted, evaluated or inverted. Every variant names a specific
+/// Annex F condition rather than a generic failure.
+impl std::error::Error for CurveError {}
