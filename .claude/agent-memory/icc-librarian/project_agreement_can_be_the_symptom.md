@@ -74,6 +74,54 @@ DL-033 is the **mirror of DL-028**
 ([[iccce-apparatus-fault-under-every-hypothesis]]) and the more
 dangerous half: DL-028's failure announces itself, this one is silent.
 
+**★★★ UPDATED 2026-08-17 — DL-056 is the DESIGN RULE that follows from
+DL-033, and it caught the librarian's own reasoning.** DL-033 is the
+*diagnosis*; DL-056 says what to do about it.
+
+**A DIFFERENTIAL test is blind in the direction that moves your answer
+TOWARD the reference.** Measured, not argued — injected drift into the
+constructed sRGB white's `Z`:
+
+| drift | max ΔE2000 | the ΔE test |
+|---|---|---|
+| `−1.0×10⁻³` | `0.101968` | FAILS ✔ |
+| `−3.0×10⁻⁴` | `0.050149` | FAILS ✔ |
+| **`+3.0×10⁻⁴`** | **`0.029008`** | **PASSES — better-looking than the correct build's `0.033013`** |
+| `+2.0×10⁻³` | `0.146450` | FAILS ✔ |
+
+The reference file's own white sits **`+1.885×10⁻⁴` above D50**, so
+drifting upward moves us *toward* it; blind to ≈`+3.8×10⁻⁴`, where it
+would report **zero**. ★★★ **Not fixable by tightening: a difference
+cannot detect a defect that shrinks it.** Same shape as the black-point
+estimator above.
+
+★★★ **And it corrected this librarian's own §3.32.9a**, filed hours
+earlier, which argued the observed-≡-derived coincidence made the row *"a
+tighter white-point gate than any flat constant."* **True downward, false
+upward.** A careful argument from re-reading was corrected **by an
+injection** — §5.2 applied to the agent whose job is reading
+([[iccce-verify-own-draft-too]]).
+
+> **The rule: every differential gate NAMES the ABSOLUTE assertion that
+> covers its blind direction, or declares that none exists.** Absolute =
+> compared against a **sourced constant with no reference artifact in
+> it**. Here: `constructed_colorant_sum_is_d50` (vs `D50` itself, `1e-9`,
+> no file) — the same `+3.0×10⁻⁴` **fails it while all six differential
+> tests pass**. ★★ **Deleting it as "redundant, the ΔE test covers it"
+> would open the blind spot AND EVERY REMAINING TEST WOULD STAY GREEN
+> WHILE IT HAPPENED**, so both sites carry a DO-NOT-DELETE note
+> **containing the injection table** — the table is the argument.
+
+★★ **DL-056 is DL-055's mechanism in the differential-test register**
+([[iccce-gate-must-not-reward-deletion]]). Shared sentence: **a redundancy
+is only a redundancy if each member has a defect it alone can catch;
+otherwise it is a single mechanism with a decoy beside it.** ★ Revisit if
+a reference artifact is replaced by one sitting *below* D50 — the blind
+direction flips and any prose about it goes wrong while every test stays
+green.
+
 Related: [[iccce-pass-status]], [[iccce-rule7-can-run-against-us]],
 [[iccce-control-only-as-good-as-its-fixture]],
-[[iccce-bound-cannot-catch-its-own-magnitude]].
+[[iccce-bound-cannot-catch-its-own-magnitude]],
+[[iccce-gate-must-not-reward-deletion]],
+[[iccce-absence-of-publication-is-not-evidence]].

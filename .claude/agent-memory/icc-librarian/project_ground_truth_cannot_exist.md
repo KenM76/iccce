@@ -1,6 +1,6 @@
 ---
 name: iccce-ground-truth-cannot-exist
-description: DL-041/DL-042 — published ground truth for the LUT path CANNOT EXIST (structural, not availability); ICC.1 Annex D.6.3 and Table 16 are now AVAILABLE but NOTHING IN iccce HAS BEEN COMPARED TO THEM, and NC-001 is still the only such row
+description: DL-041/DL-042 — published ground truth for the LUT path CANNOT EXIST (structural, not availability); ICC.1 Annex D.6.3 is available AND a test now asserts its twelve integers (0bd76ad) — but NC-001 is STILL the only published-ground-truth LEDGER ROW. A test is not a row.
 metadata:
   type: project
 ---
@@ -26,6 +26,25 @@ scaling — v2 legacy would give `0800h`).
 > The ground truth is **available**; the row is **buildable**; **the row
 > does not exist. `NC-001` (ΔE2000 vs Sharma/Wu/Dalal) remains this
 > project's only `published-ground-truth` row.**
+
+> ★★★ **CORRECTED 2026-08-17 — the first sentence of the box above is
+> STALE; the last one is STILL TRUE, and the gap between them is the
+> point.** Commit **`0bd76ad`** landed
+> `crates/iccce-cmm/tests/annex_d_ground_truth.rs` — *"the project's
+> first ground-truth test for a transform path"*, asserting **twelve
+> exact published integers** against iccce's own code *(verified — file
+> read at the tip 2026-08-17)*. **So iccce HAS now been compared to
+> Annex D.6.3.**
+>
+> ★★★ **But `NUMERIC_CLAIMS.md` §7.17 still records NC-001 as the only
+> `published-ground-truth` ROW, and §7.15 newly-owed 1 is still owed.**
+> **A TEST IS NOT A LEDGER ROW.** The test exists in `crates/`; the row —
+> with its tolerance, coverage, corpus and evidence class — has never
+> been filed, and the blocking operator decision (may published numbers
+> live in an MIT repo as fixtures) is unchanged. ★ **Say "the test
+> exists, the row does not", never "still nothing has been compared" and
+> never "we now have a second ground-truth row."** Both are wrong in
+> opposite directions.
 
 Three qualifications travel with every citation: **Annex D is
 INFORMATIVE** (ground truth *epistemically*, not normatively — a

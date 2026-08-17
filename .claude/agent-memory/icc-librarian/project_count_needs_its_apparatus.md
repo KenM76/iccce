@@ -71,5 +71,20 @@ was **not named at all** — the attribution to `tools/difftest` is an
 inference from the row ids (`pass4/…`, `pass5c/…`), which is recorded in
 the ledger as a gap rather than glossed.
 
+**★★ UPDATE 2026-08-17 (twentieth filing) — A THIRD COLLISION, and this
+one caused a WRONG CITATION in an outbound document.** An outbound
+request to `pdfce` cited `NUMERIC_CLAIMS.md:2529` as the basis of
+iccce's **33-node recommended grid**. That line carries a **different
+33** — `USWebCoatedSWOP.icc`'s **own `lut8` CLUT node count**, a vendor
+file's tag. (The companion citation `:2164` states the grid as **17**.)
+The real homes are **§3.19 / NC-145**, **§3.27**, and
+`crates/iccce-cmm/src/compiled.rs:77` (`recommended_grid_points`). ★ **A
+reader following the citation would have concluded the recommendation is
+a property of somebody else's profile.** ★★ **The argument was right and
+the citation was wrong** — which is the combination that survives review,
+and the reason to grep a number's real home before citing a line number.
+**Running tally of collisions in this project: `129`, `16`, `33`.**
+
 Related: [[iccce-pass-status]], [[iccce-verify-own-draft-too]],
+[[iccce-compatibility-not-certification]],
 [[iccce-git-files-readable-without-shell]].

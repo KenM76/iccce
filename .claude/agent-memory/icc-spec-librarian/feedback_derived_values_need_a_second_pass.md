@@ -1,6 +1,6 @@
 ---
 name: derived-values-need-a-second-pass
-description: A DERIVED evidence label states provenance, not correctness — recompute every value the corpus derives, twice, print the intermediate, and ALWAYS evaluate a printed value as an INTERVAL not a point (C5); the C2 D50-chromaticity erratum and the C5 Annex-D ground-truth loss
+description: A DERIVED evidence label states provenance, not correctness — recompute every value the corpus derives, twice, print the intermediate, ALWAYS evaluate a printed value as an INTERVAL not a point (C5), and NEVER print a derivation unlabelled (C8, the manufactured claim); the C2 D50-chromaticity erratum, the C5 Annex-D ground-truth loss, and C8's "a SYMPTOM claim is a claim about test power"
 metadata:
   type: feedback
 ---
@@ -25,6 +25,26 @@ metadata:
 **What it cost, and this is why it is worth this much space.** Calling one typo two made it look like a *pattern*, and the pattern justified the conclusion *"the black row is not ground truth."* **That sentence disqualified ICC.1:2022 Annex D.6.3 — the ONLY published input→output numeric ground truth for any ICC transform** — and `icc-librarian` then carried *"there is no published-ground-truth row for any transform"* through **eleven consecutive filings.** Started at Table D.3, the example reproduces **12 of 12** of Table D.5's integers exactly. **The corpus did not fail to find the ground truth. It found it, and then threw it away with a rounding error.**
 
 **How to apply:** every time this corpus compares one printed number against another — spectral integrations, `chad` values, the D50 chromaticity work, any future worked example. If the two agree to within their display precision, **that is agreement**, not a near-miss. Only a disagreement larger than the whole rounding interval is a finding. And **before writing off a fixture, ask what it costs if the write-off is wrong** — here it cost the project its only oracle for a year of filings.
+
+## ★★★ C8, 2026-08-17 — an UNLABELLED derivation, and the first corpus defect that was MANUFACTURED
+
+**The rule, and it is new:**
+
+> **A `SYMPTOM` claim is a claim about TEST POWER, not about magnitude. Write
+> "which classes of test detect this, and which have exactly zero power" — never
+> only "the error is ≈ N".** A magnitude cannot be checked by running anything;
+> a test-power claim can be falsified in one afternoon, and *was*.
+
+**Why.** `iec/iec__s__srgb.md` carried *"using the wrong sRGB breakpoint `0.03928` affects **8-bit codes 10 and 11 only**; max linear error ≈ `1.3×10⁻⁴` ≈ `0.05 ΔE76`."* **Both halves false.** `10/255 = 0.039 216` is *below* `0.03928` and `11/255 = 0.043 137` is *above* `0.04045`, so **both codes take the same branch under both breakpoints — separation at 8-bit precision is EXACTLY ZERO, all 256 codes.** True maximum `7.5548×10⁻⁷` at `V = 0.039 302 447` (an **interior** maximum: at the knee itself both branches are linear and the separation is zero, so *a test placed at `V = 0.03928` also has zero power*). **172× smaller than claimed.**
+
+**Three things make C8 a different species from C1–C7:**
+1. **It was MANUFACTURED, not mis-read.** Every earlier defect mis-read something real. **No source in `_sources/` contains `0.03928` as text at all** — it was computed in-corpus and printed **without the `DERIVED` label** that a table twenty lines below it carries. **An unlabelled derivation is indistinguishable from a transcription: a reader cannot tell there is nothing behind it to check against.** *(The corpus is not under version control, so which pass wrote it is unrecoverable — recorded as "provenance not recoverable" rather than guessed.)*
+2. **The refutation was thirty lines away and internally invisible.** The same file already tabulated the `0.03928` pairing's discontinuity as `−7.55×10⁻⁷`, and **the separation between two curves cannot exceed the gap one fails to close.** One subtraction. Six days, two files, nobody did it. ⟹ **internal availability does not produce catching** — see [[corpus-defects-are-caught-from-outside]].
+3. **★ FALSE PRECISION REPELS CHECKING.** "8-bit codes 10 and 11" has the texture of a computed result, so no reader recomputed it. **A claim precise enough to look computed is the claim least likely to be recomputed. Vagueness invites checking; false precision repels it.** This is the inverse of the usual instinct to make claims more specific.
+
+**What it cost:** `icc-conformance` carried it into a Rust doc comment and **five** tests, then **injected `0.03928` and all five passed.** The corrected form tells a reader that 8-bit vectors, round-trips, and differential tests against lcms2 *all* have zero power here — only a correctly-built reference at non-8-bit precision inside a `1.17×10⁻³` window detects it.
+
+**How to apply:** any SYMPTOM/consequence paragraph in this corpus must (a) carry `DERIVED` if it is derived, (b) name the check that would falsify it, and (c) be sanity-bounded against any related magnitude already printed in the same file. The bound check is one subtraction and is the whole audit.
 
 **How to apply:**
 - Writing any number with a `DERIVED` mark: compute it twice by different means (e.g. Python `decimal` at high precision *and* a second route), state that in the file, and **show the intermediate** (the sum, the reciprocal, the ASCII bytes).

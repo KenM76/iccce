@@ -1,6 +1,6 @@
 ---
 name: published-ground-truth-state
-description: Published transform ground truth EXISTS — ICC.1:2022 Annex D.6.3, held and audited — but only for the colorimetric/encoding chain; for the LUT path it is STRUCTURALLY impossible because ICC.1 mandates no interpolation method. Includes what was checked and found empty, so the survey is not re-run.
+description: Published transform ground truth EXISTS — ICC.1:2022 Annex D.6.3, held and audited — but only for the colorimetric/encoding chain; for the LUT path it is STRUCTURALLY impossible because ICC.1 mandates no interpolation method. Plus a second ground-truth row added 2026-08-17 (sRGB's D50 colorants, ICC srgb.pdf §B.2 — a PARAMETER, not a transform). Includes what was checked and found empty.
 metadata:
   type: reference
 ---
@@ -32,7 +32,8 @@ metadata:
 | **ECI / Fogra residual for `PSOcoated_v3` vs FOGRA51** | **Does not exist.** `PSOcoated_v3_info.pdf` **is inside the held zip** and states only: Heidelberg **Color Tool 17**, black length 9, black width 10, **TAC 300 %**, max K 96 %. **No accuracy claim of any kind.** |
 | ISO 12647-x / GRACoL / SWOP / Fogra tolerances | **Category error, not an access problem.** They bound a *press* against an aim, never a *transform* against an input. **Do not spend money or operator time here.** |
 | ISO 15076-1 | ICC.1 verbatim. Availability-blocked **and** redundant. |
-| sRGB worked triples | **None published.** The free 1996 W3C/HP document has parameters only — and a **different breakpoint** (`0,003 04` / `0,039 28` vs IEC's `0,003 130 8` / `0,040 45`). **★ Every equation in it is a GIF; a text scrape yields zero numbers.** It *did* cross-verify the primaries and both matrices. |
+| sRGB worked triples | **Not found in the five sources held** (W3C 1996, BT.709-6, CSS Color 4, lcms2, **ICC `srgb.pdf` 2015**). All publish parameters, never results. **★ Wording deliberate — see [[icc-corpus-gap-vs-nonexistence-claim]]; "none published" is the quantifier that failed for the colorants.** The 1996 document also has a **different breakpoint** (`0,003 04` / `0,039 28`) and **every equation in it is a PNG**; a text scrape yields zero numbers. |
+| **★★★ sRGB D50-adapted COLORANTS — a PARAMETER row, verdict-table row 12** | **PUBLISHED and held.** ICC `srgb.pdf` (2015) **§B.2**, 15 dp → **`published_ground_truth`**, because ICC defines the *artifact* (an ICC profile's encoding of sRGB), not merely restating IEC. **iccce from-constants = `3,02` ULP away** (4 ULP bound justified: `3,02` observed, `4` = headroom — say both in the test comment). **The shipped HP/`sRGB2014` file = `11,13` ULP.** ⚠ **Ground truth for the CONSTRUCTION, not the colorimetry** — ICC's chain descends from a 4-dp rounding, so iccce's values are the more faithful. **A parameter, NOT a transform result: §8's structural limit is untouched.** → [[srgb-colorant-gap-routes-tried]] |
 | CGATS TR001 (would settle `A47`) | Via `color.org/chardata/` (**barred**) or purchase from APT. **Untried lead: the `targ`-tag trick — any freely-hosted profile built from TR001 carries the data inside it.** |
 
 ## ★★ What the FOGRA51 / `PSOcoated_v3` pairing CAN prove — measured, not argued

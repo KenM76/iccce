@@ -49,7 +49,11 @@ is the exception: it prints the same relationships on single lines, which
 is why the corpus quotes `(D.6)`/`(D.7)` verbatim and reconstructs
 `6.3.2.2 (1)\u2013(6)`.
 
-**Working recipe, for re-extraction:** `pypdf` for a whole-document grep corpus (fast, page-tagged); **poppler `pdftotext -layout`** for tables (best column reconstruction, but it scrambles equation cells); **`pdfminer.six`** for equations and anything glyph-critical — it is the only one that preserved `parametricCurveType` Table 68 in recoverable order. `pdftotext` lives at `/mingw64/bin/pdftotext` in the Git-Bash environment.
+**★★ SAME HAZARD IN ICC's `srgb.pdf` (2015)** — `_sources/srgb_bt709/srgb_icc_specification_of_srgb_2015.pdf`. Fonts are Times New Roman only, but the Symbol glyphs ride in a Times encoding: `0xF02D` ×19 (minus), `0xF02B`, `0xF03D`, `0xF028`/`0xF029`, `0xF020`/`0xF0A0`, bracket band `0xF0E6`–`0xF0FB`. **`pypdf` PRESERVES them as U+F0xx here** (unlike on ICC.1:2022) — map, don't assume dropped. **★ AND a second, unmappable hazard: §A.8's minus is U+2013 EN DASH in Times**, so a regex for `-` matches nothing.
+
+**★★★ poppler is DISQUALIFIED for matrices in this document class.** On `srgb.pdf` `pdftotext -layout` **dropped all three `chad` minus signs AND transposed a cell**, yielding a plausible all-positive matrix. It read the *single-line* equations correctly (it independently confirmed both §B.1 defects). **For any matrix the two engines must be `pypdf` + `pdfminer.six` character coordinates.**
+
+**Working recipe, for re-extraction:** `pypdf` for a whole-document grep corpus (fast, page-tagged); **poppler `pdftotext -layout`** for tables and single-line equations (best column reconstruction, but it scrambles equation cells **and matrices**); **`pdfminer.six`** for equations, matrices and anything glyph-critical — it is the only one that preserved `parametricCurveType` Table 68 in recoverable order. `pdftotext` lives at `/mingw64/bin/pdftotext` in the Git-Bash environment.
 
 **Tool limitation worth not re-discovering:** the **Read tool cannot render PDF pages** here — it needs `pdftoppm`/poppler-utils, which is not installed for it, and fails with "pdftoppm is not installed". So visual page reading is unavailable and **cross-verification must be two *text* engines, not text-plus-vision.** Say so in the file when a passage is load-bearing.
 

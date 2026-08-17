@@ -50,5 +50,42 @@ exists to change the result; DL-013 records lcms2 forcing it on at
 step. **Not** every self-consistency row: most price an approximation
 whose removal makes the metric *worse*, and those are well-conditioned.
 
+**★★★ UPDATED 2026-08-17 — DL-055 is the MIRROR of this, and it is worse
+in one specific way: NOTHING MOVES.** A crash fix had **two layers** (a
+computed ≥5-channel grid recommendation, and `MAX_COMPILED_GRID_BYTES =
+64 MiB` behind a named `ChainError::GridExceedsBudget`), and **each layer
+alone makes the conformance row observe zero**: the smaller default means
+the allocation succeeds **whether or not the guard exists**, so
+**deleting `MAX_COMPILED_GRID_BYTES` would have left the row GREEN.**
+
+DL-018's hazard is a gate that gets **greener** when a costly requirement
+is removed — a diff of tolerances can at least show that. **Here no
+tolerance changes, no expectation changes, no test is deleted, no number
+is edited.** A *second* change elsewhere quietly takes the first out of
+the loop. ★★★ **A change ledger cannot record it, because there is
+nothing to record.**
+
+**The rule:** when a fix has more than one layer, ask of every row that
+observed the defect ***"which layer is in the loop?"***, not *"what does
+this row measure?"* A row must exist that **fails if any single layer is
+removed** — `icc-conformance` split one row into **four, one per layer**
+(`TOLERANCES.md` §3.8.4.3). ★ **An in-process unit test and a CLI row are
+different layers**: the unit test asserts the guard's arithmetic without
+attempting the allocation (right — *a test that aborts the test process
+proves nothing*), and is blind to whether `bench` propagates the `Err` as
+exit 1. **"Belt and braces" is the tell: two mechanisms are redundant only
+if EACH has a defect it alone can catch.**
+
+★★ The same shape in the differential-test register is **DL-056** —
+[[iccce-agreement-can-be-the-symptom]]. Filed with **NC-234/NC-235**
+(`iccce bench` **aborted the process**, `0xC0000409`, on ICC's
+seven-channel APTEC profile: a `_ => 33` catch-all giving `33⁷ × 3 × 8 ≈
+952.6 GiB`, and a guard using `checked_pow`, **which catches WRAP not
+SIZE**). ★ **An abort is the worst available library failure** — not
+catchable; the consumer's process goes with it. **Rule 6 at the
+allocation layer.**
+
 Related: [[iccce-bound-cannot-catch-its-own-magnitude]],
-[[iccce-pass-status]], [[iccce-verify-own-draft-too]].
+[[iccce-pass-status]], [[iccce-verify-own-draft-too]],
+[[iccce-agreement-can-be-the-symptom]],
+[[iccce-absence-of-publication-is-not-evidence]].
