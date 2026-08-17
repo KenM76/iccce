@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6,
+    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -409,6 +409,46 @@ fn main() {
         ));
     }
     for r in p6_records {
+        report.push_record(r);
+    }
+
+    // Pass G — the Ghent v5.0 population sample. The first differential
+    // grading in this suite whose inputs are profiles a **real document
+    // producer** embeds: 20 profiles extracted from the Ghent PDF Output Suite
+    // 5.0, written by Adobe InDesign CS6 and imposed by Callas pdfToolbox.
+    //
+    // ★ Its corpus is **licensed and cannot be committed** (the Ghent suite's
+    // own licence forbids redistribution; the profiles carry Adobe's, ECI's and
+    // X-Rite's separate licences). It resolves the corpus through
+    // `$ICCCE_PRIVATE_FIXTURES` and **skips every row with a reason** when it is
+    // absent, which is the permanent state in CI by design. A green CI line
+    // says those rows did not run, not that they passed.
+    let (pg, pg_records) = passg::run(&oracle);
+    report.note(format!("passg: {}", passg::note(&pg)));
+    for r in pg_records {
+        report.push_record(r);
+    }
+
+    // Pass H — ACCEPTANCE and REFUSAL, over the ICC's own published profile
+    // set (50 files from color.org, 2026-08-17). Its subject is not a colour
+    // value: that corpus publishes transforms, never expected outputs (DL-041),
+    // so nothing in it could be ground truth about a ΔE. What it grades is
+    // **which files iccce accepts, which it refuses, and whether a refusal says
+    // why** — rule 6 demonstrated on ten real ICC-published iccMAX files rather
+    // than on a fixture this project wrote to be refused.
+    //
+    // ★ It carries the **first `Kind::GroundTruth` rows in this crate**, from
+    // the ICC's published `Probe2 Profile Readme June 1, 2007`, which states in
+    // numbers what its Probe profiles do. Read `passh`'s module header before
+    // quoting any of them: they are ground truth about *rendering-intent tag
+    // selection*, not about any colour value, and one of the published
+    // statements turns out to be **false of the file the document names**.
+    //
+    // Same licensing posture as Pass G: uncommittable corpus, resolved through
+    // `$ICCCE_PRIVATE_FIXTURES`, every row SKIPs with a reason when absent.
+    let (ph, ph_records) = passh::run(&oracle);
+    report.note(format!("passh: {}", passh::note(&ph)));
+    for r in ph_records {
         report.push_record(r);
     }
 

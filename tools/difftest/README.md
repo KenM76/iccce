@@ -3159,6 +3159,16 @@ nothing, which is the trap `compiled.rs`'s own control hit on its first run.
 > | `…/compiled-cost-device` (reported) | 3,588 962×10⁻³ | 2,012 444×10⁻³ |
 > | `pass6/apparatus/harness-reproduces-bench` | 2,537×10⁻¹⁰ | 2,739×10⁻¹⁰ |
 >
+> ★★ **SCOPE, ADDED 2026-08-17: everything in §18 is a FOUR-CHANNEL result and
+> it does not generalise upward.** `recommended_grid_points` returns 33 for 3
+> and 4 inputs *because of the measurement above*, and for **≥5 inputs it now
+> returns a value computed from a memory budget** (`7→6`), which carries **no
+> ΔE claim at all**. The `_ => 33` catch-all that silently extended this
+> measurement to every higher dimension **aborted the process on the first
+> seven-channel profile the project was ever given** — Pass H §23.6. *A
+> constant justified for one regime and extended by a wildcard to regimes
+> nobody measured looks like a decision and is the absence of one.*
+>
 > **Three things this transition put on the record that the original run could
 > not.**
 >
@@ -4124,3 +4134,426 @@ is now defended through a parsed profile — **the fitted branches of 4.2.5.5 ar
 not**, on any fixture, because every fixture in reach is straight enough in the
 mid-range that neither implementation reaches the quadratic at all. That is the
 same owed instrument §19 named and it is still owed.
+
+---
+
+## 22. ★★★ Pass G — the Ghent v5.0 population sample
+
+**Built 2026-08-17 by `icc-conformance`.** Code: `src/passg.rs`. Instrument:
+`src/bin/ghent_probe.rs`. Graded bounds and their derivations:
+`docs/TOLERANCES.md` **§3.7**, which is the authoritative record — this section
+is the operational one: how to run it, what it needs, and what it refuses.
+
+### 22.1 What it is, in one paragraph
+
+Every profile this suite had graded against before it was **synthetic**
+(`tools/gen-profiles`), **OS-shipped** (the Windows colour directory) or
+**standards-body-issued** (FOGRA51). Pass G grades against **20 ICC profiles
+extracted from the Ghent PDF Output Suite 5.0** — written by Adobe InDesign
+CS6, imposed by Callas pdfToolbox, and embedded 121 times across 98 production
+PDF/X files. It is the first time this project has measured itself against what
+a real document producer actually embeds.
+
+**72 rows. Whole-suite result with Pass G registered:
+`pass=229 fail=0 skip=3 error=0`, exit 0** (baseline before it, `pass=157`).
+**Every Pass G row states a candidate separation** — the suite's `unstated`
+count is unchanged at 119, so Pass G added none — and `blind=0`.
+
+### 22.2 ★★ Licensing — the rule that binds anyone editing this
+
+The Ghent suite's own licence **forbids commercial use and redistribution
+without written permission**, and the profiles inside carry Adobe's, ECI's and
+X-Rite's separate licences. Therefore:
+
+- **No file from `ghent-v50\` may be committed to this repository.**
+- **No value read out of one may be copied into this repository** — not a
+  colorant, not a white point, not a CLUT sample, not a ΔE. Every number in
+  Pass G's records is **formatted at run time** from the file on the operator's
+  disk. The only corpus identifiers in source are **SHA-256 prefixes and file
+  names**, which point at a licensed artifact rather than reproducing it, and
+  **structural facts** (a grid size, a tag signature, a device class), which are
+  format metadata rather than colour data.
+- The same posture as the other three private corpora — `docs/NEXT_SESSION.md`
+  §4, `docs/LEGAL.md` §3.
+
+### 22.3 Running it
+
+```text
+# the corpus (licensed, not in any repository)
+set ICCCE_PRIVATE_FIXTURES=D:\Dev\iccce-private-fixtures
+
+cargo build --release -p iccce-cli          # from the repo root
+cd tools/difftest
+cargo run --release                          # the whole suite, Pass G included
+cargo run --release --bin ghent_probe        # the INSTRUMENT: prints, grades nothing
+```
+
+**Without the corpus every Pass G row SKIPs with a reason.** That is the
+permanent state in CI, by design. ★ A green CI line for these rows says they
+**did not run** — it is not evidence that they passed. `§5.6`'s rule applies as
+everywhere: run the gate bare and read `$?`; never through `grep` or `tail`.
+
+**`ghent_probe` is an instrument, not a gate.** It prints numbers, grades
+nothing and never fails. It exists so that a tolerance can be *derived* from
+measured structure before it is written into `passg.rs` — so that no number in
+the graded suite was chosen by watching a comparison go green. If you are
+changing a Pass G tolerance, run the probe first and put the computed envelope
+in the `why`; §3.7.2 and §3.7.3 record what happens when that order is reversed.
+
+### 22.4 The four sections
+
+| § | subject | needs | rows |
+|---|---|---|---|
+| **A** | the **v4 vendor `mAB `** path — X-Rite's `GWG_ICC_v4_testprofile.icc`, `mAB ` 7×7×7×7 with 4096-entry A curves | corpus, oracle, shipped binary | 18 |
+| **B** | the **population sweep** — 5 pairs × 4 intents × ±BPC, in the `B2A` direction | corpus, oracle, shipped binary | 46 |
+| **C** | **`eciRGB v2` in its v2.4 and v4.2 encodings** — one vendor, one declared space | corpus, shipped binary (+ oracle for one row) | 3 |
+| **D** | the two **GWG trap profiles** | corpus (+ oracle for one row) | 5 |
+
+They are independent: a failure to build one does not silence the others.
+
+### 22.5 The three things to know before changing anything here
+
+1. **§A's PCS rows compare the HARNESS to lcms2, not iccce to lcms2.** The
+   geometry substitution they depend on cannot be made inside `crates/` — the
+   shipped engine has one interpolation scheme by design. **The link to iccce is
+   the `apparatus` row**, graded at `1×10⁻⁹`, and injection I1 (§3.7.6) confirms
+   it empirically: corrupting iccce's v4 PCSLAB decode turns the apparatus rows
+   red and leaves the three PCS rows green. Reading a green PCS row as a
+   statement about iccce, without the apparatus row beside it, is a
+   misattribution the structure invites.
+2. **Two tolerances here are FUNCTIONS, not constants**
+   (`corner_tolerance`, `propagated_gate`, `structural_tolerance_from`), because
+   the quantity each bounds is a property of *which tag is loaded*. Both were
+   made functions **after** a constant failed — see `TOLERANCES.md` §3.7.2 and
+   the §4 change log. A run-time-selected tolerance also cannot go stale
+   (DL-034) and states its own premise on the emitted line.
+3. **Every separation in Pass G uses `Separation::against_distance`, never
+   `against`.** The distances are properties of the *fixture* — a method
+   envelope, a byte difference between two tag blocks, the gap between two
+   colorant tags — and must not be derived as `|observed − alt_observed|`, which
+   collapses to zero on exactly the run where the code takes the wrong
+   candidate. Injection I4 demonstrates the difference: the emulated-geometry
+   rows fail **and keep reporting `DISCRIMINATING`**.
+
+### 22.6 Coverage, stated
+
+**11 of the corpus's 20 profiles touched, 9 not.** Three vendors and one
+workgroup; one destination CMYK profile for four of the five sweep pairs; one
+machine (Windows 11, MSVC, release); one oracle pin (`21c582a`); one day
+(2026-08-17); one tip (`e21154c`). 341 CMYK / 213 RGB / 69 gray points, plus 16
+corners.
+
+**Not covered, and named rather than implied:** the `mBA ` (B2A) direction of
+the X-Rite v4 profile; `gamt` and `gbd*`; the 9 untouched profiles; **eight
+`--bpc` combinations iccce refuses by name, which are therefore not
+differentially tested at all** (the refusals are graded; the conversions behind
+them are not measured); **any agreement claim for §B**, which has no attribution
+row because the harness has no `mft2` B2A model; any perceptual claim; and
+**any published ground truth** — Pass G has none and cannot have any, because
+ICC.1 mandates no interpolation method.
+
+---
+
+## 23. ★★★ Pass H — acceptance and refusal, over the ICC's own published profile set
+
+**Built 2026-08-17 by `icc-conformance`.** Apparatus `src/passh.rs` (**51
+rows** — filed with 48; three added the same day when the one RED row was fixed
+and had to be split, §23.6.3), instrument `src/bin/passh_probe.rs`, tolerance
+record `docs/TOLERANCES.md` **§3.8**.
+
+Everything else in this suite grades a **colour value**. Pass H does not, and
+on this corpus nothing could: a published profile states a *transform*, never an
+expected *output*, so any ΔE computed from one is a comparison between two
+implementations of an interpolation ICC.1 does not specify (DL-041). **The
+subject here is which files iccce accepts, which it refuses, and whether a
+refusal says why** — and that turns out to be provable more broadly than
+anything else the project holds.
+
+### 23.1 Why a refusal population is worth a Pass
+
+`CLAUDE.md` rule 6 — *"the parser reports; it does not repair"* — had until now
+been demonstrated **only on profiles this project wrote to be refused**
+(`tools/gen-profiles`). That is a real test of the code path and a weak test of
+the claim: a synthetic fixture proves that iccce refuses *our* iccMAX file.
+
+This corpus contains **ten iccMAX files authored by the ICC, by X-Rite and by
+Kodak** for their own purposes — `FluorescentNamedColor`, `NamedColor`,
+`Lab-D50_2deg`, `SixChanCameraRef`, the four `Spec400_10_700-*`,
+`sRGB_D65_colorimetric`, `sRGB_ISO22028` — and **forty** conformant v2/v4
+profiles across seven ICC versions, four device classes and three colour spaces.
+Neither population is obtainable from a generator, because a generator only
+contains what somebody thought to generate.
+
+### 23.2 Running it
+
+```text
+cd tools/difftest && cargo run --release            # the suite, Pass H included
+cd tools/difftest && cargo run --release --bin passh_probe   # the instrument
+```
+
+The corpus resolves from `$ICCCE_PRIVATE_FIXTURES` (default
+`D:\Dev\iccce-private-fixtures`), subfolder `color-org\`. **Every row SKIPs with
+a reason when it is absent**, which is CI's permanent state by design. ★ A green
+CI line is evidence that nothing in this section ran.
+
+★★ **Licensing, and it binds anyone editing `passh.rs`.** 23 distinct `cprt`
+strings across the loose files, six licensing postures, restrictive reading
+applies to the whole folder (`D:\Dev\iccce-private-fixtures\README.md`,
+`### color-org/`). **No file may be committed and no value read out of one may
+be copied into this repository.** Every number Pass H reports is computed at run
+time from the operator's disk. The only identifiers `passh.rs` holds are **file
+names** — pointers to a licensed artifact, not content of it.
+
+### 23.3 The five sections
+
+| § | subject | needs |
+|---|---|---|
+| **A** | the **version gate** — 10 real iccMAX files, each required to satisfy all four of *exit exactly 1*, *message contains `iccMAX`*, *message quotes the file's own version word*, *stdout empty* — plus a committed **control** that isolates the version byte from the exotic content | corpus + shipped binary |
+| **B** | the **acceptance population** — 40 profiles, exit 0 and `malformations: 0`, header fields checked against the raw bytes, and the accept/refuse verdict cross-checked against lcms2 on all 50 | corpus + shipped binary + oracle |
+| **C** | the **N-channel population** — the first `7CLR` profile this project has seen, and the compiled path's behaviour on it | corpus + shipped binary + oracle |
+| **D** | the **Probe profiles**, graded against the ICC's own **published** statement of what they do | corpus + shipped binary (+ oracle for two rows) |
+| **E** | **coverage, reported not graded** | corpus |
+
+### 23.4 ★★★ §D carries the first `ground-truth` rows in this crate
+
+`Probev2.zip` ships `Probe2 Profile Readme June 1.pdf`, in which the ICC states
+in numbers what `Probev2_ICCv4.icc` does — the `BToA` tags ignore `a*`/`b*` and
+map `L*` to monotone tints of **pure cyan** (`B2A0`), **magenta** (`B2A1`) and
+**yellow** (`B2A2`), with `L* 0` at maximum coverage and `L* 100` at unmarked
+media; the `AToB` tags put `L*` into `70..100`, `30..70` and `0..30`
+respectively. Both paragraphs are transcribed verbatim in `passh.rs`'s module
+header with their source.
+
+**That is ground truth about rendering-intent TAG SELECTION and about the
+lightness BAND a tag's output lies in. It is not a published colorimetric
+value** — nobody measured a patch. Full statement of what the rows can and
+cannot claim is `TOLERANCES.md` §3.8.2, and the short version is that a row here
+catches a wrong tag, a wrong element order, a mis-decoded PCSLAB or a transposed
+ink, and certifies no colour.
+
+★★★ **And the published claim turns out to be false of the file the document
+names.** It is realised **exactly** on the two `Probev1` profiles the readme
+does not describe (off-colorant channels `0.0` to the bit) and **not at all** on
+`Probev2_ICCv4` (off-colorant maximum `0.9969`). The three rows that depend on
+the strict form of the sentence are therefore emitted on that file as REPORTED
+with a mandatory `★★★ THE PUBLISHED CLAIM IS FALSE OF THIS FILE` prefix in their
+own detail text — **relaxed to infinity, not to a number the observation
+happens to satisfy**. What survives and is graded everywhere is the weaker
+statement the sentence still entails: *the published colorant is strictly the
+largest of the three chromatic channels.*
+
+### 23.5 ★★ Two divergences with lcms2, both findings, neither a failure
+
+**(a) `mpet` tag selection, and both engines are right.** `Probev2_ICCv4`
+carries `D2B0/1/2` and `B2D0/1/2`. ICC.1:2022 **8.10.2 a)** prefers them *"except
+where this tag is not needed or supported by the CMM"*; **b)** falls back to
+`AToBx`/`BToAx`. iccce does not implement `multiProcessElementsType` (the six
+tags decode to `TagData::Unknown` — graded), so it takes (b); lcms2 supports
+them and takes (a). **Measured divergence `33.13 L*`.** In the `BToA` direction
+lcms2's three intents return **red, green and blue** — which is precisely what
+the readme says `B2D0/1/2` do, so the profile identifies which tag each engine
+used. The row is REPORTED: no clause requires the two to agree.
+
+★ **What is owed to the engineer:** iccce takes step (b) **silently**. Nothing
+in `inspect` or `transform` discloses that an author-preferred transform was
+present and declined. **The clause permits declining; it does not require
+silence.** A `33.13 L*` divergence a caller cannot see coming is rule 6's
+subject one layer above the parser.
+
+★★ **The graded row `icc-conformance` will build the moment that disclosure
+exists, specified here so the target is fixed BEFORE the implementation and
+cannot be fitted to whatever gets built.** Confirmed with `icc-engineer`
+2026-08-17; not yet implemented, because it changes a public surface and the
+operator has not seen it.
+
+`passh/D/probe-v2-icc-v4/tags/8102-fallback-is-DISCLOSED` — an **indicator
+count**, `Kind::DerivedExpectation`, tolerance **exactly 0**, four violation
+counters:
+
+1. running `inspect` on `Probev2_ICCv4.icc` produces **no** disclosure naming
+   the step-(b) fallback;
+2. the disclosure does **not** name the tag that was present and declined
+   (`D2B0`/`D2B1`/`D2B2`/`B2D0`/`B2D1`/`B2D2` — the specific signature for the
+   intent asked for, not the family);
+3. the disclosure does **not** cite the clause that permits it (**ICC.1:2022
+   8.10.2**), which is what makes it a *conformant decline* rather than a defect
+   report;
+4. **the control** — the same disclosure appears on a profile that has **no**
+   `mpet` tags at all (any of the three `Probev1` files, or `sRGB2014.icc`).
+   Without this counter a build that emitted the notice unconditionally would be
+   green, and an unconditional disclosure discloses nothing.
+
+★ **Counter 4 is the row.** The first three are satisfied by printing a string;
+only the control makes the row load-bearing, and it is the same lesson as
+`passh/A/control/the-version-word-ALONE-produces-the-same-refusal`.
+
+■ **What the row will NOT claim:** that iccce should take step (a). It should
+not — `mpet` is unimplemented and the clause explicitly permits declining
+*"where this tag is not needed or supported by the CMM"*. The subject is
+disclosure, not tag selection, and `tags/mpet-selection-divergence-from-lcms2`
+stays **REPORTED** at `33.13 L*` either way.
+
+**(b) The encoded-PCS clamp, reproduced on a real file.** iccce clamps the
+encoded PCS at the B curve (clause 10.18's domain, via `Trc::eval`); lcms2 does
+not. Pass 4b (§15.3) found this on a fixture **this project authored** and
+reported it ungraded because the clause question is unsettled. Pass H reproduces
+it on `Probev1_ICCv4.icc` at `0.2374 L*` — **so it was never an artefact of our
+own fixture design.** ★ The two `Probev1` files make the mechanism unmistakable:
+the same design, encoded once as legacy `mft2` (ceiling `100.390625`, no
+overflow) and once as v4 `mAB ` (ceiling `100.0`, overflow). **The overflow is
+caused by the encoding, not the data.** The points are excluded from the graded
+cross-check by a predicate evaluated on **lcms2's** output — the side that does
+not clamp — never on iccce's.
+
+### 23.6 ★★★ The row that went RED — the defect, the fix, and why one row became four
+
+#### 23.6.1 What it found — HISTORICAL, DATED 2026-08-17, tip `e21154c`
+
+`iccce bench` on the corpus's 7-channel source **aborted the process**: bare
+exit `-1073740791` (`0xC0000409`), stderr *"memory allocation of
+1022842631448 bytes failed"*, stdout empty. `recommended_grid_points(7)`
+returned **33** (its `_ => 33` catch-all, documented only for 3-D and 4-D), so
+`CompiledTransform::new` sampled `33⁷ = 42 618 442 977` nodes × 3 × 8 bytes
+≈ **952.6 GiB**. `checked_pow` guards against wrap, not against size.
+
+The graded indicator is: **the bare exit status must be `0` (worked) or `1` (a
+NAMED refusal)** — the CLI's own contract everywhere else. A process abort is
+neither. **There was no number that could be moved to make it green**; it was a
+defect report with a reproduction. `transform` on the same profile was
+unaffected (it uses the reference `Chain`) and is graded green at
+`4.900435×10⁻⁵ L*` against lcms2 on the PCS side — **the first graded
+seven-channel row this project has ever had**.
+
+★ **The corpus found this and nothing synthetic would have**: `gen-profiles`
+has never produced a device space with more than four channels.
+
+#### 23.6.2 What fixed it — verified by running the shipped binary, not by reading the diff
+
+`icc-engineer` changed `crates/iccce-cmm/src/compiled.rs` twice: a **SIZE**
+guard (`ChainError::GridExceedsBudget`, bounded by the new public
+`MAX_COMPILED_GRID_BYTES = 64 MiB`) distinct from the `checked_pow` **OVERFLOW**
+guard (`GridTooLarge`, which stays and stays meaning true overflow); and
+`recommended_grid_points`' `_ => 33` catch-all replaced by a value **computed**
+from the budget for ≥5 channels — `5→14, 6→9, 7→6, 8→5, 9→4, 10–12→3, 13–15→2`,
+with **3 and 4 keeping the measured 33**.
+
+| command | bare exit | result |
+|---|---|---|
+| `iccce bench --src <7CLR> --dst sRGB2014.icc --pixels 10000` | **0** | grid **6**, **279 936** nodes, `6 718 464` bytes (6.407 MiB) |
+| the same with `--grid 33` | **1** | stdout **empty**; stderr names `42618442977` nodes, `1022842631448` bytes and the `67108864`-byte budget |
+
+**Suite after the fix and the split: `pass=274 fail=0 skip=9 error=0`, bare exit
+`0`** — re-measured here, `cargo run --release` redirected to a file, no pipe in
+the gate.
+
+#### 23.6.3 ★★★ Why ONE row stopped being enough the moment the defect was fixed
+
+**Each of the two fixes independently makes the original observation zero.** At
+grid 6 the allocation is 6.4 MiB and succeeds whether or not the guard exists —
+so **deleting `MAX_COMPILED_GRID_BYTES` would leave the original row GREEN.** A
+row that went red on a real defect had become a row that cannot see that defect
+return, with no number moving and nobody editing it.
+
+*Not "what does this row measure" but "which layer is in the loop."* Four rows:
+
+| row | layer in the loop |
+|---|---|
+| `compiled-path-does-not-ABORT-the-process` | the binary at the **default** grid — is the default survivable |
+| `default-grid-BUILDS-and-is-the-grid-the-library-RECOMMENDS` | the binary **and** `recommended_grid_points` — is the default *usable*, and do the library's recommendation and the binary's behaviour still agree |
+| `oversized-grid-is-a-NAMED-refusal` | **the size guard itself, through the CLI** — forces `--grid 33`, the exact configuration that died |
+| `compiled-vs-reference-at-the-default-grid` | none — **REPORTED**, both arms are iccce |
+
+★ **The third is not redundant with `crates/iccce-cmm`'s own
+`compiled::tests::oversized_grid_arithmetic_is_refused_not_aborted`.** That test
+asserts the guard's **arithmetic** in process and deliberately never attempts
+the allocation — right, because a test that aborts the test process proves
+nothing and takes its siblings with it. But it is blind to the CLI wiring: exit
+code, stream routing, stdout suppression. **Same claim, two layers, both
+needed** — the lesson injection I2 produced in §23.7.
+
+★ **The three numbers stderr must name are computed by the row, never typed**,
+so the row tracks the guard's arithmetic instead of freezing yesterday's. A
+sixth violation counter fires if the budget is ever raised above that
+allocation: **a row that has quietly gone vacuous is worse than one that fails,
+because it reports PASS.**
+
+#### 23.6.4 ★★ Two stale-prose defects fixed in the same sweep
+
+Both are DL-034's shape, and both are worth reading because **the row was
+authored correctly** — the computed halves of its `detail` updated themselves —
+and the *typed narrative* is what went stale beside them.
+
+1. The row reported **PASS** while its own detail still read *"checked_pow
+   guards against WRAP, not against SIZE, so the allocation is attempted and the
+   allocator aborts"*. A reader trusting the detail over the verdict would
+   conclude iccce still aborts. **A `detail` string that mixes computed and
+   typed content inherits the weaknesses of the typed part.**
+2. `(~0.00 TiB)` — a `{:.2} TiB` format chosen when the value was `0.93 TiB`.
+   The *number* was interpolated and updated itself; the *unit* was prose and did
+   not. **A fixed unit is a typed claim about magnitude.** Now `human_bytes()`,
+   which picks the unit from the value and always prints the exact byte count
+   beside it. And a trailing `stderr: ` with nothing after it, indistinguishable
+   from a truncated field, is now `(empty)`.
+
+#### 23.6.5 The compiled path above four channels stays REPORTED
+
+`compiled-vs-reference-at-the-default-grid` observes **`2.952005×10⁻³`** device
+units at grid 6 over 527 off-node probes, and is **never graded**. Both arms are
+iccce (self-comparison, the weakest class); the measured gate that justifies 33
+for 3-D and 4-D has no counterpart at seven inputs, because ICC.1 legislates no
+interpolation method (A16) and lcms2's n>4 CLUT geometry has not been read out
+of the pin; and there is exactly **one** >4-channel profile in existence here, so
+any bound would be a population of one. Full reasoning and the two conditions
+that would reverse it: `TOLERANCES.md` §3.8.4.5.
+
+### 23.7 Proof of power — three injections
+
+Detached worktree, baseline reproduced first, each injection reverted before the
+next. Full table in `TOLERANCES.md` §3.8.6.
+
+| # | defect | result |
+|---|---|---|
+| I1 | the `version_raw >> 24 >= 5` gate made unreachable | §A's four rows and §B's cross-check red; **A1 failed at exactly 10 and the control at exactly 4 — their stated separations** |
+| I2 | destination intent→`B2A` map rotated by one | all three `shipped/intent-selects-the-published-colorant` rows failed at **exactly 81**, their stated separation. ★ **Seven of §D's eight per-profile rows stayed GREEN** — they evaluate a tag by signature in process and are blind to a *wiring* defect by construction |
+| I3 | `decode_v4_pcs` given the legacy 16-bit Lab scale | `passh/C/7clr/pcs-corners-vs-lcms2` failed at **`3.906250×10⁻¹` = `100 × (65535/65280 − 1)` exactly**, which is the sensitivity `ORACLE_LAB`'s `why` claims. ★ The `probe-v1-icc-v2` rows stayed green — `mft2` does not go through that function, so the suite **localised** the injection to the v4 files |
+
+### 23.8 Coverage, stated
+
+**50 files, all inspected; 40 accepted, 10 refused.** Versions `2.0.0 (5)
+2.1.0 (4) 2.4.0 (6) 4.0.0 (8) 4.1.0 (1) 4.2.0 (15) 4.3.0 (1)`; classes
+`prtr (24) mntr (7) scnr (6) spac (3)`; colour spaces `CMYK (23) RGB (16)
+7CLR (1)`. One machine (Windows 11, MSVC, release), one oracle pin (`21c582a`),
+one day (2026-08-17).
+
+★★ **The denominator matters and is stated in the row itself, because a second
+census exists that reads like a rival claim.** Across **both** private corpora —
+this one (40 accepted) plus `ghent-v50` (20, Pass G, §22) — the sweep gives
+**`CMYK 33, RGB 25, GRAY 1, 7CLR 1 = 60`** (`NUMERIC_CLAIMS.md` **NC-220**).
+**They reconcile exactly**: `23+16+1 = 40` here, `10+9+1 = 20` there, and **the
+single `GRAY` profile is in `ghent-v50`, not here.** No contradiction — two
+populations. **A coverage number quoted without its corpus is not a coverage
+number**, so `passh/E/coverage/population-breakdown` now names its own
+denominator and points at the other one.
+
+**Not covered, and named rather than implied:**
+
+- **Any colour value.** Structurally impossible here.
+- **`GRAY`, `Lab ` and `XYZ ` colour spaces — the accepted population has
+  NONE.** `D50/D55/D65_XYZ.icc` declare `colourSpace = 'RGB '`. Any claim of
+  `GRAY`/`Lab`/`XYZ` coverage from this corpus is false.
+- **`6CLR` — zero evidence.** The corpus's only six-channel file is iccMAX and
+  is refused at the version gate. Nothing about six channels follows from the
+  seven-channel rows.
+- **`namedColor2` behaviour** — both `nmcl` files are iccMAX and refused.
+- **Any differential colour row for the CMYK print profiles.**
+  `CGATS21_CRPC1/3`, `GRACoL2006/2013`, `SWOP2006/2013`, `PSOuncoated_v3
+  FOGRA52`, `PSOsc-b_paper_v3 FOGRA54`, `SC_paper_eci`, `SNAP2007`, the two
+  `Coated_Fogra39L_VIGC_*`, the two `Uncoated_Fogra47L_VIGC_*` and the five
+  `APTEC_*` are covered by §B's acceptance rows **and by nothing else**.
+  `NEXT_SESSION.md`'s queue item 6 is **not** discharged by this pass.
+- **The version gate's rival reading.** Every iccMAX file here encodes exactly
+  `0x05000000`, so *"major byte ≥ 5"* and *"word ≥ 0x05000000"* are
+  indistinguishable on all 50 — the row prints `ZERO-SEPARATION` and says so. A
+  v5.1 profile would be needed.
+- **Any perceptual claim.** Nothing here was measured against a press or an
+  instrument.

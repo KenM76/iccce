@@ -188,6 +188,27 @@ pub mod pass5;
 pub mod pass5b;
 pub mod pass5c;
 pub mod pass6;
+// ★ Pass G — the Ghent v5.0 population sample. The first differential grading
+// this project has done against profiles a *real document producer* embeds,
+// rather than synthetic, OS-shipped or standards-body-issued ones. It reads a
+// **licensed, uncommittable** corpus via `$ICCCE_PRIVATE_FIXTURES` and skips
+// with a reason when it is absent, which is the permanent state in CI. The
+// licensing rules that bind anyone editing it are in the module's own header.
+//
+// This is a `//` comment and not a `///` one deliberately: an outer doc comment
+// here is merged with `passg.rs`'s `//!` header, and rustdoc then resolves that
+// header's intra-doc links in THIS module's scope, where `passg`'s own types are
+// not visible. The result is a doc build that fails on links which are correct.
+pub mod passg;
+
+// ★ Pass H — acceptance and refusal, over the ICC's own published profile set.
+// Its subject is not a colour value (that corpus publishes transforms, never
+// expected outputs — DL-041) but **which files are accepted, which are refused,
+// and whether a refusal says why**. It carries the first `Kind::GroundTruth`
+// rows in this crate, sourced from the ICC's published Probe-profile readme.
+// Same licensing posture and same `$ICCCE_PRIVATE_FIXTURES` resolution as Pass
+// G; same `//`-not-`///` reason as the comment above.
+pub mod passh;
 
 // ===========================================================================
 // Locating the oracle
@@ -606,6 +627,40 @@ pub struct Iccce {
     exe: PathBuf,
 }
 
+/// ★ **Added 2026-08-17 for Pass H.** Everything one invocation of the shipped
+/// binary said, kept apart so a grader can assert on each piece.
+///
+/// The three fields are three different claims and Pass H grades all three:
+///
+/// - `code` — **the bare exit status of the child process.** Not a pipeline's,
+///   not a shell's. `None` when the process did not exit normally at all,
+///   which is a distinct and gradeable outcome from "exited non-zero".
+/// - `stdout` — for a refusal this must be **empty**. `CLAUDE.md` rule 6: the
+///   parser reports, it does not repair, and a profile it declined to parse
+///   must not have produced a partial dump that a caller could mistake for a
+///   successful read.
+/// - `stderr` — the **reason**, which is the deliverable. A refusal that says
+///   "parse error" where it should say "iccMAX" is a different behaviour, and
+///   a row that only checked the exit code would not see the difference.
+#[derive(Debug, Clone)]
+pub struct InspectRun {
+    pub code: Option<i32>,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+impl InspectRun {
+    /// The value of a `key: value` line in `iccce inspect`'s stdout, whose
+    /// format is deliberately a diff surface rather than a human UI
+    /// (`crates/iccce-cli/src/main.rs`).
+    #[must_use]
+    pub fn field(&self, key: &str) -> Option<&str> {
+        self.stdout
+            .lines()
+            .find_map(|l| l.strip_prefix(key)?.strip_prefix(": "))
+    }
+}
+
 impl Iccce {
     /// Find the `iccce` binary, in this order:
     ///
@@ -659,6 +714,70 @@ impl Iccce {
         self.exe
             .components()
             .any(|c| c.as_os_str().eq_ignore_ascii_case("debug"))
+    }
+
+    /// ★ **Added 2026-08-17 for Pass H.** Run `iccce inspect <profile>` and
+    /// return **everything the process said**, unparsed and ungraded.
+    ///
+    /// ## Why this returns a struct instead of a `Result`
+    ///
+    /// Every other method on this type treats a non-zero exit as
+    /// [`DiffError::NonZeroExit`], because for a *transform* a refusal means
+    /// no answer came back. Pass H inverts that: **the refusal IS the answer**,
+    /// and the thing being graded is its exit code, its message and the absence
+    /// of any stdout. Folding a refusal into an error type would force every
+    /// caller to unpick it out of a `Display` string, and would make "iccce
+    /// refused, saying why" indistinguishable from "the harness could not run
+    /// iccce at all". Those are different facts and this type keeps them apart:
+    /// a genuine spawn failure is still `Err`.
+    ///
+    /// ## What the caller must NOT do with the result
+    ///
+    /// **Do not pipe.** `TOLERANCES.md` §5.6 exists because two false
+    /// "all green" claims have shipped from reading an exit code through
+    /// `grep`/`tail`, which report *their* status, not the child's.
+    /// [`InspectRun::code`] is the child's own status and is the only thing a
+    /// gate may use.
+    pub fn inspect(&self, profile: &Path) -> Result<InspectRun, DiffError> {
+        let args = vec!["inspect".to_string(), profile.display().to_string()];
+        let out = Command::new(&self.exe)
+            .args(&args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+        Ok(InspectRun {
+            code: out.status.code(),
+            stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&out.stderr).into_owned(),
+        })
+    }
+
+    /// ★ **Added 2026-08-17 for Pass H.** Run `iccce bench` and return the raw
+    /// exit status, for a row whose subject is **whether the process survives
+    /// at all**.
+    ///
+    /// `Ok(None)` for `code` means the process was terminated without a normal
+    /// exit status. On Windows an allocator abort surfaces as the *negative*
+    /// status `0xC000_0409` (`STATUS_STACK_BUFFER_OVERRUN`, which is what
+    /// Rust's `__fastfail` raises), and that is a value a caller must be able
+    /// to see rather than have flattened into "non-zero".
+    pub fn bench_status(&self, args: &[String]) -> Result<InspectRun, DiffError> {
+        let mut full = vec!["bench".to_string()];
+        full.extend_from_slice(args);
+        let out = Command::new(&self.exe)
+            .args(&full)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|e| DiffError::Spawn(self.exe.clone(), e))?;
+        Ok(InspectRun {
+            code: out.status.code(),
+            stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&out.stderr).into_owned(),
+        })
     }
 
     /// Run `iccce transform --src <src> --dst <dst>` over a grid of RGB
@@ -1234,6 +1353,21 @@ pub enum Metric {
     DeltaE2000Max,
     /// Mean CIEDE2000 over the rows of a grid, `kL=kC=kH=1`, D50 CIELAB.
     DeltaE2000Mean,
+    /// ★ **Added 2026-08-17 for Pass H.** A **count** — of files, of violated
+    /// conditions, of points at which a predicate did not hold.
+    ///
+    /// It exists because Pass H's subject is *acceptance and refusal*, which
+    /// has no colour units at all, and because emitting a count under
+    /// [`Metric::AbsMaxComponent`] would put "abs-max-component" in the TSV
+    /// beside a number that is not a difference of components in any space.
+    /// A metric column that lies is worse than one that is coarse: a reader
+    /// comparing two rows must be able to tell that they answer different
+    /// questions, which is the whole reason this enum documents each variant.
+    ///
+    /// **A count row's tolerance is essentially always zero** — there is no
+    /// instrument error in a count — so a non-zero bound on one of these
+    /// deserves a very good `why`.
+    IndicatorCount,
 }
 
 impl Metric {
@@ -1244,6 +1378,7 @@ impl Metric {
             Metric::DeviceAbsMeanNormalised => "device-abs-mean-normalised(0..1)",
             Metric::DeltaE2000Max => "dE2000-max(kL=kC=kH=1,D50)",
             Metric::DeltaE2000Mean => "dE2000-mean(kL=kC=kH=1,D50)",
+            Metric::IndicatorCount => "indicator-count",
         }
     }
 
@@ -1671,6 +1806,21 @@ impl Record {
     #[must_use]
     pub fn with_separation(mut self, separation: Separation) -> Record {
         self.separation = separation;
+        self
+    }
+
+    /// ★ **Added 2026-08-17 for Pass H.** Restate the [`Metric`] a record was
+    /// built with.
+    ///
+    /// [`Record::graded`] takes the metric positionally, which is right for a
+    /// section where every row measures the same thing. Pass H mixes counts,
+    /// device units and `L*` units inside one section, and a helper that fixed
+    /// one metric for all of them would have put a wrong label in the TSV — the
+    /// failure [`Metric`]'s own doc comment warns about. A builder keeps the
+    /// helper and keeps the label honest.
+    #[must_use]
+    pub fn with_metric(mut self, metric: Metric) -> Record {
+        self.metric = metric;
         self
     }
 
