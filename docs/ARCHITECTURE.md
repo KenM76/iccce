@@ -4509,3 +4509,1241 @@ would then be fitted to the observation, which is exactly what this
 entry forbids, and nothing in the code can detect the ordering); or a
 second control acquires a declaration table, at which point the pattern
 should be factored rather than copied.
+
+### DL-044 — ★★ **iccce has a NAMED EXTERNAL CONSUMER and a standing bidirectional channel to it. Rule 9's dependency classification gains a SECOND AXIS — a consumer's CI gates — and the adoption case for that consumer is CONFORMANCE, never accuracy**
+
+**Date:** 2026-08-17 · **Occasioned by:** the operator creating
+`D:\Dev\FeatureRequests\iccce_FeatureRequests\` on 2026-08-17 as a
+bidirectional request channel to the `pdfce` session at `D:\Dev\pdfce\`,
+and `pdfce` filing three items into it the same day · **Assessed by:**
+`icc-engineer` · **Filed by:** a **general-purpose agent standing in for
+`icc-librarian`** — the agent type could not be dispatched from a
+session whose working directory is `D:\Dev\pdfce`, so `iccce`'s project
+agents were not in its roster; it followed
+`.claude/agents/icc-librarian.md` as its operating contract and **had a
+shell**, which the real agent does not · **Relates to** project **rule 9**
+(classify every dependency), **rule 3** (name the oracle), **rule 1** (a
+wrong colour looks like a right one), **DL-024** (publication is the
+operator's act), **DL-031** (a count is not an inventory), **DL-041**
+(the LUT path's ground truth cannot exist), **DL-042** (re-audit the
+reason an item is owed), and `CLAUDE.md` **rule 10**
+
+#### The decision
+
+> **This project's API shape is, from today, constrained by a REAL
+> CALLER rather than only by its own judgement; and `pdfce`'s three hard
+> gates — `wasm32-unknown-unknown` (CI-enforced there), no copyleft
+> anywhere in a dependency tree, and no network client in
+> `pdfce-core`/`pdfce-render` — become INPUTS to rule 9's classification
+> of every future dependency, not merely observations about a sibling.**
+
+#### What the channel is, and the one property that forces this entry
+
+The folder is **in no git repository, deliberately** — transient
+coordination, not a record. Its binding consequence: **nothing may exist
+only there.** A reply is a pointer plus an executive summary; the
+durable finding lands in this project's own `docs/` in git. **This entry
+is that landing** for the registration itself.
+
+**Requests flow BOTH ways** — unlike the GUI channel `pdfce` also runs,
+where `pdfceGUI` asks and `pdfce` answers. `iccce` may write
+`open/request_<topic>.md`. ★ **A consumer's real usage is the best
+available check on this library's API shape, and that check only works
+if this side asks. Not asking is the failure mode, not a courtesy.**
+
+#### The constraint is SATISFIED TODAY and is NOT GATED HERE
+
+| Gate | State at tip `e21154c` | Class |
+|---|---|---|
+| `wasm32-unknown-unknown` builds | **exit 0**, four `.rlib`s emitted for `iccce-cmm`, `iccce-profile`, `iccce-color`, `iccce-measure` | **dated observation** |
+| No copyleft in the tree | `Cargo.lock` holds **5** `[[package]]` entries and **all five are the workspace crates** — zero third-party dependencies | **dated observation** |
+| No network client | nothing to classify; the only non-test I/O in the workspace is `iccce-cli`, and every `std::fs` call in a library crate sits inside `#[cfg(test)]` | **dated observation** |
+
+*(All three **verified by the filing agent, which ran them** — see the
+`SESSION_LOG.md` entry of the same date for the runner and the
+inventory.)*
+
+★★ **This was the FIRST time any iccce code was built for wasm32**; the
+target was not previously installed on this machine. **It is NOT gated
+in this project's CI.** So the honest statement is *"it built once,
+today, at one tip, uninstrumented"* — **not** *"wasm32 is supported"*.
+
+> **★ The consequence that makes this a decision rather than a note:
+> adding a dependency here can break a CONSUMER'S CI gate silently.**
+> Nothing in this repository would go red. Adding
+> `wasm32-unknown-unknown` to `.github/workflows/ci.yml` is the obvious
+> remedy and **is not done** — `.github/` is not the librarian's to
+> edit, and it is recorded as owed.
+
+#### ★★★ The adoption finding, and the direction it must never be written in
+
+`pdfce` today converts `DeviceCMYK` through a **6×6×6×6 baked lookup
+table fitted to *pdfium* output** (`crates/pdfce-core/src/color/cmyk_table.rs`)
+— obtained by rendering patches and measuring them. That is a
+**cross-check against another implementation, not ground truth**: this
+project's own **rule 3**, applied to a sibling's existing work.
+
+**iccce's oracle for a CMYK LUT path is lcms2** — also a cross-check.
+And per **DL-041** the ground-truth gap for the LUT path is
+**structural**: ICC.1 mandates no interpolation method, so no published
+value could exist even in principle, corroborated because **iccDEV,
+ICC's own reference implementation, ships zero expected colour values**.
+
+> **★★★ Therefore replacing pdfium's table with iccce is a LATERAL move
+> in evidence class. The defensible case for adoption is CONFORMANCE —
+> ISO 15930 / ISO 32000-1 §14.11.5, the document's declared output
+> intent being honoured AT ALL — and NOT accuracy. Do not let a later
+> restatement invert this; the inversion is the specific error this
+> entry exists to prevent.**
+
+#### ★ And the first thing the consumer asked for is the thing this project cannot supply with independent provenance
+
+`pdfce` renders to an sRGB raster and asked whether iccce constructs
+**sRGB internally** or demands a caller-supplied destination profile.
+**Today it is the latter, by omission rather than by decision** —
+`Chain::new` (`crates/iccce-cmm/src/transform.rs:246`) requires two
+parsed `&Profile`s, and every sRGB reference in the tree is inside a
+`#[cfg(test)]` block reading a file off local disk *(verified — grepped
+and read)*.
+
+**The blocker is not effort.** `NUMERIC_CLAIMS.md:623` records the D65
+chromaticity as **single-source from lcms2 `cmsvirt.c` alone**, because
+**IEC 61966-2-1 is paywalled and was not obtained** — the row's own
+header calls it *"the weakest constant in the crate"*. `:976` records
+that *"the shared-misreading risk is ELEVATED here, not merely
+present … the corpus against which any future ground-truth check would
+be built shares an origin with the oracle."* ★ **A computed sRGB
+destination built today would take its white point from the very
+implementation iccce cross-checks against, and would then sit underneath
+every `ICCBased` conversion `pdfce` made.** Obtaining the document is an
+**operator act**, not an agent dispatch; the cheap *independent* lever is
+**ITU-R BT.709, free from ITU and never fetched**.
+
+**This is propagation, not a new finding** — the rows have said it for
+some time and it simply had not reached the place that needed it. **No
+new ledger row was created and `NUMERIC_CLAIMS.md` was not touched.**
+
+#### What this does NOT decide
+
+- **It does not scope any Pass.** No `ROADMAP.md` entry was created; the
+  four gaps found (no computed sRGB destination; no `f32`/`u8`
+  evaluation surface; `ChainError` implements `Display`
+  (`transform.rs:134-169`) but **not** `std::error::Error`, so it is the
+  `Box<dyn Error>` path and not the printable-message path that is
+  blocked; no public signature→component-count helper) are **recorded as
+  found and deliberately not scoped.** *(This list said `ChainError`
+  implemented "neither" on the day of filing; corrected the same day —
+  see the `SESSION_LOG.md` entry of 2026-08-17.)*
+- **It does not commit `pdfce` to adopting iccce**, nor iccce to
+  supplying anything on a schedule. It records that a consumer exists
+  and what constrains it.
+- **It does not answer either design question in the channel.**
+  `reply_capability_status.md` answered *what exists* and declined both
+  by name.
+- **It does not make wasm32 a standing guarantee** — see the boxed
+  consequence above.
+- **It does not close an exchange.** `INDEX.md` holds **no rows**; a row
+  is added when an exchange closes and none has.
+
+**Revisit if:** any third-party dependency is proposed (classify against
+all three consumer gates **before** rule 9's own MIT test, and re-run
+the wasm32 build in the same breath); or `wasm32-unknown-unknown` is
+added to this project's CI (at which point the "dated observation"
+wording above is superseded and must be replaced rather than left
+standing); or `IEC 61966-2-1` or **ITU-R BT.709** is obtained, which
+converts the sRGB gap from a provenance problem into an engineering one;
+or the channel's first exchange closes, at which point `INDEX.md` gains
+its first row and the durable answer must be named in this project's
+`docs/`.
+
+---
+
+### DL-045 — ★★★ **COMPATIBILITY and CERTIFICATION are different things, and this project has been parking work on the second while the first was reachable all along. The posture changes; the EVIDENCE RULES DO NOT**
+
+**Date:** 2026-08-17 · **Occasioned by:** the operator, handing over the
+**Ghent PDF Output Suite 5.0** · **Assessed by:** `icc-engineer` ·
+**Filed by:** `icc-librarian` (**no shell** — every figure carried,
+every document claim read from source) · **Relates to** project **rule 1**
+(a wrong colour looks like a right one), **rule 3** (expected values come
+from the literature), **rule 5** (tolerances are justified, not tuned),
+**rule 9** (publishing is the operator's act), **DL-020** (refuse what
+the corpus cannot supply), **DL-036** (a real vendor profile earns its
+place), **DL-041** (three kinds of blocker, kept apart), **DL-042**
+(re-audit the *reason* an item is owed), **DL-044** (the named external
+consumer), and **DL-046 / DL-047** filed alongside it
+
+#### The instruction, verbatim
+
+> *"I know some things you stopped work on because they required physical
+> testing that we don't have. We aren't going to aim for compliance like
+> that. Just aim for compatibility."* — the operator, 2026-08-17.
+
+#### The decision
+
+> **This project does not pursue conformance CERTIFICATION, and it does
+> pursue demonstrable COMPATIBILITY. The two are distinct claims with
+> distinct evidence, and an item may not be parked on the grounds that
+> certification is unreachable when the capability underneath it is
+> measurable without an instrument.**
+>
+> ★★★ **This changes WHAT IS CLAIMED. It does not change how well a
+> claim must be supported.** Rules 1, 3, 4 and 5 are untouched. Nothing
+> in this entry licenses a looser tolerance, an unlabelled evidence
+> class, or a plausible-looking result standing in for a measured one.
+
+| | what it means | available here? |
+|---|---|---|
+| **compliance / certification** | a conformance body assesses a *workflow* against published criteria, generally by printing and judging or measuring the result | **No.** It needs a press or proofing device, and it is sold to print service providers by third parties. The operator has ruled it out |
+| **compatibility** | the software accepts what a real-world corpus contains, and behaves as that corpus's design says a correct engine behaves, **in the parts checkable without an instrument** | **Yes, in a bounded subset** — and the subset is larger than it looked. `NUMERIC_CLAIMS.md` **§3.30** measures it |
+
+#### ★★ The failure mode this corrects, named precisely
+
+The habit was **not** cowardice about hard measurements. It was a
+**category error**: *"this cannot be certified"* was being read as
+*"this cannot be checked"*, and the item was then filed under the same
+heading as a genuine blocker. **DL-041 already drew the distinction that
+was needed** — existence, availability, and access terms are three
+different blockers — and this entry adds the fourth kind that DL-041 did
+not have a name for: **an item blocked on an ORGANISATIONAL fact about a
+certification programme, which is not a blocker on the engineering at
+all.**
+
+★ **The correction was worth making because the parked work turned out
+to be cheap.** `NUMERIC_CLAIMS.md` §3.30's strongest rows (NC-194,
+NC-195) need **no oracle, no instrument, no published dataset and no
+clause transcription** — they read their expectation off a fixture's
+declared content. That evidence was reachable on any day of this
+project's history and nobody reached for it, because the corpus it lives
+in was filed under *"needs a press."*
+
+#### ★★★ The one thing this entry must not be read as licensing
+
+**It does not license the word "compatible" in public.** The Ghent
+suite's licence permits use *"for … testing workflow setup"* and
+**nothing else without written permission**; the certification release
+directs developers to a separate programme reachable only by contacting
+GWG. **Any public statement containing the word "Ghent" — `README.md`,
+release notes, crates.io metadata — is a claim requiring GWG's written
+permission first, and is an operator decision** (global claim-bearing-
+copy rule; `NUMERIC_CLAIMS.md` §7.16, operator item 1).
+
+★ **The internal statement that IS supportable today**, in full:
+*iccce evaluates the colour transforms of the Ghent Level-2 ICC-CMS
+patches' embedded profiles without failure, and applies a declared
+source profile rather than falling back to a device alternate; it is not
+Ghent-certified; and Ghent supplies no numeric criterion by which
+"without failure" could be tightened into a colorimetric claim.*
+
+#### What this does NOT decide
+
+- **It does not scope a Pass.** `ROADMAP.md` gains a **standing
+  workstream** block, not a numbered Pass, and no done-when is asserted.
+- **It does not admit the suite into this repository.** The bytes stay in
+  `D:\Dev\iccce-private-fixtures\ghent-v50\`; the licence's affirmative
+  notice condition and its no-commercial-use clause would both follow
+  them into an MIT tree.
+- **It does not weaken DL-020.** Refusing what the corpus cannot supply
+  remains correct. What changes is the *test* for "cannot supply":
+  **ask whether an instrument is genuinely required, or whether only a
+  certificate is.**
+- **It does not make anything in §3.30 an accuracy claim.** See DL-047.
+
+**Revisit if:** the operator obtains GWG's written permission (at which
+point a public claim becomes possible and the exact wording becomes a
+claim-bearing-copy matter, not a technical one); or a second
+compatibility corpus with different terms arrives, which would argue for
+generalising this entry beyond Ghent; or any future filing is found to
+have used *"compatibility"* as a reason to relax a tolerance — **that
+would be this entry being misread, and the misreading is the specific
+risk it was written to prevent.**
+
+---
+
+### DL-046 — ★★★ **VERIFY IN THE RUNNING THING, NOT IN THE REPORT — and add the CONTROL the report did not have. A `[REPORTED]` claim is promoted by RE-DERIVATION, never by being repeated confidently**
+
+**Date:** 2026-08-17 · **Occasioned by:** the CMYK trap-profile swap,
+which arrived from a dispatched agent's byte-level scan and was
+**deliberately re-derived through the shipped `iccce transform` binary,
+with a control profile added**, before it was allowed to become a
+finding · **Assessed by:** `icc-engineer`, who asked for the
+generalisation to be recorded · **Filed by:** `icc-librarian` ·
+**Relates to** project **rule 1**, **rule 3**, **DL-025** (a control is
+only as good as its fixture), **DL-031** (a count is not an inventory),
+**DL-033** (candidate separation is where a check's power lives),
+**DL-036**, and `NEXT_SESSION.md` **§5.3** (an absence-claim is only as
+strong as the breadth of the search that failed to find it)
+
+#### The decision
+
+> **A claim produced by reading bytes, parsing a file, or summarising a
+> document is `[REPORTED]`. It becomes a finding only when the claim is
+> re-derived by RUNNING THE SHIPPED CODE on the case — and where the
+> claim is of the form "X changed", the re-derivation MUST include a
+> control that isolates what did NOT change.**
+>
+> ★★★ **The control is not diligence. It is what makes the claim
+> different from a weaker one.** Without it, *"the values changed"* is
+> equally consistent with the transform mangling everything. With it, the
+> claim becomes *"exactly two channels exchanged, and the others moved by
+> at most `2.455×10⁻³`"*, and the mangling hypothesis is eliminated
+> rather than assumed away.
+
+#### The worked instance
+
+A dispatched agent reported that GWG's `CMYK prtr lut X (Switch magenta
+cyan)` has its cyan and magenta channels exchanged. That report was
+**true** — and filing it would still have been wrong, because the
+project would have recorded a *property of a file* as though it were a
+*behaviour of iccce*.
+
+What was done instead: the profile **and** the genuine
+`ISO Coated v2 300% (ECI)` embedded in the same patch were both driven
+through `iccce transform` at the same four inputs. The swap appeared on
+the trap and not on the control; the unswapped channels agreed
+(paper exactly to six decimals, yellow to `2.455×10⁻³`).
+`NUMERIC_CLAIMS.md` **NC-195** and **NC-196**.
+
+★★ **And the same session shows the other half of the rule holding.**
+Six further byte-scan leads — per-patch rendering intents, a
+`FOGRA27` / `ISO Coated v2 300% (ECI)` output-intent mismatch, a PDF
+`/Lab` white point — were **NOT re-derived**, and are filed as
+`[REPORTED]` leads with re-derivation recorded as owed
+(§3.30.6, §7.16 newly-owed 2). **The rule is only visible as a rule
+because both outcomes occurred on the same day**: one claim was promoted
+and six were not.
+
+#### ★★ Why this is not already covered by "verify against live source"
+
+The librarian's standing rule says *verify the dispatch against live
+source*. **This entry is the same principle one layer down, and the
+layer matters.** Reading the source of a profile — or of the code — is
+still *reading*. A wiring defect between `parse → model → transform`
+is invisible to every amount of reading and appears only when the
+binary runs. §3.29.1 already recorded exactly this shape from the other
+direction: a clause was **defended as a function on a synthetic
+closure** while *"the clause exercised THROUGH A PARSED PROFILE"* had no
+detector at all.
+
+> ★ **The diagnostic question, phrased for reuse:** *did anything
+> execute, and was there a second case that should NOT have moved?* If
+> the answer to either half is no, the claim is `[REPORTED]` and is
+> labelled so.
+
+#### What this does NOT decide
+
+- **It does not devalue `[REPORTED]` claims.** They are how leads
+  arrive. It requires only that they be **labelled**, and that the label
+  survive being passed to a consumer.
+- **It does not require a control on every row.** A control is required
+  where the claim's form is *"X changed"*. A categorical row whose
+  candidates are a gamut apart (NC-194) is already discriminating.
+- **It does not make a control sufficient.** **DL-025 stands**: a
+  control whose fixture is degenerate nullifies itself — an identity
+  fixture once returned `1.1e-15` and proved nothing.
+
+**Revisit if:** a `[REPORTED]` lead is ever found to have been promoted
+without re-derivation (record which, and what it cost); or a control is
+found to have agreed with its subject **because both were broken the
+same way**, which is DL-025's failure mode arriving in this rule's
+territory and would need the diagnostic sharpened.
+
+---
+
+### DL-047 — ★★★ **The Ghent PDF Output Suite CANNOT SUPPLY A NUMERIC EXPECTATION. It supplies a CATEGORICAL one, which is worth more than it sounds — and it CONTRADICTS ITSELF exactly on rendering intent**
+
+**Date:** 2026-08-17 · **Occasioned by:** reading the suite's own
+`ReadMeFirst.pdf` and per-patch readmes for a pass criterion, and
+finding that none exists · **Assessed by:** `icc-engineer` (`pdftotext
+-layout` extraction) · **Filed by:** `icc-librarian`, which **has not
+seen the PDFs** and carries the quotations from
+`docs/GHENT_COMPATIBILITY.md` §2.1 and §2.3 · **Relates to** project
+**rule 3** (expected values come from the literature), **rule 5**,
+**rule 7** (disagreement with an implementation is a finding, not a
+failure), **DL-021** (say which direction, and which profile class),
+**DL-033**, **DL-041**, and **DL-045**
+
+#### The finding, in the suite's own words
+
+> *"For some patches a faint X may appear due to rounding of values or
+> different color management engines beeing used. This is not a failure
+> of the tested features: A clear X indicates a failure of this feature.
+> A faint X is NOT a failure of this feature."*
+
+with assessment *"at a viewing distance of 0.5 m / 20 inches"*. Three
+further readmes pre-excuse CMM-to-CMM disagreement outright — the
+`ICCBased` blend-mode readme says *"A faint X is due to differences in
+the CMM and does not indicate a failure"*, and the shadings readme
+concedes its own reference image *"is a screenshot … the colors and
+gradation can be slightly off"*.
+
+#### The decision
+
+> **No number measured on a Ghent file may be recorded as ground truth,
+> a reference value, or a justified tolerance. The suite states no
+> tolerance, no reference measurement and no expected colour value
+> anywhere; its pass criterion is VISUAL SALIENCE assessed by a human at
+> half a metre. Every figure measured on this corpus inherits the
+> evidence class of the APPARATUS that produced it, and Ghent adds
+> nothing to that class.**
+>
+> ★★ **The converse is the useful half: Ghent CAN supply a CATEGORICAL
+> expectation**, because the trap profiles' correct handling is a fact
+> about the file's declared content rather than a measurement of
+> anything. That is why `NUMERIC_CLAIMS.md` §1 gains
+> **`fixture-declared-categorical`**, and why NC-194/NC-195 are the
+> section's strongest rows despite containing no tolerance.
+
+#### ★★★ The suite contradicts itself, and precisely on this project's topic
+
+GWG 13.0 — the suite's **only** statement about rendering intent —
+signals *"the defined rendering intent 'Perceptual' was not respected"*
+with a **faint green X**. `ReadMeFirst.pdf` has already ruled that **a
+faint X is not a failure.**
+
+> **Consequence: intent handling is UNTESTED by the suite's own pass
+> criterion.** A workflow can be "Ghent-clean" while ignoring the
+> declared rendering intent entirely. ★★★ **Therefore any iccce claim
+> about intent selection must be graded against ICC.1's own text on
+> which `A2Bx`/`B2Ax` table an intent selects — never against Ghent**,
+> which has no criterion to offer.
+
+★ **This is rule 7's shape with a corpus in the defendant's chair
+instead of an implementation.** The suite is not wrong; it is a smoke
+test with a very well-designed smoke detector, and it does not claim to
+be a colorimetric criterion. **Recording that is what stops a future
+session from grading a tolerance against it.**
+
+#### What this does NOT decide
+
+- **It does not devalue the corpus.** The profiles inside it are real
+  third-party output and are the reason `NUMERIC_CLAIMS.md` §3.30 exists
+  at all.
+- **It does not say the suite is unusable as a target.** Rendering
+  `ALL_X4` and comparing against the shipped `ALL_REFERENCE` remains the
+  largest available win — and §3.30.2 shows the trap patches make that
+  judgement **mechanical** rather than visual, because the artwork is
+  authored pre-swapped and a correct conversion makes the X vanish into
+  its surround. **That is a joint exercise with `pdfce` and an operator
+  decision to scope.**
+- **It does not close the intent question.** It states where the
+  criterion must come from, and **no such row exists today**.
+
+**Revisit if:** GWG publishes numeric criteria or a reference
+measurement (which would change the first half entirely); or a render-
+and-compare harness lands, at which point the pass criterion becomes
+*this* project's to define and DL-045's warning applies — **defining our
+own criterion is exactly the situation rule 5 was written for.**
+
+---
+
+### DL-048 — ★★★ **A stale claim-bearing CITATION is worse than a stale claim-bearing NUMBER, and in one specific direction: a wrong number invites RE-DERIVATION, a wrong pointer invites the reader to ACCEPT WHATEVER IS AT THE DESTINATION.** Cite the ledger by §-number and NC-number; never by line
+
+**Date:** 2026-08-17 · **Occasioned by:** a spot-check of the six
+`NUMERIC_CLAIMS.md` line-number citations in `docs/NEXT_SESSION.md`,
+undertaken while correcting one of them · **Measured by:**
+`icc-librarian` (reading each cited location at tip `e21154c`) and
+independently by `icc-engineer` (*"[VERIFIED — I read all six lines
+myself at tip `e21154c` and confirm every one carries unrelated content;
+`:5788` is a blank line]"*) · **Filed by:** `icc-librarian` ·
+**Sits beside DL-034**, which is its sibling and covers the *number*
+case · **Relates to** **DL-031** (a count needs its apparatus — this is
+the same disease in pointer form), **DL-044** (the outbound channel that
+carried it), and project **rule 3**
+
+#### The finding
+
+**DL-034 says a claim-bearing number must be computed, not typed, because
+a typed number goes stale silently.** This entry is the **pointer**
+case, and it fails **in a worse direction**:
+
+> **A wrong NUMBER invites re-derivation.** The reader who doubts it goes
+> and recomputes, and the doubt is productive.
+>
+> **A wrong POINTER invites the reader to ACCEPT WHATEVER IS AT THE
+> DESTINATION.** Arriving somewhere plausible *reads as confirmation*.
+> The citation does not fail — **it authenticates the wrong text.**
+
+#### The instance, and it is structural rather than a slip
+
+`NEXT_SESSION.md` §3.0 cited iccce's **33-node recommended grid** as
+`NUMERIC_CLAIMS.md:2164, :2529`. `:2529` described
+**`USWebCoatedSWOP.icc`'s own `lut8` CLUT, which also has 33 nodes — a
+DIFFERENT 33**: a vendor file's tag rather than iccce's recommendation.
+**A reader at `pdfce` following it would have concluded the
+recommendation is a property of somebody else's profile.** The line had
+been **copied unchecked out of the handoff document every session is
+instructed to read first, into an outbound cross-project request**, so the
+carrier was the one artifact guaranteed to be re-read.
+
+**Six of six spot-checked line citations did not carry the claim cited to
+them** (`:2164`, `:2529`, `:5788`, `:623`, `:976`, `:6488`). ★★ **The
+correction filed for the first two, at `NUMERIC_CLAIMS.md` §3.30.7, went
+stale the same way inside one filing** — and the decay was then *observed
+happening*: §3.30.7 records `:2164` as §3.13's Pass 6 coverage box
+(`icc-librarian`, before that filing's own edits), while the corrected
+outbound request describes the same line as *"unrelated (BPC material)"*
+(`icc-engineer`, later the same day). **Two readers, two moments, one line
+number, two destinations, and neither reading is wrong.**
+
+**The mechanism is arithmetic, not carelessness: a ledger that grows by
+INSERTION renumbers every line below the insertion**, so a line citation
+into it decays on the next filing, silently, **everywhere it was copied**.
+
+#### The decision
+
+> **1. `NUMERIC_CLAIMS.md` is cited by §-number and NC-number** — stable
+> identifiers that **move with their content**. **Never by line.**
+>
+> **2. A `path:line` citation into a SOURCE FILE is acceptable** — the
+> same sweep found `lib.rs:80`, `compiled.rs:171`/`:180`,
+> `transform.rs:246` and `diag.rs:83` **all exact, 4 of 4**. Line drift is
+> a property of the **append-heavy ledger**, not of citation as such.
+>
+> **3. But a source citation gives the FULL PATH FROM THE REPO ROOT.**
+> The bare `diag.rs:83` was right about line *and* content and named
+> neither the crate nor `src/` — and **this workspace contains two
+> distinct `ParseError` types** (`crates/iccce-measure/src/lib.rs:221`
+> and `crates/iccce-profile/src/diag.rs:83`), **both of which implement
+> `std::error::Error`**, which is exactly the ambiguity a bare filename
+> invites.
+>
+> **4. A §-number with NO DOCUMENT NAMED is the same failure without even
+> a line number to blame.** §3.0's bare *"§4.4"* pointed at nothing that
+> carries the constant; the **two** §4.4 sections that exist in `docs/`
+> are `LEGAL.md` §4.4 (*"What is not claimed"*) and
+> `GHENT_COMPATIBILITY.md` §4.4 (*"ICC v4 evaluation on a
+> vendor-authored profile"*) — **both plausible enough to be read as
+> confirmation.**
+>
+> **5. When filing, REWRITE any `NUMERIC_CLAIMS.md:NNNN` you encounter
+> into §/NC form rather than passing it along**, and treat a
+> line-numbered ledger citation in any dispatch as **unverified**
+> regardless of how confident the dispatcher sounds.
+
+#### What this does NOT decide
+
+- **It does not say the citations were wrong when written.** Several
+  almost certainly were right; that is the point — **they became wrong
+  without anybody touching them.**
+- **It does not extend to source files.** Rule 2 above is deliberate:
+  banning `path:line` everywhere would cost real precision to fix a
+  problem that has not occurred there.
+- **It does not fix the outbound channel retrospectively.** The channel is
+  in no git repository (DL-044); the census request was corrected by its
+  author *(verified — read)*, and the durable homes live in the ledger.
+
+**Revisit if:** the ledger ever acquires stable anchors that survive
+insertion (an emitted index, or per-row identifiers used as link
+targets), at which point a mechanical citation form becomes available and
+this entry's rule 1 can be enforced rather than remembered.
+
+---
+
+### DL-049 — ★★ **A disclosure field that GATES NOTHING caught a defect in a TOLERANCE'S JUSTIFICATION — on a row that was green. The separation mechanism's second-order value is that it makes a fixture state a claim its `why` string has to survive**
+
+**Date:** 2026-08-17 · **Occasioned by:** `BLIND` firing on a Pass G
+authoring row, and the fix exposing a second, invisible fault ·
+**Measured by:** `icc-conformance` (`TOLERANCES.md` §3.7.4) · **Filed
+by:** `icc-librarian` *(carried; this librarian ran nothing and
+transcribed from `TOLERANCES.md` §3.7.4, read)* · **Extends DL-037**
+(separation is disclosure, not enforcement) and **DL-039** (a rival
+tolerance is not a rival candidate) · **Relates to** **DL-043**,
+**DL-033**, and `NUMERIC_CLAIMS.md` **§5.2**
+
+#### The finding
+
+**DL-037 established that candidate separation is DISCLOSURE and
+deliberately does not gate** — `BLIND` prints, it does not fail a row.
+Pass G shows that a field with no enforcement power can still catch a
+defect **no gate could**, because of *where* it looks:
+
+1. **The visible fault.** On a profile whose `wtpt` **agrees** with its
+   own colorant sum there is **no rival reading**, so a stated
+   "separation" of `5.4×10⁻⁶` against a `2×10⁻⁴` bound was a
+   **manufactured alternative**. `BLIND` said so. That row became
+   `NO-NAMED-ALTERNATIVE` **with its reason** and is now the section's
+   negative control.
+2. **★★★ The invisible fault, which only surfaced once the first was
+   fixed.** The `2×10⁻⁴` **encoding-floor justification did not hold for
+   the profiles it was gating**: Ghent's sRGB colorants sum to the PCS
+   white only to `1.885×10⁻⁴` — **≈12 `s15Fixed16` lsb** — because the
+   *published* sRGB primaries do not sum to D50 to the encoding lsb.
+   **The row had been PASSING, inside a bound its own `why` could not
+   support.**
+
+#### The decision
+
+> **A candidate separation is not only a statement about POWER (DL-033).
+> It is a statement about the FIXTURE that the row's `why` string must
+> survive. Where the two disagree, the `why` is the thing that is wrong
+> — and a green row is no evidence at all that it is not.**
+>
+> **Practically:** when a separation reads as *manufactured*, absent, or
+> implausibly small, **re-derive the tolerance's justification before
+> touching the separation.** The separation is the symptom; the
+> derivation is where the defect lives.
+>
+> **And the remedy takes the DL-039 shape:** replace the unsupportable
+> bound with a question that has **no free parameter** — here,
+> *is the colorant sum nearer the normative PCS white or nearer the
+> profile's own encoded `wtpt`?*, bounded at **half the distance to the
+> profile's own rival candidate**. A classification cannot be tuned.
+
+★ **A constraint that came with it, and it is rule 1 in a sourcing
+register:** the replacement **imports no third white point** — **D65 in
+particular**, whose constant this project records as **the weakest in
+`iccce-color`** and **single-sourced from the oracle's own `cmsvirt.c`**
+(`NUMERIC_CLAIMS.md` §3.5 / NC-018). **A derivation that had reached for
+D65 would have put the oracle's own unverified constant underneath a
+finding about third-party authorship** — and the finding would still have
+looked exactly the same.
+
+#### Why this is a separate entry and not a footnote to DL-037
+
+**DL-037 is about the guard ORDER and about disclosure not being
+enforcement.** This is about **what the disclosure is evidence OF**.
+DL-037 predicts that `BLIND` will identify rows whose *comparison* has
+unknown power; **it did not predict that `BLIND` would identify rows
+whose TOLERANCE is unsupported**, which is a different document, a
+different agent's responsibility, and — until this instance — something
+only a person re-reading a `why` string could find.
+
+#### What this does NOT decide
+
+- **It does not make separation a gate.** DL-037's guard order and the
+  deliberate non-gating of `BLIND` are unchanged.
+- **It does not say every `BLIND` row hides a bad tolerance.** One
+  instance; the rule is *look there first*, not *assume*.
+- **It does not license widening.** In this instance the bound was
+  **replaced by a differently-shaped question**, not relaxed — and the
+  other Pass G tolerance corrected the same day
+  (`NUMERIC_CLAIMS.md` §3.31.3) was fixed by **finding a missing term**,
+  which is DL-043's rule and remains the first thing to try.
+
+**Revisit if:** a `BLIND` or `NO-NAMED-ALTERNATIVE` row is ever found
+whose `why` string is sound — which would show the association is weaker
+than one instance suggests — or if the separation field acquires gating
+power, which would change what it can be trusted to disclose.
+
+---
+
+### DL-050 — ★★★ **the built-in sRGB destination is selected by a TWO-VARIANT ENUM, not by `Option<&Profile>`, because an `Option` being `None` cannot distinguish *"there was none"* from *"I failed to get one"* — and only the second must never trigger a fallback**
+
+**Date:** 2026-08-17. **Status:** decided and implemented (uncommitted).
+**Filed by:** `icc-librarian` from an `icc-engineer` dispatch.
+**Evidence:** `crates/iccce-cmm/src/transform.rs:122-179` *(read at the
+tip by this librarian)*; `docs/DEFAULT_DESTINATION.md`'s
+**STATUS: BUILT** block; `NUMERIC_CLAIMS.md` §3.32.14.
+
+#### The decision
+
+The operator decided on 2026-08-17: *"if the caller supplied destination
+doesn't exist then it should fallback to constructing sRGB internally."*
+**The API through which that happens is:**
+
+```
+pub enum Destination<'a> {
+    Profile(&'a Profile),   // used. Always.
+    None,                   // the caller LOOKED and there is none.
+}
+```
+
+**Not** `Option<&Profile>`, and the difference is not stylistic.
+
+#### Why — and this is rule 1 wearing a type signature
+
+*A wrong colour looks exactly like a right one.* The fallback's failure
+mode is the founding hazard **caused** rather than caught: if a
+destination **failed to parse**, or **was not looked for**, or **was
+found and then dropped**, and iccce quietly substitutes sRGB, the result
+is a plausible-looking image, rendered to the wrong destination, with the
+document's own declared print condition silently discarded, **and no
+error anywhere.**
+
+**`None` in an `Option` carries no information about which of those
+happened.** The caller is the only party that knows whether it *looked* —
+so the API makes the caller **say**, and `Destination::None` is spelled
+out rather than inferred from an absence.
+
+★★ **A declared destination that could not be parsed never reaches this
+type.** It stays a **named refusal** and the caller propagates the parse
+error. That is rule 6 (*the parser reports; it does not repair*) surviving
+one layer up, where it would otherwise have been quietly discarded.
+
+#### The second half of the decision: the fallback is DISCLOSED
+
+`DestinationProvenance` (`CallerSupplied` / `BuiltInSrgb`) is returned by
+`Chain::destination_provenance()`, and its `note()` names the constants
+used and says in terms *"This is NOT the document's declared output
+intent"*.
+
+> ★★★ **This is the difference between a default and a cover-up, and it
+> costs one accessor to stay on the right side of it.** A renderer that
+> cannot tell whether a page went to a document-declared destination or
+> to iccce's default **cannot honestly report what it did** — and
+> `pdfce`, the named consumer, is a preflight-adjacent tool where exactly
+> that report is the product.
+
+#### What this does NOT decide
+
+- ★★ **It does not make the constructed sRGB accurate.** Its measurement
+  (NC-221/NC-222) is in a **third and weaker evidence class**,
+  `constructed-vs-reference-file` — **neither ground truth nor a
+  cross-check against another implementation**
+  (`NUMERIC_CLAIMS.md` §3.32.1).
+- **`Chain::new` is unchanged and no caller moved.** The addition is
+  purely additive to the public surface.
+- **It says nothing about LUT destinations.** The construction is
+  matrix/TRC only, measured in one direction (DL-021 binds).
+
+**Revisit if:** a consumer is found that needs a third state (e.g.
+*"a destination was declared, is unparseable, and I want the fallback
+anyway with a recorded reason"*) — which would be a **new variant with
+its own provenance value**, never a widening of `None`.
+
+---
+
+### DL-051 — ★★★ **a test suite that documents a constant at length while being unable to detect its corruption is WORSE than one that says nothing, because it reads as protection. The gap was found by INJECTION and could not have been found by INSPECTION**
+
+**Date:** 2026-08-17. **Status:** adopted, with the measured instance.
+**Filed by:** `icc-librarian`. **Evidence:** `NUMERIC_CLAIMS.md` §3.32.4
+(NC-228, the five-injection matrix) and §3.32.3 (NC-224).
+
+#### The instance
+
+`crates/iccce-cmm/src/builtin.rs` shipped **a long, carefully sourced doc
+comment on why the sRGB breakpoint is `0.04045` and not `0.03928`** — the
+C⁰ versus C¹ solutions, the standards each comes from, the reason the
+project chose one — and **five tests**. The constant was then substituted
+and the suite re-run:
+
+| injection | caught by |
+|---|---|
+| **A** Bradford adaptation omitted | 3 of 6 tests FAILED |
+| **B** adaptation applied twice | 3 of 6 FAILED |
+| **C** TRC replaced by pure gamma 2.2 | 1 FAILED |
+| **★★★ D** breakpoint `0.04045` → `0.03928` | **NOTHING. 6 of 6 PASSED** |
+| **E** green primary `0.600` → `0.610` | 2 FAILED |
+
+#### The rule, and the mechanism that hides it
+
+★★★ **The length of the documentation is what made the gap invisible.
+Nobody audits a constant that is visibly well-explained.** A reader
+scanning for weak spots sees the paragraph of sourcing and moves on — the
+documentation performs the function of a test without being one, and it
+performs it *convincingly in proportion to how well it is written.*
+
+★★ **This is a SIBLING of `NEXT_SESSION.md` §5.3 (*a test that cannot
+fail is not evidence*) and is not the same thing.** In §5.3's two
+instances the tests could not fail **at all**. Here **every one of the
+five tests could fail** — three of them do, under A, B and E — **just not
+for this defect.**
+
+> ★★★ **A suite's power is PER-DEFECT, not per-suite.** A green suite is
+> a statement about the defects someone thought to inject, and *"the
+> suite passes"* carries no information about a defect nobody enumerated.
+
+#### The method half, which is the transferable part
+
+★★★ **Inspection could not have found it.** The same person wrote the
+constant, the doc comment and the tests **in one sitting**, and read them
+back without seeing it. That is `NEXT_SESSION.md` §5.2's structure
+appearing outside the oracle: **reading your own work is not an
+instrument.**
+
+**Two tests were then written specifically for D, and the injection now
+goes red while its siblings stay green** — including
+`no_eight_bit_code_lies_between_the_two_candidate_breakpoints`, which
+**asserts NC-224's falsification of the corpus so it cannot go stale
+again.**
+
+#### ★★ The corroborating instance, from the same day and a different module
+
+`crates/iccce-color/src/illuminant.rs`'s `D65_XY` doc comment read
+**"SINGLE SOURCE — not cross-verified"** long after ITU-R BT.709-6 had
+made that false. **The pointer was fine; the CHARACTERISATION OF THE
+SOURCE'S STRENGTH had gone stale** — and it mattered, because while D65
+rested on lcms2 alone, **anything built on it put the differential
+oracle's own white point underneath every conversion iccce then checks
+against that oracle.**
+
+★★★ **So DL-048's class is not confined to `docs/`.** A doc comment
+citing a source is a claim-bearing pointer with the same decay property
+as a ledger citation — **and it decays with no line numbers involved at
+all.** *(`NUMERIC_CLAIMS.md` §3.32.10b; DL-048 itself is not edited.)*
+
+#### ★★★ And it recurred INSIDE the same session, in the module documenting the hazard most
+
+`crates/iccce-profile/src/colour_space.rs`'s corruption test carries a
+doc comment explaining the failure mode *"stated as a property rather
+than a single case"* — and **the property is not tested**: the survivor
+count reaches a `println!`, and the in-loop assertion compares
+`components(sig).count()` with **its own result**, so it cannot fail.
+**Found by this librarian reading the file at the tip, hours after this
+entry's rule was adopted from a different module**
+(`NUMERIC_CLAIMS.md` §3.32.8, §7.18 newly-owed 2).
+
+**Revisit if:** an injection is ever found that a test suite catches
+**only** because of a doc comment — which cannot happen, and is stated so
+the entry's claim stays falsifiable in principle.
+
+---
+
+### DL-052 — ★★ **write the COMPILED DOC EXAMPLE before declaring a public API done: it is the cheapest available consumer, and it is the only reviewer who has not already learned the API's shape**
+
+**Date:** 2026-08-17. **Status:** adopted, with the defect it found.
+**Filed by:** `icc-librarian`. **Evidence:** `NUMERIC_CLAIMS.md` §3.32.11;
+`crates/iccce-cmm/src/transform.rs:307`,
+`crates/iccce-cmm/src/matrix_trc.rs:768` and `:780` *(read at the tip)*.
+
+#### The instance
+
+`ChainError` did **not** implement `std::error::Error` while `ParseError`
+did. The asymmetry had been **noticed across sessions and carried as
+cosmetic** — `NEXT_SESSION.md` §0 names it in a list of known gaps.
+
+**It was not cosmetic.** Without the impl a consumer cannot write
+
+```
+let chain = Chain::with_destination(..)?;
+```
+
+into a `Result<_, Box<dyn Error>>` — **the most common error-handling
+shape in Rust.** Callers had to hand-wrap or `.ok()` the result and
+**lose the named refusal entirely.**
+
+> ★★★ **A refusal that is awkward to propagate is a refusal that gets
+> discarded** — and rule 6's entire value is that refusals reach the
+> consumer. An ergonomics defect on an error type is a **correctness**
+> defect one layer out.
+
+`source()` now chains through `ModelError` to `CurveError` (both also
+gained impls), so **the clause-level reason survives the boxing.**
+
+#### How it was found, which is the rule
+
+A `no_run` **doc example** was written for `Chain::with_destination`
+doing the ordinary thing, and **the doctest refused to compile with
+`E0277`.**
+
+★★★ **A compiled doc example exercises the API as a STRANGER would, which
+no amount of internal review does.** The author of an API is the one
+person who cannot use it naively — they know which types compose, so they
+never write the line that does not compile. The doctest does, and the
+compiler is the reviewer.
+
+★★ **It is also the cheapest consumer available.** The project's other
+real consumer check is the `pdfce` request channel, which costs a
+round trip measured in sessions. This one costs a paragraph and runs in
+`cargo test`.
+
+**Scope:** this is about **public** API. A doc example on a private item
+proves nothing about consumability.
+
+**Revisit if:** the workspace ever gains a genuine external integration
+test that plays the stranger's role — which would make the doc example
+the cheap check rather than the only one.
+
+---
+
+### DL-053 — ★★★ **a count taken from a SAMPLE, recorded as a count of the POPULATION. `[VERIFIED]` tagging does not protect against this, because the verification is real — what is missing is the DENOMINATOR**
+
+**Date:** 2026-08-17. **Status:** adopted, with the live instance and its
+correction. **Filed by:** `icc-librarian`. **Evidence:**
+`NUMERIC_CLAIMS.md` §3.32.10a (NC-219); the superseded text in
+`docs/NEXT_SESSION.md`, corrected by this filing.
+
+#### The instance
+
+`NEXT_SESSION.md`'s resume-from-cold handoff stated:
+
+> *"★ **Two of them correctly FAILED** [VERIFIED by me]:
+> `sRGB_ISO22028.icc` and `sRGB_D65_colorimetric.icc` are **iccMAX**…"*
+
+**Every word of that is true of what was run.** Two files were tested and
+two files refused. **Ten are present** — `FluorescentNamedColor`,
+`NamedColor`, `Lab-D50_2deg`, `SixChanCameraRef`, the four
+`Spec400_10_700-*`, `sRGB_D65_colorimetric`, `sRGB_ISO22028` — measured
+by reading header bytes 8..12 across all 50 files and then running
+`iccce inspect` over all 50, reading `$?` per file.
+
+#### Why this is not DL-031, and why it is worse in one specific way
+
+**DL-031** says an unlabelled count is not a claim, because the
+**apparatus** is half the number. **Here the apparatus WAS labelled** —
+the claim carried `[VERIFIED by me]`, and the verification was genuine.
+
+★★★ **What was missing is the sentence *"…of the two I tested."*** The
+sample was never named, so the reader supplies the natural denominator,
+which is the corpus. **A `[VERIFIED]` tag certifies that the measurement
+happened; it certifies nothing about what the measurement RANGED OVER.**
+
+★★ **And it landed in the worst possible document.** `NEXT_SESSION.md` is
+the resume-from-cold handoff that **every session is instructed to read
+first**, so the figure was positioned to be re-quoted rather than
+re-derived — the same carrier mechanism DL-048 recorded for a stale
+citation.
+
+#### The rule
+
+> **A count states its denominator, or it is not a count.** *"Two
+> failed"* is a claim about a sample. *"Two of fifty failed"* is a claim
+> about a population. **The first may never be written where the second
+> will be read**, and a handoff document is always the second.
+
+★ **The corollary for this librarian:** *"a count is not an inventory"*
+already governs findings and tests. **This adds the mirror case** — a
+count that IS an inventory of something, but of a **smaller set than the
+reader will assume.**
+
+#### ★ The correction, and what it turned out to be worth
+
+**The full population is a better finding than the sample was:** 50 files,
+**40 parse with `malformations: 0` and 10 are refused by name** with the
+iccMAX signature and version in the message. That is **rule 6
+demonstrated on real ICC-published files at population scale** rather
+than on two of them (NC-219) — so re-deriving the denominator did not
+merely correct a number, **it upgraded the claim.**
+
+**Revisit if:** never, as a rule. **As a practice**, revisit the moment a
+sampled measurement is cheap to run over its whole population — in this
+instance the full sweep cost one loop and replaced a corrected figure
+with a stronger one.
+
+### DL-054 — ★★★ **the ABSENCE of a published value is not evidence that the artifact you hold IS the reference. An ACCESS boundary got recorded as an EXISTENCE fact, and the mis-attribution survived because THE NUMBER WAS CORRECT**
+
+**Date:** 2026-08-17 (supplementary filing). **Status:** adopted, with the
+live instance, its correction, and the repair still outstanding in the
+standards corpus. **Filed by:** `icc-librarian`. **Evidence:**
+`NUMERIC_CLAIMS.md` §3.33 (NC-230 … NC-233), §3.33.4, §3.33.5, §4's
+NA-011; `crates/iccce-cmm/src/builtin.rs`'s rewritten rule-4 section;
+`ICC_Spec/iec/iec__s__srgb.md` lines 58, 582, 655-669, 705.
+**Supersedes no entry** — it *corrects an attribution*, and the entry
+that carried the attribution was a ledger row, not a decision.
+
+#### The instance
+
+For the whole life of this project's sRGB work, reconstructing the
+shipped HP 1998 profile's colorants from sourced chromaticities landed 8
+of 9 cells within 2 ULP of `s15Fixed16` and missed `bXYZ.Z` by **~12
+ULP**. Three routes were tried to close it; all failed; the residual was
+registered as **iccce's** rule-4 approximation and a test asserted it
+stayed in `11.0..13.0` ULP.
+
+On 2026-08-17 the operator downloaded ICC's own **"How to interpret the
+sRGB color space (specified in IEC 61966-2-1) for ICC profiles"** (Jack
+Holm, ICC, 2015-04-27) in a browser. **§B.2 publishes the D50-adapted
+colorants at 15 decimal places.** Measured against them:
+
+| | worst cell | `bXYZ.Z` |
+|---|---|---|
+| **iccce's from-constants construction** | **3.02 ULP** | **0.90 ULP** |
+| the shipped HP 1998 / `sRGB2014.icc` file | **11.13 ULP** | **11.13 ULP** |
+
+**The residual belongs to the FILE.** iccce's construction is ~3.7×
+closer to ICC's published values than the most widely deployed sRGB
+profile in the world is.
+
+#### Why it survived, and it is not "nobody checked"
+
+★★★ **The number was right.** Every measurement of the residual was
+correct; every route that failed to close it genuinely failed. **What was
+wrong was the OWNER**, and no re-measurement could have found that,
+because both candidate owners produce the same residual. **Only a new
+document could settle it** — which is precisely why the item that would
+have settled it must never be de-prioritised by reasoning.
+
+#### The mechanism, in three parts
+
+1. **An ACCESS boundary was recorded as an EXISTENCE fact.** The
+   document sat behind `color.org`'s robot bar. *"No agent may fetch
+   it"* became *"it is not fetched"* became *"nothing publishes these
+   values."* ★★★ **DL-041 built the taxonomy that prevents this** —
+   *existence*, *availability*, *access terms* are three different
+   blockers — and **this is that taxonomy's first observed failure in
+   practice.**
+2. **Both registers existed IN ONE FILE, and the flat one propagated.**
+   `iec__s__srgb.md`'s **acquisition list** said *"the one thing no
+   document **found so far** states"* and named the barrier, who could
+   pass it, and that not fetching was *"a reported tool/permission limit,
+   not an untaken action"* — **exactly right.** Its **status table**, 100
+   lines away, said ***"NO document states them. Only a real file
+   does."*** ★★ **The status table is what got quoted** — into a doc
+   comment, into `DEFAULT_DESTINATION.md`, into `NUMERIC_CLAIMS.md`
+   §3.8 and §3.32.5. **Summaries propagate; that is what summaries are
+   for**, and a summary that collapses a *search* claim into an
+   *existence* claim launders the difference.
+3. ★★★ **The expectation of an UNREAD document was revised DOWNWARD from
+   evidence about a DIFFERENT artifact.** Hours before the fetch, the
+   corpus recorded *"★ EXPECTATION LOWERED … `sRGB2014.icc` turns out to
+   carry HP's 1998 colorants byte-for-byte, so the registry page most
+   likely restates the same nine numbers … **no longer likely to close
+   the colorant gap on its own**."* **The document closed the gap
+   outright and reversed an attribution.** You cannot estimate the
+   contents of an unread document from the files it describes, and the
+   practical effect of trying was to lower the priority of the one action
+   that would have settled the question.
+
+#### Why this is NOT DL-041, and the distinction is the whole entry
+
+**DL-041** established that published ground truth for the LUT path
+**cannot exist** — ICC.1 mandates no interpolation method, so no expected
+value could be published *even in principle*. **That absence is
+STRUCTURAL.** Here the absence was merely **UNFETCHED**. ★★★ **The two
+were treated the same way**, and the ledger's own language did not
+distinguish them: *"no document publishes X"* was written for both.
+
+> **The rule.** ★★★ **Write the SEARCH claim, never the EXISTENCE claim.**
+> *"No document found so far states X, and here is what has been looked
+> at and what is barred"* is falsifiable, dated, and invites the next
+> fetch. ***"No document states X"*** is a claim about the literature
+> that nobody in this project is in a position to make, and it converts
+> the best artifact available into the reference **by elimination**.
+>
+> ★★ **Corollary, which is where the cost actually landed:** a gap in the
+> literature is **not a licence to promote an implementation to ground
+> truth.** If the only available reference is an artifact, the row is
+> `measured_file_behaviour` or `constructed-vs-reference-file` and the
+> residual is **unattributed** — it is a distance between two things, and
+> the ledger says so, rather than assigning it to whichever of them is
+> ours.
+
+#### ★★ The same day supplied the counter-example, and it is not a contradiction
+
+`icc-conformance`'s Pass H found that ICC's **`Probe2 Profile Readme`**
+states, in numbers, what `Probev2_ICCv4.icc` does — and **the published
+claim is FALSE of the file the document names** (`TOLERANCES.md` §3.8.2).
+Those rows were relaxed to **REPORTED, tolerance infinity**.
+
+★★★ **Two ICC documents, one day, opposite rulings, and the principle is
+the same in both:** *a document that states the intended VALUES is a
+definition and outranks any file* (sRGB §B.2 — we ruled for the
+document); *a document that states what a particular FILE does is an
+empirical claim about an artifact and can be falsified by that artifact*
+(the Probe2 readme — we ruled against the document). **Ask what kind of
+claim the document is making before deciding what it outranks.**
+
+**Revisit if:** a second reading of §B.2 disagrees with the transcription
+now in `builtin.rs`; or ICC publishes the §A.7 matrix at more than 7
+decimals, which would collapse NA-011's 3.02 ULP into a transcription
+question rather than a construction one.
+
+### DL-055 — ★★★ **a fix with two layers where EACH LAYER ALONE makes the gate observe zero. The guard can be deleted with NO NUMBER MOVED and NO EDIT TO BLAME — the change ledger cannot record it, because there is nothing to record**
+
+**Date:** 2026-08-17 (supplementary filing). **Status:** adopted; the
+remedy is already in place as `icc-conformance`'s four rows.
+**Filed by:** `icc-librarian`, from a finding that was
+**`icc-conformance`'s, not the engineer's**. **Evidence:**
+`NUMERIC_CLAIMS.md` §3.33 (NC-234, NC-235, NC-236) and §3.33.6;
+`TOLERANCES.md` §3.8.4.3 — read at the tip, in `icc-conformance`'s own
+words — and `crates/iccce-cmm/src/compiled.rs`.
+
+#### The instance
+
+`iccce bench` **aborted the process** on ICC's published seven-channel
+`APTEC_CMYKOGV_Coated_LinearCTV_2025.icc`: bare exit `0xC0000409`,
+stderr *"memory allocation of 1022842631448 bytes failed"*, stdout empty.
+Two independent causes — a **`_ => 33` catch-all** (`33⁷ × 3 × 8 ≈ 952.6
+GiB`), and a guard using **`checked_pow`, which catches WRAP and not
+SIZE**. The fix has two layers: a **computed** ≥5-channel recommendation,
+and a **`MAX_COMPILED_GRID_BYTES = 64 MiB`** budget with a named
+`ChainError::GridExceedsBudget`.
+
+> ★★★ **Each layer alone makes the original conformance row observe
+> zero.** The computed recommendation puts the default at grid 6, so the
+> allocation succeeds **whether or not the guard exists** — **deleting
+> `MAX_COMPILED_GRID_BYTES` entirely would have left the row GREEN.**
+
+#### Why this is worse than DL-018, which it otherwise resembles
+
+**DL-018** is *a gate must not reward deletion*: someone removes a costly
+thing and the gate gets **greener**, which a diff of tolerances can at
+least show. ★★★ **Here nothing moves.** No tolerance changes, no
+expectation changes, no test is deleted, no number is edited. **A second
+change, elsewhere, quietly takes the first change out of the loop.** A
+row that went red on a real defect becomes a row that **cannot see that
+defect return**, and there is no artifact anywhere that records the
+transition.
+
+#### The rule
+
+> **When a fix has more than one layer, ask of every row that observed
+> the defect: *which layer is in the loop?* — not *what does this row
+> measure?*** A row must exist that **fails if any single layer is
+> removed**, or the layers are load-bearing only by coincidence.
+
+**Applied here** (`icc-conformance`'s split, four rows, one per layer):
+the default-grid survival row; a row tying the binary's behaviour to
+`recommended_grid_points`; a row exercising **the guard itself through
+the CLI**; and one **REPORTED** row that grades nothing and says so.
+
+★★ **An in-process unit test is not the same layer as a CLI row.**
+`compiled::tests::oversized_grid_arithmetic_is_refused_not_aborted`
+asserts the guard's **arithmetic** deliberately without attempting the
+allocation — right, because *a test that aborts the test process proves
+nothing and takes its siblings with it* — but it is **blind to the
+wiring**: whether `bench` propagates the `Err` as exit 1, whether the
+message reaches stderr, whether anything escapes on stdout. **Both are
+needed and neither substitutes.**
+
+#### ★★ Two subsidiary decisions recorded as decided
+
+1. **An abort is the worst available library failure and converting it to
+   a named refusal is rule 6 at the allocation layer.** Not an `Err`, not
+   a catchable panic — **it takes the consumer's process down**, and
+   `pdfce` (DL-044, wasm32-gated) has no defence at all.
+2. **The measured 4-channel grid `33` was NOT shrunk to fit the byte
+   budget** (`33⁴ × 15 × 8 ≈ 136 MiB` at the worst output width). A
+   measured value is not weakened to satisfy a memory bound; the guard
+   uses the **actual** output width. ★ **A test fails if the tension ever
+   disappears**, because the failure mode of a documented exception is
+   silent removal with the explaining paragraph surviving.
+
+**Revisit if:** a fix is ever proposed as *"belt and braces"* — that
+phrase is the tell. Two mechanisms are only redundant if **each** has a
+row that fails without it.
+
+### DL-056 — ★★★ **a DIFFERENTIAL test is blind in the direction that moves your answer TOWARD the reference. The ABSOLUTE assertion covering the blind direction always looks redundant, and deleting it leaves every test green**
+
+**Date:** 2026-08-17 (supplementary filing). **Status:** adopted, with the
+injection table that proves it and DO-NOT-DELETE notes at both sites.
+**Filed by:** `icc-librarian`. **Evidence:** `NUMERIC_CLAIMS.md` §3.33
+(NC-240, NC-241) and §3.33.8; `crates/iccce-cmm/src/builtin.rs:489-519`;
+`crates/iccce-cmm/tests/builtin_srgb_destination.rs:260-307`.
+**Relationship to DL-033:** DL-033 is the **diagnosis** (*agreement with
+the oracle was the symptom of our defect*); **this is the design rule
+that follows from it.**
+
+#### The instance
+
+`icc-engineer` wrote that NC-221's run-time-derived ΔE bound was *"a very
+tight white-point gate"*, **then injected drift to check it**:
+
+| injected drift in the constructed white's `Z` | max ΔE2000 | the ΔE test |
+|---|---|---|
+| `−1.0×10⁻³` | `0.101968` | FAILS ✔ |
+| `−3.0×10⁻⁴` | `0.050149` | FAILS ✔ |
+| **`+3.0×10⁻⁴`** | **`0.029008`** | **PASSES — and looks BETTER than the correct build's `0.033013`** |
+| `+2.0×10⁻³` | `0.146450` | FAILS ✔ |
+
+**A defect in one direction makes the test greener.** The reference
+file's own white sits **`+1.885×10⁻⁴` above D50** in `Z`, so drifting
+upward moves iccce **toward the reference**; up to ≈`+3.8×10⁻⁴` the test
+would report **zero**.
+
+★★★ **It is not fixable by tightening: a difference cannot detect a
+defect that shrinks it.**
+
+#### ★★ It corrected the librarian's own reasoning, filed hours earlier
+
+`NUMERIC_CLAIMS.md` §3.32.9a — this librarian's independent correction of
+the dispatch — argued that the observed-≡-derived coincidence at the
+binding probe made the row *"a tighter white-point gate than any flat
+constant would have been."* **True downward, false upward.** ★★★ **A
+careful argument produced from re-reading was corrected by an injection**,
+which is §5.2 (*reading your own work is not an instrument*) applied to
+the agent whose job is reading.
+
+#### The rule
+
+> **Every differential gate names the ABSOLUTE assertion that covers its
+> blind direction, or declares that none exists.** An absolute assertion
+> compares against a **sourced constant with no reference artifact in
+> it**; a differential one compares against something real and is blind,
+> by construction, in the direction of that something.
+
+**Here:** `builtin::tests::constructed_colorant_sum_is_d50` compares the
+constructed white against **`D50` itself to `1e-9`, with no file anywhere
+in it**. The same `+3.0×10⁻⁴` injection **fails it while all six
+differential tests pass**.
+
+★★★ **Deleting it as "redundant — the ΔE test covers it" would open the
+blind spot AND EVERY REMAINING TEST WOULD STAY GREEN WHILE IT HAPPENED.**
+Both files therefore carry a **DO-NOT-DELETE note containing the
+injection table** — the table is the argument; a bare *"do not delete"*
+would be an assertion of the kind this project does not accept.
+
+★★ **This is DL-055's mechanism in the differential-test register.** Two
+mechanisms, only one with power against a given defect, and removing the
+powerful one is invisible. **The shared sentence: a redundancy is only a
+redundancy if each member has a defect it alone can catch — otherwise it
+is a single mechanism with a decoy beside it.**
+
+**Revisit if:** a reference artifact is ever replaced by one that sits
+*below* D50 — the blind direction flips, and any prose describing which
+way the gate is blind becomes wrong while every test stays green.
+
+### DL-057 — ★★★ **a code path that reuses machinery "and discards part of the result" inherits every failure mode of the discarded part — because the discarded half CANNOT FAIL HARMLESSLY. And a refusal that names the WRONG CLAUSE is worse than a vague one, because the citation makes it persuasive**
+
+**Date:** 2026-08-17 (supplementary filing). **Status:** adopted; fixed by
+extraction, with two regression tests. **Filed by:** `icc-librarian`.
+**Evidence:** `NUMERIC_CLAIMS.md` §3.33 (NC-237) and §3.33.7;
+`crates/iccce-cmm/src/transform.rs:457-498` (`derive_source_model` and
+its doc), shared with `new_inner` at `:609` and `:724`.
+
+#### The instance
+
+`Chain::with_destination(src, Destination::None, ..)` obtained the source
+model by building a **scaffold chain `src → src`** and **discarding the
+destination half**. That works whenever the source can also serve as a
+destination — which every profile tested at the time could.
+
+It fails for a profile with an `A2B` tag and **no `B2A`, no colorant
+matrix, no `grayTRC`** — a conformant shape. **Four such profiles are in
+ICC's own published set**: the colour-vision-deficiency simulation
+profiles, `scnr` class, Lab PCS, one-directional by design.
+
+#### ★★★ The symptom is the filing-worthy part
+
+The refusal read:
+
+```text
+matrix/TRC model requires PCSXYZ (Annex F.3, normative); profile PCS is 'Lab '
+```
+
+**True. Correctly clause-cited. And about a model iccce was about to
+throw away.** A caller reads it as *"my source profile is unusable"* —
+which is false; the source was fine and the destination being complained
+about was never going to be used.
+
+> ★★★ **This is the project's founding hazard — rule 1, *a wrong colour
+> looks exactly like a right one* — arriving in the ERROR SURFACE rather
+> than in a colour value.** A vague refusal invites investigation. **A
+> precise, clause-cited refusal invites acceptance.** The citation is
+> what makes it dangerous, which inverts the usual instinct that more
+> precise diagnostics are strictly better.
+>
+> ★★ It is also **DL-048's mechanism in a third register**: a pointer
+> that is individually correct and points at the wrong thing, so arrival
+> reads as confirmation.
+
+#### The rule
+
+> **A path that reuses machinery and discards part of the result inherits
+> every failure mode of the part it discards.** The discarded half cannot
+> fail harmlessly — **its error is what the caller sees**, wearing the
+> caller's own request as its subject line.
+>
+> ★ **Corollary for rule 6:** *the parser reports and does not repair*
+> gains a second half — **a report must be ABOUT THE THING THE CALLER
+> ASKED ABOUT.** A truthful report about an internal scaffold is not a
+> report to the caller; it is a leak.
+
+#### ★ Why the fix is an extraction and not a special case
+
+`derive_source_model()` is **shared** with `new_inner`, so the ICC.1
+**8.10.2** fallback dispatch — the most intricate logic in the crate —
+has one copy and cannot drift. A local special case would have removed
+the instance and left the class.
+
+★★ **And the second regression test is load-bearing.** Beside *"these
+profiles now work as sources"* sits *"these same profiles are still
+correctly REFUSED as destinations"*. Without it, an over-broad future fix
+turns the first test green **for the wrong reason** — DL-020's discipline
+(a fixture discharges the doubt it was authored for and nothing adjacent)
+applied to a pair of tests.
+
+**Revisit if:** any other path is found calling a constructor for a side
+effect and dropping part of its result. The audit question is not *"is
+this correct?"* but *"whose error message does the caller see if the
+discarded half fails?"*

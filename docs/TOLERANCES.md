@@ -1588,6 +1588,924 @@ break-even, at a named grid.
 
 ---
 
+### 3.7 ★★★ Pass G — the Ghent v5.0 population sample
+
+**Filed 2026-08-17 by `icc-conformance`, measured at tip `e21154c`, release
+build, Windows 11 / MSVC, oracle pin `21c582a` (lcms2 2.19.1).** Code:
+`tools/difftest/src/passg.rs`. Instrument that derived the envelopes:
+`tools/difftest/src/bin/ghent_probe.rs` — **which grades nothing and never
+fails**, deliberately, so that no number below was chosen by watching a
+comparison go green.
+
+**Whole-suite result with Pass G registered: `pass=229 fail=0 skip=3 error=0`,
+exit 0** (baseline before it: `pass=157`). **72 rows, and every one of them
+states a candidate separation** — the separation aggregate's `unstated` count
+is unchanged at 119, so Pass G contributed **zero** unstated rows, `blind=0`,
+`sep-broken=0`.
+
+#### 3.7.0 What is new about this pass, and what is not
+
+Every profile graded before it was **synthetic** (`tools/gen-profiles`),
+**OS-shipped** (the Windows colour directory) or **standards-body-issued**
+(FOGRA51). Pass G grades against 20 profiles extracted from the **Ghent PDF
+Output Suite 5.0** — written by Adobe InDesign CS6, imposed by Callas
+pdfToolbox, and embedded 121 times across 98 production PDF/X files. It is the
+first time this project has measured itself against *what a real document
+producer actually embeds*.
+
+★ **It is a compatibility exercise, not a conformance certification.** Nothing
+was proofed on a press or measured with an instrument; the operator has ruled
+that path out. The strongest claim any oracle row here makes is *"iccce and
+lcms2 read this profile the same way"*, which §1 ranks below the eight
+`derived-expectation` rows in this section and far below published ground
+truth, of which Pass G has **none**.
+
+★★ **The corpus is licensed and uncommittable.** The Ghent suite's licence
+forbids redistribution, and the profiles carry Adobe's, ECI's and X-Rite's
+separate licences. It lives in `D:\Dev\iccce-private-fixtures\ghent-v50\`,
+is resolved through `$ICCCE_PRIVATE_FIXTURES`, and **every row SKIPs with a
+reason when it is absent**, which is the permanent state in CI. A green CI line
+for these rows says they **did not run**. No value from that directory appears
+in this repository: every number in the records is formatted at run time from
+the file on the operator's disk, and the only corpus identifiers in source are
+SHA-256 prefixes and file names.
+
+#### 3.7.1 §A — the v4 vendor `mAB ` path (the row this pass exists for)
+
+**Subject:** X-Rite's `GWG_ICC_v4_testprofile.icc`, ICC **v4.2.0**, `prtr`
+CMYK → `Lab `, `mAB ` `A2B0/1/2` at **7×7×7×7** with 4096-entry A curves, `mBA `
+`B2A0/1/2` at 17³, plus `gamt` and four `gbd` tags.
+
+**Why it matters more than its row count suggests: every v4 LUT profile iccce
+had ever been graded against came from `tools/gen-profiles`, i.e. from us.** A
+shared misreading between the fixture generator and the engine would have been
+invisible to §3.4.4's `derived-expectation` rows, because the fixture and the
+derivation come out of one corpus (§3.4.4.1 says so in its own text). X-Rite
+authored this one.
+
+| row | kind | tolerance | where the number comes from | observed |
+|---|---|---|---|---|
+| `…/{A2B0,A2B1}/apparatus-harness-mab-matches-iccce-cmm` | self-consistency | **1×10⁻⁹** | ~7 orders above `f64` noise, ~5 below anything colorimetric | **0.0** both |
+| `…/{A2B0,A2B1}/pcs-lab-vs-lcms2` | cross-check | **envelope × 1.25**, computed per tag at run time | the CLUT method envelope from *this tag's own* 7⁴ table under the two published geometries; **no lcms2 output in it** | **0.950 274** (A2B0, tol 1.185 199) / **0.828 444** (A2B1, tol 1.035 154) |
+| **`…/{A2B0,A2B1}/pcs-lab-emulated-geometry`** | cross-check | **2×10⁻²** | lcms2's own quantisation once its geometry is substituted (see below) | **3.912×10⁻³** / **4.624×10⁻³** |
+| `…/{A2B0,A2B1}/pcs-lab-corners-interpolation-free` | cross-check | **1×10⁻³ or 2×10⁻³**, chosen from the tag's B curves | see §3.7.2 — this one was wrong on its first run | **1.112×10⁻³** (A2B0, tol 2×10⁻³) / **6.074×10⁻⁵** (A2B1, tol 1×10⁻³) |
+| `…/a2b1-equals-a2b2-byte-identical` | derived-expectation | **0.0** | an integer comparison on file bytes, not a residual | **0.0**, separation **255** |
+| `…/perceptual-black-equals-its-own-B-curve-floor` | derived-expectation | **1×10⁻⁴** | `transicc`'s 4-decimal `L*` print | **4.510×10⁻⁵** |
+| `passg/xrite-v4-to-srgb/<intent>/…` | cross-check | **propagated envelope × 1.25 + 1×10⁻⁴** | the method envelope pushed through the *actual* destination model point by point | **1.488×10⁻²** (perceptual, tol 1.872×10⁻²), **8.984×10⁻³** (media-relative and saturation, tol 1.130×10⁻²) |
+
+★ **The headline result: the raw disagreement on the v4 `mAB ` path IS the
+interpolation method, and nothing else.** With lcms2's own `Eval4Inputs`
+geometry substituted into the harness pipeline, `A2B1`'s residual collapses
+**0.828 444 → 4.624 5×10⁻³, a factor of 179**, and `A2B0`'s
+**0.950 274 → 3.912 3×10⁻³, a factor of 243**. The method envelope computed
+from the CLUT bytes alone is **0.828 123** and **0.948 160** — i.e. the raw
+residual is accounted for to **0.04 %** and **0.22 %**. This is the same
+signature Pass 4 established on a `lut16` profile, now reproduced on a
+vendor-authored v4 one, and it is the first time §3.4.3's "any **real** v4 LUT
+profile" gap (recorded as open since 2026-08-11) has been closed.
+
+★ **What §A's PCS rows do and do not compare, stated because it is easy to
+misread.** The three PCS rows compare **the harness's `mAB ` reimplementation**
+to lcms2, not iccce to lcms2 — the substitution they depend on cannot be made
+inside `crates/`, because the shipped engine has one interpolation scheme by
+design. The link to iccce is the **apparatus row**, and it is graded at
+`1×10⁻⁹`. Injection I1 (§3.7.6) confirms the linkage empirically: corrupting
+iccce's v4 PCSLAB decode turns the apparatus rows red and leaves the three PCS
+rows green.
+
+★★ **lcms2's forced BPC fires on this profile, and §A defeats it with a
+FIXTURE rather than subtracting it with a model.** The profile's `A2B0` `L*`
+B curve is a 2-entry `curv` `(0x0808, 0xFFFF)` — its declared perceptual black,
+`2056/65535 × 100 = 3.137 254` `L*`. Into a **v2** PCS lcms2 prints exactly
+that for full ink; into a **v4** PCS it prints **0.0**, because
+`_cmsLinkProfiles` forces BPC for perceptual when the *destination* is v4
+(Pass 4b finding 2, §3.4.4). §A therefore runs the perceptual arm against
+`*Lab2`. That is the Pass 4c lesson applied again: **a fixture that keeps the
+gate shut is better evidence than a model that subtracts what the gate did**,
+because a model can absorb an arithmetic error along with the policy difference
+it was built to isolate. The `perceptual-black-equals-its-own-B-curve-floor`
+row grades the whole mechanism against **the profile's own bytes**, with the
+v4-PCS answer carried as its named separation.
+
+★ **Intent-tag aliasing is a VENDOR choice, and this corpus contains three
+different ones.** X-Rite aliases `A2B1 ≡ A2B2` (media-relative and saturation
+are one block at two offsets); both ECI profiles alias `A2B0 ≡ A2B2`
+(perceptual and saturation); the GWG CMYK trap aliases `B2A0 ≡ B2A2` as well.
+**An engine — or a test suite — that hard-coded one pairing would be wrong on
+the others.** §A grades the aliasing at exactly `0.0` and does **not** give
+`A2B2` an arm of its own, because a saturation arm on this profile would
+reproduce the media-relative arm bit for bit and add green lines that measure
+nothing. §3.4.4's rule stands: a null that is null by construction must be
+identified before it is collected, never explained afterwards.
+
+#### 3.7.2 ★★ The corner tolerance was WRONG on its first run, and the term was found rather than the number moved
+
+Its first draft was a single constant `1×10⁻³`, justified by: *"at a node
+lcms2's quantisation terms vanish rather than accumulate — the CLUT input is an
+exact `u16`, the interpolated value **is** the stored `u16`, and the 2-entry B
+curves are affine; what remains is `transicc`'s 4-decimal print, a ΔE00 floor
+of ≈1×10⁻⁴, and 1×10⁻³ is 10× that."*
+
+**The `A2B1` arm measured 6.074×10⁻⁵ — the print floor, exactly as predicted.
+The `A2B0` arm FAILED at 1.111 856×10⁻³.** §0's procedure, in order:
+
+1. **Is the code wrong?** No. The per-corner dump (`ghent_probe`) shows the
+   disagreement sits entirely in `L*`, at up to 0.001 16 — **0.76 of one lsb of
+   `1/65535`** — and only on the tag whose `L*` B curve is *not* the identity.
+2. **Is the expectation wrong?** There is none; both sides are computed.
+3. **Is the fixture wrong?** No.
+4. **The derivation was wrong**, and specifically one clause of it: *"the
+   2-entry B curves are affine"* is true of both tags and **irrelevant**. What
+   matters is whether they are the **exact identity** `(0x0000, 0xFFFF)`.
+   `A2B1`'s are, so lcms2's `cmsEvalToneCurveFloat` `u16` round trip is
+   lossless. `A2B0`'s `L*` curve is `(0x0808, 0xFFFF)`, a *non-identity* affine
+   map, and lcms2 evaluates it through `cmsEvalToneCurve16` — rounding **twice**
+   (input to `u16`, lossless at a node; output to `u16`, not) where iccce and
+   the harness use `f64`. Two roundings of ≤½ lsb is ≤1 lsb; one lsb of encoded
+   output is `100/65535 = 1.526×10⁻³` in `L*`; `S_L ≥ 1` off mid-lightness.
+   Bound `≈1.526×10⁻³`; observed 0.73 of it.
+
+**The fix is not a wider constant — it is a tolerance that is a FUNCTION of the
+tag's own B curves** (`passg::corner_tolerance`, selected at run time by
+`is_identity_curve` reading the stored `u16`s). A tag with identity B curves
+still gets the tight `1×10⁻³` floor and does not inherit an allowance it does
+not need. **Injection I3 proves the selection is load-bearing**: forcing the
+identity branch turns exactly one row red — the `A2B0` corner row, at the same
+1.111 856×10⁻³ — and nothing else.
+
+The guess is preserved verbatim above so the change is auditable, per the
+precedent set by §3.4.4 row C1.
+
+#### 3.7.3 §B — the population sweep, and the honest limit of its claim
+
+Five pairs (`sRGB→ISO Coated v2`, `Adobe RGB→Coated FOGRA39`,
+`eciRGB v2 v4.2→ISO Coated v2`, `eciRGB v2 v2.4→ISO Coated v2`,
+`Gray→ISO Coated v2`) × **four intents** × **±BPC**, 213 RGB / 69 gray points,
+both sides in their own process.
+
+**`SWEEP_DEVICE = 4×10⁻³`, and it is derived from the DISCRIMINATION
+REQUIREMENT, not from the observation.** Every destination here is a Lab-PCS
+**output** LUT, so `_cmsReadOutputLUT` forces trilinear and the
+interpolation-method envelope is **identically zero** in this direction
+(Pass 4b finding 1). That removes the dominant term *and* the obvious way to
+derive a bound:
+
+- **A closed-form union bound was tried and discarded as useless**, exactly as
+  Pass 4 records. lcms2's tabulated-TRC rounding is ≤1.53×10⁻⁵ in linear RGB;
+  `da*/dX ≤ 4038` carries that to ≈2.4×10⁻⁴ in *encoded* `a*`; the steepest of
+  the six destination tables measured has a node-to-node slope of **14.836 2**
+  per encoded unit; the product over three channels is ≈1.1×10⁻² — **wider than
+  the rival it is supposed to discriminate.** A bound that cannot separate the
+  two candidates is a formality, not a bound.
+- **So the number is set by the rival instead.** The named alternative on every
+  §B row is *"lcms2 had NOT forced trilinear and had used its default
+  tetrahedral geometry"*, computed at run time from each destination's own
+  `B2A1` table. Measured over this sweep: **1.235×10⁻² to 3.306×10⁻²**.
+  `4×10⁻³` leaves every row **at least 3×** of discrimination against it, and
+  the report's `separation` column states that multiple per row rather than the
+  document asserting it.
+- **It also catches** the v2/v4 legacy Lab decode error (`ARCHITECTURE.md` §2's
+  named hazard): ≈0.39 `L*` at white and 0.4 % on the encoded `a*`/`b*` scale,
+  which through slopes of 5–15 is ≥10⁻² device — 2.5× this gate at minimum.
+
+★★ **What §B does NOT do, stated as prominently as what it does: it does not
+claim agreement.** There is no attribution row for §B, because the harness has
+no `mft2` B2A model to substitute lcms2's arithmetic into — Pass 4b built one
+for `mft1`/`lut8` only. §B is a **structural gate with a stated rival**, and
+the honest reading of a green §B row is *"no structural error, and not the
+tetrahedral rival"*. **This gap is owed work, and recording it here is not the
+same as closing it.** The observations sit 17–63× below the gate
+(**2.7×10⁻⁵ to 2.36×10⁻⁴** across the twenty graded rows), and that margin is
+**not** an agreement claim: §5.2's rule that an unexplained small residual is
+*unexplained*, not *successful*, applies with full force.
+
+**Two circumstances take a §B row out of grading, and each says so on the
+line:**
+
+| circumstance | rows | why not gated |
+|---|---|---|
+| ICC-absolute out of `sRGB` or `Adobe RGB (1998)` | 2 | the two implementations use **different destination media whites**; the mechanism is graded separately, on the profile's own bytes, in §3.7.4. Observed **2.066×10⁻¹** and **2.051×10⁻¹** device |
+| anything with `--bpc` | 10 | iccce estimates the destination black by ISO/CD 18619 4.2.5, lcms2 by `cmsDetectDestinationBlackPoint`; **ICC.1 has no normative BPC text at all** (A27/A42). Gating this would gate a choice neither standard makes |
+
+★ **ICC-absolute IS graded for `eciRGB v2` (both encodings) and for the gray
+profile**, at the full `4×10⁻³`, and passes at **1.16×10⁻⁴ / 1.82×10⁻⁴ /
+7.2×10⁻⁵**. Those sources encode `wtpt` **at** the PCS white, so lcms2's
+substitution is a no-op and the gate cannot fire — the fixture defeats the
+confound. That is the first time this suite has had a *graded, unmodelled*
+ICC-absolute row through a real CMYK destination out of a real display profile.
+
+★ **The `--bpc` mechanism, measured on three real vendor print profiles.** The
+`passg/bpc-mechanism/*` rows report iccce's ISO estimator against `pass5c`'s
+reimplementation of lcms2's: **2.010 883 `L*`** (ISO Coated v2 v2.4),
+**0.823 487** (Coated FOGRA39 v2.1), **2.084 405** (X-Rite v4.2). What the
+Ghent corpus adds to §3.5.7/§3.5.8 is that **the divergence is not an artefact
+of synthetic or OS-shipped fixtures** — it reproduces, at the same order, on
+profiles a real producer embeds. The device consequence is the 3.5×10⁻² to
+7.6×10⁻² seen on the media-relative `--bpc` rows above.
+
+★ **iccce refuses `--bpc` by name on eight of the twenty `--bpc` combinations**,
+and those refusals are **graded as deliverables at exactly `0.0`** — the
+quantity is *"did the engine decline by name"*, not a residual. `CLAUDE.md`
+rule 6. The boundary of the estimation subset is part of the coverage
+statement, and §3.7.5 states it.
+
+#### 3.7.4 ★★ The authoring finding, and why it settles the ICC-absolute divergence
+
+`COLORANTS_SUM = 2×10⁻⁴` — the `s15Fixed16` encoding floor: one lsb is
+`1/65536 = 1.526×10⁻⁵`, three colorants sum three of them (4.6×10⁻⁵), and
+Table 14 states the PCS white to four decimals so it is known only to ±5×10⁻⁵
+per component. `2×10⁻⁴` is ≈2× that sum. It is **not perceptual and not fitted
+to any observation** — it is the precision of the encoding the claim is made in.
+
+★ **The two authoring rows are DIFFERENT CLAIMS, and the first draft conflated
+them.** Where a profile's `wtpt` disagrees with its own colorant sum the
+question is *which of the two is out of step*, and that is decidable **without
+any external white point**: the colorant sum is compared to the normative PCS
+white against a bound that is **half the distance to the profile's own rival
+candidate**, so the row asks a *classification* question that cannot be tuned.
+Where the two agree, that question is meaningless — and such a profile is the
+**negative control**, so it gets its own row, the encoding-floor bound, and an
+honest `NO-NAMED-ALTERNATIVE`.
+
+★★★ **The finding.** Ghent's `sRGB IEC61966-2.1` and `Adobe RGB (1998)` — the
+copies Adobe InDesign CS6 actually embedded — have colorants summing to the PCS
+white (**1.885×10⁻⁴** and **5.396×10⁻⁶**), a `wtpt` sitting **0.264 15** away
+from it, and **no `chad` tag**. Their PCS data *is* D50-adapted and their
+`wtpt` is *not*. **ICC.1:2001-04 Annex A.3.1.1, VERBATIM:**
+
+> *"If chromatic adaptation is being applied to the PCS values, the adaptation
+> should be applied to the mediaWhitePointTag values as well."*
+
+On that clause these are **defects of authorship, not a second reading of the
+standard** — which is what the corpus's A4b resolution already records for the
+Windows system sRGB profile (`ICC_Spec\icc\icc__s__v2_ICC1_2001_04.md` §1.1;
+note §1.3's caution that this document has **no defined verbal-form hierarchy**,
+so its "should" must not be cited as an ISO-directives *should*). It settles the
+ICC-absolute divergence **in lcms2's favour**: iccce uses the encoded value and
+lcms2 substitutes D50, and it is lcms2 that is following the clause.
+
+**What the population sample adds, and it is the reason §B was worth running:
+this is not a one-off system profile.** It is what a real producer embeds, in
+98 PDF/X files, 121 times. `eciRGB v2` in both its encodings is the control that
+stops the finding being read as *"every v2 display profile in the wild is
+mis-authored"*: its `wtpt` and colorant sum agree to **1.526×10⁻⁵**, one lsb.
+
+★ **`NA-00x` is NOT registered for this and no code changed.** Deciding whether
+iccce should follow lcms2 here is an engineering call with a `ROADMAP` cost, not
+a tolerance; this section records the evidence and the clause, and leaves the
+decision where it belongs.
+
+#### 3.7.5 §C and §D — the weakest row in this document, and the strongest
+
+**§C (`eciRGB v2`, v2.4 against v4.2) is the weakest evidence class Pass G
+produces, and it is labelled so on every line.** `Kind::SelfConsistency`:
+**both sides are iccce**, on two files from **one vendor**. It prices a
+representation change. It is **not** evidence that either answer is right, and
+it is weaker than a cross-check because there is only one lineage in it. Graded
+at `SWEEP_DEVICE` — the same number as §B, reused deliberately, because a
+*different* tolerance for this comparison would be a number chosen for this
+comparison. Observed **1.01×10⁻⁴** over 213 points. A companion row runs the
+identical comparison with **lcms2 on both sides** (**2.29×10⁻⁴**), so a green
+line says something about the two *files* and not about iccce's handling of
+them.
+
+★★ **And a NEGATIVE result, recorded because the pair looks like an instrument
+it is not.** The v2/v4 pair **cannot** isolate lcms2's `wtpt` version gate:
+both encodings put `wtpt` **at** the PCS white (**1.526×10⁻⁵** and
+**5.396×10⁻⁶**), so the substitution is a no-op for either and the version leg
+of the conjunction is never exercised. **No pair in this corpus differs only in
+version while encoding a non-PCS white.** Nor is the pair a clean *version*
+isolator at all: the two files differ in **TRC representation** as well —
+a 700-entry tabulated `curv` against a `para` type 3 — so a disagreement
+between them has **two** candidate causes and this fixture separates neither.
+§5.4's rule applies: a negative result removes its own auditor, so it is
+written down at the same length as a positive one.
+
+**§D (the two GWG trap profiles) carries the only rows in this section whose
+correct answer is known WITHOUT measurement.** `RGB mntr mtx X (Switch red
+green)` declares the swap as its own content, so *"red in, green out"* is
+checkable against the profile's own tags rather than against an oracle:
+ICC.1:2022 6.3.4 / Annex F.3 gives PCS `XYZ` for device `(1,0,0)` as
+`rXYZ × TRC_r(1)`, and a `curv`'s last entry maps to 1.0, **so the expected
+answer IS the `rXYZ` tag's own three numbers.** `Kind::DerivedExpectation`,
+graded at `SWAP_EXACT = 1×10⁻⁶` — ~1/15 of the `s15Fixed16` lsb, tighter than
+the encoding **on purpose**, legitimate only because both sides decode the same
+stored integers and the comparison is of two decodings of one number rather
+than of two measurements. **Observed 0.0 on both rows.**
+
+★ **The alternative candidate is named, and it is the one DL-033 asks for:**
+*an engine that ignores the declared source profile and reads the colorants in
+conventional order* — the failure the GWG suite designed these files to expose,
+and the one its test page renders as a visible red X. Its distance is
+**0.472 229** in the row's own metric (`|rXYZ − gXYZ|∞`), **472 229× the
+tolerance**, and it is **supplied, not derived**, because it is a property of
+the profile's two colorant tags and must not collapse to zero on the run where
+the engine takes the wrong candidate. That the swap is colorimetric and not a
+naming convention is graded too: the `rXYZ` tag's chromaticity has `y − x > 0`
+(a **green** primary) and `gXYZ`'s has `x − y > 0` (**red**).
+
+★★ **Injection I2 confirmed the separation was exactly right:** transposing
+`rXYZ`/`gXYZ` in `MatrixTrc::from_profile` moved both rows to **0.472 229** —
+*the stated separation, to six figures.* A separation that predicts the
+magnitude of the injected failure is doing the job DL-033 defined for it.
+
+Two further §D rows: the corpus contains **two files with the same `desc` and
+different SHA-256s**, checked to agree at `0.0` with their colour-bearing tags
+verified byte-identical in the same run (a corpus with two files under one
+description is a place for a silent substitution to hide); and the CMYK trap's
+`B2A0 ≡ B2A2` aliasing, the third pattern of §3.7.1.
+
+#### 3.7.6 ★★★ Injection proof — every claim in this section was broken on purpose
+
+§5.3 of `docs/NEXT_SESSION.md`: *a test that cannot fail is not evidence.* Four
+injections were run **in a detached `git worktree`**, never in the main tree,
+each reverted before the next. Baseline in that worktree reproduced the main
+tree exactly (`pass=229 fail=0 skip=3 error=0`).
+
+| # | defect injected | where | result |
+|---|---|---|---|
+| **I1** | v4 PCSLAB `a*`/`b*` decode scale `255 → 254` | `crates/iccce-cmm/src/lut_ab.rs` | **`pass=218 fail=11`.** Pass G red: both `apparatus` rows (at **0.894**, 894 million× the `1×10⁻⁹` bound) and all three graded `xrite-v4-to-srgb` rows. **The three PCS rows stayed green — correctly**, since they compare the harness to lcms2; the apparatus row is what ties them to iccce, and it fired. Six Pass 4b/5 rows also fired, confirming a real defect |
+| **I2** | `rXYZ`/`gXYZ` transposed | `crates/iccce-cmm/src/matrix_trc.rs` | **`pass=177 fail=52`.** Both §D derived rows red at **0.472 229 = the stated separation exactly**; every §B graded row red at ~1.0; §A's end-to-end rows red. ★ `passg/trap-rgb/the-two-same-desc-files-agree` and `passg/ecirgb-v2-vs-v4/*` stayed **green — correctly**: they are self-consistency rows and are blind to a *symmetric* defect by construction, which is what their `kind` says |
+| **I3** | the corner tolerance always takes the identity branch | `passg::analyse_xrite` | **`pass=228 fail=1`.** Exactly one row red: `passg/xrite-v4/A2B0/pcs-lab-corners-interpolation-free` at 1.111 856×10⁻³ against 1×10⁻³. **The run-time selection of §3.7.2 is load-bearing, not decoration** |
+| **I4** | the emulated-geometry arm silently keeps iccce's geometry | `passg::analyse_xrite` | **`pass=227 fail=2`.** Both `pcs-lab-emulated-geometry` rows red at **0.828 444 / 0.950 274** against `2×10⁻²` — ★ **and their separations stayed `DISCRIMINATING` at 0.828 / 0.948 rather than collapsing to `ZERO-SEPARATION`.** That is the `Separation::against` hazard (`lib.rs`, 2026-08-12) avoided by construction: the distance is supplied as a property of the fixture, so the mechanism does not disclaim its power on the one run where it demonstrates it |
+
+#### 3.7.7 Coverage of this section, stated
+
+**Three vendors** (Adobe, ECI, X-Rite) and **one workgroup** (GWG); **11 of
+the corpus's 20 profiles** touched, **9 not**; **one destination CMYK profile
+for four of the five sweep pairs**; **one machine** (Windows 11, MSVC,
+release), **one oracle pin**, **one day** (2026-08-17), **one tip**
+(`e21154c`). 341 CMYK / 213 RGB / 69 gray points; 16 corners.
+
+**Not covered, and named rather than implied:** the `mBA ` (B2A) direction of
+the X-Rite v4 profile — §A grades its `A2B` only, and `B2A0`'s tabulated
+4096-entry B curve is a shape nothing in this suite evaluates; `gamt` and
+`gbd*` (iccce does not implement gamut tags); the 9 untouched profiles,
+including the Thunderbolt display profile with `vcgt`/`mmod`/`ndin`; **eight
+`--bpc` combinations that iccce refuses by name and are therefore NOT
+differentially tested at all**; any perceptual claim (nothing here is measured
+against a press or an instrument); and **any published ground truth** — Pass G
+has none and cannot have any, for the structural reason §1 and
+`icc__ref__ground_truth_availability.md` record: ICC.1 mandates no
+interpolation method, so no published expected value for a LUT path can exist
+even in principle.
+
+---
+
+### 3.8 ★★★ Pass H — acceptance and refusal, over the ICC's own published profile set
+
+**Filed 2026-08-17 by `icc-conformance`.** Apparatus
+`tools/difftest/src/passh.rs`, instrument
+`tools/difftest/src/bin/passh_probe.rs`, operational notes
+`tools/difftest/README.md` §23.
+
+**Subject: which files iccce accepts, which it refuses, and whether a refusal
+says why.** Not a colour value — and that is a structural limit, not an
+omission. The corpus publishes *transforms*, never expected *outputs*, so no ΔE
+computed on it could be ground truth (DL-041). What it can prove is broader
+than anything else this project holds, because a **refusal population** and an
+**acceptance population** are things a generator cannot manufacture: every file
+in them was authored by somebody else, for their own purposes, before this
+repository existed.
+
+**Corpus:** `D:\Dev\iccce-private-fixtures\color-org\` — **50 `.icc` files**
+downloaded by the operator from `color.org` on 2026-08-17, terms in that
+folder's own `README.md` under `### color-org/`. 23 distinct `cprt` strings,
+six licensing postures, **restrictive reading applies to the whole folder**.
+Uncommittable; resolved through `$ICCCE_PRIVATE_FIXTURES`; **every row SKIPs
+with a reason when it is absent**, which is CI's permanent state. ★ A green CI
+line is evidence that nothing here ran.
+
+**Measured population** (harness's own reading of bytes 8..12, 2026-08-17):
+**40 accepted, 10 refused.** Versions `2.0.0 (5) 2.1.0 (4) 2.4.0 (6) 4.0.0 (8)
+4.1.0 (1) 4.2.0 (15) 4.3.0 (1)`; classes `prtr (24) mntr (7) scnr (6)
+spac (3)`; colour spaces `CMYK (23) RGB (16) 7CLR (1)`.
+
+★ **`docs/NEXT_SESSION.md` said "two of them" were iccMAX. Two were *tested*;
+ten are *present*.** The correction is filed in §4 below.
+
+#### 3.8.1 The rows
+
+| id | kind | metric | tolerance | observed | what it can catch |
+|---|---|---|---|---|---|
+| `passh/A/refusal/every-iccMAX-file-is-refused-by-name-with-its-own-version` | derived-expectation | indicator-count | **0** | 0 | a refusal that says "parse error" instead of naming iccMAX, does not quote the file's own version word, exits ≠1, or prints anything on stdout |
+| `passh/A/refusal/stdout-is-empty-nothing-was-parsed-anyway` | derived-expectation | indicator-count | **0** | 0 | a partial header/tag dump escaping from a file that was refused (rule 6) |
+| `passh/A/control/the-version-word-ALONE-produces-the-same-refusal` | derived-expectation | indicator-count | **0** | 0 | the ten real refusals being caused by their exotic **content** rather than by their version |
+| `passh/A/gate/harness-reading-of-byte-8-predicts-iccce-on-every-file` | derived-expectation | indicator-count | **0** | 0 | any disagreement between the harness's own reading of the version word and iccce's verdict, over all 50 |
+| `passh/B/acceptance/every-non-iccMAX-file-is-accepted-exit-0` | derived-expectation | indicator-count | **0** | 0 | a published, conformant v2/v4 profile that iccce cannot read |
+| `passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file` | derived-expectation | indicator-count | **0** | 0 | over-reporting by iccce **or** a defect in a published profile — the row cannot tell which, and says so |
+| `passh/B/acceptance/iccce-and-lcms2-reach-the-same-verdict-on-every-file` | cross-check | indicator-count | **0** | 0 | one implementation reading a file the other cannot |
+| `passh/B/acceptance/header-fields-iccce-printed-match-the-raw-bytes` | derived-expectation | indicator-count | **0** | 0 | "it parsed" without "it read the right bytes" |
+| `passh/C/7clr/shipped-binary-converts-a-7-channel-source` | derived-expectation | indicator-count | **0** | 0 | the shipped binary failing or reshaping a seven-channel conversion |
+| **`passh/C/7clr/pcs-corners-vs-lcms2`** | cross-check | `L*` | **2×10⁻³** | **4.900435×10⁻⁵** | ★ the first graded seven-channel row this project has ever had |
+| `passh/C/7clr/end-to-end-device-corners-vs-lcms2` | cross-check | device (0..1) | **∞** | 1.191176×10⁻⁴ | reported; carries the destination's reverse-tone-curve term (see §3.8.3) |
+| `passh/C/7clr/end-to-end-device-interior-vs-lcms2` | cross-check | device (0..1) | **∞** | 1.687373×10⁻³ | reported; dominated by the unlegislated interpolation method (A16) in 7 dimensions |
+| **`passh/C/7clr/compiled-path-does-not-ABORT-the-process`** | derived-expectation | indicator-count | **0** | **0** (was **1 — RED** on 2026-08-17) | ★★ the process aborting instead of returning or refusing. **The defect it found is fixed; its subject has narrowed** — see §3.8.4 |
+| **`passh/C/7clr/default-grid-BUILDS-and-is-the-grid-the-library-RECOMMENDS`** | derived-expectation | indicator-count | **0** | **0** | ★ added 2026-08-17 (later). A default that *refuses* rather than builds; and `recommended_grid_points` drifting apart from what `iccce bench` does with it |
+| **`passh/C/7clr/oversized-grid-is-a-NAMED-refusal`** | derived-expectation | indicator-count | **0** | **0** | ★★ added 2026-08-17 (later). **The regression detector for the abort**: re-runs `--grid 33`, the exact configuration that died, and requires exit 1, empty stdout, and stderr naming all three quantities |
+| `passh/C/7clr/compiled-vs-reference-at-the-default-grid` | **self-consistency** | device (0..1) | **∞** | **2.952005×10⁻³** | added 2026-08-17 (later). REPORTED for ever — **both arms are iccce** (§3.8.4's closing note on why this is not the number to grade) |
+| `passh/C/coverage/6clr-evidence-is-zero` | derived-expectation | indicator-count | **∞** | 0 | reported coverage: there is none |
+| `passh/E/coverage/population-breakdown` | derived-expectation | indicator-count | **∞** | — | reported coverage census |
+
+Section D, per Probe profile (`probe-v1-icc-v2`, `probe-v1-icc-v4`,
+`probe-v2-icc-v4`):
+
+| id suffix | kind | metric | tolerance | v1/v2 | v1/v4 | v2/v4 |
+|---|---|---|---|---|---|---|
+| `b2a/off-colorant-channels-are-exactly-zero` | see §3.8.2 | device (0..1) | **0** (∞ on v2/v4) | 0 | 0 | 9.969315×10⁻¹ **claim FALSE** |
+| `b2a/a-and-b-are-ignored` | see §3.8.2 | device (0..1) | **1.5259×10⁻⁵** (∞ on v2/v4) | 3.330669×10⁻¹⁶ | 4.440892×10⁻¹⁶ | 9.176524×10⁻¹ **claim FALSE** |
+| `b2a/tint-is-monotone-decreasing-in-L` | see §3.8.2 | device (0..1) | **1.5259×10⁻⁵** (∞ on v2/v4) | 0 | 0 | 2.682589×10⁻³ **claim FALSE** |
+| **`b2a/the-published-colorant-dominates-at-every-point`** | see §3.8.2 | indicator-count | **0** | 0 | 0 | **0** |
+| **`a2b/the-three-published-bands-are-disjoint-and-ordered`** | see §3.8.2 | `L*` | **0** | 0 | 0 | **0** |
+| `a2b/published-band-containment` | see §3.8.2 | `L*` | **∞** | 2.263736 | 2.263736 | 3.000687 |
+| `a2b/vs-lcms2-through-the-same-tags` | cross-check | `L*` | **2×10⁻³** | 8.843702×10⁻⁴ | 8.843702×10⁻⁴ | SKIP (§3.8.5) |
+| `a2b/encoded-pcs-clamp-divergence` | cross-check | `L*` | **∞** | 0 | **2.374×10⁻¹** | SKIP |
+| `tags/mpet-is-present-and-NOT-decoded` | see §3.8.2 | indicator-count | **0** | SKIP | SKIP | **0** |
+| `tags/mpet-selection-divergence-from-lcms2` | see §3.8.2 | `L*` | **∞** | SKIP | SKIP | **3.313383×10¹** |
+| **`shipped/intent-selects-the-published-colorant`** | see §3.8.2 | indicator-count | **0** | 0 | 0 | **0** |
+
+**Whole suite at first filing (2026-08-17, tip `e21154c`): `pass=270 fail=1
+skip=9 error=0`,** bare exit `1`, the single failure being the compiled-path
+abort of §3.8.4.
+
+**Whole suite after the fix and the row split (2026-08-17, later the same day):
+`pass=274 fail=0 skip=9 error=0`, bare exit `0`** — re-measured by
+`icc-conformance` rather than taken on report, `cargo run --release` redirected
+to a file with no pipe anywhere in the gate (§5.6's rule about the harness's own
+exit code). `+4` on the pass count is `−1` failure becoming a pass and `+3` new
+rows.
+
+#### 3.8.2 ★★★ The first `ground-truth` rows in `tools/difftest`, and exactly what they are ground truth ABOUT
+
+`Probev2.zip` ships **`Probe2 Profile Readme June 1.pdf`**, in which the ICC
+states, in numbers, what `Probev2_ICCv4.icc` does:
+
+> *"The rendering intent transforms (BToA tags or BToD tags) of the probe
+> profile ignore the a\* and b\* components of incoming PCS colors, and map the
+> L\* components directly to monotone tints of process colorants. (L\* = 0 is
+> rendered as maximum colorant coverage, and L\* = 100 is rendered as unmarked
+> media.) The B2A0 tag (perceptual rendering intent transform) renders the L\*
+> values as tints of pure cyan. The B2A1 tag (relative colorimetric intent
+> transform) renders them as tints of pure magenta, and the B2A2 tag
+> (saturation intent transform) renders them as tints of pure yellow."*
+
+> *"For the perceptual (A2B0) tag, the output is set such that the measured L\*
+> values are scaled and offset into the range 70 to 100. For the relative
+> colorimetric (A2B1) tag, the L\* values are scaled and offset into the range
+> 30 to 70. For the saturation (A2B2) tag, they are scaled to the range 0 to
+> 30."*
+
+That is a **published vendor statement about a named file, transcribed with its
+source, containing no implementation's output** — §1's definition of
+`ground-truth`, satisfied for the first time in this crate.
+
+**What it is ground truth ABOUT, and the limit matters more than the claim.**
+It is ground truth about **rendering-intent tag selection** and about **the
+lightness band a tag's output lies in**. Nobody measured a patch; there is no
+published `L*a*b*` triple anywhere in it. A row here can catch iccce selecting
+`B2A1` when asked for `B2A0`, evaluating the wrong element order, mis-decoding
+PCSLAB, or transposing an ink — each of which a cross-check against lcms2 can
+only catch if lcms2 happens not to share it. **It cannot certify that any
+number is the right colour, and no row here says otherwise.**
+
+**Kinds, and why they are not uniform.** Only `Probev2_ICCv4.icc` carries
+`ground-truth`: it is the file the readme names. The readme describes
+`Probev1_ICCv4.icc` only as *"the previous probe profile"* whose purpose the
+v2 profile's is *"similar to … with the addition of optional tags based on the
+MultiProcessingElement tag type"*, so applying the v2 table to a v1 file is a
+**reading of that sentence**. The `Probev1_*` rows are graded — a reading that
+cannot fail is not a reading — as **`derived-expectation`**, and a red one is
+ambiguous between *"iccce is wrong"* and *"the reading is wrong"*. That
+ambiguity is the whole reason they are not ground truth.
+
+★★★ **AND THE PUBLISHED CLAIM IS FALSE OF THE FILE THE DOCUMENT NAMES.** This
+is the most surprising result in the pass and it inverts the expected
+arrangement:
+
+- On **`Probev1_ICCv2`** and **`Probev1_ICCv4`**, which the readme does *not*
+  describe, the "pure cyan / magenta / yellow" design is realised **exactly** —
+  off-colorant channels are `0.0` to the bit, `a*`/`b*` change the answer by
+  `3.3×10⁻¹⁶` (the `f64` arithmetic of the interpolation weights, eleven orders
+  below one 16-bit device code), the ramp is monotone with **zero** violations,
+  `L* 0 → 1.000000` (maximum coverage) and `L* 100 → 0.003890` (unmarked
+  media). lcms2 agrees: `50.1945 %` against iccce's `50.193793 %` at `L* 50`.
+- On **`Probev2_ICCv4`**, the file the readme names, the `BToA` tags produce a
+  **near-neutral CMYK build with the intent's colorant raised** — at
+  `L* 50, a*=b*=0` the perceptual tag returns `(0.645, 0.619, 0.619, 0.023)`,
+  the media-relative tag `(0.630, 0.652, 0.630, 0.030)`, the saturation tag
+  `(0.645, 0.645, 0.681, 0.041)`. Two chromatic channels equal, the readme's
+  colorant third and highest. Off-colorant maximum `0.9969`; `a*`/`b*` move the
+  answer by up to `0.9177`.
+
+**What was done about it, and what was deliberately not done.** Once a
+published premise is shown false, continuing to grade iccce against it grades
+iccce against the document's error. The three rows that depend on the *strict*
+form of the sentence are therefore emitted on `Probev2_ICCv4` as **REPORTED —
+tolerance infinity, claiming nothing** — each carrying a loud prefix in its own
+detail text (`★★★ THE PUBLISHED CLAIM IS FALSE OF THIS FILE, AND THIS ROW'S
+'PASS' MEANS ONLY THAT ITS TOLERANCE IS INFINITE …`) so a green line cannot be
+quoted as confirmation.
+
+★★ **They are relaxed to infinity, not to a finite number the observation
+happens to satisfy.** A bound of `0.98` chosen because the measurement came out
+at `0.9969` would be exactly the tuning §0 exists to prevent, and it would read
+in a report as a claim. Infinity reads as what it is.
+
+**What survives, and IS graded on all three files, is the weaker statement the
+sentence still entails:** *the published colorant is strictly the largest of
+the three chromatic channels.* That row (`b2a/the-published-colorant-dominates-at-every-point`,
+tolerance 0, observed 0 everywhere) is the one that catches an intent-to-tag
+mis-wiring, and §3.8.6 shows by injection that it is the *only* in-process row
+that does.
+
+**The A2B side behaves the same way**: no profile meets the published band
+(`2.26`–`3.00 L*` of excursion, at heavy-ink corners of the device cube that
+are outside any real press gamut and are extrapolated in the table), **and
+lcms2 reproduces the excursion to `8.8×10⁻⁴ L*`** — so it is a statement about
+the artefact, not about either engine. Containment is therefore REPORTED. What
+is **graded** is the property the readme's three bands actually support and
+which no quantisation argument can erode: **the three realised bands are
+disjoint and in the published order.** Overlap `0` on all three files; the
+tightest gap on `Probev2_ICCv4` is `+1.03 L*`.
+
+**Two further caveats the readme itself supplies, both load-bearing.** (a) It
+states the profile is deliberately non-compliant — *"the media relative
+colorimetric intent tags are not based on real measurement data, as is required
+for v4 profiles"* — which is a defect of **content**, not of encoding, so it
+does not touch anything §D grades; but a green §D must not be quoted as
+evidence that iccce handles a *conformant* profile correctly. (b) Its own
+colour-code table contains transcription defects (the `B2A2` block is
+duplicated; the prose describes `B2D0/1/2` where the table says `D2A0/1/2`; one
+paragraph names `A2B1`/`A2B2` while describing `D2B1`/`D2B2`). **§D grades only
+the two prose paragraphs quoted above.** The table is not used.
+
+#### 3.8.3 ★★ A bound that was written, failed, and was WITHDRAWN rather than widened
+
+`SEVEN_CORNER = 5×10⁻⁵` was derived for the end-to-end seven-channel device
+comparison: at a device-cube corner every interpolation scheme returns the
+stored node, so the (unlegislated, A16) method difference is identically zero,
+and what remains is lcms2's quantisation — CLUT input rounded to `u16`
+(`7.63×10⁻⁶`), CLUT evaluated in s15.16 (`1.53×10⁻⁵`), *"the destination's
+16-bit reverse tone curve"* (`1.53×10⁻⁵`), `transicc`'s 4-decimal print in
+0..255 (`1.96×10⁻⁷`) — summing to `3.82×10⁻⁵`.
+
+**It failed at `1.191176×10⁻⁴`, 2.4× over.** §0's procedure in order:
+
+1. **Is the code wrong?** No. Re-run on the **PCS** side, where the destination
+   is not in the loop at all, the same 128 corners agree to **`4.900435×10⁻⁵`
+   `L*`** — 40× inside `ORACLE_LAB`. The disagreement was never in the
+   seven-channel path.
+2. **Is the expectation wrong?** There is none; both sides are computed.
+3. **Is the fixture wrong?** No.
+4. **The derivation was wrong.** The destination chosen for the row,
+   `sRGB2014.icc`, carries **1024-entry tabulated `curv` TRCs**, and lcms2
+   inverts a tabulated curve through a **4096-entry reverse tone curve**
+   (`cmsgamma.c`) — the same term Pass 4b measured at `9.68×10⁻⁵` and used to
+   collapse a residual 457×. The line *"the destination's 16-bit reverse tone
+   curve, 1.53×10⁻⁵"* silently **assumed an analytic inverse** and is simply
+   the wrong term for this destination.
+
+**The response was not to widen `5×10⁻⁵` until the observation fitted.** The
+graded claim moved to the PCS side, where the subject of the row — a
+seven-channel `mAB ` tag — is isolated, and the end-to-end device numbers are
+REPORTED with the missing term named. Widening would have produced a green line
+whose justification still did not mention the biggest thing in it. The withdrawn
+constant and its derivation are preserved as a comment in `passh.rs` so the
+change is auditable.
+
+★ **This is the third instance of the same failure in this document** — Pass
+4b's `DEVICE_B2A`/`B6`, Pass G's `SWEEP_DEVICE` applied in the wrong direction,
+and now this. **The generalisation: when a tolerance's `why` contains a clause
+about a component the row does not own — a destination, a direction, a fixture
+property — that clause is where the missing term will be.**
+
+#### 3.8.4 ★★★ The row that went RED, the defect it found, and why one row became four
+
+##### 3.8.4.1 What was measured on 2026-08-17 at tip `e21154c` — HISTORICAL, DATED, NOT LIVE
+
+`iccce bench --src <the 7CLR profile> --dst <sRGB2014>` **aborted the process**.
+Bare exit status **`-1073740791` = `0xC0000409`** (`STATUS_STACK_BUFFER_OVERRUN`,
+which is what Rust's `__fastfail` raises on an allocator abort); stderr
+*"memory allocation of 1022842631448 bytes failed"*; stdout empty.
+
+The arithmetic, computed at run time by the row and not typed:
+`iccce_cmm::compiled::recommended_grid_points(7)` returned **33** — its
+`_ => 33` catch-all, whose doc comment reasoned only about 3-D and 4-D — so
+`CompiledTransform::new` sampled `33⁷ = 42 618 442 977` nodes × 3 outputs × 8
+bytes = **1 022 842 631 448 bytes ≈ 952.6 GiB**. The `checked_pow` guard the
+constructor documented protects against **wrap**, not against **size**, so the
+allocation was attempted.
+
+**The tolerance is 0 on an indicator whose definition is: the bare exit status
+must be `0` (it worked) or `1` (a NAMED refusal).** That is the shipped CLI's
+own contract — every other decline in this product is a named refusal on stderr
+(`--bpc` outside the estimation subset, `lut8` with an XYZ PCS, iccMAX). **A
+process abort is neither a result nor a refusal; a caller cannot distinguish it
+from a crash in their own code.**
+
+★ **There was no number to move, and that is why this is worth re-reading.** The
+observable was a bare exit status. The pass went red, stayed red, and went green
+when the *code* changed — which is the entire proposition §0 asserts and this is
+the first time in this document it has been demonstrated on shipped code rather
+than on an injected defect.
+
+★ **The corpus found this. Nothing synthetic would have**: `tools/gen-profiles`
+has never produced a device space with more than four channels, because nobody
+thought to.
+
+##### 3.8.4.2 What fixed it — two changes in `crates/iccce-cmm/src/compiled.rs`
+
+Made by `icc-engineer`, verified here by `icc-conformance` running the shipped
+binary rather than reading the diff.
+
+1. **A SIZE guard, distinct from the OVERFLOW guard.** New
+   `ChainError::GridExceedsBudget { nodes, bytes, budget_bytes }`, bounded by a
+   new public `iccce_cmm::compiled::MAX_COMPILED_GRID_BYTES = 64 MiB`.
+   `ChainError::GridTooLarge` stays, and stays meaning the true `checked_pow`
+   overflow case. ★ **The two are not merged, and should not be**: one says *this
+   node count is not a number*, the other says *this node count is a perfectly
+   ordinary number and cannot be allocated*. On a 64-bit machine the second is
+   nearly every interesting case and the first is almost none of them.
+2. **`recommended_grid_points` no longer has a `_ => 33` catch-all.** 1–2 stay
+   129; **3 and 4 stay the measured 33**; ≥5 is **computed** as the largest grid
+   that fits the budget at the worst output width ICC.1 permits (15, `FCLR`,
+   Table 19). Yields `5→14, 6→9, 7→6, 8→5, 9→4, 10–12→3, 13–15→2`.
+
+**Verified end to end** [`icc-conformance`, 2026-08-17, this machine]:
+
+| command | bare exit | result |
+|---|---|---|
+| `iccce bench --src <7CLR> --dst sRGB2014.icc --pixels 10000` | **0** | grid **6**, **279 936** nodes, `6 718 464` bytes (6.407 MiB), build 3.56 s |
+| the same with `--grid 33` | **1** | stdout **empty**; stderr *"compiled grid would need 42618442977 nodes = 1022842631448 bytes, over iccce's 67108864-byte budget; refused rather than allowed to abort the process. Pass a smaller --grid, or use the reference path (`transform`), which has no grid at all"* |
+
+##### 3.8.4.3 ★★★ Why ONE row stopped being enough the moment the defect was fixed
+
+This is the part worth carrying to other passes.
+
+The original row observed *"did the bare exit fall outside {0, 1}?"*. **Each of
+the two fixes above independently makes that observation zero.** Change (2)
+alone — the smaller default — means the allocation on this file is 6.4 MiB and
+succeeds whether or not the guard in change (1) exists. So:
+
+> **Deleting `MAX_COMPILED_GRID_BYTES` entirely would leave the original row
+> GREEN.**
+
+A row that went red on a real defect can become a row that cannot see that
+defect's return, without anybody editing it and without any number moving. The
+Pass H question — *not "what does this row measure" but "which layer is in the
+loop"* — is the one that catches it. Four rows, four layers:
+
+| row | what is in the loop | what its going red would mean |
+|---|---|---|
+| `compiled-path-does-not-ABORT-the-process` | the shipped binary at the **default** grid | the default became unsurvivable again |
+| `default-grid-BUILDS-and-is-the-grid-the-library-RECOMMENDS` | the binary **and** `recommended_grid_points` | the default refuses rather than builds, **or** the library's recommendation and the binary's behaviour have drifted apart |
+| `oversized-grid-is-a-NAMED-refusal` | **the size guard itself**, through the CLI | the guard was removed, or stopped naming its numbers, or stopped exiting 1, or let something escape on stdout |
+| `compiled-vs-reference-at-the-default-grid` | nothing — **REPORTED** | (never; it is not graded) |
+
+★ **`oversized-grid-is-a-NAMED-refusal` is not redundant with the engineer's own
+unit test.** `compiled::tests::oversized_grid_arithmetic_is_refused_not_aborted`
+asserts the guard's **arithmetic**, in process, deliberately without attempting
+the allocation — *"a test that aborts the test process proves nothing and takes
+its siblings with it"*, which is right. But an in-process test is blind to the
+CLI wiring: whether `bench` propagates the `Err` as exit 1, whether the message
+reaches stderr, whether anything partial escapes on stdout. **This is the same
+finding Pass H's injection I2 produced** — seven of §D's eight per-profile rows
+evaluated a tag *by signature in process* and were blind to a *wiring* defect by
+construction. The unit test and the row are the same claim at two layers, and
+both are needed.
+
+★ **The three numbers stderr must name are computed by the row, never typed.**
+`33⁷`, `× 3 × 8`, and `MAX_COMPILED_GRID_BYTES` are all read from the library at
+run time and matched as substrings. If the guard's arithmetic changes, the row
+tracks it; if the message stops naming one of them, the row goes red. A sixth
+violation counter fires if the budget is ever raised above this allocation —
+**a row that has quietly become vacuous is worse than a row that fails**, because
+it reports PASS.
+
+##### 3.8.4.4 ★★ The measured 33 was NOT weakened to fit the budget, and the tension is asserted
+
+`33⁴ × 15 × 8` is ~136 MiB, so the **measured** 4-channel 33 does *not* fit
+`MAX_COMPILED_GRID_BYTES` at the worst-case output width. It was not shrunk.
+
+- **A measured value is not weakened to satisfy a memory bound.** The 33 for 3-D
+  and 4-D is gated on Pass 4's iccce-vs-lcms2 agreement on a real profile pair
+  (§3.6; 17 was rejected because it failed that gate by 17 %). Shrinking it to
+  fit a byte budget would discard evidence in favour of convenience.
+- **The budget still protects the process**, because the guard in
+  `CompiledTransform::new` uses the **actual** output width, not the worst case.
+  CMYK → RGB at 33 is ~27 MiB and builds. Only CMYK → 15-channel exceeds, and
+  that is then a named refusal, which is all the budget was ever for.
+
+So worst-case sizing applies where there is no measurement to protect, and the
+measurement wins where there is one. ★ **The tension is asserted in a test that
+fails if it ever disappears**, so the doc cannot go stale claiming a conflict
+that no longer exists. `icc-conformance` grades that as the right call: the
+failure mode of a documented exception is that the exception is silently removed
+and the paragraph explaining it survives.
+
+##### 3.8.4.5 ★★ Why the ≥5-channel grids are REPORTED and not GRADED — `icc-conformance`'s judgement
+
+`compiled-vs-reference-at-the-default-grid` observes **2.952005×10⁻³** in
+normalised device units at grid 6 over 527 off-node probes. It is **REPORTED,
+permanently**, and the request to consider grading it is declined. Four reasons,
+in descending order of how hard they are to remove:
+
+1. **Both arms are iccce.** It is self-comparison — `NUMERIC_CLAIMS.md` §1's
+   weakest class, *"worthless as correctness evidence"*. No bound derived from it
+   could distinguish a correct engine from a consistently wrong one. This reason
+   alone is dispositive and does not depend on the other three.
+2. **The gate that made 33 defensible does not exist at seven inputs.** The 3-D
+   and 4-D 33 is gated on a *measured iccce-vs-lcms2 agreement*. At 7 inputs
+   there is no equivalent: **ICC.1 legislates no interpolation method (A16)**, and
+   **lcms2's >4-input CLUT geometry has not been read out of the pinned source**.
+   The two end-to-end 7-channel rows against lcms2 are themselves REPORTED for
+   exactly this reason.
+3. **n = 1.** `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc` is the only >4-channel
+   profile this project has ever been given. A bound fitted to it would be a
+   population of one — the shape Pass G's `SWEEP_DEVICE` withdrawal warned about.
+4. **The number is not stable under the thing it would be quoted about.** 2.95×10⁻³
+   is at grid 6 on one destination; the grid is now a *computed* function of a
+   memory budget, so a change to `MAX_COMPILED_GRID_BYTES` moves it with no
+   colour reasoning involved at all.
+
+**What is graded instead is structure**, and that is not a compromise — it is
+the correct partition given the evidence available. Exit codes, refusal wording,
+stdout emptiness and recommendation-vs-behaviour agreement are indicator counts
+with tolerance exactly **0**: no instrument error, nothing to absorb, and each of
+them catches a real regression.
+
+★ **What would unblock a graded colour row at seven inputs**, stated so the
+decision is reversible rather than permanent: (a) lcms2's n>4 interpolation
+geometry read out of pin `21c582a` and modelled, as Pass 4 did for the 4-D
+hybrid; **and** (b) at least a second 7-channel profile, so the bound is not
+fitted to one file. Until both, the honest report is a number with no claim
+attached to it.
+
+#### 3.8.5 ★★★ Two conformant CMMs, two different colours, from one file — and the Probe profile was built to show it
+
+`Probev2_ICCv4.icc` carries `D2B0/1/2` and `B2D0/1/2` (`multiProcessElements`)
+**in addition to** its `A2B*`/`B2A*` tags. **ICC.1:2022 clause 8.10.2**,
+verbatim:
+
+> a) Use the BToD0Tag, BToD1Tag, BToD2Tag, BToD3Tag, DToB0Tag, DToB1Tag,
+> DToB2Tag, or DToB3Tag designated for the rendering intent if the tag is
+> present, **except where this tag is not needed or supported by the CMM** (if a
+> particular processing element within the tag is not supported the tag is not
+> supported).
+> b) Use the BToA0Tag, BToA1Tag, BToA2Tag, AToB0Tag, AToB1Tag, or AToB2Tag
+> designated for the rendering intent if present, when the tag in a) is not
+> used.
+
+(Transcribed in
+`D:\Dev\Rag-Specialized\ICC_Spec\icc\icc__s__required_tags.md` §5.)
+
+iccce does not implement `multiProcessElementsType` — the six tags are present
+and decode to `TagData::Unknown`, which the row
+`tags/mpet-is-present-and-NOT-decoded` grades at **0 decoded**. The tag is
+therefore *"not supported by the CMM"*, step (a)'s own proviso applies, and
+iccce proceeds to step (b). **That is conformant.** lcms2 supports `mpet` and
+takes step (a). **That is also conformant.**
+
+**Measured size of the divergence: `33.133830 L*`** at unmarked media
+(`CMYK 0,0,0,0`) at the perceptual intent — iccce returns **`99.000534`** from
+`A2B0`, lcms2 returns **`65.866700`** from `D2B0`.
+In the `BToA` direction the same divergence is
+visible as pure colour: asked for `L* 50` at perceptual, iccce returns cyan
+`(0.645, 0.619, 0.619, 0.023)` from `B2A0` and lcms2 returns **red**
+`(0, 0.754, 0.754, 0)` from `B2D0` — and **the readme's own colour code
+identifies which tag each engine used**: *"The B2D0 tag … renders the L\* values
+as tints of pure red (a combination of magenta plus yellow). The B2D1 tag …
+pure green … B2D2 … pure blue."* lcms2's three intents return red, green and
+blue exactly.
+
+★★ **The profile was built to make this visible and it did.** Its stated
+purpose is *"to enable visual determination of the rendering intent **and
+processing element type** used"*. This is the cleanest possible demonstration
+of the standard's own designed-in divergence (ambiguity **A33**).
+
+**Consequences for this pass, all of them stated rather than absorbed:**
+
+- The row `a2b/vs-lcms2-through-the-same-tags` **SKIPs** on `Probev2_ICCv4`
+  with that reason. There is no second reading of the *same* tag to compare
+  against, and a comparison of two *different* tags would be a number with no
+  meaning.
+- The divergence itself is a **REPORTED** row. No clause requires the two to
+  agree, so there is nothing for a bound to mean (the §3.5.9.6 rule).
+- ★ **What is NOT settled, and is owed to the engineer:** iccce takes step (b)
+  **silently**. Neither `inspect` nor `transform` tells a caller that an
+  author-preferred transform was present and declined. Clause 8.10.2 permits
+  declining; it does not require silence, and `CLAUDE.md` rule 6 is about
+  exactly that kind of undisclosed substitution. **A 33 `L*` difference that a
+  caller cannot see coming is a disclosure defect even where the selection is
+  conformant.**
+- ★★ **STATUS 2026-08-17 (later): agreed, not yet fixed, and the gate is
+  pre-registered.** `icc-engineer` accepts it as a disclosure defect and has
+  **deliberately not implemented it in this session** — it changes a public
+  surface and the operator has not seen it. `icc-conformance` has therefore
+  **specified the graded row in advance, before the implementation exists**, so
+  the target cannot be fitted to whatever gets built: full text in
+  `tools/difftest/README.md` §23.5. In outline —
+  `passh/D/probe-v2-icc-v4/tags/8102-fallback-is-DISCLOSED`, indicator count,
+  tolerance **exactly 0**, four counters: a disclosure exists; it **names the
+  declined tag** by signature; it **cites clause 8.10.2**, which is what makes it
+  a conformant decline rather than a defect report; and **the control** — the
+  same disclosure must *not* appear on a profile with no `mpet` tags. ★ **The
+  control is the row.** The first three are satisfied by printing a string; an
+  unconditional notice discloses nothing. ■ The row will **not** claim iccce
+  should take step (a) — it should not — and
+  `tags/mpet-selection-divergence-from-lcms2` stays REPORTED at `33.13 L*`
+  either way.
+
+#### 3.8.6 Proof of power — three injections, each in a detached worktree
+
+Baseline reproduced first (`pass=270 fail=1 skip=9`), each injection reverted
+before the next, `git worktree remove --force` at the end.
+
+| # | injected defect | predicted | measured |
+|---|---|---|---|
+| **I1** | `crates/iccce-profile/src/lib.rs`: the `version_raw >> 24 >= 5` gate made unreachable | §A red, §B's cross-check red, everything else green | **exactly that.** `pass=265 fail=6`. A1 failed at **10**, its stated separation `1.000000×10¹`; the control row A3 failed at **4**, its stated separation `4.000000×10⁰`. **Two separations predicted their own failure magnitude to the digit.** §B's acceptance rows, §C and all of §D stayed green |
+| **I2** | `crates/iccce-cmm/src/transform.rs`: the destination intent→`B2A` map rotated by one (perceptual→`B2A1`, media-relative→`B2A2`, saturation→`B2A0`) | §D's shipped rows red | **`pass=238 fail=33`.** All three `shipped/intent-selects-the-published-colorant` rows failed at **exactly 81**, their stated separation `8.100000×10¹` (27 source points × 3 intents). Pass 4b/4c/5c/G's `B2A`-direction rows also went red, correctly |
+| **I3** | `crates/iccce-cmm/src/lut_ab.rs`: `decode_v4_pcs` given the **legacy** 16-bit Lab scale instead of clause 10.13's | `ORACLE_LAB`'s stated sensitivity, `0.39 L*` at white | **`pass=252 fail=19`.** `passh/C/7clr/pcs-corners-vs-lcms2` failed at **`3.906250×10⁻¹`** = `100 × (65535/65280 − 1)` **exactly**, and `probe-v1-icc-v4/a2b/vs-lcms2-through-the-same-tags` at `3.843075×10⁻¹`. ★ The `probe-v1-icc-v2` rows stayed **green** — that file's tags are `mft2` and go through `Lut16Model`, not `decode_v4_pcs`, so the suite localised the injection to the v4 files |
+
+★★★ **Five separations predicted the magnitude of their own injected failure to
+the digit** (10, 4, and 81 three times), and a sixth reproduced a tolerance's
+stated sensitivity claim exactly. DL-033's purpose, discharged.
+
+★★ **The most useful thing I2 found is what did NOT go red.** Seven of §D's
+eight per-profile rows are **blind** to an intent-to-tag mis-wiring, because
+they evaluate a tag *by signature* in process — they test the tag, not the
+wiring. **Only `shipped/intent-selects-the-published-colorant` sees it**, which
+is why that row exists and why it drives the CLI rather than the library. *An
+in-process library test cannot see a CLI-to-`Chain` mis-wiring.*
+
+#### 3.8.7 Two named honesty limits in this pass
+
+1. **`passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file` is
+   the weakest-argued row here, and its own `why` says so.** Its expectation —
+   *a profile published as conformant contains nothing for a conformant parser
+   to disclose* — is not derived from any implementation, and it is also not
+   guaranteed by anything. **A non-zero result is an adjudication between two
+   hypotheses (iccce over-reports / a published profile is defective) that this
+   corpus cannot settle**, because `transicc` emits no malformation list to
+   compare against. It is graded at 0 anyway, with the instruction attached that
+   a non-zero is a finding to adjudicate and **never** answered by widening.
+2. **The version gate's rival reading is untestable on this corpus.**
+   `harness-reading-of-byte-8-predicts-iccce-on-every-file` prints
+   **ZERO-SEPARATION**, correctly: the rival is *"the gate compares the whole
+   4-byte version word against `0x05000000` rather than the major byte alone"*,
+   and every iccMAX file here encodes exactly `0x05000000` (minor and bugfix
+   zero), so the two readings are indistinguishable on all 50 files. **A v5.1
+   profile would be needed and the corpus has none.** That is a coverage
+   statement the mechanism produced without anybody asking for it.
+
+#### 3.8.8 Coverage — what Pass H does NOT establish
+
+- **No colour value.** Structurally impossible on this corpus (DL-041). Every
+  ΔE-shaped number in §3.8.1 is an `L*` or device difference between two
+  implementations or against a published *band*, never against a published
+  *value*.
+- **No `GRAY`, `Lab` or `XYZ` colour-space coverage — IN THIS CORPUS.** ★ The
+  accepted population declares **`CMYK (23)`, `RGB (16)` and `7CLR (1)` only**.
+  `D50_XYZ.icc`, `D55_XYZ.icc` and `D65_XYZ.icc` declare
+  `colourSpace = 'RGB '`, not `'XYZ '`. Any claim of `GRAY`/`Lab`/`XYZ`
+  coverage **from this corpus** is false, and the §E row says so in the report.
+  ★★ **The denominator is now named in the row itself, because a second census
+  exists and reads like a rival claim.** Across **both** private corpora —
+  `color-org` (40 accepted) plus `ghent-v50` (20, Pass G) — the engineer's sweep
+  gives **`CMYK 33, RGB 25, GRAY 1, 7CLR 1 = 60`** (`NUMERIC_CLAIMS.md`
+  **NC-220**). **The two reconcile exactly**: `23+16+1 = 40` here, `10+9+1 = 20`
+  there. **The single `GRAY` profile is in `ghent-v50`, not here.** There is no
+  contradiction, only two populations — but a coverage number quoted without its
+  corpus is not a coverage number, and the §E row now carries its own
+  denominator so the pair cannot be read as a disagreement. **iccce does have
+  `GRAY` evidence; Pass H is not where it lives.**
+- **No ΔE claim of any kind for the compiled path above four input channels.**
+  `compiled-vs-reference-at-the-default-grid` reports `2.952005×10⁻³` in device
+  units at grid 6, and that is **self-comparison** — both arms are iccce. The
+  ≥5-channel grid recommendations are a **memory** result, not an accuracy one;
+  §3.8.4.5 states what would be needed to make one of them a graded colour claim
+  and why neither condition is met today.
+- **No `6CLR` evidence of any kind.** The corpus's only six-channel file,
+  `SixChanCameraRef.icc`, is iccMAX and is refused at the version gate. Nothing
+  about six channels may be inferred from the seven-channel rows: a `7CLR`
+  `mAB ` and a `6CLR` tag share no code path this pass exercised.
+- **No `namedColor2` behaviour.** Both `nmcl` files in the corpus
+  (`NamedColor.icc`, `FluorescentNamedColor.icc`) are iccMAX and refused.
+- **The CMYK print profiles are parsed, not transformed.** `CGATS21_CRPC1/3`,
+  `GRACoL2006/2013`, `SWOP2006/2013`, `PSOuncoated_v3_FOGRA52`,
+  `PSOsc-b_paper_v3_FOGRA54`, `SC_paper_eci`, `SNAP2007`, the two
+  `Coated_Fogra39L_VIGC_*`, the two `Uncoated_Fogra47L_VIGC_*` and the five
+  `APTEC_*` are covered by §B's acceptance rows and by nothing else. **No
+  differential colour row exists for any of them**, and `NEXT_SESSION.md`'s
+  queue item 6 is therefore **not** discharged by this pass.
+- **One machine, one toolchain, one day.** Windows/MSVC, 2026-08-17, lcms2 pin
+  `21c582a` (2.19.1).
+- **`mpet` is not implemented and is not graded as colour anywhere.** §D
+  measures the *consequence* of not implementing it; it does not evaluate a
+  single `mpet` element.
+
+---
+
 ## 4. Changes to tolerances — append only
 
 Every change to a number in §3 gets a row here. **Never edit a tolerance
@@ -1634,6 +2552,15 @@ drifting one justification at a time.
 | 2026-08-12 (fourth filing) | **§3.5.9, two new rows** (`CLAUSE/4.2.5.4-…` at `7,629 5×10⁻⁴` and `FIXTURE/candidates-are-separated-as-designed` at `2,288 9×10⁻³`) — **first filling, not a change**; plus a **third Pass 5c arm** and a new fixture `v4-rgb-mab-floored-b2a.icc` | ISO/CD 18619 4.2.5.4 had **no committed instrument in this suite**: a full reversion of `fd34a44` turned no row red on any machine | the reversion now fails exactly one row, on a **committed** fixture, with no oracle or system profile in the loop | `icc-conformance` | **★★★ THE FIRST TOLERANCE IN THIS DOCUMENT WHOSE DERIVATION HAS NO TERM IN IT AT ALL BEYOND ONE ENCODING QUANTUM — because the fixture was authored to remove the others.** `A2B1` at device `(0,0,0)` is a CLUT **corner** read through identity curves, so there is no interpolation term; no oracle is consulted, so there is no oracle term; 4.2.3 assigns neutral **literally**, so the chroma terms are exactly zero. What is left is the generator's own round-to-nearest into 6.3.4.2's general PCSLAB encoding — **half of `100/65 535`**, and nothing else. **The expectation is a named constant in `recipes.rs` put through a clause, so this is `derived-expectation` and not a cross-check**, and it deliberately runs outside `analyse`: *a derived expectation must not be hostage to an oracle.* **Three things about how, because each would otherwise look like tuning. (1) The power was PROVEN, not asserted** — §3.5.9.4: the pre-`fd34a44` return value injected in a detached worktree, both category (c) paths repointed at a non-existent drive, 27 `pass5c` rows skipped, and the new row the **only** failure at `2,500 019×10¹`. **(2) A failing row was NOT fixed by widening it.** The third arm made `apparatus/error-bar-is-smaller-than-the-effect` fail at `3,775×10⁹`, and it was **right**: the fixture's floor makes `d(device)/d(L*)` zero by construction and §B is void on that arm. `APPARATUS_RATIO` stays at `1.0` and still applies everywhere the conversion it needs exists; what was added is an **authored table** (`DEVICE_OBSERVABLE`) plus a row grading the measurement against the declaration, so the exemption cannot be acquired by a quantity coming out small. **(3) The brief's premise was corrected in both directions** — the clause was **not** undefended (`cargo test -p iccce-cmm` fails on the reversion, two tests, verified), and the vendor arm was **not** load-bearing either (its numbers moved and no row crossed a bound). What had no instrument was the clause exercised **through a parsed profile**. |
 | 2026-08-12 (fourth filing) | **§3.4.5.1** — candidate separations on all ten Pass 4c rows; and **§1.1.2**, a defect in the separation mechanism itself | Pass 4c rows all `UNSTATED`; `Separation::against` used wherever two candidate observations existed | four rows `Measured`, six `no-named-alternative` **with reasons**; three rows moved to `against_distance` | `icc-conformance` | **★★ NO TOLERANCE MOVED; A MECHANISM WAS FOUND TO LIE IN ONE PLACE.** `Separation::against` derives its distance as `\|observed − alt_observed\|`, which **collapses to exactly zero on the run where the code actually returns the alternative** — measured: the new clause row failed at `2,500 019×10¹` and printed `ZERO-SEPARATION` beside it, the mechanism disclaiming its power on the one run where it had just demonstrated it. The test now recorded on the constructor's own doc comment: **is the distance a property of the RUN or of the FIXTURE?** Three rows corrected (one clause row, two `0/1` indicators whose candidates are always one apart). On Pass 4c the notable half is the **six** honest absences: the media-relative floors have no rival because lcms2 consults the media white point only for the ICC-absolute adjustment; the sensitivity-floor row has none because *the only alternative nameable is a different floor, and that is a tolerance question* — **conflating a rival tolerance with a rival candidate is how a separation becomes a second, undocumented gate.** Each precondition row names the reading that is **the strongest threat to its own claim** and enumerates the other two, because naming the rival that flatters a row is the tuning this mechanism exists to prevent. |
 | 2026-08-12 (fourth filing) | **§3.5.8 row T6 / `estimators/black-points-in-lab`** — asked whether the `4,717 441` separation now justifies a real tolerance | `∞` — REPORTED, NOT GRADED | **`∞` — unchanged, and now argued rather than defaulted** (§3.5.9.6) | `icc-conformance` | **★ A TOLERANCE THAT WAS ASKED FOR, CONSIDERED, AND DECLINED — recorded because a declined change is evidence about the budget too.** Three reasons. **(1) There is nothing for a bound to mean**: since `fd34a44` both sides return a quantity their own document calls `InitialLab` and the two documents mean different things by the name; **no clause requires them to agree**, so grading the difference grades iccce against lcms2's reading of a document iccce does not implement. **(2) A bound derived from the separation is a bound fitted to one known defect** — anything below `4,717 441` would have failed the pre-`fd34a44` build and anything above would not, and it could not be one number: the three arms observe `4,799`, `5,000` and `10,000`. **(3) The defect now has a row with a real derivation** (§3.5.9.3). **The generalisation: a large separation on an `UNGRADED` row is a request for a fixture and a graded row elsewhere, not a licence to grade that row.** Ask what clause the number would be graded against; if the answer is *"none, but it would have caught the bug"*, the bound is fitted to the bug. |
+| 2026-08-17 (Pass G) | **§3.7, all rows (first filling, not a change)** | did not exist | as recorded in §3.7 | `icc-conformance` | Pass G graded iccce against the **Ghent PDF Output Suite 5.0** profile corpus — the first differential grading in this suite whose inputs are profiles a **real document producer embeds** rather than synthetic, OS-shipped or standards-body-issued ones. **72 rows, `pass=229 fail=0 skip=3` for the whole suite.** Four things about *how* the numbers were arrived at, each of which would otherwise look like tuning. **(1)** Every tolerance is either an **envelope computed from the profiles' own bytes and two published algorithms, with no lcms2 output in it** (§A's structural and propagated gates), or a **discrimination requirement against a named rival computed the same way** (§B's `4×10⁻³`), or an **encoding floor** (§3.7.4), or a **classification bound built from the file's own two candidates** (§3.7.4's authoring rows). The instrument that computed them — `tools/difftest/src/bin/ghent_probe.rs` — **grades nothing and cannot fail**, deliberately. **(2)** The wide/tight split of §3.4 is kept: §A's structural rows admit the whole interpolation-method difference and say they cannot claim agreement; the agreement claim is the emulated-geometry row's, ≥40× tighter, and it collapses the residual **179×** and **243×**. **(3) §B has NO attribution row and the section says so** — the harness has no `mft2` B2A model — so §B is a structural gate with a stated rival and **not** an agreement claim, and its 17–63× margin is explicitly not offered as one. **(4)** All four sections were **proven by injection** (§3.7.6), including one injection whose only purpose was to show that a run-time tolerance *selection* is load-bearing. |
+| 2026-08-17 (Pass G) | **§3.7.1, `…/{A2B0,A2B1}/pcs-lab-corners-interpolation-free`** | **`1×10⁻³`**, justified by *"the 2-entry B curves are affine"* | **`1×10⁻³` when the tag's B curves are the exact identity, `2×10⁻³` when they are not — selected at run time from the tag's own bytes** | `icc-conformance` | **★★ A TERM THAT WAS MISSING, FOUND — not a number that was widened, and the distinction is checkable by injection.** The first draft failed on `A2B0` at **1.111 856×10⁻³** while passing on `A2B1` at 6.074×10⁻⁵. §0's procedure in order: the code is not wrong (the disagreement is entirely in `L*` and only on the tag whose `L*` B curve is not the identity); there is no recorded expectation; the fixture is not wrong; **the derivation was wrong**. *"Affine"* is true of both tags and irrelevant — what matters is *"the exact identity `(0x0000, 0xFFFF)`"*, because lcms2 evaluates a non-identity 2-entry `curv` through `cmsEvalToneCurve16` and rounds **twice** where iccce uses `f64`. Two ≤½-lsb roundings is ≤1 lsb = `1.526×10⁻³` in `L*` through the v4 PCSLAB decode; observed 0.73 of that. **The remedy is a tolerance that is a FUNCTION of the tag, so a profile with identity B curves keeps the tight floor**, and `injection I3` (§3.7.6) shows that forcing the identity branch turns exactly that one row red and nothing else. The original justification is preserved verbatim in §3.7.2 so a reader who suspects tuning can audit the change. |
+| 2026-08-17 (Pass G) | **§3.7.1, `passg/xrite-v4-to-srgb/<intent>/device-vs-lcms2`** | `4×10⁻³` (§B's `SWEEP_DEVICE`, reused) | **the method envelope propagated through the actual destination model, ×1.25, +1×10⁻⁴ — computed per tag at run time** | `icc-conformance` | **★ A TOLERANCE APPLIED IN THE WRONG DIRECTION, corrected.** `SWEEP_DEVICE` is derived for the **B2A** direction, where lcms2 forces trilinear and the interpolation-method envelope is **identically zero**; these rows are **A2B**, where it is the *dominant* term. Three rows failed at 8.98×10⁻³–1.49×10⁻² against 4×10⁻³ and they were **right to**: a bound that omits the dominant term is not a bound, however small its number looks. The replacement pushes the harness's **two** Lab answers — n-linear and lcms2's geometry — through `MatrixTrc::pcs_to_device` for the destination file, point by point, and takes the largest device difference; **no lcms2 output enters it.** Like §3.4's wide rows it admits the whole legitimate interpolation difference and therefore detects structural error only; the agreement claim for this profile stays in the PCS, where the destination model is not in the way. |
+| 2026-08-17 (Pass G) | **§3.7.4, the authoring rows** | drafted as one row per profile, `|Σcolorants − PCS white|∞` against a `2×10⁻⁴` encoding floor | **two different rows for two different claims**: a **classification** bound (half the distance to the profile's own rival white) where `wtpt` and colorant sum disagree, and the **encoding floor** where they agree | `icc-conformance` | **★ THE APPARATUS CAUGHT IT, NOT A PERSON — the separation mechanism flagged `BLIND` on the `eciRGB v2` row.** Two faults, one visible and one not. **Visible:** for a profile whose `wtpt` *agrees* with its colorants there is no rival reading, so a "separation" of 5.4×10⁻⁶ against a 2×10⁻⁴ tolerance is a manufactured alternative and `BLIND` said so; that row is now `NO-NAMED-ALTERNATIVE` **with its reason**, and is the section's negative control. **Invisible until the first was fixed:** the `2×10⁻⁴` encoding-floor derivation does not actually hold for the disagreeing profiles — Ghent's sRGB colorants sum to the PCS white to **1.885×10⁻⁴**, i.e. ≈12 `s15Fixed16` lsb, because the *published* sRGB primaries do not sum to D50 to the encoding lsb. The row was passing **inside** a bound its own justification could not support, which is §5.2's shape exactly. The replacement asks a question with no free parameter — *is the colorant sum nearer the normative PCS white or nearer the profile's own encoded `wtpt`?* — and **imports no third white point**, D65 in particular, whose constant `docs/NEXT_SESSION.md` §0 records as the weakest in `iccce-color`. |
+| 2026-08-17 (Pass H) | **§3.8, all rows (first filling, not a change)** | did not exist | as recorded in §3.8 | `icc-conformance` | Pass H graded **acceptance and refusal** over the ICC's own published profile set (50 files from `color.org`). **48 rows; whole suite `pass=270 fail=1 skip=9 error=0`, bare exit 1.** Four things about *how* the numbers were arrived at. **(1) Most of them are indicator counts with a tolerance of exactly zero**, and a new `Metric::IndicatorCount` was added so a count stops being emitted under the label `abs-max-component`; a count has no instrument error, so any bound above zero would be an allowance for a defect rather than for noise. **(2) The expectations are not this project's**: §A/§B derive the required verdict from the **harness's own reading of bytes 8..12** (clause 7.2.4) with the parser under test nowhere in the loop, and §D transcribes two paragraphs of a **published ICC document**. **(3) The one RED row is a defect report, not a tolerance question** (§3.8.4) — the observable is a bare exit status and there is no number that could be moved. **(4) All three arms were proven by injection** (§3.8.6), and **five separations predicted the magnitude of their own injected failure to the digit**. |
+| 2026-08-17 (Pass H) | **§3.8.1, `passh/C/7clr/…-device-corners-vs-lcms2`** | drafted as `SEVEN_CORNER = 5×10⁻⁵`, an end-to-end device bound | **WITHDRAWN**; the graded claim moved to `passh/C/7clr/pcs-corners-vs-lcms2` at `2×10⁻³ L*` and the device rows are REPORTED | `icc-conformance` | **★★ A BOUND THAT FAILED AND WAS RETIRED RATHER THAN WIDENED, and the omitted term is nameable.** It failed at `1.191176×10⁻⁴`, 2.4× over. §0's procedure: the code is not wrong — re-run on the **PCS** side, where the destination is not in the loop, the same 128 corners agree to **`4.900435×10⁻⁵ L*`**, 40× inside `ORACLE_LAB` — so the disagreement was never in the seven-channel path. **The derivation was wrong**: the destination `sRGB2014.icc` carries **1024-entry tabulated `curv`** TRCs and lcms2 inverts a tabulated curve through a **4096-entry reverse tone curve**, the term Pass 4b measured at `9.68×10⁻⁵`; the withdrawn `why`'s line *"the destination's 16-bit reverse tone curve, 1.53×10⁻⁵"* silently assumed an **analytic** inverse. **Widening would have produced a green line whose justification still did not mention the biggest thing in it.** The constant and its derivation are preserved as a comment in `passh.rs`. ★ **Third instance of this failure in this document** (Pass 4b `B6`, Pass G `SWEEP_DEVICE`, this): *when a tolerance's `why` contains a clause about a component the row does not own — a destination, a direction, a fixture property — that clause is where the missing term will be.* |
+| 2026-08-17 (Pass H) | **§3.8.1 §D, three rows on `Probev2_ICCv4`** (`b2a/off-colorant-channels-are-exactly-zero`, `b2a/a-and-b-are-ignored`, `b2a/tint-is-monotone-decreasing-in-L`) | drafted graded at `0` / `1.5259×10⁻⁵` — the readme's statement taken at face value | **REPORTED (∞) on that file only**, each carrying a mandatory `★★★ THE PUBLISHED CLAIM IS FALSE OF THIS FILE` prefix in its own emitted detail | `icc-conformance` | **★★★ THE PUBLISHED CLAIM IS FALSE OF THE FILE THE PUBLISHED DOCUMENT NAMES — and that inverts the pass's expected arrangement.** The ICC's `Probe2` readme says the `BToA` tags render *"tints of pure cyan / magenta / yellow"*. That is realised **exactly** on `Probev1_ICCv2` and `Probev1_ICCv4`, which the readme does **not** describe (off-colorant channels `0.0` to the bit; `a*`/`b*` change the answer by `3.3×10⁻¹⁶`); and it is **false of `Probev2_ICCv4`**, which the readme **does** name (off-colorant maximum `0.9969`; `a*`/`b*` worth up to `0.9177`). Once a published premise is shown false, continuing to grade iccce against it grades iccce against the document's error. ★★ **They were relaxed to INFINITY, not to a finite number the observation happens to satisfy** — `0.98` chosen because the measurement came out at `0.9969` would be exactly the tuning §0 exists to prevent, and would read in a report as a claim. **What survives and IS graded on all three files is the weaker statement the sentence still entails** — *the published colorant is strictly the largest of the three chromatic channels* — observed `0` violations everywhere, and §3.8.6 shows by injection that it is the only in-process row that catches an intent-to-tag mis-wiring. **No number moved on the two files where the claim holds.** |
+| 2026-08-17 (Pass H) | **§3.8.1 §D, `a2b/vs-lcms2-through-the-same-tags`** | drafted over **all** device corners at `2×10⁻³ L*` | the same bound, over corners **less those where lcms2's `L*` exceeds the tag's representable ceiling**; the excluded points get their own REPORTED row `a2b/encoded-pcs-clamp-divergence` | `icc-conformance` | **★★ PASS 4b'S SYNTHETIC FINDING, REPRODUCED ON A REAL ICC-PUBLISHED FILE — and it is why the row was split, not widened.** It failed on `Probev1_ICCv4` at `2.374×10⁻¹` while passing on `Probev1_ICCv2` at `8.8×10⁻⁴`. The code is not wrong: **iccce clamps the encoded PCS at the B curve (clause 10.18's domain, via `Trc::eval`) and lcms2 does not** (its identity curve is an analytic gamma-1 segment, evaluated unbounded) — exactly `pass4b/fixture/mab/encoded-pcs-overflow-divergence`, which is REPORTED because **which behaviour the specification requires is UNSETTLED**. Pass 4b measured it on a fixture *this project authored*, so it could have been an artefact of our own fixture design; **it is not.** ★ The split predicate is evaluated on **lcms2's** output, never on iccce's: *"the file encodes a PCS value above what this tag's encoding can represent"* is a fact about the file, and the side that does **not** clamp is the one that can still show it — splitting on iccce's own clamp fixed-point would be splitting on the behaviour under test. ★ The two `Probev1` files make the mechanism unmistakable: the **same design**, encoded once as legacy `mft2` (ceiling `100.390625`, no overflow, `0`) and once as v4 `mAB ` (ceiling `100.0`, overflow, `0.2374`). **The overflow is caused by the ENCODING, not by the data** — the ICC's own v4 re-issue of its own v1 profile stored a value the v4 encoding cannot hold. |
+| 2026-08-17 (later, after Pass H) | **§3.8.1 / §3.8.4, `passh/C/7clr/compiled-path-does-not-ABORT-the-process`** | one row, tolerance **0**, observed **1 — RED** | **the same row at the same tolerance 0, now observed 0 — plus THREE new rows**: `default-grid-BUILDS-and-is-the-grid-the-library-RECOMMENDS` (0), `oversized-grid-is-a-NAMED-refusal` (0), `compiled-vs-reference-at-the-default-grid` (**REPORTED**) | `icc-conformance` | **★★★ NO TOLERANCE MOVED. THE CODE MOVED — and then the ROW had to, for a reason worth naming.** `icc-engineer` fixed the abort in `crates/iccce-cmm/src/compiled.rs` with a SIZE guard (`ChainError::GridExceedsBudget`, `MAX_COMPILED_GRID_BYTES = 64 MiB`) distinct from the `checked_pow` OVERFLOW guard, and by replacing `recommended_grid_points`' `_ => 33` catch-all with a value **computed** from the budget for ≥5 channels (`7→6`). Re-measured here rather than taken on report: `pass=274 fail=0 skip=9 error=0`, **bare exit 0**, and both `iccce bench` invocations run directly. **★ Why three rows were added rather than none.** Each of the two fixes *independently* makes the original observation zero: at grid 6 the allocation is 6.4 MiB and succeeds whether or not the guard exists, so **deleting `MAX_COMPILED_GRID_BYTES` would leave the original row GREEN**. A row that went red on a real defect had become a row that could not see that defect return, with no number moving and nobody editing it. The split puts a different **layer** in each row's loop (§3.8.4.3): the default's survivability, the default's *usability* plus recommendation-vs-behaviour agreement, and — forcing `--grid 33`, the exact configuration that died — the guard itself through the CLI, requiring exit 1, empty stdout and stderr naming all three quantities, **every one of them computed at run time from the library rather than typed**. A sixth counter fires if the budget is ever raised above that allocation, because **a row that has quietly become vacuous is worse than one that fails: it reports PASS.** **★ Two stale-prose defects fixed in the same sweep, both DL-034's shape** — the row's `detail` mixed *computed* halves (which updated themselves correctly) with *typed* narrative (which did not), and the typed half went on asserting *"checked_pow guards against WRAP, not against SIZE, so the allocation is attempted and the allocator aborts"* **on a row reporting PASS**. Also `(~0.00 TiB)` — a unit chosen for `0.93 TiB` and left behind when the value fell five orders — now `human_bytes()`, which picks the unit from the value; and a trailing `stderr: ` that was indistinguishable from a truncated field, now `(empty)`. **A `detail` string that mixes computed and typed content inherits the weaknesses of the typed part.** **★ The grading decision, declined and reasoned:** `compiled-vs-reference-at-the-default-grid` stays REPORTED for ever — both arms are iccce (self-comparison, `NUMERIC_CLAIMS.md` §1), no lcms2 n>4 geometry has been read out of the pin, ICC.1 legislates no interpolation method (A16), and n = 1 profile. §3.8.4.5 states the two conditions that would reverse it. **★ The measured 4-channel 33 was NOT shrunk to fit the budget** (§3.8.4.4), and the resulting tension is asserted in a test that fails if it ever disappears — graded here as the right call, because the failure mode of a documented exception is silent removal with the paragraph surviving. |
 
 ---
 
@@ -1796,6 +2723,26 @@ Current coverage, stated honestly, as of **2026-08-11 (after Pass 5)**:
 | **4b** | **`lut8` B2A, the v4 `mAB `/`mBA ` element pipeline, and the F.2 grayTRC model: 23 graded rows + 5 reported-only (§3.4.4), run 2026-08-11 (later still).** **Two intents** (perceptual and media-relative) in §A and §C, **one** in §B; **saturation and ICC-absolute are not run anywhere in Pass 4b**. The v4 claims rest on **one synthetic fixture** because a 40-profile sweep of this machine found **zero** `mAB `/`mBA ` tags. Scope below. |
 | **5** | **Black point compensation: 21 graded rows + 5 reported-only (§3.5), run 2026-08-11 (Pass 5).** Six scenarios, derived from both implementations' sources before anything ran. **The scaling map is graded against a clause of ICC.1:2022 (6.3.4.3) and against a published paper's two constraints; the ESTIMATION is not graded against anything and cannot be (A42).** ★ **No row discriminates the two implementations' black-point estimators** — see §3.5.1. **Perceptual only** where BPC is active. Scope below. |
 | 6–8 | not started |
+| **G** | ★ **The Ghent v5.0 population sample: 72 rows (§3.7), run 2026-08-17 at tip `e21154c`.** The first differential grading whose inputs are profiles a **real document producer embeds**. **All four intents, ±BPC, on five pairs**, plus a full Pass-4-style treatment of a **vendor-authored v4 `mAB `** profile — which closes §3.4.3's "any **real** v4 LUT profile" gap, open since 2026-08-11. **Every row states a candidate separation** (Pass G contributed 0 to the suite's `unstated` count); `blind=0`. **Compatibility, not certification** — nothing here is proofed or measured with an instrument, and Pass G has **no** ground-truth row and cannot have one. ★★ **Its corpus is LICENSED and cannot be committed**: resolved through `$ICCCE_PRIVATE_FIXTURES` and **skipped, with a reason, everywhere else — permanently including CI**. Scope in §3.7.7. |
+| **H** | ★★★ **Acceptance and refusal over the ICC's own published profile set: 51 rows (§3.8), filed 2026-08-17 at tip `e21154c` with 48; three added the same day.** **50 files, 40 accepted, 10 refused.** Subject is NOT a colour value and cannot be (DL-041). Carries the **first `Kind::GroundTruth` rows in `tools/difftest`**, from the ICC's published `Probe2` readme — and ★★★ **that published statement is FALSE of the file it names**, so three rows are REPORTED with a mandatory `THE PUBLISHED CLAIM IS FALSE` prefix rather than graded (§3.8.2). ★★★ **One row was deliberately RED and was a defect report — `iccce bench` ABORTED the process on a 7-channel source. It is FIXED in `crates/iccce-cmm` and the row is now green, with no tolerance moved because there was no number to move** (§3.8.4). **The row was then SPLIT INTO FOUR**, because each of the two fixes independently satisfied the original observation and deleting the size guard would have left it green (§3.8.4.3). ★★ Two divergences with lcms2, **both conformant**: `mpet` tag selection under clause 8.10.2 worth `33.13 L*` (§3.8.5), and the encoded-PCS clamp, which Pass 4b found on a fixture we authored and this reproduces on a real ICC file. **Proven by three injections; five separations predicted their own failure magnitude to the digit** (§3.8.6). ★★ **Corpus LICENSED and uncommittable**; skips everywhere else including CI, permanently. Scope in §3.8.8. **Suite: `pass=274 fail=0 skip=9 error=0`, bare exit 0.** |
+
+**Scope limits that must travel with any Pass G "verified"** — full record in
+§3.7.7:
+
+- **11 of 20 corpus profiles touched, 9 not.** Three vendors (Adobe, ECI,
+  X-Rite) and one workgroup (GWG).
+- **One destination CMYK profile for four of the five sweep pairs**; **one
+  machine**, **one oracle pin**, **one day**, **one tip**.
+- **The `mBA ` (B2A) direction of the X-Rite v4 profile is NOT graded** — §A
+  covers its `A2B` only, and `B2A0`'s tabulated 4096-entry B curve is a shape
+  nothing in this suite evaluates.
+- **Eight `--bpc` combinations are refused by name by iccce and are therefore
+  not differentially tested at all.** The refusals are graded as deliverables;
+  the *conversions* behind them are not measured.
+- **§B claims no agreement** — there is no attribution row for an `mft2` B2A,
+  so its rows detect structural error against a named rival and nothing more.
+- **`gamt` and `gbd*` are untouched** (iccce implements no gamut tags), as is
+  the display profile carrying `vcgt`/`mmod`/`ndin`.
 
 **Scope limits that must travel with any Pass 1 "verified":** adaptation
 is exercised in **one direction (D65 → D50), one sample vector**; the
@@ -2102,6 +3049,115 @@ change what a future cross-check tolerance is measuring:
    BPC-off arm is already being run as the baseline. **Every future agreement
    claim should carry its sensitivity ratio**; a comparison that cannot state one
    has not shown it could have failed.
+
+### 6.6 ★★ Five things Pass G found that are worth carrying forward
+
+1. **★★★ A REAL vendor profile is a different instrument from a synthetic one,
+   and the difference is not that it is "more realistic".** It is that the
+   *shapes it contains were not chosen by us*. Three of §3.7's findings exist
+   only because X-Rite and Adobe made choices `tools/gen-profiles` would never
+   have made: a **non-identity 2-entry B curve** encoding a declared perceptual
+   black (which broke a tolerance derivation — §3.7.2); an **intent-tag aliasing
+   pattern that differs by vendor** (X-Rite `A2B1≡A2B2`, ECI `A2B0≡A2B2`, the
+   GWG trap `B2A0≡B2A2`); and a **`wtpt` that contradicts its own colorants**
+   (§3.7.4). **A generator writes the fixtures its author already understands.**
+   Where a corpus of real files is legally obtainable, it buys coverage no
+   amount of care in a generator can.
+2. **★★ "Both files come from one vendor and describe one colour space" is a
+   WEAKER premise than it sounds, and the fixture must be interrogated before
+   the claim is written.** The `eciRGB v2` v2.4/v4.2 pair looks like a clean
+   isolator for the ICC version gate. It is not: **both encode `wtpt` at the PCS
+   white**, so the gate they were meant to exercise is a no-op for either; and
+   they differ in **TRC representation** as well as version, so any disagreement
+   has two candidate causes the pair cannot separate. The general form: **before
+   describing a fixture as isolating a variable, enumerate the OTHER things that
+   differ between its two arms.** Recording that a fixture *cannot* do a job is
+   as load-bearing as recording that it can (§5.4).
+3. **★★ A tolerance may need to be a FUNCTION of the fixture, not a constant** —
+   and the tell is a derivation containing a clause about the fixture's
+   *contents*. §3.7.2's first draft said "the 2-entry B curves are affine"; the
+   property that mattered was "the exact identity `(0x0000, 0xFFFF)`", which is
+   true of one tag in a file and false of another **in the same file**. A
+   constant would have had to be the looser of the two everywhere, weakening the
+   arm that did not need it. **When a `why` string asserts something about the
+   fixture, ask whether the code can read it instead**; a run-time-selected
+   tolerance cannot go stale (DL-034) and states its own premise on the line.
+4. **★★ A gate derived for one direction is not a gate in the other, however
+   small its number.** §B's `4×10⁻³` is defensible because lcms2 forces
+   trilinear for a Lab-PCS *output* LUT and the method envelope is identically
+   zero there; reusing it on §A's `A2B` end-to-end rows — where that envelope is
+   the *dominant* term — put a bound on the table that omitted the biggest term
+   in it, and three rows correctly failed. **Direction is part of a tolerance's
+   identity in exactly the way §6.4 says it is part of a finding's.** The
+   remedy was to propagate the envelope through the actual destination model
+   point by point, which is Pass 4's method reused rather than a new one.
+5. **★★★ The separation mechanism found two faults nobody was looking for, and
+   the second was invisible until the first was fixed.** `BLIND` on the
+   `eciRGB v2` authoring row said, correctly, that the "rival reading" was
+   manufactured — the profile's `wtpt` and colorants agree, so nothing is out of
+   step. Fixing that exposed the real defect: the `2×10⁻⁴` encoding-floor
+   justification **did not hold for the profiles it was actually gating**
+   (Ghent's sRGB colorants sum to the PCS white to ≈12 `s15Fixed16` lsb, because
+   the *published* primaries do not sum to D50 to the lsb). The row had been
+   **passing inside a bound its own justification could not support** — §5.2's
+   shape, arrived at from the opposite direction. **A separation is not only a
+   statement about power; it is a second, independent reading of what the row
+   believes it is testing, and the two disagreeing is a finding.**
+
+### 6.7 ★★★ Six things Pass H found that are worth carrying forward
+
+1. **★★★ A published statement about a published artefact can be false, and
+   the way you find out is by measuring it.** The ICC's `Probe2` readme says
+   `Probev2_ICCv4.icc`'s `BToA` tags render pure single-colorant tints. They do
+   not; they render a near-neutral CMYK build with the intent's colorant raised.
+   The same sentence is realised **to the bit** on the two `Probev1` profiles
+   the readme does *not* describe. **Ground truth is a provenance, not a
+   guarantee** — §1 ranks `ground-truth` above `cross-check` because of where
+   the expectation came from, and that ranking says nothing about whether the
+   artefact honours it. Every ground-truth row this project ever adds must be
+   run before it is believed, and the response to a falsified premise is to stop
+   claiming (tolerance ∞ with a loud prefix), never to find a finite number the
+   observation satisfies.
+2. **★★★ Two conformant CMMs can return colours `33 L*` apart from one file,
+   and ICC.1 says so.** Clause 8.10.2 step (a) prefers `DToBx`/`BToDx` *"except
+   where this tag is not needed or supported by the CMM"*, and step (b) is the
+   fallback. lcms2 supports `multiProcessElements` and takes (a); iccce does not
+   and takes (b). **Both are conformant** (ambiguity A33), and the Probe profile
+   was built to make exactly this visible. **The open question is not the
+   selection but the SILENCE**: nothing in `inspect` or `transform` tells a
+   caller that an author-preferred transform was present and declined, and a
+   `33 L*` difference a caller cannot see coming is a disclosure defect even
+   where the selection is right.
+3. **★★ A synthetic fixture proves what it was written to prove, and no more.**
+   Two instances in one pass. (a) `fixtures/synthetic/iccmax-version.icc`
+   established that lcms2 *"does not refuse a major-version-5 profile"*
+   (`NUMERIC_CLAIMS.md` §3.10.6) — true, and it does **not** generalise:
+   **lcms2 declines all ten real iccMAX files**, for their content rather than
+   their version. The fixture isolates the version field, which is its whole
+   value; reading it as "lcms2 processes iccMAX" would have been wrong. (b) The
+   encoded-PCS clamp divergence Pass 4b found on a fixture *this project
+   authored* now reproduces on the ICC's own published v4 probe — so it was
+   never an artefact of our fixture design, and the unsettled clause question
+   behind it is load-bearing on real files.
+4. **★★ An in-process library test cannot see a CLI-to-`Chain` mis-wiring, and
+   the injection proved which rows can.** Rotating the destination intent→`B2A`
+   map by one turned **exactly one** of §D's eight per-profile rows red — the
+   one that drives the shipped binary. The other seven evaluate a tag *by
+   signature* in process and are blind to it by construction. **Ask of every row
+   not "what does it measure" but "which layer is in the loop".**
+5. **★ `transicc` exits 0 when it fails.** It prints `[transicc]: Couldn't link
+   the profiles`, converts nothing, and returns status 0 — measured on all ten
+   iccMAX members of this corpus. **Any oracle-side acceptance test that keys on
+   the exit code will record lcms2 as accepting everything.** The observable
+   Pass H uses is *"did any numbers come out"*. This sits beside §5.6's rule
+   about the *harness's* own exit code: the oracle's is not a gate either.
+6. **★ A count is not a difference, and a metric label that lies is worse than
+   one that is coarse.** `Metric::IndicatorCount` was added because Pass H
+   grades counts of files and of violated conditions, and emitting those under
+   `abs-max-component` would have put a wrong unit in the TSV beside a number
+   that is not a difference of components in any space. **A count row's
+   tolerance is essentially always zero**; a non-zero one deserves a very good
+   `why`.
 
 ---
 

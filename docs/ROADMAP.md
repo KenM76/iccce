@@ -701,6 +701,336 @@ on it. Rule 9 unchanged.
 
 ---
 
+**Updated 2026-08-17 (five days later, and the first update to this
+document since 2026-08-12): ★★★ a NEW STANDING WORKSTREAM — Ghent
+compatibility — and a change of POSTURE from the operator that reaches
+back into work this document has parked.** *(Filed by `icc-librarian`
+from an `icc-engineer` dispatch, at tip **`e21154c`** *(carried — this
+librarian has no shell and did not run `git`)*. **No Pass status
+changes. No plan text is rewritten.** Two earlier 2026-08-17 sessions
+touched other documents and **deliberately made no `ROADMAP.md` entry**;
+this is therefore this document's **first 2026-08-17 material**.)*
+
+**★★★ 1. The operator's instruction, verbatim:** *"I know some things
+you stopped work on because they required physical testing that we don't
+have. We aren't going to aim for compliance like that. Just aim for
+compatibility."* **Filed as `ARCHITECTURE.md` DL-045.** ★ **It changes
+what is CLAIMED, not how well a claim must be supported** — rules 1, 3,
+4 and 5 are untouched, and nothing in it licenses a looser tolerance.
+The habit it corrects is a **category error**: *"this cannot be
+certified"* was being read as *"this cannot be checked"*, and DL-041's
+three kinds of blocker gain a fourth — **an item blocked on an
+ORGANISATIONAL fact about a certification programme, which is not an
+engineering blocker at all.**
+
+**★★ 2. A new durable document, and it is not this librarian's.**
+`docs/GHENT_COMPATIBILITY.md` *(verified — nine sections, read)*, written
+by `icc-engineer`: the compliance/compatibility distinction, what the
+suite is, its licence, the boundary split against `pdfce` patch by patch,
+what was measured, **what is explicitly NOT claimed**, what would raise
+each claim, certification, the operator decisions owed, and a
+per-statement provenance table tagging every claim VERIFIED / QUOTED /
+REPORTED.
+
+**★★ 3. The first corpus this project has measured that was authored by
+neither this project, an operating system, nor a standards body.**
+**98 PDFs → 121 embeddings → 20 distinct ICC profiles**, from
+**Adobe, ECI, Heidelberg, X-Rite and GWG**. `NUMERIC_CLAIMS.md` gains
+**§3.30** and rows **NC-192 … NC-199**, plus **two new evidence classes**
+— `fixture-declared-categorical` and `acceptance`. ★★★ **NOT ONE OF THEM
+IS AN ACCURACY CLAIM**, and that is not modesty: the lcms2 differential
+over this corpus was dispatched the same day and **had not reported**.
+**NC-001 remains this project's only `published-ground-truth` row**
+(DL-041 unchanged).
+
+**★★★ 4. The strong result, and it is a shape this project has never had
+before.** GWG ships two **deliberately corrupted** profiles — a
+red/green-swapped RGB matrix profile and a cyan/magenta-swapped CMYK LUT
+profile — as discriminators. iccce honours both swaps, **and the CMYK arm
+was re-derived with a CONTROL** (the genuine `ISO Coated v2 300% (ECI)`
+from the same patch). The expected answer is a fact about the file's own
+declared content, so there is **no oracle and no instrument in the
+claim**, and the **candidate separation is the full width of the gamut**
+— the named alternative being an engine that drops the source profile
+for ISO 32000-1 Table 66's `/Alternate`, **which is what `pdfce` does
+today**. ★ **What it licenses:** *iccce applies the declared source
+profile rather than falling back to a device alternate.* ★★★ **What it
+does NOT license: any sentence containing a number.** A CMM wrong by
+20 ΔE2000 passes it as cleanly as a correct one, provided it swaps.
+
+**★★ 5. Ghent can never supply a numeric expectation — DL-047.** The
+suite states **no tolerance, no reference measurement and no expected
+colour value anywhere**; its criterion is *"a clear X"* at *"0.5 m"*,
+and *"A faint X is NOT a failure"*. ★ **And it contradicts itself
+exactly on our topic:** GWG 13.0 signals a rendering-intent failure with
+a **faint green X** — the symbol already declared not to be a failure —
+so **intent handling is untested by the suite's own criterion**, and any
+iccce intent claim must be graded against **ICC.1's** text instead.
+
+**★★ 6. A rule about promoting reports — DL-046.** The CMYK swap arrived
+`[REPORTED]` from a byte-level scan and was **re-derived through the
+shipped binary, with a control**, before becoming a finding. Six further
+leads from the same scan were **not** re-derived and are filed as leads.
+★ **The rule is visible only because both outcomes happened on the same
+day: verify in the RUNNING THING, and where the claim is "X changed",
+add the case that should NOT have moved.**
+
+**★ 7. Three decisions are owed to the operator and no agent may take
+any of them** — see the workstream block below and `NUMERIC_CLAIMS.md`
+§7.16. The first is the binding one: **no public artifact of this
+project may say "Ghent" without GWG's written permission**, so
+*"passes the Ghent suite"* is **not available as README or crates.io
+copy today**. Nothing has been published.
+
+---
+
+**Updated again 2026-08-17 (later the same day, third filing): ★★★ PASS G
+— the lcms2 differential over the Ghent corpus LANDED, and with it this
+project's first cross-check rows on a corpus a real document producer
+embeds.** *(Filed by `icc-librarian` from an `icc-engineer` dispatch
+carrying `icc-conformance`'s work, at tip **`e21154c`**. **No Pass status
+changes** — Pass G is part of the **Ghent workstream**, not a Pass; see
+that block for the detail and for what it did not do.)*
+
+**★★ 1. The suite is bigger and it is green.** `cargo run --release` in
+`tools/difftest` gives **`pass=229 fail=0 skip=3 error=0`, exit 0** — up
+from `pass=157` — from **72 new graded rows in four sections**
+(`tools/difftest/src/passg.rs`), **every one of which states a candidate
+separation**. `discriminating` goes **16 → 42**. *(`icc-engineer`,
+**[VERIFIED — ran the gate bare, redirected to a file, read `$?`]**.)*
+★ **Corpus-absent — which is CI, permanently — it is `pass=157 skip=7`,
+exit 0**, four labelled SKIP records standing in for all 72 rows. **A
+green CI line means Pass G did not run**, and the corpus-absent pass
+count is **numerically identical to the pre-Pass-G total**.
+
+**★★★ 2. The headline result: the raw iccce-vs-lcms2 disagreement on a
+VENDOR-AUTHORED v4 `mAB ` profile IS the interpolation method and nothing
+else.** With lcms2's own `Eval4Inputs` geometry substituted, the residual
+collapses **179×** (`A2B1`, `0.828 444 → 4.624 5×10⁻³`) and **243×**
+(`A2B0`, `0.950 274 → 3.912 3×10⁻³`); the envelope computed **from the
+CLUT's own bytes and two published algorithms, with no lcms2 output in
+it**, accounts for the raw residual to **0.04 %** and **0.22 %**.
+`TOLERANCES.md` §3.4.3's *"any **real** v4 LUT profile"* gap, open since
+2026-08-11, is **closed**. ★★ **But the structural gate (envelope × 1.25)
+explicitly CANNOT claim agreement and is labelled so** — the agreement
+claim lives in the substituted-geometry row alone, at `2×10⁻²`. **Never
+merge the two arms into one "agrees with lcms2" sentence**
+(`NUMERIC_CLAIMS.md` §3.31.2).
+
+**★★ 3. rule 7 ran against a third party's files.** Ghent's Adobe-embedded
+`sRGB` and `Adobe RGB (1998)` have **D50-adapted PCS data, a `wtpt` that
+is NOT adapted, and no `chad` tag** — a defect of **authorship** under
+`ICC.1:2001-04` Annex A.3.1.1, which **settles the ICC-absolute divergence
+in lcms2's favour**. `eciRGB v2` is the control that stops it being read
+as *"every v2 display profile in the wild"*. ★ **No `NA` was registered
+and no code changed** — whether iccce should follow lcms2 here is an
+engineering call with a cost, and it is **newly owed** (`NUMERIC_CLAIMS.md`
+§7.17 newly-owed 4).
+
+**★★ 4. Two decision-log entries, and neither is about colour.**
+**DL-048** — *a stale claim-bearing **citation** is worse than a stale
+**number**, because a wrong number invites re-derivation while a wrong
+pointer invites the reader to accept whatever is at the destination*;
+**six of six** spot-checked ledger line-citations were stale, and the one
+that escaped into an outbound `pdfce` request is corrected at both ends.
+**DL-049** — *a disclosure field that gates nothing caught a defect in a
+**tolerance's justification**, on a row that was green*: `BLIND` fired,
+and the fix exposed that a `2×10⁻⁴` encoding-floor bound **did not hold
+for the profiles it was gating**.
+
+**★ 5. What Pass G did NOT do.** It touched **11 of the corpus's 20
+profiles**; it has **no attribution row for §B** (the harness has no
+`mft2` B2A model), so §B's 17–63× margin is **not** an agreement claim;
+it grades **no `mBA ` (B2A) direction** of the X-Rite profile; **eight
+`--bpc` combinations are refused by name and therefore differentially
+untested**; and it produces **no published ground truth and cannot**
+(DL-041/DL-047). **NC-001 remains this project's only
+`published-ground-truth` row.** `NUMERIC_CLAIMS.md` gains **§3.30.10**
+(two corrections to §3.30), **§3.31** with rows **NC-200 … NC-218**, a
+second dated measurement under **NA-006**, and **§7.17**.
+
+**★★★ Updated again 2026-08-17 (later the same day, latest): TWO
+CONSUMER-FACING CAPABILITIES LANDED THAT HAD NO ROADMAP ENTRY AT ALL, an
+lcms2-independent sRGB was constructed and measured, and a CORPUS CLAIM
+WAS FALSIFIED by the test written to honour it.** Filed by
+`icc-librarian`; **`NUMERIC_CLAIMS.md` §3.32 (NC-219 … NC-229) and §7.18**
+carry the rows, and `ARCHITECTURE.md` gains **DL-050 … DL-053**.
+
+**★★★ Read this first, because it bounds everything below it.**
+**Nothing from this session is committed and nothing is pushed**
+*(carried; this librarian has no shell)*, so **every row in §3.32 is
+against an uncommitted working tree and has NO COMMIT ANCHOR.** ★★ **The
+conformance runner was NOT run** — `icc-conformance` holds
+`tools/difftest` and `docs/TOLERANCES.md` for a **concurrent Pass H**, and
+both are **untouched by this filing**. **`pass=229` remains NC-218's dated
+observation at `e21154c`; nothing here re-measures it, and a `pass=` line
+must not be quoted on this filing's authority.**
+
+**★★ 1. The built-in sRGB destination is BUILT, and the API question is
+DECIDED.** `crates/iccce-cmm/src/builtin.rs` constructs sRGB from
+**ITU-R BT.709-6 items 1.3/1.4** (primaries and white), **W3C CSS Color
+4** (transfer function) and **ICC.1:2022 Annex E.3 Eq. (E.1)**
+(Bradford) — **no I/O, no embedded blob, no dependency, and no lcms2
+anywhere in the lineage.** Selection is a **two-variant enum, not
+`Option<&Profile>`** (**DL-050**), because an `Option` being `None`
+cannot distinguish *"there was none"* from *"I failed to get one"* and
+**only the second must never trigger a fallback**; the substitution is
+**disclosed** via `DestinationProvenance`. `Chain::new` is unchanged and
+**no caller moved**. ★★★ **The measurement is in a THIRD and WEAKER
+evidence class — `constructed-vs-reference-file`, neither ground truth
+nor a cross-check** (§3.32.1): **max `0.033013` ΔE2000 at pure white**,
+device **black exact**, and **the bound is DERIVED AT RUN TIME from the
+reference file's own tags** rather than typed (§3.32.9).
+
+**★★ 2. The `/N` accessor is BUILT, and ICC.1 turns out to be SILENT on
+the thing it would have been natural to assume.**
+`crates/iccce-profile/src/colour_space.rs` exposes `components()`,
+`channel_agreement()`, `is_valid_pcs()`. **A48: ICC.1:2022 nowhere
+requires a LUT tag's channel count to match the header's data colour
+space, and nowhere states reader behaviour on mismatch** — so iccce
+**discloses** and does **not** call it non-conformant, because *"silent"*
+is a different claim from *"requires agreement"*. **A50: the component
+count is a TWO-TABLE JOIN (Table 19 + Table 41), not a transcription** —
+**ICC.1 publishes no `Signature → count` map**, so cite it as derived.
+★ **Population: 60 real profiles, CMYK 33 / RGB 25 / GRAY 1 / 7CLR 1,
+zero unrecognised signatures, zero PCS-field violations.**
+
+**★★★ 3. A corpus claim was FALSIFIED, and the corrected version is worse
+news.** `ICC_Spec/iec/iec__s__srgb.md` said the wrong sRGB breakpoint
+*"affects only 8-bit codes 10 and 11"*. **No 8-bit code lands in the
+window at all** — the separation at 8-bit input precision is **exactly
+zero**, and the maximum anywhere is **`7.55×10⁻⁷`** in linear light. ★★
+**So a wrong breakpoint is invisible to every image, every 8-bit test
+vector, every round trip, and every differential against an
+implementation that made the same choice.** ★★★ **OWED: the corpus still
+carries the wrong version** (§7.18 newly-owed 1, `icc-spec-librarian`).
+
+**★★★ 4. The suite had ZERO POWER against the constant it documented
+most.** Five injected defects: Bradford omitted **3 of 6 red**, applied
+twice **3 of 6**, gamma-2.2 substitution **1**, green primary **2** —
+and **the breakpoint substitution: NOTHING, 6 of 6 passed.** **DL-051:**
+*a suite that documents a constant at length while being unable to detect
+its corruption is worse than one that says nothing, because it reads as
+protection* — **and the gap was found by INJECTION, not by inspection, by
+the person who had just written both the constant and the tests.**
+
+**★★ 5. `sRGB2014.icc` is NOT a second source.** ICC's 2015 file has the
+compliant `wtpt` and the `chad` the HP 1998 file lacks — and its `rXYZ`,
+`gXYZ`, `bXYZ` and **all three TRC tables are BYTE-IDENTICAL** to it.
+**⟹ exactly one lineage for those nine numbers; the gap is NOT closed.**
+★ Applying the file's **own** `chad` to the BT.709 matrix improves the
+residual from **12.0 to 5.35 ULP and no further**, so the corpus's
+existing negative conclusion is **strengthened, not overturned.**
+
+**★★ 6. Two owed decisions discharged and one carried figure corrected.**
+**§7.17 newly-owed 4 is DISCHARGED**: iccce **does not** substitute D50
+for a mis-authored `wtpt` — it uses `wtpt` as stored and **discloses**
+(A4c / NA-007), verified **in the running thing**, and **6 of 60 profiles
+disclose, all six hand-audited as true positives.** ★★★ **NC-213 the ROW
+is untouched and was never pending** — a measured row cannot be
+"settled". And **DL-053**: `NEXT_SESSION.md`'s *"two iccMAX"* was **a
+count from a sample recorded as a count of the population** — **ten are
+present**, and the corrected sweep (**40 parse clean, 10 refused by
+name**) is a *stronger* claim than the sample was.
+
+**★ 7. `ChainError` now implements `std::error::Error`**, found by a
+**compiled doc example** refusing to build (**DL-052**) — *the cheapest
+available consumer, and the only reviewer who has not already learned the
+API's shape.* **Gates:** `cargo test --workspace` **154 passed, exit 0**
+(was 132); clippy, `fmt`, `doc` and **`wasm32` over the 4 library crates**
+all exit 0 — ★ **and iccce still does not GATE `wasm32` in CI**, which is
+a **consumer's** gate (`CLAUDE.md` rule 10.2).
+
+**★★★ Updated again 2026-08-17 (same day, LATEST — the supplementary
+filing). ICC's own sRGB document arrived and REVERSED an attribution the
+block above makes; a shipped crash was found and fixed; and two tests
+were measured to be blind. Nothing is committed and nothing is pushed.**
+Full record: `NUMERIC_CLAIMS.md` **§3.33** (NC-230 … NC-242), **§4's
+NA-011**, **§7.19**; `ARCHITECTURE.md` **DL-054 … DL-057**.
+
+**★★★ 1. Items 1 and 5 of the block above are SUPERSEDED in their
+attribution, not merely extended.** The operator obtained, in a browser,
+**"How to interpret the sRGB color space (specified in IEC 61966-2-1) for
+ICC profiles"** (Jack Holm, ICC, 2015-04-27). **§B.2 publishes the
+D50-adapted colorants — and ICC's recommended D65→D50 `chad` — at 15
+decimal places.** The corpus's standing *"NO document publishes them"*
+was **false; it was behind `color.org`'s robot bar.** Measured against
+the published values: **iccce's construction 3.02 ULP worst / 0.90 in
+`bXYZ.Z`; the shipped HP 1998 / `sRGB2014.icc` file 11.13 ULP.** ★★★
+**The ~12 ULP blue-`Z` residual is the FILE's error, not iccce's** —
+**NC-230**/**NC-231**, and the Pass 8 retrospective's done-when row is
+corrected in place. ★★ **NC-225 is unaffected**: there is still exactly
+one lineage among the *files*; what changed is that a *document* now sits
+outside that lineage.
+
+**★★★ 2. The ledger's SECOND `published-ground-truth` row in a year of
+having one.** NC-230 carries it, under four stated conditions (§3.33.2) —
+scope is **nine numbers, not a transform**; the transcription is **single-
+reader and a second reading is owed**; and *published* does **not** mean
+*physically exact*, since ICC's own published `chad` misses ICC's own
+stated D50 by `4.9×10⁻⁵` (**NC-233**). ★★★ **The sentence *"NC-001 is the
+only published-ground-truth row"*, carried by eleven filings, retires
+today.**
+
+**★★★ 3. DL-054 — an ACCESS boundary had been recorded as an EXISTENCE
+fact, and the mis-attribution survived because THE NUMBER WAS CORRECT.**
+The corpus held both registers in one file: its acquisition list said *"no
+document **found so far** states"* and named the barrier; its status table
+said *"NO document states them."* **The status table is what
+propagated.** ★★ Worse, hours before the fetch the same file **lowered
+its expectation of the unread document** from evidence about a different
+artifact. **Write the SEARCH claim, never the EXISTENCE claim.**
+
+**★★★ 4. A shipped crash: `iccce bench` ABORTED the process** on ICC's
+published seven-channel `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc` — bare
+`0xC0000409`, *"memory allocation of 1022842631448 bytes failed"*. Two
+causes: a **`_ => 33` catch-all** (`33⁷` ≈ **952.6 GiB**) and a guard
+using **`checked_pow`, which catches wrap and not size**. Fixed with a
+computed ≥5-channel recommendation and `MAX_COMPILED_GRID_BYTES = 64 MiB`
+behind a named `ChainError::GridExceedsBudget` (**NC-234**). ★★ **An
+abort is the worst available library failure — not catchable, and a
+consumer's process goes with it.** ★★★ **And DL-055: each half of the fix
+alone makes the conformance row observe zero, so deleting the guard would
+have left it GREEN with no number moved and no edit to blame.**
+`icc-conformance` split it into four rows, one per layer.
+
+**★★★ 5. DL-056 — the ΔE destination gate is ASYMMETRICALLY BLIND.**
+Injected white-point drift: `−3.0×10⁻⁴` fails, **`+3.0×10⁻⁴` PASSES and
+reports `0.029008`, better-looking than the correct build's `0.033013`**;
+blind to ≈`+3.8×10⁻⁴` (**NC-240**). **A difference cannot detect a defect
+that shrinks it.** What has power is the **absolute** assertion
+`constructed_colorant_sum_is_d50` — D50 itself, no file in it — which the
+same injection fails (**NC-241**). ★★ **Deleting it as redundant would
+open the blind spot and every remaining test would stay green while it
+happened.**
+
+**★★ 6. DL-057 — a refusal that named the WRONG CLAUSE.**
+`Destination::None` on an `A2B`-only profile (four exist in ICC's
+published set) reported *"matrix/TRC model requires PCSXYZ (Annex F.3,
+normative)"* — true, correctly cited, **and about a model iccce was about
+to discard**. Fixed by sharing `derive_source_model()` (**NC-237**). ★★★
+**A code path that discards half its result inherits the discarded half's
+failure modes, because that half's error is what the caller sees.**
+
+**★ 7. Two owed items DISCHARGED and one blocker MOVED.** §7.18's
+tautological-test item is closed and **proven by injection** (the lcms2
+behaviour now fails 4 of 6 tests — **NC-238**); the corpus's *"8-bit codes
+10 and 11"* claim is **retracted as corpus defect `C8`** *(verified by
+this librarian in `ICC_Spec` at the tip)*. ★★★ **And the ground-truth row
+for chromatic adaptation — owed since Pass 1's §7 item 4 — moves from
+BLOCKED to AVAILABLE-AND-UNMEASURED**, because ICC's recommended `chad`
+is in the same §B.2. The instrument is named and the bound must be
+derived before it is run.
+
+**Gates:** `cargo test --workspace` **158 passed, exit 0** (was 154);
+clippy / `fmt` / `doc` / **`wasm32` over the 4 library crates** all exit
+0. ★★ **`icc-conformance` shipped a concurrent Pass H — `pass=274 fail=0
+skip=9 error=0`, their measurement, corroborated in `TOLERANCES.md`
+§3.8.1** — and **`274` may not be compared with `229`**, because Pass H
+added rows.
+
+---
+
 ## Pass 0 — scaffold and the oracle
 
 **STATUS: DONE — 2026-08-11.** Evidence in the block below the done-when.
@@ -3932,6 +4262,18 @@ number would not move"* *(hash and subject corroborated by the reflog;
 `_ => 33`, **with the failing 17 recorded in the constant's own doc
 comment**)*.
 
+> **★★ Dated citation correction, 2026-08-17 (supplementary filing).**
+> The parenthetical above is **true as a 2026-08-12 read and false as a
+> statement of current state**, and it is not edited — this note is the
+> correction. **`_ => 33` no longer exists as code**; it was removed on
+> 2026-08-17 after being measured to make `recommended_grid_points(7)`
+> return 33, i.e. `33⁷ × 3 × 8 ≈ 952.6 GiB`, which **aborted the
+> process** (`NUMERIC_CLAIMS.md` §3.33 / **NC-234**). The only surviving
+> occurrences in `crates/` are **doc comments describing its removal**
+> *(verified — grepped at the tip)*. ★ **The 3-D and 4-D `33` are
+> unchanged and are now asserted in `compiled::tests` as *measured
+> values***, so this Pass's grading stands.
+
 #### ★★ The tolerance, and why it could not be moved
 
 **`2,5×10⁻¹` ΔE2000 — which is Pass 4's measured iccce-vs-lcms2 figure
@@ -4440,6 +4782,173 @@ engineer changes the code.**
 >   is a CONFORMANCE-RUNNER record count and is not comparable to
 >   either** — DL-031.
 
+### ★★★ Pass 8 — RETROSPECTIVE entries for two capabilities that shipped with NO ROADMAP ENTRY. Filed 2026-08-17 by `icc-librarian`
+
+**Why this subsection exists, stated plainly:** the two items below were
+**built, tested and measured before this document said they were
+planned.** `NEXT_SESSION.md` §0 had listed them among *"four gaps this
+project now knows about and has NOT filed anywhere else … **none has a
+`ROADMAP.md` entry**"*. They now have implementations, so they get
+retrospective entries — **a completion record with no plan above it is
+still better than a capability with no record at all**, and pretending
+they were planned would be worse than both.
+
+★★ **Both are properly Pass 8 material even though Pass 8 is built in
+`pdfce`**, because both are things **this repository owes the bridge**.
+Neither is the bridge. `ARCHITECTURE.md` §4's boundary is untouched:
+**iccce still does not know what a PDF is.**
+
+★★★ **Both were requested, in substance, by the consumer.** They came out
+of `pdfce`'s `open/request_iccbased_colour_spaces.md` and the `/N`
+validation need — **which is the request channel doing the one thing
+`CLAUDE.md` rule 10.1 says it is for**, and the strongest available
+evidence that a bidirectional channel is worth its overhead.
+
+#### ★★ Retrospective 1 — the built-in sRGB destination. **DONE 2026-08-17 (uncommitted)**
+
+**What it is:** `iccce_cmm::builtin::srgb()` plus
+`Destination` / `DestinationProvenance` / `Chain::with_destination` /
+`Chain::destination_provenance` in `crates/iccce-cmm/src/transform.rs`.
+**Contract, conditions and build order are in
+`docs/DEFAULT_DESTINATION.md`**, whose **STATUS: BUILT** block records
+the four things measurement changed.
+
+**Done-when, judged MET on these terms:**
+
+| Clause | Status |
+|---|---|
+| Constructed from published constants, **no file, no blob, no dependency** | **MET** — BT.709-6 items 1.3/1.4, W3C CSS Color 4, ICC.1:2022 Annex E.3 |
+| **No lcms2 in the lineage** | **MET** — this is the clause the whole item was blocked on, and `illuminant.rs`'s D65 comment is corrected to match (DL-051) |
+| *"Doesn't exist"* means **absent**, never **unresolved** | **MET** — **DL-050**, a two-variant enum rather than `Option` |
+| The fallback is **disclosed, not silent** | **MET** — `DestinationProvenance::note()` names the constants and says *"This is NOT the document's declared output intent"* |
+| Tested by **ΔE round-trip, not byte-equality** against a shipped profile | **MET** — NC-221/NC-222, and `NEXT_SESSION.md` §3.2's explicit prohibition on byte-equality was honoured |
+| The blue-`Z` difference **named as a rule-4 approximation** | **MET** — ~12 ULP, and `builtin.rs` **asserts the residual stays in `11.0..13.0` ULP**, so a change to the construction turns it red |
+
+> ★★★ **CORRECTED THE SAME DAY, 2026-08-17 (supplementary filing). The
+> row immediately above is WRONG IN BOTH HALVES and is left standing as
+> the record of what was judged.**
+>
+> 1. **The ~12 ULP residual is the FILE's, not iccce's.** ICC's own
+>    published D50-adapted colorants (Holm/ICC 2015 §B.2, 15 dp) put
+>    **iccce's construction at 3.02 ULP worst / 0.90 in `bXYZ.Z`** and
+>    **the shipped HP 1998 / `sRGB2014.icc` file at 11.13 ULP**
+>    (`NUMERIC_CLAIMS.md` §3.33, **NC-230**/**NC-231**; **DL-054**).
+> 2. **The `11.0..13.0` assertion no longer exists.** It was replaced by
+>    `matches_icc_published_colorants_within_stated_ulps`, a **4 ULP**
+>    bound against ICC's published values with a **discrimination
+>    assertion** that fails if the bound ever stops telling our
+>    construction apart from the file's *(verified — read at the tip;
+>    `11.0` appears in `builtin.rs` only as `11.0 / 255.0` in the 8-bit
+>    breakpoint test)*.
+> 3. ★★★ **And the clause was judged MET against a DOC COMMENT while the
+>    register was EMPTY.** *"Named as a rule-4 approximation"* is
+>    discharged by an entry in `NUMERIC_CLAIMS.md` §4 — the register of
+>    named approximations — and **§4 carried nothing for the constructed
+>    sRGB at all**, running NA-001 … NA-010 with no entry for it. **Now
+>    registered as NA-011**, with the measured 3.02 ULP, its cause, and
+>    what it is not. ★ **A doc comment explains an approximation; the
+>    register is what makes it findable**, and only the register can
+>    answer *"what does iccce approximate?"*
+>
+> **Judged MET on the corrected terms**, with the evidence class
+> **improved**: the clause is now discharged against
+> `published-ground-truth` rather than against a file.
+
+★★★ **What is NOT met, and it is not a defect — it is the evidence
+class.** NC-221/NC-222 are **`constructed-vs-reference-file`**: the
+reference is third-party but **the machinery on both sides is ours**.
+**Nothing about the `0.033013` establishes that either side is
+colorimetrically right** (`NUMERIC_CLAIMS.md` §3.32.1). ★ **And the
+margin must be quoted correctly** — the binding probe (white) passes with
+**exactly the 5 % headroom**, not the 37 % that applies to the non-binding
+probes (§3.32.9a).
+
+★★ **Coverage:** one reference file, ten probes, one direction, **matrix/
+TRC path only. No LUT destination, no CMYK, no non-default intent, no
+`f32` path.** DL-021 binds every sentence about it.
+
+**What it does NOT deliver, and what a consumer must not infer:** it does
+**not** make adopting iccce an *accuracy* gain for `pdfce` (DL-044/DL-047
+— the case is **conformance**, and this changes nothing about that), and
+it does **not** supply a destination for the CMYK output-intent path,
+which is a LUT profile.
+
+#### ★★ Retrospective 2 — the colour-space signature accessor (`/N`). **DONE 2026-08-17 (uncommitted)**
+
+**What it is:** `crates/iccce-profile/src/colour_space.rs` —
+`components()`, `channel_agreement()`, `is_valid_pcs()`, with
+`ComponentCount` and `ChannelAgreement`; exported from the crate root and
+surfaced by `iccce inspect` as `colorspace.components:`.
+
+**Why it is not the same as `Chain::input_channels()`**, which already
+existed: that reports the **tag's** count and needs a **built chain**.
+`pdfce` needs the **header signature's** count **before** building, to
+validate a PDF `/N`. ★ **And when header and tag disagree, that is itself
+worth disclosing** — hence `channel_agreement()`.
+
+**Done-when, judged MET:**
+
+| Clause | Status |
+|---|---|
+| Sourced, **not written from memory** (rule 2 / §5.1) | **MET** — `icc-spec-librarian` from **ICC.1:2022 7.2.6 Table 19**, transcribed with **two independent PDF text engines** and matched against ICC's `icProfileHeader.h` and lcms2's `lcms2.h`: **four routes, no disagreement**. Corpus file `ICC_Spec/icc/icc__s__colour_space_signatures.md` |
+| A public `Signature → count` accessor | **MET** |
+| A header/tag cross-check | **MET** |
+| Exercised on real profiles | **MET** — **60**, zero unrecognised, zero PCS-field violations (NC-220) |
+
+**★★★ The three findings that outlast the code:**
+
+- **A48 — ICC.1:2022 is SILENT on header/tag channel agreement.** The
+  only `shall`-level count agreements in the document are
+  `colorantOrderType` (10.4) and `colorantTableType` (10.5). ★★
+  ***"Silent" is a different claim from "requires agreement"*, and the
+  distinction was asked for explicitly** — so iccce **discloses** rather
+  than declaring non-conformance. That is **DL-020's discipline applied
+  to a SEVERITY** rather than to a rule.
+- **A50 — the count is a TWO-TABLE JOIN, not a transcription.** Table 19
+  has **no component-count column**; for the eleven named spaces the
+  count exists only in **Table 41**, read off by **counting non-dash
+  cells** (`GRAY` = 1 rests on one `K` and three dashes). **ICC.1
+  publishes no `Signature → count` map at all** — cite it as **derived**,
+  under DL-014's terms.
+- **★ The trap that costs conformance:** treating the header PCS field as
+  a two-value enum `XYZ `/`Lab ` **rejects every conformant DeviceLink
+  profile** — **7.2.7** says a DeviceLink's PCS *shall* be a data colour
+  space from Table 19. Tested.
+
+★★ **A deliberate divergence from lcms2, asserted so it cannot regress:
+`cmsChannelsOf()` returns `3` for an UNRECOGNISED signature; iccce returns
+`Unknown(sig)` and refuses to guess.** ★★★ **Evidence class, and it must
+travel with the claim: this was READ FROM lcms2 SOURCE at the pinned
+commit and NOT EXECUTED** — `impl_crosscheck` **by inspection**, weaker
+than every other lcms2 statement in this project, all of which came from
+`transicc` runs.
+
+★ **The hazard made concrete:** of the **1 020** single-byte corruptions
+of `'CMYK'`, **exactly one lands on another valid signature — `'CMY '`,
+which is 3 components.** ★★ **That number is MEASURED but NOT ASSERTED**
+— it reaches a `println!`, and the test's in-loop assertion compares a
+call with its own result and **cannot fail** (`NUMERIC_CLAIMS.md`
+§3.32.8, §7.18 newly-owed 2). **The behaviour is protected; the
+enumeration is not.**
+
+#### ★ Still not filed, and now down to two
+
+`NEXT_SESSION.md` §0's list of four unrecorded gaps is **half
+discharged**. Remaining:
+
+1. **The `f32`/`u8` evaluation surface.** Still `f64`-only, so an 8 Mpix
+   CMYK page is **256 MB in / 192 MB out** through `convert_buffer`.
+   ★ **This is the API finding a real consumer produced that no amount of
+   internal review would have**, and it still has no entry.
+2. **The four unexercised CMYK print profiles**, including
+   `ISO Coated v2 300% (ECI)` — the `DestOutputProfile` of *every*
+   ICC-CMS Ghent patch.
+
+★ `ChainError`'s missing `std::error::Error` — the third item on that
+list — **is discharged** (DL-052), and it was never cosmetic: without it
+a caller had to hand-wrap or `.ok()` the result and **lose the named
+refusal**.
+
 ---
 
 ## Passes added 2026-08-11 by operator decision
@@ -4697,6 +5206,145 @@ Practical consequences, cheapest if done early:
   earned yet. The natural first publish follows a Pass whose numbers are
   on the record in `NUMERIC_CLAIMS.md` — the ledger is what lets a
   stranger trust the crate.
+
+---
+
+## Ghent compatibility — **a standing workstream, NOT a Pass** (opened 2026-08-17)
+
+**STATUS: OPEN, with a first measurement and no accuracy claim.**
+
+★ **Why this is not a Pass.** Every Pass in this document is sized to be
+finishable and has a done-when that can be met. **This has neither.**
+There is no state in which "Ghent compatibility" is *done*: the suite is
+a corpus, not a specification, it supplies **no numeric criterion**
+(DL-047), and the one claim that would close it — *"passes the Ghent
+suite"* — **cannot be made in public without GWG's written permission**
+and is therefore not this project's to declare. Filing it as a Pass
+would create a done-when that could only ever be met by weakening it.
+
+**Origin:** the operator's instruction of 2026-08-17 (**DL-045**),
+handed over with the suite itself.
+
+**Where the material lives, and none of it is duplicated here:**
+
+| What | Where |
+|---|---|
+| The reasoning, licence analysis, patch-by-patch boundary against `pdfce`, and per-statement provenance | **`docs/GHENT_COMPATIBILITY.md`** (nine sections) |
+| The measured rows, their evidence classes, and what they do not claim | **`docs/NUMERIC_CLAIMS.md` §3.30**, rows **NC-192 … NC-199** |
+| The two new evidence classes | **`docs/NUMERIC_CLAIMS.md` §1** — `fixture-declared-categorical`, `acceptance` |
+| The posture, the promotion rule, and the no-numeric-expectation bound | **`ARCHITECTURE.md` §5 — DL-045, DL-046, DL-047** |
+| The profiles themselves | `D:\Dev\iccce-private-fixtures\ghent-v50\` — **20 `.icc` files plus a manifest** *(verified — enumerated)*. **They must never enter this repository** |
+| The extractor | `tools/ghent/extract_icc.py` *(verified — exists)* |
+| The outbound asks | `open/note_ghent_output_suite.md`, `open/request_ghent_render_harness.md`, `open/request_profile_population_census.md` in the request channel *(verified — all three exist)*. ★ **The channel is in no git repository: nothing may exist only there** (DL-044) |
+
+### What is measured today, stated at its real strength
+
+- **Acceptance** — `iccce inspect` on all 20 profiles: **20/20 exit 0,
+  `malformations: 0`**, including a 1.36 MB X-Rite **ICC v4.2.0** CMYK
+  profile whose full 18-tag table decodes. ★ **This proves the parser did
+  not refuse. It proves nothing about the parsed values.**
+- **Categorical** — the two trap profiles, **with a control**. The
+  strongest rows, and narrow: *the declared source profile is used at
+  all.*
+- **Self-consistency** — `eciRGB v2` as **v2.4.0 vs v4.2.0 from the same
+  vendor**, 2,197 grid points, **max |Δ| = 0.000113 in destination device
+  coordinates**. ★★ **Both arms are iccce and it is NOT a ΔE.** Do not
+  restate it as one.
+- **Capability only** — the X-Rite v4 CMYK profile at perceptual intent,
+  and the 4-tag `kTRC`-only Gray profile, both evaluate. **Nothing is
+  compared to anything.**
+
+### What is NOT measured, and must not be rounded up
+
+- **No accuracy claim of any kind on this corpus.** The lcms2
+  differential was dispatched 2026-08-17 and had not reported.
+- **Nothing was rendered.** No Ghent *patch* has been processed as a PDF
+  by anything here; twenty profiles were extracted and driven directly.
+- **No B2A direction, no saturation intent, no ICC-absolute** on this
+  corpus.
+- **No `tools/difftest` record**, so no row here is in any `pass=…`
+  count and none has an **emitted** separation field.
+- **20 profiles is a distinct-profile count**, not a count of patches
+  exercised and not an inventory of features (DL-031).
+
+### Next, in the order that buys the most
+
+1. **The lcms2 differential over the same 20 profiles** — converts the
+   capability rows into cross-checks. **Dispatched, not reported.**
+2. **Re-derive the six `[REPORTED]` byte-scan leads** before any is told
+   to `pdfce` as fact — the `FOGRA27` / `ISO Coated v2 300% (ECI)`
+   output-intent mismatch first.
+3. **Grade intent selection against ICC.1**, never against Ghent
+   (DL-047).
+4. **The joint render-and-compare harness with `pdfce`** — the largest
+   available win, and **operator-gated** (below).
+
+### ★★★ Updated 2026-08-17 (later the same day) — **Pass G landed. Item 1 of "Next" is DISCHARGED and the "no accuracy claim" statement above is SUPERSEDED**
+
+**The two lists above are dated observations and are NOT edited.** This
+subsection is what changed.
+
+- **★★★ "Next" item 1 — the lcms2 differential — is DISCHARGED.**
+  `tools/difftest/src/passg.rs`, **72 graded rows in four sections**,
+  whole-suite **`pass=229 fail=0 skip=3 error=0`**. Rows, classes and
+  coverage: **`NUMERIC_CLAIMS.md` §3.31, NC-200 … NC-218**; derivations:
+  **`TOLERANCES.md` §3.7, §4's two Pass G rows and §6.6**; apparatus:
+  **`tools/difftest/README.md` §22**.
+- **★★ So *"What is NOT measured"* bullet 1 above — "no accuracy claim of
+  any kind on this corpus" — is SUPERSEDED.** There are now **six
+  `implementation-cross-check` rows** and six `derived-expectation` ones.
+  ★ **Every other bullet in that list still stands**, including *nothing
+  was rendered*, and the **B2A direction is still untouched** on the one
+  profile that has an interesting one.
+- **★ It ran over 11 of the 20 profiles, not 20.** `NUMERIC_CLAIMS.md`
+  §7.16 pre-registered exactly this check — *"a differential over a
+  different member set is a different claim (DL-031)"* — and it paid off.
+  **§3.30 is a claim about 20 profiles; §3.31 is a claim about 11.**
+- **★ "Next" item 2 (re-derive the six `[REPORTED]` leads) and item 3
+  (grade intent selection against ICC.1) are UNTOUCHED**; item 4 (the
+  joint render harness) remains operator-gated, below.
+- **★★ Two new decision-log entries came out of the same day and neither
+  is about colour: DL-048** (cite the ledger by §/NC, never by line —
+  **six of six** line citations were stale) and **DL-049** (a disclosure
+  field caught a defect in a *tolerance's justification*, on a green row).
+- **★★★ Nothing here changes the operator block below.** More numbers do
+  **not** make *"passes the Ghent suite"* available; that is a permission
+  question, not an evidence one.
+
+### ★★★ Blocked on the operator — three decisions, and no agent may take any of them
+
+*(There was no "blocked-on-operator" section in this document before
+today* *(verified — grepped)**; this is it. The same three are recorded
+in `NUMERIC_CLAIMS.md` §7.16.)*
+
+1. **★★★ No public artifact of this project may say "Ghent" without
+   GWG's written permission.** Certification is sold to print service
+   providers by individual GWG member companies, and *"solution vendors,
+   developers or system integrators"* are directed to a **separate
+   programme reachable only by contacting GWG**. ★ **So *"passes the
+   Ghent suite"* is not available as `README.md`, release-note or
+   crates.io copy today** — a **claim-bearing-copy** matter under the
+   global rule, not a style choice. **Nothing has been published.**
+2. **Whether to pursue that developer Compliancy programme at all.**
+   Contacting an external body is an operator act (rule 9), and it is
+   the only route by which a public claim could become supportable.
+3. **Whether to scope the joint render-and-compare harness with
+   `pdfce`** — rasterise `ALL_X4`, compare patch-by-patch against the
+   suite's shipped `ALL_REFERENCE`. ★ **It is tractable rather than
+   aspirational**: the trap artwork is authored **pre-swapped**, so a
+   correct conversion makes the X vanish into its surround and the
+   judgement becomes *sample the region against its neighbours* — **no
+   press, no proof, no instrument, no human at 0.5 m.**
+
+★ **A fourth decision is enlarged rather than new.** The standing
+operator question — *may published numbers live in an MIT repository as
+fixtures?* — now spans **four** private corpora rather than three, and
+**Ghent's terms are the most restrictive**: no commercial use, no
+redistribution without written permission, an **affirmative obligation
+to reproduce GWG's notice**, **plus** the separate and individually
+unassessed licences of the profiles inside. ★★ **A "yes" on the other
+three would not extend to this one**, and that is the distinction most
+likely to be lost if they are answered together.
 
 ---
 
