@@ -311,6 +311,32 @@ pub fn detect_destination_black_point(
             // ★ a* and b* are NOT touched. This is the branch in which the
             // pre-registered mechanism claim can be exercised at all.
             let d = darkest_colorant_lab;
+            // ★★ TWO CLIPPY SUGGESTIONS ARE REFUSED HERE, AND BOTH WOULD BE
+            // DEFECTS. Measured 2026-08-17 while deciding whether CI should
+            // lint `tools/` (see README §24.9):
+            //
+            //   * `clippy::manual_clamp` suggests `d.l.clamp(0.0, 50.0)`. That
+            //     is NOT this function. lcms2 sends `L > 95` to **0**, not to
+            //     50 — the "synthetical negative profiles" branch — so the
+            //     suggested rewrite would map `L = 97` to 50 where lcms2 maps
+            //     it to 0. **A 50 `L*` error, injected into the one piece of
+            //     code in this repository whose entire purpose is fidelity to
+            //     lcms2**, by a lint that reads the shape of the `if` chain and
+            //     not its intent.
+            //   * `clippy::if_same_then_else` flags the `> 95` and `< 0` arms
+            //     as identical blocks. They are, and they are two separate
+            //     branches in the C. Merging them would delete the
+            //     line-for-line correspondence that makes this transcription
+            //     checkable against `cmsBlackPoint.c`.
+            //
+            // The chain below is the C, in order, and it stays that way.
+            #[expect(
+                clippy::manual_clamp,
+                clippy::if_same_then_else,
+                reason = "deliberate line-for-line transcription of lcms2's BlackPointAsDarkerColorant; \
+                          clamp() is not equivalent (L>95 -> 0, not 50) and merging the two \
+                          zero-arms would break correspondence with the C source"
+            )]
             let l = if d.l > 95.0 {
                 0.0
             } else if d.l < 0.0 {
@@ -386,6 +412,19 @@ pub fn detect_destination_black_point(
     };
 
     // --- Validity (L511-517) ------------------------------------------------
+    // ★★ `clippy::neg_cmp_op_on_partial_ord` wants `min_l >= max_l` here and
+    // that is NOT the same predicate. `!(a < b)` is **true** when either
+    // operand is NaN; `a >= b` is **false**. `root_raw` is initialised to
+    // `f64::NAN` a few lines above and the ramp comes from an oracle
+    // subprocess's parsed output, so NaN is reachable, not hypothetical. The
+    // negated form GIVES UP on NaN; the "cleaner" form would carry NaN forward
+    // into a black-point estimate and emit a plausible-looking record.
+    // Refused deliberately — see README §24.9.
+    #[expect(
+        clippy::neg_cmp_op_on_partial_ord,
+        reason = "NaN semantics are load-bearing: !(a < b) gives up on NaN, a >= b does not, \
+                  and the ramp is parsed from an oracle subprocess"
+    )]
     if !(min_l < max_l) {
         det.gave_up = Some("outRamp[0] >= outRamp[255] (L511)");
         return det;

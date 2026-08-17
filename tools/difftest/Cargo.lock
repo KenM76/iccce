@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "iccce-cmm"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "iccce-color",
  "iccce-profile",
@@ -12,7 +12,7 @@ dependencies = [
 
 [[package]]
 name = "iccce-color"
-version = "0.0.1"
+version = "0.1.0"
 
 [[package]]
 name = "iccce-difftest"
@@ -25,4 +25,4 @@ dependencies = [
 
 [[package]]
 name = "iccce-profile"
-version = "0.0.1"
+version = "0.1.0"

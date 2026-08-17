@@ -2506,6 +2506,242 @@ in-process library test cannot see a CLI-to-`Chain` mis-wiring.*
 
 ---
 
+### 3.9 ★★★ Pass I — ICC's **published** chromatic-adaptation matrix
+
+**Filed 2026-08-17.** Apparatus `tools/difftest/src/passi.rs`, instrument
+`tools/difftest/src/bin/passi_probe.rs`. **19 rows, `pass=19 fail=0 skip=0
+error=0`, and none of them can skip** — Pass I invokes no oracle, reads no
+profile, resolves no fixture and consults no environment variable. It is the
+only section of §3 that grades the same rows on a bare CI machine as on the
+operator's, which is the posture a ground-truth row should have: *a
+ground-truth-shaped row must not be hostage to an oracle.*
+
+**Subject:** `iccce_color::adaptation_matrix(&BRADFORD, D65, D50)` against the
+nine cells ICC prints at fifteen decimal places in
+
+> ICC, *How to interpret the sRGB color space (specified in IEC 61966-2-1) for
+> ICC profiles*, Jack Holm, **2015-04-27**, **§B.2**. Corpus
+> `ICC_Spec/icc/icc__s__srgb_for_icc_profiles.md`; PDF
+> `ICC_Spec/_sources/srgb_bt709/srgb_icc_specification_of_srgb_2015.pdf`,
+> obtained by the operator 2026-08-17.
+
+This is the document `ICC.1:2022` Annex E.4.2 points at, and which this project
+recorded as **not obtained** until that date. Pass I is the repository's
+**third `published-ground-truth` subject** (after NC-001/Sharma and the sRGB
+colorants) and the **first for chromatic adaptation** — the error class
+`RAG_PLAN.md` names as the canonical from-memory mistake.
+
+#### 3.9.0 ★★★ What these rows do NOT claim, stated before what they do
+
+**`ICC.1` mandates no chromatic-adaptation transform at all** (corpus **A29**;
+**NA-002**). A profile's `chad` stores a *resulting matrix*, not a method, so
+Bradford is iccce **policy**. Every row in this section grades exactly one
+sentence:
+
+> *iccce's Bradford-derived D65→D50 matrix agrees with the matrix ICC
+> recommends, to the extent that the two constructions' published inputs
+> entail.*
+
+It does **not** say *"iccce's chromatic adaptation is correct"*. No
+specification text exists against which that sentence could be graded, and a
+reader who quotes these rows for it has been handed the wrong number. Pass I
+also does **not** discharge NA-002, whose cost is Bradford *against another
+CAT* and whose alternatives remain unsourceable.
+
+#### 3.9.1 ★★★ The bound was derived before the pass was run — and the derivation it was commissioned with was incomplete
+
+This pass was dispatched with a bound to derive from the **cone-matrix**
+difference alone, propagated through `M_A⁻¹ · D · M_A`. That term is real:
+
+- **ICC.1:2022 Annex E.3 Eq. (E.1) prints Bradford `M_A[0][0] = 0,8951`**, and
+  that is what `iccce_color::BRADFORD` carries, because it is what the
+  specification prints.
+- **ICC's published `chad` was computed with `0,8950`** — recovered by
+  `icc-spec-librarian` by eigendecomposition (a von-Kries matrix has the rows of
+  `M_A` as its left eigenvectors) and confirmed by exact reconstruction:
+  `0,8951` leaves `5,661×10⁻⁶`, `0,8950` leaves `5,7×10⁻¹⁶`. The distinguishing
+  digit had been in the corpus for six days as a sanity-check footnote — E.1's
+  first row sums to `1,0001`, the recovered one to exactly `1,0000`.
+
+Isolated exactly, that term is **`5,661 341 564 633 735×10⁻⁶`**. **A bound
+derived from it would have failed this pass at 7,4× its value**, because of a
+second difference the brief did not contain:
+
+- **ICC's `chad` adapts a ROUNDED white.** `chad⁻¹ · D50` returns
+  `(0,9505, 1,0000, 1,0890)` exactly — §A.4's `76,04/80` and `87,12/80`.
+  **iccce's D65 comes from BT.709-6 item 1.4's chromaticities** `(0,3127,
+  0,3290)`, giving `(0,950 455 927…, 1, 1,089 057 751…)`. The two whites differ
+  by `−4,407×10⁻⁵` in X and `+5,775×10⁻⁵` in Z, and that propagates to
+  **`4,453 187 573 657 197×10⁻⁵`** in the matrix — **7,9× the cone term.**
+
+The two terms **partially cancel**, and the exact prediction for iccce as
+shipped is **`4,164 936 613 631 601×10⁻⁵`** at cell `(0,0)` — `2,730` ULP of
+`s15Fixed16`. Every §B bound is that prediction, **per cell**, plus one
+numerical allowance.
+
+> **★★ The generalisation, and it is the third instance of one failure shape in
+> this document** (§3.4's `B6`, §3.7.2's `SWEEP_DEVICE`, §3.8.3's
+> `SEVEN_CORNER`): *when a tolerance's derivation names only the components the
+> row owns, the missing term is in a component it does not own.* Here the
+> derivation named the **cone matrix**, which the row is *about*, and omitted
+> the **white point**, which the row merely *uses*. All four instances were
+> found the same way — by writing the derivation down before running.
+
+#### 3.9.2 The one numerical allowance, `F64_NOISE = 1×10⁻¹²`
+
+Every bound in §3.9 is `an exactly-derived prediction + F64_NOISE`, so this
+constant is the only place a failing row here could be made to pass and it has
+to stand on its own.
+
+**Derivation.** The compared computation is one 3×3 adjugate inverse (nine 2×2
+minors, one determinant, nine divisions), two 3×3 products (three-term dot
+products) and three cone-ratio divisions, all at magnitudes of order 1 with no
+leading-digit cancellation (largest intermediate `1,7135`). A conservative worst
+case is ≈50 ulp of that magnitude: `50 × 2,220×10⁻¹⁶ × 1,72 ≈ 1,9×10⁻¹⁴`.
+`1×10⁻¹²` is **50× that headroom**.
+
+**Why it cannot mask what the section exists to detect.** The smallest defect
+any row here is designed to see is the cone-cell substitution, worth
+`5,663×10⁻⁶` — **5,7×10⁶ times the allowance**. There is no value of this
+constant between `10⁻¹⁴` and `10⁻⁸` that changes any verdict in this section,
+which is the property a numerical allowance should have and a tuned tolerance
+never does.
+
+**What would justify moving it:** a measured f64 residual above `10⁻¹³` on any
+platform — which would be *a finding about floating-point accumulation, recorded
+as one*, not a licence to widen. Observed values are emitted in every record's
+detail so this can be checked rather than assumed. Measured 2026-08-17 on
+Windows/MSVC: `4,44×10⁻¹⁶`, `2,67×10⁻¹⁷`, `2,82×10⁻¹⁶`, and **exactly `0`** —
+four orders below the allowance at worst.
+
+#### 3.9.3 The rows
+
+| # | Row | Kind | Metric | Tolerance | Why that number | Observed 2026-08-17 |
+|---|---|---|---|---|---|---|
+| **A1** | `passi/A/harness-CAT-reproduces-ICC-published-chad-from-Bradford-0.8950` | **ground-truth** | abs-max-component | **1×10⁻¹²** | **The instrument check, and a ground-truth row in its own right.** The harness's own CAT — its own typed digits, its own adjugate inverse, **no iccce code in the loop** — is given ICC's own inputs (`M_A[0][0] = 0,8950`, source `0,9505/1/1,0890`, destination `0,9642/1/0,8249`) and must return the nine cells ICC printed. Exact reconstruction leaves `5,668×10⁻¹⁶`, the fifteen-decimal print floor; the rest is §3.9.2. **If A1 is ever red, nothing else in §3.9 means anything** — which is why it is graded first and at the tightest bound. | **`4,440 892×10⁻¹⁶`** — the print floor, and an independent second-route confirmation of the `0,8950` finding, in a second language from an independent transcription |
+| **A2** | `passi/A/E.3-Bradford-does-NOT-reproduce-the-published-chad` | derived-expectation | abs-max-component | **1×10⁻¹²** | Graded quantity is `|measured − exact prediction|`, not a colour difference: `5,661 341 564 633 735×10⁻⁶` is exact rational arithmetic over published constants, so the only admissible discrepancy is round-off. **Stops A1 from being a tautology** — it demonstrates the harness can tell the two variants apart. | **`2,672 050×10⁻¹⁷`** |
+| **A3** | `passi/A/typed-exact-predictions-still-hold` | derived-expectation | abs-max-component | **1×10⁻¹²** | **The stale-constant guard.** §B's per-cell bounds are typed exact values; the harness recomputes all nine in f64 from the published inputs and grades the agreement, so an edited published digit or a superseded derivation **fails loudly here** instead of quietly re-basing every bound in the section. | **`2,819 671×10⁻¹⁶`** |
+| **B1–B9** | `passi/B/chad-cell-r{i}c{j}` | **ground-truth** | abs-max-component | **the cell's own exact prediction + 1×10⁻¹²** (`4,164 937×10⁻⁵` … `2,692 510×10⁻⁷`) | **A prediction, not an observation.** Each residual is the sum of the two terms in §3.9.1, both computable in exact rational arithmetic from published constants alone — which is why these nine numbers could be written down before the pass was first run. **ONE-SIDED BY CONSTRUCTION**, and that is stated on every row: a change moving iccce *toward* ICC's own construction passes silently here. §C is the two-sided gate. | **every cell exactly at its prediction**; worst `4,164 937×10⁻⁵` = `2,730` ULP |
+| **B10** | `passi/B/chad-max-over-nine-cells` | **ground-truth** | abs-max-component | **`4,164 936 713 631 601×10⁻⁵`** (max prediction + allowance) | The headline number for the pass and the one to quote; the per-cell rows are what make it a test rather than a summary. | **`4,164 937×10⁻⁵`** = **`2,730` ULP of `s15Fixed16`** |
+| **C** | `passi/C/iccce-matches-the-independent-prediction-two-sided` | derived-expectation | abs-max-component | **1×10⁻¹²** | **The regression gate, and the row with power in BOTH directions.** Two f64 implementations of one construction over identical published inputs may differ only by round-off. It catches a corrupted `BRADFORD` digit, a corrupted `D65_XY` or `D50`, an inverted operand order (`M_A · D · M_A⁻¹`) or a transposition — every one of which yields a matrix that still looks like an adaptation matrix. | **exactly `0`** — see the honesty limit in §3.9.6 |
+| **D1** | `passi/D/two-ICC-publications-print-different-Bradford-matrices` | ground-truth | abs-max-component | **∞ — REPORTED** | **There is no clause under which one of two ICC publications is the wrong one.** Annex E is informative and ICC.1 mandates no CAT (A29), so neither value is required of anybody; iccce follows the printed specification. Grading this would mean *this project* deciding which ICC document is authoritative, which is not a decision a conformance suite is entitled to make. | `5,661 342×10⁻⁶` = `0,371` ULP |
+| **D2** | `passi/D/encoded-chad-cells-differing-from-ICC-published` | ground-truth | indicator-count | **∞ — REPORTED** | A count of encoding differences is not a requirement: iccce writes no `chad` today and no clause requires a profile's `chad` to equal ICC's recommended one. Emitted because it is the unit a profile author cares about — and because it **corrects an inference this project made in writing** (§3.9.5). | **6 of 9**, largest **3 LSB** |
+| **E1** | `passi/E/shipped-srgb-colorants-vs-ICC-published` | **ground-truth** | abs-max-component | **`4,607 402×10⁻⁵` + allowance** (`3,020` ULP) | The exactly-derived worst-cell residual of the **shipped** construction — `chad(0,8951, chromaticity D65) × rgb_to_xyz(BT.709-6 primaries)` — against ICC's printed colorants. It matches the figure `builtin.rs` declares as the model's one named approximation, **and until this row nothing in the repository measured it**: grepped 2026-08-17, the digits `0,436 030…` appear in **no** source file under `crates/`, so the doc comment's *"asserted in the tests"* was not true. | **`4,607 402×10⁻⁵`** = **`3,020` ULP** |
+| **E2** | `passi/E/colorant-residual-attribution` | ground-truth | abs-max-component | **∞ — REPORTED** | The subject is an **attribution** — which of two inputs a known residual came from — and no clause and no published value grades an attribution. The number it carries is graded by E1. | `3,787 988×10⁻⁵`; see §3.9.4 |
+| **E3** | `passi/E/published-colorant-rows-sum-to-D50` | ground-truth | abs-max-component | **1×10⁻⁷** | **A transcription guard on the REFERENCE DATA, not on iccce**, and the size of the permitted miss is derivable rather than observable: ICC's colorants are `chad × inv(§A.7)`, §A.7 is printed to **seven** decimals, so the implied white of `inv(§A.7)` sits `1,060 763×10⁻⁷` above `1,0890` in Z, and the published `chad` carries that to `7,946 512×10⁻⁸` in the row sums — **exact arithmetic, closing to every printed digit.** The bound is the next power of ten above it, stated in the unit of §A.7's own print precision. Discrimination: one mistyped digit in the third decimal of any published cell moves this by ~`10⁻³`, four orders above the bound. | **`7,946 512×10⁻⁸`** |
+
+#### 3.9.4 ★★ A finding for the engineer: the built-in sRGB has TWO named approximations, not one
+
+`crates/iccce-cmm/src/builtin.rs` states that the `3,02` ULP colorant residual
+*"is entirely accounted for by **which D65 matrix each side starts from**"* —
+ICC inverting its own §A.7 matrix as printed to 7 decimals, iccce building it
+exactly from BT.709-6's chromaticities. **Exact decomposition, 2026-08-17:**
+
+```text
+iccce − ICC  =  (chad_iccce − chad_ICC) · M_d65        [the CHAD term]
+             +   chad_ICC · (M_d65 − inv(§A.7))        [the PRIMARIES term]
+```
+
+| term | worst cell | on `bXYZ.Z` |
+|---|---|---|
+| **chad term** | **`2,482` ULP** | **`−2,482` ULP** |
+| **primaries term** | **`2,480` ULP** | **`+1,586` ULP** |
+| total (graded by E1) | `3,020` ULP | `−0,897` ULP |
+
+The two terms are **the same size**, and the word *"entirely"* is false. Worse
+for the doc comment's argument: on `bXYZ.Z` — the cell that section is
+specifically about — the small total (`−0,897` ULP, presented as evidence the
+construction is close) is a **cancellation between two errors five times its
+size**, one of which is the Bradford variant the sentence does not mention. The
+`3,02`/`11,13` comparison against the shipped HP file is unaffected and remains
+correct; what is wrong is the attribution of the remainder to a single cause.
+**Registered as NA-010.**
+
+#### 3.9.5 ★ Sub-ULP does not mean identical bytes — a corollary corrected
+
+`icc__s__srgb_for_icc_profiles.md` records that a `chad` recomputed from E.3
+differs from ICC's by `0,371` ULP and concludes *"That is below one encoding
+step, so **the written tag bytes are identical** and nothing observable
+changes."* Measured, in exact arithmetic:
+
+- for that very case (`0,8951` at ICC's own rounded white, `0,371` ULP),
+  **3 of 9 cells still encode to a different `s15Fixed16` word**;
+- for **iccce as shipped**, `2,730` ULP, **6 of 9 cells differ, largest 3 LSB**.
+
+A sub-ULP difference near a half-ULP rounding boundary still flips the LSB.
+*Below one ULP* bounds the encoding difference at **one** LSB; it does not make
+it zero. The consequence is narrow but real: if iccce ever writes a `chad` tag
+for its built-in sRGB, **it will not byte-match ICC's recommended one**, and no
+clause requires it to.
+
+#### 3.9.6 Proof of power — three injections, each in a detached worktree
+
+Per `README.md` §21 and DL-018, the arm is proven by breaking it, not by
+argument. Each defect was injected into a detached worktree at `aece12b`, the
+pass re-run, the worktree destroyed.
+
+| injected defect | predicted | **measured** |
+|---|---|---|
+| **`BRADFORD[0][0]` `0,8951` → `0,8950`** (adopt ICC's own cone cell) | B fails on 6 of 9 cells + B10 at `4,453 158×10⁻⁵`; C fails at `5,662 962×10⁻⁶`; E1 fails at `4,686 594×10⁻⁵`; §A untouched | **exactly that — `pass=10 fail=9`, every figure to the digit** |
+| **operand order `M_A · D · M_A⁻¹`** (the classic transposition of this construction) | all of §B, C and E1 fail by orders | **`pass=7 fail=12`**, worst cell `9,724 514×10⁻²` — 2 300× its bound |
+| **`D65_XY` → CIE's 5-figure `0,312 72 / 0,329 03`** (the "precision upgrade" trap `illuminant.rs` warns about) | §C fails; §B partially | **`pass=10 fail=9`** — and **three §B cells PASSED because the substitution moved them TOWARD ICC** (`r0c0` `2,443×10⁻⁵` against a `4,165×10⁻⁵` bound). **C failed at `1,784×10⁻⁴`, eight orders over.** |
+
+★★ **The third injection is the argument for §C existing.** It is the same
+shape as `builtin.rs`'s `constructed_colorant_sum_is_d50` finding and as
+`NEXT_SESSION.md` §5.2: *a one-sided test has no power against an error that
+moves your answer toward the thing you are comparing to.* §B is the
+ground-truth claim and is one-sided; §C is the gate. Quoting §B as the
+regression protection would be a mistake this table exists to prevent.
+
+★ **What the injections did NOT move:** §A (all three rows) and §D on every
+run. That is correct and designed — §A grades the *harness* against published
+digits and contains no iccce code, and §D is REPORTED. **A row that never moves
+under any injection of the subject is either an instrument row or a dead one,
+and the difference must be stated**: A1–A3 are instrument rows, and they would
+go red on a mistyped published constant in `passi.rs`, which is the defect they
+exist for.
+
+#### 3.9.7 The `BLIND` flags in §B, and why they are not being tuned away
+
+Ten §B rows report `BLIND`: the candidate distance (`5,662 962×10⁻⁶`, iccce vs
+the `0,8950` rival) is smaller than the bound (up to `4,164 937×10⁻⁵`), so the
+mechanism's distance test declines to claim discriminating power. **That verdict
+is conservative and correct as a distance test, and it understates these rows**
+— because the observation sits *exactly at* its bound by construction, the rival
+breaches **6 of the 9** per-cell bounds anyway (worst exceedance `1,621×`),
+which the injection above confirms.
+
+**Nothing was adjusted to remove the flag.** The honest reading is recorded on
+the rows themselves: §B's power against the cone cell is real but is an artefact
+of where the observation sits, and the row that carries that power without
+needing an argument is **§C**, where the same separation is `DISCRIMINATING` by
+`5,66×10⁶`. This is the same shape as §1.1's finding that the row named
+`estimators/black-points-in-lab` was `UNGRADED` while the suite's power lived
+elsewhere: **the row whose name matches the finding is often not the row that
+would catch its regression.**
+
+#### 3.9.8 Coverage of this section, stated
+
+- **One illuminant pair** (D65→D50), **one cone matrix family** (Bradford),
+  **one direction**. Nothing here says anything about D50→D65, about any other
+  illuminant pair, or about any CAT other than Bradford.
+- **No `chad` tag is parsed anywhere in this pass.** The subject is a *computed*
+  matrix. A profile that carries a `chad` takes an entirely different code path
+  (`iccce-profile`), and Pass I has **zero** power over it.
+- **In-process library calls, not the shipped binary.** §A–§D call
+  `iccce_color::adaptation_matrix` directly; §E calls
+  `iccce_cmm::builtin::srgb()`. **A wiring defect between the `iccce`
+  executable and either is invisible to every row in this file** — the Pass H
+  lesson (*ask which layer is in the loop*), applied in advance. §E is the layer
+  closest to the product that this subject can reach without an oracle.
+- **No ΔE anywhere.** Every number is an XYZ-space matrix-cell difference. The
+  perceptual cost of `4,16×10⁻⁵` in these cells is **not measured by this pass**
+  and must not be inferred from it.
+- **One machine, one toolchain, one day.** Windows/MSVC, 2026-08-17, at
+  `aece12b`.
+
+---
+
 ## 4. Changes to tolerances — append only
 
 Every change to a number in §3 gets a row here. **Never edit a tolerance
@@ -2561,6 +2797,9 @@ drifting one justification at a time.
 | 2026-08-17 (Pass H) | **§3.8.1 §D, three rows on `Probev2_ICCv4`** (`b2a/off-colorant-channels-are-exactly-zero`, `b2a/a-and-b-are-ignored`, `b2a/tint-is-monotone-decreasing-in-L`) | drafted graded at `0` / `1.5259×10⁻⁵` — the readme's statement taken at face value | **REPORTED (∞) on that file only**, each carrying a mandatory `★★★ THE PUBLISHED CLAIM IS FALSE OF THIS FILE` prefix in its own emitted detail | `icc-conformance` | **★★★ THE PUBLISHED CLAIM IS FALSE OF THE FILE THE PUBLISHED DOCUMENT NAMES — and that inverts the pass's expected arrangement.** The ICC's `Probe2` readme says the `BToA` tags render *"tints of pure cyan / magenta / yellow"*. That is realised **exactly** on `Probev1_ICCv2` and `Probev1_ICCv4`, which the readme does **not** describe (off-colorant channels `0.0` to the bit; `a*`/`b*` change the answer by `3.3×10⁻¹⁶`); and it is **false of `Probev2_ICCv4`**, which the readme **does** name (off-colorant maximum `0.9969`; `a*`/`b*` worth up to `0.9177`). Once a published premise is shown false, continuing to grade iccce against it grades iccce against the document's error. ★★ **They were relaxed to INFINITY, not to a finite number the observation happens to satisfy** — `0.98` chosen because the measurement came out at `0.9969` would be exactly the tuning §0 exists to prevent, and would read in a report as a claim. **What survives and IS graded on all three files is the weaker statement the sentence still entails** — *the published colorant is strictly the largest of the three chromatic channels* — observed `0` violations everywhere, and §3.8.6 shows by injection that it is the only in-process row that catches an intent-to-tag mis-wiring. **No number moved on the two files where the claim holds.** |
 | 2026-08-17 (Pass H) | **§3.8.1 §D, `a2b/vs-lcms2-through-the-same-tags`** | drafted over **all** device corners at `2×10⁻³ L*` | the same bound, over corners **less those where lcms2's `L*` exceeds the tag's representable ceiling**; the excluded points get their own REPORTED row `a2b/encoded-pcs-clamp-divergence` | `icc-conformance` | **★★ PASS 4b'S SYNTHETIC FINDING, REPRODUCED ON A REAL ICC-PUBLISHED FILE — and it is why the row was split, not widened.** It failed on `Probev1_ICCv4` at `2.374×10⁻¹` while passing on `Probev1_ICCv2` at `8.8×10⁻⁴`. The code is not wrong: **iccce clamps the encoded PCS at the B curve (clause 10.18's domain, via `Trc::eval`) and lcms2 does not** (its identity curve is an analytic gamma-1 segment, evaluated unbounded) — exactly `pass4b/fixture/mab/encoded-pcs-overflow-divergence`, which is REPORTED because **which behaviour the specification requires is UNSETTLED**. Pass 4b measured it on a fixture *this project authored*, so it could have been an artefact of our own fixture design; **it is not.** ★ The split predicate is evaluated on **lcms2's** output, never on iccce's: *"the file encodes a PCS value above what this tag's encoding can represent"* is a fact about the file, and the side that does **not** clamp is the one that can still show it — splitting on iccce's own clamp fixed-point would be splitting on the behaviour under test. ★ The two `Probev1` files make the mechanism unmistakable: the **same design**, encoded once as legacy `mft2` (ceiling `100.390625`, no overflow, `0`) and once as v4 `mAB ` (ceiling `100.0`, overflow, `0.2374`). **The overflow is caused by the ENCODING, not by the data** — the ICC's own v4 re-issue of its own v1 profile stored a value the v4 encoding cannot hold. |
 | 2026-08-17 (later, after Pass H) | **§3.8.1 / §3.8.4, `passh/C/7clr/compiled-path-does-not-ABORT-the-process`** | one row, tolerance **0**, observed **1 — RED** | **the same row at the same tolerance 0, now observed 0 — plus THREE new rows**: `default-grid-BUILDS-and-is-the-grid-the-library-RECOMMENDS` (0), `oversized-grid-is-a-NAMED-refusal` (0), `compiled-vs-reference-at-the-default-grid` (**REPORTED**) | `icc-conformance` | **★★★ NO TOLERANCE MOVED. THE CODE MOVED — and then the ROW had to, for a reason worth naming.** `icc-engineer` fixed the abort in `crates/iccce-cmm/src/compiled.rs` with a SIZE guard (`ChainError::GridExceedsBudget`, `MAX_COMPILED_GRID_BYTES = 64 MiB`) distinct from the `checked_pow` OVERFLOW guard, and by replacing `recommended_grid_points`' `_ => 33` catch-all with a value **computed** from the budget for ≥5 channels (`7→6`). Re-measured here rather than taken on report: `pass=274 fail=0 skip=9 error=0`, **bare exit 0**, and both `iccce bench` invocations run directly. **★ Why three rows were added rather than none.** Each of the two fixes *independently* makes the original observation zero: at grid 6 the allocation is 6.4 MiB and succeeds whether or not the guard exists, so **deleting `MAX_COMPILED_GRID_BYTES` would leave the original row GREEN**. A row that went red on a real defect had become a row that could not see that defect return, with no number moving and nobody editing it. The split puts a different **layer** in each row's loop (§3.8.4.3): the default's survivability, the default's *usability* plus recommendation-vs-behaviour agreement, and — forcing `--grid 33`, the exact configuration that died — the guard itself through the CLI, requiring exit 1, empty stdout and stderr naming all three quantities, **every one of them computed at run time from the library rather than typed**. A sixth counter fires if the budget is ever raised above that allocation, because **a row that has quietly become vacuous is worse than one that fails: it reports PASS.** **★ Two stale-prose defects fixed in the same sweep, both DL-034's shape** — the row's `detail` mixed *computed* halves (which updated themselves correctly) with *typed* narrative (which did not), and the typed half went on asserting *"checked_pow guards against WRAP, not against SIZE, so the allocation is attempted and the allocator aborts"* **on a row reporting PASS**. Also `(~0.00 TiB)` — a unit chosen for `0.93 TiB` and left behind when the value fell five orders — now `human_bytes()`, which picks the unit from the value; and a trailing `stderr: ` that was indistinguishable from a truncated field, now `(empty)`. **A `detail` string that mixes computed and typed content inherits the weaknesses of the typed part.** **★ The grading decision, declined and reasoned:** `compiled-vs-reference-at-the-default-grid` stays REPORTED for ever — both arms are iccce (self-comparison, `NUMERIC_CLAIMS.md` §1), no lcms2 n>4 geometry has been read out of the pin, ICC.1 legislates no interpolation method (A16), and n = 1 profile. §3.8.4.5 states the two conditions that would reverse it. **★ The measured 4-channel 33 was NOT shrunk to fit the budget** (§3.8.4.4), and the resulting tension is asserted in a test that fails if it ever disappears — graded here as the right call, because the failure mode of a documented exception is silent removal with the paragraph surviving. |
+| 2026-08-17 (Pass I) | **§3.9, all 19 rows (first filling, not a change)** | did not exist | as recorded in §3.9 | `icc-conformance` | Pass I graded `iccce_color::adaptation_matrix` against ICC's **published** D65→D50 `chad` — the repository's third `published-ground-truth` subject and the first for chromatic adaptation. **★★★ The bound this pass was COMMISSIONED with would have failed it at 7,4×.** The brief derived the tolerance from the cone-matrix difference alone (`0,8951` vs `0,8950`, exactly `5,661 342×10⁻⁶`); the residual is dominated by a second, unmentioned term — ICC's `chad` adapts the 4-dp-**rounded** white `0,9505/1/1,0890` while iccce derives D65 from BT.709-6's chromaticities, worth `4,453 188×10⁻⁵`, **7,9×** the cone term. The two partially cancel to `4,164 937×10⁻⁵`. **No number was moved after the fact**: the complete derivation was done in exact rational arithmetic before the pass was first run, and the bounds are per-cell predictions plus one f64 allowance. Same failure shape as §3.4's `B6`, §3.7.2's `SWEEP_DEVICE` and §3.8.3's `SEVEN_CORNER` — *the missing term is in the component the row does not own*. |
+| 2026-08-17 (Pass I) | **§3.9.3 row E3, `passi/E/published-colorant-rows-sum-to-D50`** | drafted at **1×10⁻⁸**, justified as *"exact arithmetic over the printed fifteen decimals gives 9,3×10⁻⁹"* | **1×10⁻⁷**, justified from §A.7's **seven-decimal print** propagated through the published `chad` | `icc-conformance` | **★ The bound FAILED on its first run at `7,946 512×10⁻⁸` and the code was not wrong — the JUSTIFICATION's source was.** `icc__s__srgb_for_icc_profiles.md` prints all three row sums of ICC's published colorants and then summarises them as reproducing D50 *"to 9,3×10⁻⁹"*; that is the **X** row's residual quoted as though it were the maximum, and the **Z** row is `7,946 512×10⁻⁸`, **8,5× larger**. The replacement bound is derived, not observed: `inv(§A.7)`'s implied white sits `1,060 763×10⁻⁷` above `1,0890` in Z because §A.7 is printed to seven decimals, and the published `chad` carries that to `7,946 512×10⁻⁸` — closing to every printed digit. `1×10⁻⁷` is the next power of ten, stated in the unit of §A.7's own print precision. **The guard keeps its power**: a mistyped digit in the third decimal of any published cell moves this by ~`10⁻³`, four orders over. A corpus summary line was corrected as a result; this is the second time a bound derived from a corpus *summary* rather than the corpus's own *printed values* has failed. |
+| 2026-08-17 (Pass I) | **§5, NA-010 (first registration)** | did not exist | as recorded in §5 | `icc-conformance` | **★★ `builtin.rs` declares ONE named approximation for the built-in sRGB and there are TWO.** Its doc comment attributes the `3,02` ULP colorant residual *"entirely"* to which D65 primaries matrix each side starts from. Exact decomposition (§3.9.4): the **chad** term reaches `2,482` ULP and the **primaries** term `2,480` ULP — the same size — and on `bXYZ.Z` the `−0,897` ULP total the doc presents as evidence of closeness is a **cancellation between `−2,482` and `+1,586`**. Registered on the day it was measured, which is the standard §5 sets. The `3,02`/`11,13` comparison against the shipped HP file is unaffected. |
 
 ---
 
@@ -2593,6 +2832,7 @@ nobody can check.
 | **NA-004** | **★ Gamut clipping at the CMM layer: `pcs_to_device` clamps each linear component to `[0,1]` before the inverse TRC** (ICC.1:2022 **Annex F.8–F.16**, normative), and `iccce-cmm::curve` clamps again at two further points (clause 10.18's domain in `Trc::eval`; F.1(b)'s attainable-range clip in `Trc::eval_inverse` / `invert_table`). **This is the named per-transform decision NA-003 deferred.** It is *conformance*, not an approximation — but it has a **cost**, because two profiles' encoded gamuts rarely nest exactly, and that cost is what is registered here. | `crates/iccce-cmm/src/matrix_trc.rs::pcs_to_device`; `crates/iccce-cmm/src/curve.rs::{eval, eval_inverse, invert_table}` | **1.8788×10⁻² ΔE2000** at device white for the sRGB → Adobe RGB (1998) pair, on **25 of 133** grid points overall. Closed-form prediction from the two colorant matrices and the clamp alone: **1.8782×10⁻²** — 0.03 % agreement. Driver: the two files' encoded media whites differ by 5/2/12 units of `s15Fixed16`'s 1/65536 lsb. | **measurement** (`tools/difftest`, §13.6.3) | **YES — measured 2026-08-11**, on **one profile pair, one direction, 133 points, one platform**. **The cost is corpus-specific**: it is a property of *which two files* are being converted between, not a constant of the engine, and any restatement must carry the pair. Two profiles with identical encoded whites would show ≈0 here. |
 | **NA-006** | **★ CLUT interpolation is n-linear** (multilinear; quadrilinear for a CMYK A2B), a choice inside an **ICC.1 SILENCE** — corpus **A16**: the specification says nothing whatever about how to interpolate between CLUT grid points. Registered in full in `NUMERIC_CLAIMS.md` §4 on the day the code landed, with its cost as a **corpus-derived bound of ~1 ΔE and the explicit statement that iccce had NOT measured it**. **This row exists because Pass 4 measured it.** | `crates/iccce-cmm/src/clut.rs::Clut::eval`, reached through `lut_transform::Lut16Model` | **max 1.5741 ΔE2000 (mean 0.043 86) on `USWebCoatedSWOP.icc`'s `A2B0`, and max 0.254 23 (mean 0.038 54) on its `A2B1`**, against **lcms2 2.19.1's own 4-D scheme** — which is *not* pure tetrahedral but a hybrid: linear along input channel 0, Sakamoto tetrahedral in channels 1–3 (`cmsintrp.c` `Eval4Inputs`, read at pin `21c582a`). Propagated end-to-end through the sRGB destination: **1.6639 ΔE2000** / **1.0751×10⁻² device**. **At a CLUT node the two schemes agree identically** (measured: 0.0 at all 16 corners). | **measurement** (`tools/difftest` §14.5.2), computed from the CLUT and the two algorithms alone — **no lcms2 output enters the envelope** | **YES — measured 2026-08-11**, on **one profile, two of its three A2B tags, 341 CMYK points, one platform**. Three things must survive every restatement: (1) the cost is a property of *this CLUT's curvature*, not a constant — a smoother table shows less, and the two tags in this one file differ by **6×**; (2) it is measured against **lcms2's scheme**, not against "tetrahedral" generally, and not against the true colour, which nothing here knows; (3) **~1.6 ΔE2000 is at or above the perceptibility anchor**, so this is the project's first named approximation whose cost is *visible*. |
 | **NA-009** | **★★ The black-point ESTIMATION step.** BPC needs a destination black point and **no published document defines how to estimate one**; `bkpt` is untrustworthy (the corpus's own cross-verified finding) and the silence is corpus **A42**. `iccce-cmm::bpc` implements **ISO/CD 18619 4.2.5** — a **committee draft** — where lcms2 implements its own unattributed procedure. Registered in full in `NUMERIC_CLAIMS.md` §4; **this row exists because the cost stopped being unmeasurable on 2026-08-12**, exactly as NA-006 joined this table when Pass 4 measured it. | `crates/iccce-cmm/src/bpc.rs::estimate_lut_destination_black`, reached through `Chain::estimate_dst_black` and the shipped `iccce transform --bpc` | **`4,799 109 ΔE76` (100 % `L*`) on `USWebCoatedSWOP.icc`** and **`5,000 000 ΔE76` (100 % chroma) on `v4-rgb-mab-chromatic-black.icc`**, both at media-relative. At the input black these carry to **`9,921×10⁻³`** and **`5,725×10⁻²`** of device range — ~1 % of ink on the SWOP arm. **The divergence is DEFINITIONAL, not an error by either side**: both implementations return a quantity their own document calls `InitialLab`, and ISO 4.2.2.2 means the darkest device **vertex** neutralised while lcms2's `cmsDetectBlackPoint` means the **perceptual black round trip** with chroma zeroed. | **cross-check** (`tools/difftest` §3.5.8.6, `README.md` §19.10) | **YES — measured 2026-08-12**, and **four caveats travel with the number, none optional.** (1) It is a cost **at the black point only** — BPC's effect tapers away from the shadow end and **nothing here measures the taper**. (2) It is relative to **lcms2, not to truth**. (3) ★ **There is no ground truth in this comparison at all**: no published black point exists for `USWebCoatedSWOP.icc`, and 18619 is a committee draft in this project's corpus — so this reads as an implementation-cross-check throughout and **must never be promoted**, however stable it looks. (4) **Coverage: two profiles, one intent, one direction, one pin, one platform** — and the `swop` arm is the only one with any power on the clause that produced the figure (`ZERO-SEPARATION` on the other; §1.1, DL-036). The register entry's previous *"UNMEASURED"* was correct while it stood and is superseded, not deleted. |
+| **NA-010** | **★★ The Bradford VARIANT, and it is a second named approximation inside the built-in sRGB construction.** `iccce_color::BRADFORD` carries `M_A[0][0] = 0,8951` because **ICC.1:2022 Annex E.3 Eq. (E.1) prints it**. **ICC's own published D65→D50 `chad` was computed with `0,8950`** (recovered by eigendecomposition; exact reconstruction leaves `5,7×10⁻¹⁶` against `5,661×10⁻⁶` for E.1's variant). Two ICC publications, two Bradford matrices — **not an error by either side and not adjudicated here**; iccce follows the printed specification. Distinct from **NA-002**, which is *Bradford at all*; this is *which Bradford*. | `crates/iccce-color/src/adapt.rs::BRADFORD`, reached through `iccce_cmm::builtin::srgb()` | **`5,661 342×10⁻⁶` (`0,371` ULP of `s15Fixed16`) in the adaptation matrix, isolated.** In the shipped sRGB colorants the chad term reaches **`2,482` ULP** — the same size as the primaries term `builtin.rs` names, and on `bXYZ.Z` the two **cancel** to the `−0,897` ULP that doc comment presents as a small error (§3.9.4). Total shipped-colorant residual against ICC's published values: **`4,607 402×10⁻⁵` = `3,020` ULP**, graded by `passi/E`. | **measurement** in exact rational arithmetic over published constants (`tools/difftest/src/passi.rs`, §3.9), **no implementation's output in it** | **YES — measured 2026-08-17, on the day it was registered.** Four things travel with it. (1) It is an **XYZ-cell** difference; **no ΔE anywhere in Pass I**, and the perceptual cost is unmeasured. (2) **Adopting ICC's `0,8950` would make the colorant row WORSE, not better** — measured `4,686 594×10⁻⁵` against iccce's `4,607 402×10⁻⁵` — because the two error terms currently cancel; *this is not a defect with a known fix.* (3) The `chad` residual against ICC's recommendation is **dominated by the white point, not by this** (`4,453×10⁻⁵` vs `5,661×10⁻⁶`), so quoting NA-010 as the explanation of the `2,730` ULP `chad` difference is wrong by 7,9×. (4) **One illuminant pair, one direction, one machine.** |
 
 ### 5.1 Why NA-001's cost cannot be compared to §2's anchor, even though it is tempting
 
@@ -3158,6 +3398,52 @@ change what a future cross-check tolerance is measuring:
    that is not a difference of components in any space. **A count row's
    tolerance is essentially always zero**; a non-zero one deserves a very good
    `why`.
+
+### 6.8 ★★★ Five things Pass I found that are worth carrying forward
+
+1. **A bound derived from the component the row is ABOUT missed the term from
+   the component the row merely USES.** The cone-matrix difference
+   (`5,661×10⁻⁶`) was the subject; the white-point difference
+   (`4,453×10⁻⁵`, **7,9×** larger) was the dominant term and was not in the
+   brief. Fourth instance of this shape in this document. **The countermeasure
+   is not vigilance, it is arithmetic: write the complete derivation down and
+   run it before the pass exists.** Both terms here were computable in exact
+   rational arithmetic from published constants alone.
+
+2. **★★ Two ICC publications print different Bradford matrices.** ICC.1:2022
+   Annex E.3 Eq. (E.1) prints `M_A[0][0] = 0,8951`; ICC's own sRGB guidance
+   computed its recommended `chad` with `0,8950`. *"Recompute E.3's Bradford
+   and you get ICC's recommended `chad`"* is **false at full precision**. This
+   is **recorded, not adjudicated** — Annex E is informative, ICC.1 mandates no
+   CAT (A29), and deciding which ICC document is authoritative is not a
+   decision a conformance suite is entitled to make. Registered **NA-010**.
+
+3. **★ Sub-ULP does not mean identical bytes.** The corpus inferred from a
+   `0,371` ULP difference that *"the written tag bytes are identical"*. Measured:
+   **3 of 9** cells still encode to different `s15Fixed16` words in that very
+   case, and **6 of 9** for iccce as shipped. *Below one ULP* bounds an encoding
+   difference at **one LSB**; it does not zero it. Any future claim of the form
+   "the difference is sub-ULP so nothing is observable" must be **measured
+   through the encoder**, not inferred from the magnitude.
+
+4. **★★ A one-sided ground-truth row cannot be the regression gate.** §B grades
+   `|iccce − published| ≤ predicted`, which is the claim worth making and has
+   **no power against a change that moves iccce toward ICC**. The injection
+   proved it: substituting CIE's 5-figure D65 left three §B cells **passing**
+   because they got closer to ICC's numbers, while §C — the two-sided
+   `|iccce − independent prediction| ≤ round-off` row — failed by eight orders.
+   **Every published-ground-truth row in this project should be paired with a
+   two-sided derived-expectation row**, and the pairing stated, because the
+   ground-truth row is the one people quote and the derived one is the one that
+   holds.
+
+5. **★ A tolerance derived from a corpus SUMMARY rather than the corpus's
+   printed VALUES failed on its first run.** E3's `1×10⁻⁸` came from a corpus
+   sentence reading *"to `9,3×10⁻⁹`"*; the same corpus paragraph prints three
+   row sums whose worst is `7,946×10⁻⁸`. The summary quoted the first row as
+   though it were the maximum. **Derive from the printed numbers, then check
+   that the surrounding sentence agrees with them** — and when it does not, the
+   sentence is the thing to fix.
 
 ---
 

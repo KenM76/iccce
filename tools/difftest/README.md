@@ -4557,3 +4557,211 @@ denominator and points at the other one.
   v5.1 profile would be needed.
 - **Any perceptual claim.** Nothing here was measured against a press or an
   instrument.
+
+---
+
+## 24. ★★★ Pass I — ICC's **published** chromatic-adaptation matrix
+
+**Added 2026-08-17.** `src/passi.rs`, instrument `src/bin/passi_probe.rs`,
+bounds `docs/TOLERANCES.md` **§3.9**, named approximation **NA-010**.
+
+### 24.1 What it is, in one paragraph
+
+`iccce_color::adaptation_matrix(&BRADFORD, D65, D50)` — the matrix under every
+D65-referenced conversion this library performs — graded **cell by cell**
+against the nine values ICC prints at fifteen decimal places in *How to
+interpret the sRGB color space (specified in IEC 61966-2-1) for ICC profiles*
+(Jack Holm, ICC, 2015-04-27, §B.2). That is the document **ICC.1:2022 Annex
+E.4.2 points at** and which this project recorded as *not obtained* until the
+operator supplied it. It is the repository's **third `published-ground-truth`
+subject** and the **first for chromatic adaptation**.
+
+### 24.2 How to run it
+
+```bash
+cd tools/difftest
+cargo run --release --bin passi_probe     # Pass I alone, with the cell tables
+cargo run --release                       # the whole suite, Pass I included
+```
+
+**`passi_probe` needs nothing.** No `$ICCCE_TRANSICC`, no
+`$ICCCE_PRIVATE_FIXTURES`, no system profile, no network, no `vendor/` build.
+It is the only instrument in this directory that runs on a bare checkout, and
+it completes in milliseconds. Its exit code is **Pass I's alone** — a `0` from
+it says nothing about Passes 3–H.
+
+### 24.3 ★★ Three things about it that are unusual for this harness
+
+1. **`passi::run()` takes no `Oracle`.** Deliberate: *a ground-truth-shaped row
+   must not be hostage to an oracle* (§21). Nothing in Pass I can `SKIP`, so
+   unlike §22 and §23 a green CI line for these rows means they **ran**.
+2. **Its prediction side contains no iccce code.** `passi.rs` types its own
+   copies of the published constants and implements its own `inv3`/`mul3`/`cat`.
+   If it imported `iccce_color::BRADFORD` or `Mat3::inverse`, a corrupted
+   constant would move both sides together and every row would stay green while
+   the product went wrong. The cost of that independence is a **second
+   transcription that can itself be mistyped**, which is what §A exists for.
+3. **Its bounds are predictions, not observations.** Every tolerance is *an
+   exact-rational value computed before the pass was first run* plus one
+   `F64_NOISE = 1e-12` allowance. The allowance is derived in `TOLERANCES.md`
+   §3.9.2 and is `5,7×10⁶` times smaller than the smallest defect any row is
+   designed to see, so there is no setting of it between `1e-14` and `1e-8`
+   that changes a verdict.
+
+### 24.4 ★★★ The residual is NOT zero, and why — read this before quoting anything
+
+Two documented input differences, **both** of which are needed and one of which
+was missing from the brief that commissioned the pass:
+
+| term | size | what it is |
+|---|---|---|
+| **white point** | **`4,453 188×10⁻⁵`** | ICC's `chad` adapts the **rounded** white `0,9505/1/1,0890` (`chad⁻¹ · D50` returns it exactly; it is §A.4's `76,04/80`, `87,12/80`). iccce derives D65 from **BT.709-6 item 1.4's chromaticities**, `(0,950 455 927…, 1, 1,089 057 751…)`. |
+| **cone matrix** | `5,661 342×10⁻⁶` | **ICC.1:2022 E.3 prints `M_A[0][0] = 0,8951`** (which iccce uses, because it is what the specification prints); **ICC's own `chad` was built with `0,8950`**. |
+| **total, partially cancelling** | **`4,164 937×10⁻⁵` = `2,730` ULP** | the graded quantity |
+
+**A bound derived from the cone term alone would have failed the pass at 7,4×
+it.** The white term is **7,9×** larger, and it belongs to a component the row
+merely *uses* rather than the one it is *about* — the fourth instance of that
+failure shape in `TOLERANCES.md`.
+
+### 24.5 The sections
+
+| § | rows | what it does |
+|---|---|---|
+| **A** | 3 | **The instrument.** The harness's own CAT, given ICC's own inputs (`0,8950`, rounded white), must reproduce the published matrix — observed `4,44×10⁻¹⁶`, the fifteen-decimal print floor. **If §A is red, nothing else in Pass I means anything.** A2 shows the harness can tell the two Bradford variants apart; A3 guards the typed exact predictions against going stale. |
+| **B** | 10 | **The ground-truth claim.** Nine cells plus the max, each against its own exact prediction. **One-sided by construction** and every row says so. |
+| **C** | 1 | **The regression gate.** iccce against the harness's independent construction, two-sided, at `1e-12`. This is the row that holds. |
+| **D** | 2 | **REPORTED.** The divergence between two ICC publications (recorded, **not adjudicated**), and the `s15Fixed16` encoding census. |
+| **E** | 3 | **The shipped construction** — `iccce_cmm::builtin::srgb()` against ICC's published colorants (`3,020` ULP), the attribution of that residual, and a transcription guard on the reference data itself. |
+
+### 24.6 ★★ What Pass I is blind to, stated so nobody has to discover it
+
+- **No `chad` tag is parsed.** The subject is a *computed* matrix; a profile
+  carrying a `chad` takes a different code path entirely and Pass I has zero
+  power over it.
+- **In-process calls, not the shipped binary.** §A–§D call the library
+  directly, §E calls `builtin::srgb()`. **A wiring defect between the `iccce`
+  executable and either is invisible here.** Ask of every row *which layer is in
+  the loop* — the Pass H lesson, applied in advance.
+- **One illuminant pair, one direction, one cone-matrix family.** Nothing about
+  D50→D65 or any other pair.
+- **No ΔE anywhere.** Every figure is an XYZ matrix-cell difference. The
+  perceptual cost is **not measured** and must not be inferred.
+- **§B's `BLIND` flags are real and are not being tuned away.** The candidate
+  distance (`5,663×10⁻⁶`) is smaller than §B's bounds, so the mechanism's
+  distance test declines to claim power — conservative and correct. The rival
+  nevertheless breaches 6 of the 9 per-cell bounds, and **§C is where that power
+  lives unambiguously** (`DISCRIMINATING` by `5,66×10⁶`). `TOLERANCES.md`
+  §3.9.7.
+
+### 24.7 Proof of power — three injections
+
+Each defect injected into a detached worktree, the pass re-run, the worktree
+destroyed (§21's procedure).
+
+| injected | result |
+|---|---|
+| `BRADFORD[0][0]` → `0,8950` | **`pass=10 fail=9`**, every figure matching its pre-registered prediction to the digit |
+| operand order `M_A · D · M_A⁻¹` | **`pass=7 fail=12`**, worst cell `9,72×10⁻²` |
+| `D65_XY` → CIE's 5-figure `0,312 72/0,329 03` | **`pass=10 fail=9`** — and **three §B cells PASSED because the substitution moved them toward ICC**, while §C failed by eight orders. This is the injection that justifies §C existing. |
+
+### 24.8 ★★ Two corrections Pass I produced, both outside this crate
+
+1. **`crates/iccce-cmm/src/builtin.rs` names one approximation and there are
+   two.** Its doc comment attributes the `3,02` ULP colorant residual *"entirely
+   to which D65 matrix each side starts from"*. Exact decomposition: the **chad**
+   term reaches `2,482` ULP and the **primaries** term `2,480` ULP, and on
+   `bXYZ.Z` the celebrated `−0,897` ULP total is a **cancellation between
+   `−2,482` and `+1,586`**. Registered **NA-010**. The same doc comment says the
+   approximation is *"asserted in the tests"* — grepped 2026-08-17, the published
+   digits appear in **no** source file under `crates/`; `passi/E` is now the only
+   place they are checked.
+2. **`ICC_Spec/icc/icc__s__srgb_for_icc_profiles.md`, two summary lines.** *"the
+   written tag bytes are identical"* does not follow from a sub-ULP difference —
+   3 of 9 cells still change encoding in that very case. And the published
+   colorants' row sums reproduce D50 *"to `9,3×10⁻⁹`"* quotes the **X** row where
+   the **Z** row is `7,946×10⁻⁸`, `8,5×` larger; a bound derived from the summary
+   failed on its first run and was replaced by one derived from §A.7's
+   seven-decimal print.
+
+### 24.9 ★★★ Should CI lint `tools/`? — measured 2026-08-17, and the answer has an order
+
+`icc-engineer` asked, having found that CI builds and tests the tool
+workspaces but never lints them, so their findings are debt nothing looks at.
+The framing was right and the risk profile is not what the count suggests.
+
+**What is actually there** (measured with the command CI would run, in each of
+the two tool workspaces separately — `--workspace` from the repository root
+**cannot** reach them, because each declares its own `[workspace]`, which is
+exactly why nothing sees them):
+
+```bash
+cd tools/difftest    && cargo clippy --all-targets -- -D warnings
+cd tools/gen-profiles && cargo clippy --all-targets -- -D warnings
+```
+
+| workspace | findings | composition |
+|---|---|---|
+| `tools/difftest` | **37** (39 `error:` lines, two of which are the "could not compile" summaries — the likely source of the 39-vs-37 discrepancy with the engineer's count) | **34** are `usize as f64` / `f64 as usize` on **counts and grid indices**; **3** were semantic |
+| `tools/gen-profiles` | **12** | all `usize as u8` in **fixture byte emission** |
+
+**★★★ The finding that decides the order: on two of the three semantic
+findings, clippy's suggested fix is WRONG and applying it would inject a
+defect into the code that produces this project's evidence.**
+
+1. **`pass5c.rs:316`, `clippy::manual_clamp` — suggests `d.l.clamp(0.0, 50.0)`.**
+   That is not this function. The chain is a line-for-line transcription of
+   lcms2's `BlackPointAsDarkerColorant`, which sends **`L > 95` to `0`** (the
+   "synthetical negative profiles" branch), not to 50. The suggested rewrite
+   maps `L = 97` to **50** where lcms2 maps it to **0** — **a 50 `L*` error in
+   the one piece of code in this repository whose entire purpose is fidelity to
+   lcms2.**
+2. **`pass5c.rs:389`, `clippy::neg_cmp_op_on_partial_ord` — wants
+   `min_l >= max_l` in place of `!(min_l < max_l)`.** Different predicate:
+   `!(a < b)` is **true** on NaN, `a >= b` is **false**. The ramp is parsed
+   from an oracle **subprocess**, and `root_raw` is initialised to `f64::NAN`
+   twelve lines above, so NaN is reachable. The negated form **gives up** on
+   NaN; the tidier form would carry NaN into a black-point estimate and emit a
+   plausible-looking record.
+3. `pass5c.rs:314`, `clippy::if_same_then_else` — the `> 95` and `< 0` arms are
+   identical *and are two separate branches in the C*. Merging them deletes the
+   correspondence that makes the transcription checkable.
+
+All three are now `#[expect(…, reason = "…")]` with the reason naming the lcms2
+behaviour being preserved — **which is strictly better than the silence they had
+before**, and is the durable form of this finding. `passi.rs` was authored
+clippy-clean and carries one `#[expect]` of its own for a cast the lint cannot
+see is clamped.
+
+**Recommendation, in this order** (the workspaces are `icc-conformance`'s
+files; the CI job is `icc-engineer`'s):
+
+1. **Do not flip `-D warnings` on `tools/` before the remaining 46 findings are
+   triaged.** A red gate creates pressure to *apply the suggestion*, and this
+   measurement shows two suggestions that would silently change measured
+   numbers. **The gate would have been the mechanism that introduced the
+   defect** — the opposite of what it is for.
+2. **`tools/gen-profiles`' 12 deserve real fixes, not `expect`s**, and are the
+   higher priority of the two despite being a third as many: a silent
+   truncation in a *fixture generator* writes a wrong byte into a reference
+   file, and a fixture with a wrong byte is a test grading against the wrong
+   answer. `u8::try_from(N).expect("grid fits in a byte")` at each site.
+3. **`tools/difftest`'s 34 count casts** are noise at these magnitudes (every
+   one is a small count or a grid index) and should be closed with
+   `u32::try_from(n)` + `f64::from` where trivial and one shared `#[expect]`
+   otherwise.
+4. **★ `fmt` is a separate and larger question, and it is not a lint question.**
+   Measured at the same time: `cargo fmt --check` in `tools/difftest` reports
+   diffs in **19 of its 19 source files**, `src/lib.rs` and `src/main.rs`
+   included. This workspace has never been rustfmt-clean. That is not debt of
+   the same kind — no rustfmt diff has ever changed a number — but it means a
+   `fmt` gate for `tools/` arrives as a **large mechanical diff that must be its
+   own commit**, taken when nobody else has the tree open. Do not bundle it with
+   the clippy work; a formatting commit that also contains a semantic
+   `#[expect]` is a commit nobody can review.
+5. **Then** add the CI job, running the two commands above **verbatim** — the
+   engineer's own rule from the red-CI incident applies here and is the reason
+   the job must not be `cargo clippy --workspace --all-targets` from the root:
+   that command is *green today and reaches none of these files*, which is the
+   most dangerous kind of gate. Note the cost: `tools/difftest` compiles
+   `crates/` as path dependencies, so the job is not free.

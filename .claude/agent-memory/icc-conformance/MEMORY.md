@@ -1,5 +1,7 @@
 # icc-conformance — memory index
 
+- [Pass I — ICC's published chad](project_passi_published_chad_findings.md) — the commissioned bound would have failed at 7.4x; a one-sided ground-truth row is not a gate; clippy's fix can BE the defect.
+
 - [Conformance can WORSEN the cross-check](project_conformance_can_worsen_the_crosscheck.md) — fixing our 4.2.5.4 defect moved us 58.8x further from lcms2; the defect's own size was 57.8x the gap it was blamed for.
 - [Candidate separation is now an emitted field](project_candidate_separation.md) — how far the named rival answer sits, with auto BLIND/ZERO-SEPARATION; found a 4th stale literal on run one.
 - [Prove an arm by INJECTING the defect](project_prove_the_arm_by_injecting_the_defect.md) — no row caught a 4.2.5.4 reversion; "differential" ≠ "load-bearing"; Separation::against collapses to 0 exactly when the defect is live.

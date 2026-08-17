@@ -210,6 +210,24 @@ pub mod passg;
 // G; same `//`-not-`///` reason as the comment above.
 pub mod passh;
 
+// ★ Pass I — ICC's PUBLISHED chromatic-adaptation matrix, graded cell by cell
+// against `iccce_color::adaptation_matrix`. The project's third
+// `published-ground-truth` subject and the first for chromatic adaptation,
+// resting on the document ICC.1:2022 Annex E.4.2 points at and this project
+// recorded as not obtained until 2026-08-17.
+//
+// Two things about it are unusual enough to state at the declaration. First, it
+// takes **no `Oracle`**: no lcms2, no profile, no fixture, no environment
+// variable — it runs identically on a bare CI machine, because a
+// ground-truth-shaped row must not be hostage to an oracle. Second, its bounds
+// are **exact-arithmetic predictions made before the pass was first run**, not
+// observations rounded up; the residual against ICC's published matrix is
+// non-zero and is the sum of two documented input differences (see the module
+// header, which also records that a bound derived from the cone-matrix term
+// alone — the derivation this pass was commissioned with — would have failed by
+// 7.4x). Same `//`-not-`///` reason as the comments above.
+pub mod passi;
+
 // ===========================================================================
 // Locating the oracle
 // ===========================================================================

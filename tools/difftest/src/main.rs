@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh,
+    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -449,6 +449,34 @@ fn main() {
     let (ph, ph_records) = passh::run(&oracle);
     report.note(format!("passh: {}", passh::note(&ph)));
     for r in ph_records {
+        report.push_record(r);
+    }
+
+    // Pass I — ICC's **published** chromatic-adaptation matrix, graded cell by
+    // cell against `iccce_color::adaptation_matrix(&BRADFORD, D65, D50)`. The
+    // third `published-ground-truth` subject in the repository and the first
+    // for chromatic adaptation, which `RAG_PLAN.md` names as the canonical
+    // from-memory error class.
+    //
+    // ★ It takes no `Oracle` argument and that is not an oversight: it invokes
+    // no lcms2, reads no profile, resolves no fixture and consults no
+    // environment variable. Nothing in it can SKIP, so it is the only pass in
+    // this suite that grades the same rows on a bare CI machine as on the
+    // operator's. That is the deliberate posture for a ground-truth row —
+    // `README.md` §21 — and it is why this call sits after the two
+    // corpus-gated passes rather than beside them.
+    //
+    // ★★ Its bounds are exact-rational predictions written down BEFORE the
+    // pass was first run. The residual against ICC's published matrix is not
+    // zero, and the module header derives why from two documented input
+    // differences: ICC built its recommended matrix with a Bradford cone cell
+    // of 0.8950 while ICC.1:2022 Annex E.3 prints 0.8951 (which is what iccce
+    // uses, because it is what the specification prints), and ICC's matrix
+    // adapts a 4-dp-rounded white while iccce derives D65 from BT.709-6's
+    // chromaticities. The second term is 7.9x the first.
+    let (pi, pi_records) = passi::run();
+    report.note(format!("passi: {}", passi::note(&pi)));
+    for r in pi_records {
         report.push_record(r);
     }
 
