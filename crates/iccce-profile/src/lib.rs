@@ -39,6 +39,7 @@
 //! NOT SOURCED are held opaque (e.g. `Header::attributes`) rather than
 //! guessed.
 
+pub mod colour_space;
 pub mod diag;
 pub mod header;
 pub mod lut;
@@ -46,6 +47,9 @@ pub mod num;
 pub mod tag_table;
 pub mod tag_types;
 
+pub use colour_space::{
+    ChannelAgreement, ComponentCount, channel_agreement, components, is_valid_pcs,
+};
 pub use diag::{Malformation, ParseError};
 pub use header::{Header, ProfileVersion};
 pub use num::Signature;
