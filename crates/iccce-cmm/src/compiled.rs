@@ -82,9 +82,123 @@ pub const fn recommended_grid_points(input_channels: usize) -> usize {
         3 => 33,
         // 4-D at 33 is 1 185 921 nodes (~27 MB, ~14 s to build) and
         // is what the measurement above says is needed.
-        _ => 33,
+        4 => 33,
+        // ★★ FIVE CHANNELS AND UP — COMPUTED, not tabulated, and a
+        // MEMORY bound rather than an accuracy result. See the note on
+        // [`MAX_COMPILED_GRID_BYTES`] for why these are a different kind
+        // of number from the 33 above.
+        //
+        // Computed rather than hand-written because a table of fourteen
+        // hand-evaluated powers is fourteen chances to typo a number
+        // that no test could distinguish from a correct one — and the
+        // first version of this function shipped exactly that class of
+        // error as a `_ => 33` catch-all.
+        channels => {
+            let mut n = 33;
+            while n > 2 && !grid_fits_budget(n, channels) {
+                n -= 1;
+            }
+            n
+        }
     }
 }
+
+/// Would an `n`-per-axis grid over `channels` inputs fit the budget, at
+/// the worst output width ICC.1 permits?
+///
+/// ★ Uses **15 output channels** — `FCLR`, Table 19's ceiling — rather
+/// than the 3 of an RGB destination. The recommendation is consumed
+/// before the destination is known in some call paths, so sizing it for
+/// the actual output width would make the default's safety depend on
+/// something the caller has not told us yet. Sizing for the worst case
+/// costs a slightly smaller grid and removes the dependency.
+const fn grid_fits_budget(n: usize, channels: usize) -> bool {
+    // A channel count above u32::MAX is impossible (ICC.1 Table 19 tops
+    // out at 15), but this is a `const fn` with no place to assert, so
+    // the truncating case is handled as "does not fit" rather than
+    // silently wrapping to a small exponent and reporting a huge grid as
+    // affordable.
+    if channels > 64 {
+        return false;
+    }
+    #[allow(clippy::cast_possible_truncation)]
+    let dims = channels as u32;
+    let Some(nodes) = n.checked_pow(dims) else {
+        return false;
+    };
+    let Some(samples) = nodes.checked_mul(15) else {
+        return false;
+    };
+    let Some(bytes) = samples.checked_mul(8) else {
+        return false;
+    };
+    bytes <= MAX_COMPILED_GRID_BYTES
+}
+
+/// ★★ Why the ≥5-channel recommendations above are a different KIND of
+/// number from the ones below them, and must never be quoted as though
+/// they were the same.
+///
+/// **The 33 for 3-D and 4-D is a measured result.** It is gated on Pass
+/// 4's iccce-vs-lcms2 agreement on a real profile pair, and 17 was
+/// rejected because it failed that gate by 17 %. It carries a ΔE number.
+///
+/// **The values for 5 channels and up are not.** No measurement exists
+/// for them, because until 2026-08-17 this project had never seen a
+/// profile with more than four channels, and the one it now has — ICC's
+/// `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc`, `7CLR` — has no second
+/// implementation to be gated against on the compiled path. They are
+/// **computed** as the largest grid that fits this budget at the worst
+/// output width ICC.1 permits, and nothing more:
+///
+/// | channels | grid | nodes |
+/// |---|---|---|
+/// | 5 | 14 | 537 824 |
+/// | 6 | 9 | 531 441 |
+/// | 7 | 6 | 279 936 |
+/// | 8 | 5 | 390 625 |
+/// | 9 | 4 | 262 144 |
+/// | 10–12 | 3 | 59 049 … 531 441 |
+/// | 13–15 | 2 | 8 192 … 32 768 |
+///
+/// *(The table is illustrative; the function computes these — see its
+/// own note on why a hand-written table was the wrong shape here.)*
+///
+/// ## ★★ The one tension, stated rather than hidden
+///
+/// **The measured 33 for 4 channels does NOT fit this budget at 15
+/// output channels** — `33^4 × 15 × 8` is ~136 MiB. That is deliberate
+/// and is the right way round:
+///
+/// - **A measured value is not weakened to satisfy a memory bound.**
+///   The 33 is gated on a ΔE result; shrinking it to fit an arbitrary
+///   byte budget would discard evidence in favour of convenience.
+/// - **The budget still protects the process**, because the guard in
+///   [`CompiledTransform::new`] uses the *actual* output width, not the
+///   worst case. CMYK → RGB at grid 33 is ~27 MiB and builds fine. Only
+///   a CMYK → 15-channel destination would exceed, and that is then a
+///   **named refusal**, which is all this budget was ever for.
+///
+/// So the worst-case sizing applies where there is no measurement to
+/// protect, and the measurement wins where there is one.
+///
+/// ★ **This was a catch-all `_ => 33` until 2026-08-17, and the catch-all
+/// is the whole story.** Its doc comment reasoned carefully about 3-D and
+/// 4-D and then silently applied its conclusion to every higher
+/// dimension. At 7 channels that is `33^7` nodes ≈ **0.93 TiB**, and the
+/// observed result was not a slow build or a bad number — the process
+/// **aborted**. A constant justified for one regime, extended by a
+/// wildcard to regimes nobody measured, is the same defect class as an
+/// unstated approximation (rule 4): it looks like a decision and is
+/// actually an absence of one.
+///
+/// **What a caller who cares should do:** pass an explicit grid. These
+/// values will not produce a wrong answer — the compiled path's error
+/// against the reference path is measurable at any grid, and
+/// `iccce bench` prints it — but they carry **no ΔE claim**, and
+/// anything above four channels should be treated as unmeasured until
+/// someone measures it.
+pub const MAX_COMPILED_GRID_BYTES: usize = 64 * 1024 * 1024;
 
 /// A [`Chain`] folded into one interpolable grid.
 #[derive(Debug, Clone)]
@@ -128,7 +242,55 @@ impl CompiledTransform {
             });
         };
 
-        let mut samples = Vec::with_capacity(nodes * output_channels);
+        // ★★ The SIZE guard, distinct from the overflow guard above.
+        //
+        // `checked_pow` catches a node count that will not fit in a
+        // `usize`. It does NOT catch one that fits perfectly well as a
+        // number and is far too large to allocate — and on a 64-bit
+        // machine that is nearly every interesting case.
+        //
+        // Found 2026-08-17 by Pass H, on a real file: ICC's published
+        // `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc` is a SEVEN-channel
+        // (`7CLR`) press profile. At the recommended 33 points per axis
+        // that is 33^7 = 42_618_442_977 nodes, which is a perfectly
+        // ordinary `usize`, times 3 output channels times 8 bytes =
+        // **1_022_842_631_448 bytes, about 0.93 TiB**.
+        //
+        // ★ The observed behaviour was the worst possible one: `Vec`'s
+        // allocation failure **aborts the process** — bare exit
+        // `0xC0000409`, stderr "memory allocation of 1022842631448 bytes
+        // failed", stdout empty. Not an `Err`, not a panic a caller can
+        // catch: process death. For a *library* that is unacceptable
+        // regardless of the number involved, because it takes the
+        // consumer's process down with it and the consumer had no way to
+        // see it coming.
+        //
+        // So the budget below is not primarily about memory management;
+        // it is about **converting an abort into a named refusal**,
+        // which is rule 6 at the allocation layer. A caller who genuinely
+        // wants a bigger grid is not blocked by an accident of arithmetic
+        // — they are told the number and can decide.
+        let Some(sample_count) = nodes.checked_mul(output_channels) else {
+            return Err(ChainError::GridTooLarge {
+                grid_points,
+                dimensions: input_channels,
+            });
+        };
+        let Some(bytes) = sample_count.checked_mul(std::mem::size_of::<f64>()) else {
+            return Err(ChainError::GridTooLarge {
+                grid_points,
+                dimensions: input_channels,
+            });
+        };
+        if bytes > MAX_COMPILED_GRID_BYTES {
+            return Err(ChainError::GridExceedsBudget {
+                nodes,
+                bytes,
+                budget_bytes: MAX_COMPILED_GRID_BYTES,
+            });
+        }
+
+        let mut samples = Vec::with_capacity(sample_count);
         let mut device = vec![0.0f64; input_channels];
         for flat in 0..nodes {
             // First channel varies SLOWEST — the same convention the
@@ -393,5 +555,92 @@ mod tests {
         }
         assert!(!compiled.convert_buffer(&src_buf, &mut vec![0.0; 29]));
         assert!(!compiled.convert_buffer(&src_buf[..29], &mut dst_buf));
+    }
+
+    /// ★★ Regression: a grid that is arithmetically fine and far too
+    /// large to allocate must be a NAMED REFUSAL, never a process abort.
+    ///
+    /// ## The defect this pins
+    ///
+    /// Found by Pass H on 2026-08-17, on ICC's own published
+    /// seven-channel `APTEC_CMYKOGV_Coated_LinearCTV_2025.icc`. At the
+    /// then-recommended 33 points per axis, `33^7 = 42_618_442_977`
+    /// nodes — a perfectly ordinary `usize` — times 3 outputs times 8
+    /// bytes is **1_022_842_631_448 bytes ≈ 0.93 TiB**.
+    ///
+    /// `checked_pow` did not catch it, because nothing overflowed. `Vec`
+    /// then tried the allocation and **the process aborted**: bare exit
+    /// `0xC0000409`, stderr "memory allocation of 1022842631448 bytes
+    /// failed", stdout empty.
+    ///
+    /// ★ **An abort is the worst available failure for a library.** It
+    /// is not an `Err` and not a catchable panic — it takes the
+    /// consumer's process down, and the consumer had no way to see it
+    /// coming. There is no tolerance to tune here and no number that
+    /// could be moved: the graded property is that the failure is
+    /// *reportable*.
+    ///
+    /// ## Why the assertion is on arithmetic rather than on a real build
+    ///
+    /// This test must not itself attempt the allocation it is checking
+    /// against — a test that aborts the test process proves nothing and
+    /// takes its siblings with it. So it asserts the guard's own
+    /// arithmetic on the exact numbers from the real profile, plus the
+    /// two properties that make the guard meaningful.
+    #[test]
+    fn oversized_grid_arithmetic_is_refused_not_aborted() {
+        // The real case, from APTEC_CMYKOGV (7CLR) at grid 33.
+        let nodes = 33usize
+            .checked_pow(7)
+            .expect("33^7 fits a usize — that is the whole point");
+        assert_eq!(nodes, 42_618_442_977);
+        let bytes = nodes * 3 * std::mem::size_of::<f64>();
+        assert_eq!(bytes, 1_022_842_631_448);
+        assert!(
+            bytes > MAX_COMPILED_GRID_BYTES,
+            "the budget must reject the case that aborted the process"
+        );
+
+        // ★ Every UNMEASURED recommendation (>=5 channels) must fit the
+        // budget at the worst output width, so the default path can
+        // never be the thing that refuses — let alone aborts.
+        for channels in 5..=15usize {
+            let g = recommended_grid_points(channels);
+            let n = g
+                .checked_pow(u32::try_from(channels).unwrap())
+                .unwrap_or(usize::MAX);
+            // 15 = 'FCLR', Table 19's ceiling — the width the
+            // recommendation itself sizes for.
+            let b = n.saturating_mul(15 * std::mem::size_of::<f64>());
+            assert!(
+                b <= MAX_COMPILED_GRID_BYTES,
+                "recommended_grid_points({channels}) = {g} gives {n} nodes = {b} bytes, over                  the {MAX_COMPILED_GRID_BYTES}-byte budget — the DEFAULT path would refuse (or,                  before the budget existed, abort)"
+            );
+            assert!(g >= 2, "a grid needs at least two points per axis");
+        }
+
+        // ★★ And the deliberate exception, asserted so it stays
+        // deliberate: the MEASURED 4-channel 33 does NOT fit the
+        // worst-case budget, and must not be shrunk to make it. The
+        // real guard uses the ACTUAL output width, where CMYK -> RGB is
+        // ~27 MiB and builds fine. A measured value is not weakened to
+        // satisfy a memory bound; see the note on MAX_COMPILED_GRID_BYTES.
+        let four_d_worst = 33usize.pow(4) * 15 * std::mem::size_of::<f64>();
+        assert!(
+            four_d_worst > MAX_COMPILED_GRID_BYTES,
+            "if 4-D at 33 now fits the worst case, this exception is stale and the note on              MAX_COMPILED_GRID_BYTES should be simplified rather than left claiming a tension              that no longer exists"
+        );
+        let four_d_rgb = 33usize.pow(4) * 3 * std::mem::size_of::<f64>();
+        assert!(
+            four_d_rgb <= MAX_COMPILED_GRID_BYTES,
+            "CMYK -> RGB at the measured grid 33 must still build: {four_d_rgb} bytes"
+        );
+
+        // ★ The recommendation must still be the MEASURED 33 where a
+        // measurement exists. A fix that made everything small would
+        // have silently discarded Pass 4's result.
+        assert_eq!(recommended_grid_points(3), 33, "3-D is a measured value");
+        assert_eq!(recommended_grid_points(4), 33, "4-D is a measured value");
+        assert_eq!(recommended_grid_points(1), 129);
     }
 }
