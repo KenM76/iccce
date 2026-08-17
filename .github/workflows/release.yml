@@ -1,0 +1,149 @@
+# iccce release — build the CLI for each platform FROM THE TAGGED COMMIT.
+#
+# ★ WHY THIS EXISTS RATHER THAN UPLOADING A BINARY FROM A DEV MACHINE.
+#
+# The obvious alternative — build locally, attach the file — produces an
+# artifact whose provenance is "the maintainer says so". This one is
+# built in a clean environment, from the exact commit the tag names, with
+# the build log public. For a project whose entire discipline is *state
+# the evidence class*, "a binary someone had on their disk" is the wrong
+# evidence class for a downloadable executable.
+#
+# It also removes a real hazard: a dev machine can have uncommitted
+# changes. This cannot — it checks out the tag.
+#
+# ★ WHY THE SMOKE CHECK IS PART OF THE JOB.
+#
+# A release asset that builds and does not run is worse than no asset,
+# and `cargo build` succeeding says nothing about whether the binary
+# starts. The step below runs the shipped artifact and asserts its
+# documented exit-code contract:
+#
+#     no arguments      -> 2  (usage error; NEVER 0, because a script
+#                              piping stdout must not receive help text
+#                              where it expected data)
+#     inspect <garbage> -> 1  (a named refusal, not a crash)
+#
+# Both are contracts the CLI's own module doc states, so this checks the
+# artifact against its documentation rather than against itself.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # Manual dispatch builds the assets without publishing anything, so the
+  # workflow itself can be exercised before it is trusted with a tag.
+  # ★ The first run of a release workflow should never BE a release.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: iccce
+            asset: iccce-x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: iccce.exe
+            asset: iccce-x86_64-pc-windows-msvc.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build the CLI (release)
+        run: cargo build --release -p iccce-cli --target ${{ matrix.target }}
+
+      # ★ The artifact is run, not merely built. See the header.
+      - name: Smoke — the binary starts and honours its exit-code contract
+        shell: bash
+        run: |
+          set -u
+          BIN="target/${{ matrix.target }}/release/${{ matrix.bin }}"
+          test -x "$BIN" || { echo "::error::$BIN is not executable"; exit 1; }
+
+          # No arguments must be a USAGE error (2), never success.
+          "$BIN" > /dev/null 2>&1 && rc=0 || rc=$?
+          echo "no-args exit: $rc (contract: 2)"
+          [ "$rc" = "2" ] || { echo "::error::expected exit 2, got $rc"; exit 1; }
+
+          # A malformed profile must be a NAMED REFUSAL (1), never a
+          # crash and never a silent success. 200 zero bytes is not a
+          # profile.
+          head -c 200 /dev/zero > "$RUNNER_TEMP/garbage.icc"
+          "$BIN" inspect "$RUNNER_TEMP/garbage.icc" > /dev/null 2>&1 && rc=0 || rc=$?
+          echo "garbage-inspect exit: $rc (contract: 1)"
+          [ "$rc" = "1" ] || { echo "::error::expected exit 1, got $rc"; exit 1; }
+
+          # And it must actually parse a WELL-FORMED profile. The
+          # synthetic corpus is IN THIS REPOSITORY and byte-identical to
+          # its recipes (gated by the CI harness job), so it is a
+          # legitimate input here — unlike the private corpora, which no
+          # runner has.
+          #
+          # ★ THE FIXTURE IS PINNED BY NAME, NOT PICKED BY SORT ORDER,
+          # and rehearsing this check locally is what found out why. The
+          # first draft used `ls fixtures/synthetic/*.icc | head -1`,
+          # which selects `bad-magic.icc` — one of five fixtures in that
+          # directory that are DELIBERATELY MALFORMED. The corpus is a
+          # mix of valid and invalid by design (35 valid, 5 not), so
+          # "the first .icc file" is a coin flip on which contract you
+          # are testing, and it landed on the wrong one.
+          real=fixtures/synthetic/v2-rgb-matrix-trc-curv.icc
+          test -f "$real" || { echo "::error::pinned fixture $real is gone"; exit 1; }
+          "$BIN" inspect "$real" > /dev/null 2>&1 && rc=0 || rc=$?
+          echo "inspect $real exit: $rc (contract: 0)"
+          [ "$rc" = "0" ] || { echo "::error::expected exit 0, got $rc"; exit 1; }
+
+          echo "OK: the shipped artifact starts and honours its documented contract."
+
+      - name: Stage the asset
+        shell: bash
+        run: |
+          set -eu
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/${{ matrix.asset }}"
+          cd dist
+          # A checksum published beside the asset lets a downloader verify
+          # what they got against what the log says was built.
+          sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+          cat "${{ matrix.asset }}.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/*
+
+  publish:
+    name: attach assets to the release
+    # Only on a real tag. A manual dispatch builds and verifies and
+    # publishes NOTHING, which is what makes it safe to rehearse.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List what will be attached
+        run: ls -la dist && cat dist/*.sha256
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
