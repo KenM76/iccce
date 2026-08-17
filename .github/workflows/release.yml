@@ -143,7 +143,28 @@ jobs:
           merge-multiple: true
       - name: List what will be attached
         run: ls -la dist && cat dist/*.sha256
-      - name: Attach to the release
+      # ★ CREATE-IF-MISSING, deliberately, because `gh release upload`
+      # requires the release to already exist and this job races the
+      # human creating it. Pushing a tag starts this workflow
+      # immediately; whether a release object exists by the time the
+      # build finishes depends on how fast someone typed. A race whose
+      # outcome is "the assets silently did not attach" is exactly the
+      # kind of quiet failure this project does not ship.
+      #
+      # Ordering is therefore irrelevant: create the release if it is
+      # absent, then upload with --clobber so a re-run replaces assets
+      # rather than erroring on duplicates.
+      - name: Attach to the release (creating it if it does not exist)
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+        run: |
+          set -eu
+          if ! gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "No release object for ${GITHUB_REF_NAME}; creating one from the tag."
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" \
+              --notes "Assets built from ${GITHUB_SHA} by the Release workflow. See CHANGELOG.md."
+          fi
+          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+          echo "Attached:"
+          gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name'
