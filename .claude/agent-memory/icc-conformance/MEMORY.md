@@ -5,6 +5,10 @@
 - [Prove an arm by INJECTING the defect](project_prove_the_arm_by_injecting_the_defect.md) — no row caught a 4.2.5.4 reversion; "differential" ≠ "load-bearing"; Separation::against collapses to 0 exactly when the defect is live.
 - [Stale claim strings in emitted records](project_stale_claim_strings_in_emitted_records.md) — three typed numerals went false within a day; interpolate, never type. "Derived for" vs "graded at" hid a second error.
 - [Throughput is not a claim; break-even is](project_throughput_is_not_a_claim_breakeven_is.md) — speedup withdrawn (12.4–32x on one box); break-even ≈1.3e6 px AT GRID 33, and it must always carry the grid.
+- [Pass G tolerance lessons](project_passg_tolerance_lessons.md) — a tolerance may need to be a FUNCTION of the fixture; a gate for one direction is not a gate in the other; BLIND exposed a bound its own `why` could not support.
+- [Pass G — the Ghent population sample](project_passg_ghent_population_findings.md) — the first REAL vendor v4 mAB (179x/243x collapse); vendor-specific intent aliasing; Adobe ships wtpt=D65 with D50 colorants; the v2/v4 pair isolates nothing.
+- [Pass H — acceptance and refusal](project_passh_acceptance_and_refusal.md) — the first ground-truth rows, and the published claim is FALSE of the file it names; the 7-channel abort (now fixed); a conformant 33 L* split under 8.10.2.
+- [A fixed defect can BLIND its own row](project_a_fixed_defect_can_blind_its_own_row.md) — the fix made the red row unable to see the defect return; no number moved, nobody edited it; ask "which layer is in the loop" of the FIX.
 
 - [Pass 4c absolute-intent findings](project_pass4c_absolute_intent_findings.md) — lcms2's wtpt gate is a CONJUNCTION, so a fixture can defeat it instead of a model subtracting it; 8.90e-5 over 729 pts, sensitivity 2310x; the policy is direction-symmetric; NA-008's second arm has no fixture.
 - [Pass 5c estimator-BRANCH finding](project_pass5c_estimator_branch_finding.md) — lcms2 has TWO estimators and the destination's HEADER picks; this overturned Pass 5b's claim 1; transicc prints RGB 0..255.

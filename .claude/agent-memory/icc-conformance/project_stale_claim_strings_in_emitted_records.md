@@ -35,10 +35,38 @@ number, check whether the sentence around it was also confused; *"derived for"*
 vs *"graded at"* is the difference between "our tolerance's population is out
 of step with the product" (a serious finding) and "a word was loose".
 
+★★ **Two more on 2026-08-17, and they sharpen the rule in a way the first three
+did not — because the row was AUTHORED CORRECTLY.**
+`passh/C/7clr/compiled-path-does-not-ABORT-the-process` built its `detail` from
+**interpolated** values (`{grid}`, `{nodes}`, `{bytes}`) *and* **typed**
+narrative. When the engineer fixed the defect, the computed half updated itself
+— exactly as this memory's rule intends — and the typed half went on asserting
+*"checked_pow guards against WRAP, not against SIZE, so the allocation is
+attempted and the allocator aborts"* **on a row now reporting PASS**. A reader
+trusting the detail over the verdict concludes the product still aborts.
+
+> **A `detail` string that mixes computed and typed content inherits the
+> weaknesses of the typed part.** Interpolating the numbers is necessary and not
+> sufficient; the *sentence around them* is claim-bearing too, and it is written
+> for the state the row was in on the day it was written.
+
+★ **And a UNIT is a typed claim about magnitude.** The same string printed
+`(~0.00 TiB)` from a `{:.2} TiB` format chosen when the value was `0.93 TiB`.
+The number was interpolated and moved five orders; the unit was prose and did
+not. Fixed with `human_bytes()`, which picks the unit **from the value** and
+always prints the exact byte count beside it. Same class: a trailing `stderr: `
+with nothing after it is indistinguishable from a truncated field — now
+`(empty)`.
+
 **How to apply.** Before filing any Pass, grep your own apparatus for typed
 numerals in `source`/`why`/context strings and ask of each one: *is this a
 value the code already holds?* If yes, interpolate it. If it is a historical
 value being deliberately preserved, date it and name the commit that moved it.
+**Then re-read the prose between the interpolations and ask whether it is still
+true of the state the row is now in** — and check the *units* and the *empty
+cases*, not only the digits. ★ **Re-run this sweep on every row whose verdict
+FLIPS**, not only when you edit it: the row that went stale here was one nobody
+touched.
 
 Related: [[project-doc-editing-conventions]],
 [[project-conformance-can-worsen-the-crosscheck]],
