@@ -151,6 +151,44 @@ fn cmd_inspect(path: &str) -> ExitCode {
         println!("header.id: {id_hex}");
     }
 
+    // The declared component count of the data colour space, and the
+    // PCS-field validity check.
+    //
+    // WHY these are printed for every profile: a consumer that has to
+    // validate a container's own declaration (a PDF `/ICCBased`
+    // stream's `/N`, say) needs the profile's component count BEFORE
+    // building any transform, and needs it from a tool it can script.
+    // This is that surface. See `iccce_profile::colour_space` for the
+    // sourcing and for why an unknown signature yields no number rather
+    // than lcms2's default of 3.
+    match iccce_profile::components(profile.header.color_space) {
+        iccce_profile::ComponentCount::Known(n) => {
+            println!("colorspace.components: {n}");
+        }
+        iccce_profile::ComponentCount::NotInIccOneTable19(n) => {
+            println!("colorspace.components: {n}");
+            println!(
+                "note: data colour space {} is not in ICC.1:2022 Table 19 (it appears in ICC's \
+                 own icProfileHeader.h and in lcms2); component count taken as {n} (A49)",
+                profile.header.color_space
+            );
+        }
+        iccce_profile::ComponentCount::Unknown(sig) => {
+            println!("colorspace.components: unknown");
+            println!(
+                "note: data colour space {sig} is not a recognised ICC.1 colour space signature; \
+                 iccce reports no component count rather than assuming one (lcms2 would answer 3)"
+            );
+        }
+    }
+    if !iccce_profile::is_valid_pcs(profile.header.pcs, profile.header.device_class) {
+        println!(
+            "note: PCS field {} is not permitted for device class {} (ICC.1:2022 clause 7.2.7: \
+             PCSXYZ or PCSLAB for every class except DeviceLink, which takes a data colour space)",
+            profile.header.pcs, profile.header.device_class
+        );
+    }
+
     println!("tags: {}", profile.tags.len());
     for (i, t) in profile.tags.iter().enumerate() {
         let type_sig = t
