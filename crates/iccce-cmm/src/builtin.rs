@@ -461,14 +461,12 @@ mod tests {
             [0.2126, 0.7152, 0.0722],
             [0.0193, 0.1192, 0.9505],
         ];
-        for i in 0..3 {
-            for j in 0..3 {
-                let d = (m.rows[i][j] - published[i][j]).abs();
+        for (i, (got_row, want_row)) in m.rows.iter().zip(published.iter()).enumerate() {
+            for (j, (got, want)) in got_row.iter().zip(want_row.iter()).enumerate() {
+                let d = (got - want).abs();
                 assert!(
                     d < 5e-5,
-                    "cell [{i}][{j}]: computed {} vs W3C 1996 eq.(1.8) {} (Δ {d:.3e})",
-                    m.rows[i][j],
-                    published[i][j]
+                    "cell [{i}][{j}]: computed {got} vs W3C 1996 eq.(1.8) {want} (Δ {d:.3e})"
                 );
             }
         }
@@ -853,9 +851,9 @@ mod tests {
         let ours = srgb().matrix();
         let mut worst = 0.0_f64;
         let mut worst_cell = (0, 0);
-        for i in 0..3 {
-            for j in 0..3 {
-                let d = (ours.rows[i][j] - PUBLISHED[i][j]).abs() / ULP;
+        for (i, (ours_row, pub_row)) in ours.rows.iter().zip(PUBLISHED.iter()).enumerate() {
+            for (j, (o, p)) in ours_row.iter().zip(pub_row.iter()).enumerate() {
+                let d = (o - p).abs() / ULP;
                 if d > worst {
                     worst = d;
                     worst_cell = (i, j);

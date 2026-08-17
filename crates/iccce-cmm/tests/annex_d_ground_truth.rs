@@ -114,7 +114,7 @@ fn get(m: &BTreeMap<String, f64>, k: &str) -> f64 {
 fn get_u16(m: &BTreeMap<String, f64>, k: &str) -> u16 {
     let v = get(m, k);
     assert!(
-        v >= 0.0 && v <= 65535.0 && v.fract() == 0.0,
+        (0.0..=65535.0).contains(&v) && v.fract() == 0.0,
         "fixture key {k:?} should be an integer code, got {v}"
     );
     v as u16

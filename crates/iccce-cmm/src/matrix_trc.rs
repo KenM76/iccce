@@ -484,6 +484,24 @@ fn decoded(profile: &Profile, sig: Signature, entry: &TagEntry) -> Result<TagDat
     }
 }
 
+/// See [`ChainError`](crate::transform::ChainError)'s impl for why this
+/// matters: without it, `ChainError::source()` cannot expose the
+/// clause-level refusal underneath, and a consumer using
+/// `Box<dyn Error>` loses the reason a conversion was declined.
+impl std::error::Error for ModelError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Curve(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+/// The leaf of the refusal chain: a tone curve that could not be
+/// converted, evaluated or inverted. Every variant names a specific
+/// Annex F condition rather than a generic failure.
+impl std::error::Error for CurveError {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -760,21 +778,3 @@ mod tests {
         assert!(err.to_string().contains("Annex F.3"));
     }
 }
-
-/// See [`ChainError`](crate::transform::ChainError)'s impl for why this
-/// matters: without it, `ChainError::source()` cannot expose the
-/// clause-level refusal underneath, and a consumer using
-/// `Box<dyn Error>` loses the reason a conversion was declined.
-impl std::error::Error for ModelError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Curve(e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
-/// The leaf of the refusal chain: a tone curve that could not be
-/// converted, evaluated or inverted. Every variant names a specific
-/// Annex F condition rather than a generic failure.
-impl std::error::Error for CurveError {}
