@@ -9,11 +9,21 @@
 //! ICC.1:2022 clause 8.10.2 a)–d), `shall`-level, via
 //! `ICC_Spec/icc/icc__s__rendering_intents.md` §4:
 //!
-//! 1. `D2Bx`/`B2Dx` — multiProcessingElements (NOT implemented; when a
-//!    profile carries one, this stage proceeds to step 2 — which is a
-//!    DEVIATION from the shall-order, recorded here and in the model's
-//!    `notes`, until `mpet` support exists. Skipping silently would be
-//!    the sin; skipping loudly is the recorded state.)
+//! 1. `D2Bx`/`B2Dx` — multiProcessingElements. **NOT implemented**;
+//!    when a profile carries one this stage proceeds to step 2, which
+//!    the clause's own exception permits (*"except where this tag is
+//!    not needed or supported by the CMM"*). **Disclosed via
+//!    [`Chain::spec_deviations`]** — see [`SpecDeviation`] for why a
+//!    conformant decline still has to be reported.
+//!
+//!    ★★ **This bullet said "recorded here and in the model's `notes`"
+//!    until 2026-08-17, and there was no `notes` field and no
+//!    disclosure of any kind.** The tags appeared in `inspect`'s tag
+//!    dump like any other tag, with nothing to say they had been
+//!    declined. The doc asserted the safeguard, the safeguard did not
+//!    exist, and *the assertion is why nobody looked* — the third
+//!    instance this session of a documented behaviour that was never
+//!    implemented. It closes with the accessor above.
 //! 2. `A2Bx`/`B2Ax` for the requested intent (x = 0 perceptual,
 //!    1 colorimetric, 2 saturation).
 //! 3. `A2B0`/`B2A0`.
@@ -178,6 +188,142 @@ impl DestinationProvenance {
             ),
         }
     }
+}
+
+/// Which side of a conversion a disclosure is about.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Side {
+    Source,
+    Destination,
+}
+
+impl std::fmt::Display for Side {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Source => "source",
+            Self::Destination => "destination",
+        })
+    }
+}
+
+/// ★★ A place where iccce departs from the specification's **preferred**
+/// order, disclosed rather than left silent.
+///
+/// # Why this type exists
+///
+/// ICC.1:2022 clause **8.10.2** is a `shall`-level ordered fallback for
+/// choosing a profile's transform. Step **a)** prefers the
+/// `D2Bx`/`B2Dx` multiProcessingElements tags — *"except where this tag
+/// is not needed or supported by the CMM"* — and step **b)** falls back
+/// to `A2Bx`/`B2Ax`.
+///
+/// **iccce does not implement `mpet`, so it takes step b). That is
+/// conformant** — the clause's own exception covers it, and the corpus
+/// records this as ambiguity A33. lcms2 *does* implement `mpet` and
+/// takes step a). **Both engines are conformant and they disagree.**
+///
+/// ## ★ Why conformant-but-divergent is exactly what must be disclosed
+///
+/// Measured on ICC's own `Probev2_ICCv4.icc` — a profile built to make a
+/// CMM's behaviour visible — the two paths differ by **33.13 L\***.
+/// That is not a rounding difference; it is a different rendering, and
+/// the profile's `B2D0/1/2` return red / green / blue precisely so the
+/// difference is unmistakable.
+///
+/// **The clause permits declining. It does not require silence.** A
+/// caller that cannot tell an author-preferred transform was present and
+/// declined has no way to explain a 33 `L*` difference against another
+/// engine, and no way to decide whether to route that document
+/// elsewhere. This is rule 6 — *report, do not repair* — one layer above
+/// the parser, and the same shape as [`DestinationProvenance`].
+///
+/// ## What this is NOT
+///
+/// - **Not an error.** Nothing here is a refusal and nothing fails.
+/// - **Not a claim that iccce should take step a).** It should not,
+///   until `mpet` is implemented; guessing at a pipeline it cannot
+///   evaluate would be far worse than declining it.
+/// - **Not a defect report about the profile.** The profile is correct;
+///   iccce is the side with the gap.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpecDeviation {
+    /// The clause whose preferred order was not followed.
+    pub clause: &'static str,
+    /// Which profile carried the declined tags.
+    pub side: Side,
+    /// The tags that were present and not used, **by signature** — so a
+    /// caller can name the exact tag rather than the family.
+    pub declined: Vec<Signature>,
+    /// What iccce did instead.
+    pub taken: &'static str,
+    /// Why declining is permitted.
+    pub permitted_because: &'static str,
+}
+
+impl std::fmt::Display for SpecDeviation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} carries ", self.side)?;
+        for (i, sig) in self.declined.iter().enumerate() {
+            if i > 0 {
+                f.write_str(", ")?;
+            }
+            write!(f, "{sig}")?;
+        }
+        write!(
+            f,
+            " ({} tag{}), which {} prefers; iccce {}. Permitted: {}. \
+             ★ A CMM that DOES evaluate these tags may return a materially \
+             different colour — measured at 33.13 L* against lcms2 on ICC's own \
+             Probev2_ICCv4.icc — so this is disclosed rather than left silent",
+            self.declined.len(),
+            if self.declined.len() == 1 { "" } else { "s" },
+            self.clause,
+            self.taken,
+            self.permitted_because
+        )
+    }
+}
+
+/// The `mpet` tag signatures of 8.10.2 step a), in the order the clause
+/// lists them.
+const MPET_TAGS: [Signature; 6] = [
+    Signature(0x4432_4230), // 'D2B0'
+    Signature(0x4432_4231), // 'D2B1'
+    Signature(0x4432_4232), // 'D2B2'
+    Signature(0x4232_4430), // 'B2D0'
+    Signature(0x4232_4431), // 'B2D1'
+    Signature(0x4232_4432), // 'B2D2'
+];
+
+/// Detect 8.10.2 step-a) tags that iccce will decline on `side`.
+///
+/// Returns `None` when the profile carries none — which is the common
+/// case and the reason this is an `Option`: **a disclosure that fires
+/// unconditionally discloses nothing.**
+///
+/// ★ Public because the fact is a property of the **profile**, not of a
+/// built chain: a caller deciding whether to route a document through
+/// iccce at all needs it before it has chosen a destination or an
+/// intent. `iccce inspect` uses exactly this.
+#[must_use]
+pub fn mpet_deviation_for(profile: &Profile, side: Side) -> Option<SpecDeviation> {
+    let declined: Vec<Signature> = MPET_TAGS
+        .iter()
+        .copied()
+        .filter(|sig| profile.tags.iter().any(|t| t.sig == *sig))
+        .collect();
+    if declined.is_empty() {
+        return None;
+    }
+    Some(SpecDeviation {
+        clause: "ICC.1:2022 clause 8.10.2 a)",
+        side,
+        declined,
+        taken: "proceeded to step b) and used the A2Bx/B2Ax path instead, because it does not \
+                implement multiProcessingElements",
+        permitted_because: "8.10.2 a) applies \"except where this tag is not needed or supported \
+                            by the CMM\"",
+    })
 }
 
 /// Chain build/run errors.
@@ -377,6 +523,10 @@ pub struct Chain {
     /// [`DestinationProvenance`] for why disclosing this is mandatory
     /// rather than a nicety.
     dst_provenance: DestinationProvenance,
+    /// Places where this chain departed from a specification's preferred
+    /// order. Empty for almost every profile. Read via
+    /// [`Chain::spec_deviations`].
+    deviations: Vec<SpecDeviation>,
 }
 
 /// Device channel count of a captured A2B model.
@@ -636,6 +786,10 @@ impl Chain {
             dst_major: 4,
             dst_a2b,
             dst_provenance: DestinationProvenance::BuiltInSrgb,
+            // Source side only: the destination is constructed, has no
+            // tags, and therefore cannot carry an mpet pipeline to
+            // decline.
+            deviations: mpet_deviation_for(src, Side::Source).into_iter().collect(),
         })
     }
 
@@ -648,6 +802,28 @@ impl Chain {
     #[must_use]
     pub fn destination_provenance(&self) -> DestinationProvenance {
         self.dst_provenance
+    }
+
+    /// ★★ Specification-preferred behaviour this chain **declined**, and
+    /// why — empty for almost every profile.
+    ///
+    /// See [`SpecDeviation`]. In short: ICC.1:2022 8.10.2 a) prefers the
+    /// `D2Bx`/`B2Dx` multiProcessingElements tags, iccce does not
+    /// implement them and takes step b), and **that is conformant** —
+    /// but a CMM that does evaluate them can return a materially
+    /// different colour (33.13 L* measured against lcms2 on ICC's own
+    /// `Probev2_ICCv4.icc`).
+    ///
+    /// **The clause permits declining; it does not require silence.**
+    /// Consult this whenever you would otherwise be unable to explain a
+    /// difference against another engine.
+    ///
+    /// ★ Deliberately a query rather than forced output, and
+    /// deliberately empty when there is nothing to say: a disclosure
+    /// that fires unconditionally discloses nothing.
+    #[must_use]
+    pub fn spec_deviations(&self) -> &[SpecDeviation] {
+        &self.deviations
     }
 
     /// `capture_dst_a2b` is false only for the internal build of the
@@ -753,6 +929,13 @@ impl Chain {
             dst_major: dst.header.version.major(),
             dst_a2b,
             dst_provenance: DestinationProvenance::CallerSupplied,
+            deviations: [
+                mpet_deviation_for(src, Side::Source),
+                mpet_deviation_for(dst, Side::Destination),
+            ]
+            .into_iter()
+            .flatten()
+            .collect(),
         })
     }
 

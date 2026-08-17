@@ -230,6 +230,21 @@ fn cmd_inspect(path: &str) -> ExitCode {
             println!("note: {note}");
         }
     }
+
+    // 8.10.2 a): tags this engine will decline. Silent for every profile
+    // that carries none — which is nearly all of them — because a
+    // disclosure that fires unconditionally discloses nothing.
+    //
+    // WHY it is reported by `inspect` rather than only by `transform`:
+    // the fact is a property of the FILE, and a caller deciding whether
+    // to route a document through iccce at all needs it before it has
+    // chosen a destination or an intent.
+    if let Some(dev) =
+        iccce_cmm::transform::mpet_deviation_for(&profile, iccce_cmm::transform::Side::Source)
+    {
+        println!("note: {dev}");
+    }
+
     ExitCode::SUCCESS
 }
 
