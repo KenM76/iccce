@@ -323,13 +323,100 @@ jobs:
       # exist and must be the release build the records will name.
       - name: Build the iccce CLI (release)
         run: cargo build --release -p iccce-cli
+      # ★ ONE run, captured, with the BARE EXIT CODE still the gate.
+      #
+      # `cargo run | tee` would mask the status behind tee's, and three
+      # separate `cargo run`s (which this job had) can in principle
+      # disagree with each other — so the summary being gated would not
+      # be the summary that was printed. Redirect, show, re-raise.
       - name: Run the conformance suite
         working-directory: tools/difftest
-        run: cargo run --release
-      # Emitted for the record so a run's numbers are readable in the
-      # log. Deliberately AFTER the gate above, and deliberately not
-      # part of it.
+        run: |
+          set -u
+          cargo run --release > "$RUNNER_TEMP/conf.txt" 2> "$RUNNER_TEMP/conf.err"
+          rc=$?
+          cat "$RUNNER_TEMP/conf.txt"
+          echo "--- stderr ---"
+          cat "$RUNNER_TEMP/conf.err"
+          echo "--- runner exit code: $rc ---"
+          exit $rc
+      # =================================================================
+      # ★★★ THE COVERAGE FLOOR — added 2026-08-17, after the FIRST EVER
+      # run of this job returned SUCCESS having skipped 93% of the suite
+      # =================================================================
+      #
+      # The comment above says the bare exit code is sufficient because
+      # "a suite that skipped everything must not be able to report
+      # success", and that exit `3` covers it.
+      #
+      # ★ THAT PREMISE IS FALSE, and this job's own first run proved it:
+      #
+      #     summary  pass=15  fail=0  skip=186  error=0     exit 0
+      #
+      # Exit `3` means NOTHING ran. It cannot distinguish "everything
+      # ran" from "**7.5% ran**". The guard was designed against total
+      # absence and the real failure mode is near-total absence — which
+      # is strictly harder to notice, because a green tick on a job named
+      # "conformance suite vs pinned lcms2" reads as "the conformance
+      # suite passed against lcms2".
+      #
+      # Some skipping here is correct and was anticipated: category (c)
+      # rows need a Windows system profile, and every private-fixture row
+      # (Pass G, Pass H, Annex D) needs a corpus no runner holds. What
+      # was NOT anticipated is that this leaves 15 rows, and that nothing
+      # would say so.
+      #
+      # ★ WHY THIS IS PARSING, WHEN THE COMMENT ABOVE ARGUES AGAINST IT.
+      # It argues against parsing *because the exit code already carried
+      # the distinction*. It does not, so the reason lapses. The failure
+      # mode that argument protects against — `grep` exiting 0 on a
+      # FAILED match — is avoided by the shape below: this extracts a
+      # NUMBER and compares it, and **treats an unparseable summary as a
+      # failure**. It never greps for a success word.
+      #
+      # ★ WHY A DECLARED FLOOR AND NOT A RATIO. A ratio moves whenever
+      # rows are added, so it silently re-bases. A declared floor is the
+      # project's own idiom (DL-043: declare the exemption and grade the
+      # declaration) — it can only be lowered by someone editing this
+      # file and saying why, which is the whole point.
+      #
+      # ★ THE FLOOR MUST ONLY EVER RISE. 15 is what a corpus-free Linux
+      # runner executed at tip 68d4601 on 2026-08-17. If a change makes
+      # fewer rows runnable here, that is a REGRESSION IN CI'S REACH and
+      # this job should go red and say so.
+      #
+      # The durable fix is larger and is not mine: the runner's own
+      # exit-code contract should distinguish "ran what it could" from
+      # "ran almost nothing". Raised with icc-conformance, who owns
+      # Report::exit_code. This floor is the safety net, not the cure.
+      - name: Coverage floor — a suite that mostly skipped is not a pass
+        run: |
+          set -eu
+          line=$(grep -E '^summary' "$RUNNER_TEMP/conf.txt" || true)
+          if [ -z "$line" ]; then
+            echo "::error::No summary line in the runner's output. Unparseable is a FAILURE here,"
+            echo "not a pass — this step exists because a green tick was reported for a run that"
+            echo "executed 7.5% of the suite."
+            exit 1
+          fi
+          echo "$line"
+          ran=$(echo "$line" | grep -oE 'pass=[0-9]+' | cut -d= -f2)
+          fail=$(echo "$line" | grep -oE 'fail=[0-9]+' | cut -d= -f2)
+          skip=$(echo "$line" | grep -oE 'skip=[0-9]+' | cut -d= -f2)
+          executed=$((ran + fail))
+          FLOOR=15
+          echo "executed=$executed (pass=$ran fail=$fail) skipped=$skip floor=$FLOOR"
+          if [ "$executed" -lt "$FLOOR" ]; then
+            echo "::error::Only $executed rows executed; the declared floor for a corpus-free"
+            echo "Linux runner is $FLOOR (measured at tip 68d4601, 2026-08-17). Fewer rows"
+            echo "runnable here is a regression in CI's reach, not a pass. Raise the floor"
+            echo "deliberately if coverage genuinely improved; never lower it silently."
+            exit 1
+          fi
+          echo "OK: $executed rows executed, at or above the declared floor of $FLOOR."
+      # Re-emitted for the record, from the SAME captured run that was
+      # gated — not from a fresh invocation, which could in principle
+      # print different numbers from the ones the gates saw.
       - name: Re-emit the summary and separation lines
         if: always()
-        working-directory: tools/difftest
-        run: cargo run --release 2>/dev/null | grep -E '^(summary|separation)' || true
+        run: grep -E '^(summary|separation)' "$RUNNER_TEMP/conf.txt" || true
