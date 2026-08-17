@@ -51,14 +51,19 @@ keywords = ["icc", "cmm", "color-management", "color", "colour"]
 # MAINTENANCE HAZARD, stated because Cargo cannot enforce it: Cargo has
 # no way to inherit `workspace.package.version` into a *dependency*
 # requirement, so these literals are a second copy of the version number.
-# When `workspace.package.version` moves off 0.0.1, these must move with
+# When `workspace.package.version` moves, these must move with
 # it in the same commit, here and in crates/iccce-cli/Cargo.toml.
+#
+# ★ That last clause was ASPIRATIONAL until 2026-08-17: iccce-cli's
+# dependencies carried no `version` at all, so there was nothing there to
+# move — and the crate was silently unpublishable as a result. Verified
+# by running `cargo package` on all five crates. Now true.
 #
 # PUBLISH ORDER follows from this: iccce-color and iccce-profile must be
 # on crates.io before iccce-cmm can be published, and iccce-cmm before
 # iccce-cli.
-iccce-color = { path = "../iccce-color", version = "0.0.1" }
-iccce-profile = { path = "../iccce-profile", version = "0.0.1" }
+iccce-color = { path = "../iccce-color", version = "0.1.0" }
+iccce-profile = { path = "../iccce-profile", version = "0.1.0" }
 
 [lints]
 workspace = true

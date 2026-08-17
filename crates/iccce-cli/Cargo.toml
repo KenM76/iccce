@@ -44,9 +44,29 @@ name = "iccce"
 path = "src/main.rs"
 
 [dependencies]
-iccce-color = { path = "../iccce-color" }
-iccce-profile = { path = "../iccce-profile" }
-iccce-cmm = { path = "../iccce-cmm" }
+# ★ THE `version` FIELDS ARE NOT OPTIONAL, and their absence made this
+# crate UNPUBLISHABLE until 2026-08-17.
+#
+# A `path` dependency without a `version` works perfectly for a local
+# build, so nothing ever complained — but `cargo package` refuses it:
+#
+#     all dependencies must have a version requirement specified when
+#     packaging. dependency `iccce-cmm` does not specify a version
+#
+# Found by RUNNING `cargo package` on all five crates rather than
+# trusting the handoff's claim that "publication metadata is ready". Four
+# packaged; this one could not, and the publish-order note in
+# `iccce-cmm/Cargo.toml` described a path — color/profile → cmm → cli —
+# whose last step did not exist.
+#
+# ★ Same maintenance hazard as the one documented in
+# `iccce-cmm/Cargo.toml`: Cargo cannot inherit
+# `workspace.package.version` into a *dependency requirement*, so these
+# literals are a second copy of the version number and must move with it
+# in the same commit.
+iccce-color = { path = "../iccce-color", version = "0.1.0" }
+iccce-profile = { path = "../iccce-profile", version = "0.1.0" }
+iccce-cmm = { path = "../iccce-cmm", version = "0.1.0" }
 # No argument-parsing dependency yet: one subcommand does not justify
 # one. When the surface grows, the candidate is clap (MIT OR Apache-2.0,
 # permissive — classified per docs/LEGAL.md §1) and adding it is a
