@@ -14,6 +14,36 @@
 //! `docs/ARCHITECTURE.md` §3.2 makes *reporting* — not repairing — the
 //! parser's contract. A contract with no failing input has no test.
 //!
+//! ## ★ A third category, added 2026-08-18: **disputed** — currently EMPTY
+//!
+//! Both categories above are *claims about what a conformant consumer must
+//! do*. That is fine while the specification has been read on the point at
+//! issue. It stops being fine the moment a fixture is built to probe a rule
+//! whose text nobody has read on exactly that question — and then the binary
+//! taxonomy forces the fixture's author to guess, in a file
+//! (`MANIFEST.md`) that is generated and therefore read as authoritative.
+//!
+//! [`Category::Disputed`] is the place to put a fixture whose **required
+//! consumer behaviour cannot yet be written down**. Its `expect` records the
+//! **measured** current behaviour and names the outstanding question; it is a
+//! dated observation, not a requirement.
+//!
+//! ★★ **It has no members as of 2026-08-18, and that is the category
+//! working rather than the category being useless.** Its one member,
+//! `v2-rendering-intent-high-bits`, was filed here the morning the question
+//! was raised and moved to **well-formed** the same day when
+//! `icc-spec-librarian` returned the clause text — ICC.1:2001-04 6.1.11
+//! imposes nothing on the high 16 bits of `renderingIntent`. Nothing about
+//! the fixture's bytes changed; only what could truthfully be claimed about
+//! them. **That transition is the whole point of the category**, and the
+//! empty state is the record that the transition completed.
+//!
+//! The category is kept rather than deleted for one reason, and it is not
+//! sentiment: deleting it deletes the *option*, and the next fixture built
+//! ahead of its sourcing would face the same forced guess with no third
+//! answer available. An unused enum variant costs one match arm. A guess in a
+//! generated manifest costs a reader's trust in every other row.
+//!
 //! ## How a malformed fixture is built
 //!
 //! **One well-formed base, plus one named mutation.** Never two. A fixture
@@ -45,11 +75,51 @@ use crate::bytes::{Buf, D50_ENCODED, general_lab_ab, general_lab_l, legacy_lab_a
 use crate::profile::{ProfileSpec, Tag, TagBody};
 use crate::tags::{self, AbClut, LutAb, LutAbKind, Mft1, Mft2, Ncl2Entry};
 
-/// What a fixture is for: reading, or reporting.
+/// What a fixture is for: reading, reporting, or **deciding a question that is
+/// still open**.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Category {
     WellFormed,
     Malformed,
+    /// ★ **The required consumer behaviour cannot yet be written down.**
+    /// **Currently has no members** — see the module doc for why that is the
+    /// category working and not the category being idle.
+    ///
+    /// This category exists because the other two are *claims*. A fixture
+    /// filed `Malformed` asserts that a report is required; a fixture filed
+    /// `WellFormed` asserts that the file breaks no rule and so no report may
+    /// truthfully be made against it. When the specification has not been read
+    /// on the question, both are guesses, and a guess in a generated manifest
+    /// is worse than an admission because the manifest is read as
+    /// authoritative.
+    ///
+    /// **What puts a fixture here** — exactly one condition, and it is about
+    /// the *sourcing*, never about the *code*:
+    ///
+    /// * the fixture's bytes exercise a rule whose text **has not been read on
+    ///   the exact point the fixture probes**, so a dispatch to
+    ///   `icc-spec-librarian` is outstanding and its answer would change which
+    ///   of the two real categories the fixture belongs to.
+    ///
+    /// **What does NOT put a fixture here**, both of which have been mistaken
+    /// for it:
+    ///
+    /// * *iccce's behaviour is believed wrong.* That is a defect, and the
+    ///   fixture is filed under what the **standard** says, which is what makes
+    ///   the suite go red. A category is not a place to park a bug.
+    /// * *the text has been read and licenses more than one consumer
+    ///   behaviour.* That is settled, not disputed — the answer is "ICC.1
+    ///   does not determine this", the fixture is filed under what the file
+    ///   *is*, and the project's own choice is recorded in the `expect` row as
+    ///   a choice. `v2-rendering-intent-low-half` is the worked example.
+    ///
+    /// A `Disputed` fixture's `expect` field records **what iccce does today,
+    /// measured**, and names the outstanding question. It is a dated
+    /// observation, not a requirement on a consumer. When the sourcing lands
+    /// the fixture moves to `WellFormed` or `Malformed` and its `expect`
+    /// becomes a real expectation — that move is the visible event this
+    /// category is designed to produce, and it has happened once.
+    Disputed,
 }
 
 impl Category {
@@ -58,6 +128,7 @@ impl Category {
         match self {
             Self::WellFormed => "well-formed",
             Self::Malformed => "malformed",
+            Self::Disputed => "disputed",
         }
     }
 }
@@ -706,7 +777,8 @@ const CN_CHROMA: f64 = 0.25;
 /// why that would otherwise matter.
 #[expect(
     clippy::cast_precision_loss,
-    reason = "clutPoints is a uInt8 field (clause 10.10) and the index is below it, so both are               small integers f64 represents exactly — the same argument `frac` makes"
+    reason = "clutPoints is a uInt8 field (clause 10.10) and the index is below it, so both \
+              are small integers f64 represents exactly — the same argument `frac` makes"
 )]
 fn chroma_ramp(i: usize, n: usize) -> f64 {
     let centre = (n - 1) as f64 / 2.0;
@@ -850,8 +922,12 @@ fn v2_cmyk_chromatic_neutral() -> Vec<u8> {
         for mi in 0..na {
             for yi in 0..na {
                 for ki in 0..na {
-                    let (l, a_star, b_star) =
-                        chromatic_neutral_a2b(frac(ci, na), frac(mi, na), frac(yi, na), frac(ki, na));
+                    let (l, a_star, b_star) = chromatic_neutral_a2b(
+                        frac(ci, na),
+                        frac(mi, na),
+                        frac(yi, na),
+                        frac(ki, na),
+                    );
                     a2b_clut.push(legacy_lab_l(l));
                     a2b_clut.push(legacy_lab_ab(a_star));
                     a2b_clut.push(legacy_lab_ab(b_star));
@@ -915,8 +991,7 @@ fn v2_cmyk_chromatic_neutral() -> Vec<u8> {
     };
     // 7-bit ASCII only: textDescriptionType's Mac ScriptCode block is an
     // ASCII field and the generator asserts it, so no section sign here.
-    let mut tags_ =
-        v2_meta("iccce synthetic v2 CMYK, B2A0 separates neutrals into C M Y and K");
+    let mut tags_ = v2_meta("iccce synthetic v2 CMYK, B2A0 separates neutrals into C M Y and K");
     tags_.push(wtpt());
     tags_.push(Tag::own(b"A2B0", a2b0.encode()));
     tags_.push(Tag::own(b"B2A0", b2a0.encode()));
@@ -1018,6 +1093,168 @@ fn v4_rgb_mft2_lab() -> Vec<u8> {
 
 fn v2_rgb_mft2_lab() -> Vec<u8> {
     probe_profile(0x0210_0000)
+}
+
+// ===========================================================================
+// (d2) Well-formed: the header rendering-intent PAIR
+// ===========================================================================
+
+/// The `A2B0`/`A2B1` tables carried by the header rendering-intent pair, and
+/// the reason they are shaped the way they are.
+///
+/// Both are `mft2` (`lut16Type`) RGB→PCSLAB tags with a 2 x 2 x 2 CLUT and
+/// identity input/output tables, so **every value a consumer reads back is a
+/// decoded table entry or a trilinear blend of eight of them** — nothing here
+/// depends on curve evaluation, and nothing is approximated on the way out.
+///
+/// `perceptual == true` builds the tag that goes in `A2B0`, `false` the one
+/// that goes in `A2B1`. Per ICC.1:2022 clause 8.10.2 b) a CMM asked for the
+/// perceptual intent selects `A2B0` and one asked for media-relative
+/// colorimetric selects `A2B1`, so **which of these two tables is used is
+/// exactly the observable that the pair exists to expose.**
+///
+/// | CLUT node `r+g+b` | `A2B1` (colorimetric) | `A2B0` (perceptual) |
+/// |---|---|---|
+/// | 0 | L\* 20, a 0, b 0 | L\* 45, a +12, b −12 |
+/// | 1 | L\* 40, a 0, b 0 | L\* 55, a +12, b −12 |
+/// | 2 | L\* 60, a 0, b 0 | L\* 65, a +12, b −12 |
+/// | 3 | L\* 80, a 0, b 0 | L\* 75, a +12, b −12 |
+///
+/// ★ **Three properties of this table are load-bearing, and each is a choice
+/// rather than an accident.**
+///
+/// 1. **The two tables differ at EVERY node, not merely on average.** The
+///    lightness columns cross over between node 2 and node 3 (60 vs 65, then
+///    80 vs 75), so a fixture that separated on `L*` alone would have an input
+///    at which the two tables coincide — and a test evaluated at that input
+///    would report "no difference" while the mechanism it is probing was fully
+///    live. The constant chroma offset (`a +12, b −12` against a neutral
+///    `a 0, b 0`) closes that hole: **no input to this profile can produce
+///    equal output from the two tags.** A zero-separation fixture does not
+///    merely fail to inform — it turns a red result green, which is this
+///    corpus's standing trap.
+/// 2. **Every entry is well inside the sRGB gamut**, in the `L*` 45–80 /
+///    chroma ~17 region. The pair's companion test chains these profiles into
+///    iccce's built-in sRGB destination, and a table whose entries clipped at
+///    the destination could have its separation *removed by the clip* — two
+///    different PCS values landing on the same clipped device value. The
+///    separation has to survive to the observable, or it is not a separation.
+/// 3. **PCSLAB values use the LEGACY 16-bit encoding** ([`legacy_lab_l`] /
+///    [`legacy_lab_ab`], `L* = 100` → `FF00h`), because `lut16Type` is in
+///    clause 6.3.4.2 NOTE 3's legacy set — the encoding keys off the **tag
+///    type**, not the profile version (corpus finding DL-012). The nominal
+///    `L*`/`a`/`b` figures in the table above are therefore what a consumer
+///    reading the legacy rule decodes; a consumer using the general rule
+///    decodes something ~0,39 % different. That difference is not what this
+///    fixture is for and is covered by `v2-rgb-mft2-lab`/`v4-rgb-mft2-lab`;
+///    it is named here only so a reader of a measured number knows which rule
+///    produced it.
+///
+/// **These numbers describe no device.** They are an arbitrary, hand-checkable
+/// split chosen for separation and in-gamut-ness, exactly as the module header
+/// says of every other CLUT in this file.
+fn intent_split_mft2(perceptual: bool) -> Vec<u8> {
+    let mut clut: Vec<u16> = Vec::with_capacity(8 * 3);
+    for r in 0..2u32 {
+        for g in 0..2u32 {
+            for b in 0..2u32 {
+                // Node ordering: the FIRST input channel varies slowest
+                // (clause 10.10) — index = r*4 + g*2 + b, which is the order
+                // these nested loops emit.
+                let n = f64::from(r + g + b); // 0..=3
+                let (l, a, bb) = if perceptual {
+                    (45.0 + 10.0 * n, 12.0, -12.0)
+                } else {
+                    (20.0 + 20.0 * n, 0.0, 0.0)
+                };
+                clut.push(legacy_lab_l(l));
+                clut.push(legacy_lab_ab(a));
+                clut.push(legacy_lab_ab(bb));
+            }
+        }
+    }
+    Mft2 {
+        input_chan: 3,
+        output_chan: 3,
+        clut_points: 2,
+        pad: 0,
+        matrix: Mft2::IDENTITY,
+        input_ent: 2,
+        output_ent: 2,
+        input_tables: [0x0000u16, 0xFFFF].repeat(3),
+        clut,
+        output_tables: [0x0000u16, 0xFFFF].repeat(3),
+    }
+    .encode()
+}
+
+/// One member of the header rendering-intent pair, parameterised **only** by
+/// the header's `renderingIntent` field (clause 7.2.15, header bytes 64..68).
+///
+/// # What this pair is for
+///
+/// A profile's header carries a rendering intent. A caller of a CMM also names
+/// an intent. **Which one governs, when the caller does not name one, is a
+/// question this corpus's companion test measures and deliberately does not
+/// answer.** See
+/// `crates/iccce-cmm/tests/header_rendering_intent_not_consumed.rs` for the
+/// measured behaviour and for the statement of what is still unsourced.
+///
+/// # Why the two members must differ in exactly one byte
+///
+/// `renderingIntent` is a `uInt32Number` at header offset 64. Values 0
+/// (perceptual) and 1 (media-relative colorimetric) differ **only in the low
+/// byte, at file offset 67**; the other three bytes are zero in both. Because
+/// the two members are assembled from the same tag list in the same order,
+/// every other byte in the file — header, tag directory, tag data, padding,
+/// and the size field at offset 0 — is identical by construction.
+///
+/// ★ **"By construction" is not evidence.** The property is asserted twice, on
+/// the produced bytes: once here in
+/// [`tests::the_header_intent_pair_differs_only_at_offset_67`], and again in
+/// the companion integration test, which re-derives it from the files on disk
+/// rather than from the generator. A pair that accidentally differed in two
+/// places would let a test prove something strictly weaker than it claims, and
+/// neither the generator nor the consumer of the fixture is in a position to
+/// notice that on its own.
+///
+/// # Class and tags
+///
+/// `scnr` (input), RGB device space, PCSLAB. Clause 8.3's required set for an
+/// N-component LUT-based input profile is `desc`, `wtpt`, `cprt` and `A2B0`;
+/// `A2B1` is permitted and is what makes the intent selection observable.
+/// `wtpt` is the PCS illuminant, so **no chromatic adaptation happens anywhere
+/// in this fixture** and every difference a consumer measures is a property of
+/// the tag it selected.
+fn header_intent_profile(intent: u32) -> Vec<u8> {
+    let mut tags_ = vec![
+        Tag::own(b"A2B0", intent_split_mft2(true)),
+        Tag::own(b"A2B1", intent_split_mft2(false)),
+    ];
+    tags_.extend(v2_meta(
+        "iccce synthetic: header rendering intent pair; A2B0 and A2B1 differ",
+    ));
+    tags_.push(wtpt());
+    ProfileSpec {
+        version: 0x0240_0000,
+        class: *b"scnr",
+        color_space: *b"RGB ",
+        pcs: *b"Lab ",
+        rendering_intent: intent,
+        tags: tags_,
+    }
+    .assemble()
+}
+
+/// Header `renderingIntent` = 0 (perceptual). Byte 67 is `00h`.
+fn v2_rgb_header_intent_perceptual() -> Vec<u8> {
+    header_intent_profile(0)
+}
+
+/// Header `renderingIntent` = 1 (media-relative colorimetric). Byte 67 is
+/// `01h`. **The only byte in the file that differs from its sibling.**
+fn v2_rgb_header_intent_relative() -> Vec<u8> {
+    header_intent_profile(1)
 }
 
 // ===========================================================================
@@ -1456,9 +1693,8 @@ fn v4_rgb_mab_chromatic_black() -> Vec<u8> {
         a_curves: vec![tags::curv_identity(); usize::from(a_n)],
     };
 
-    let mut tags_ = v4_meta(
-        "iccce synthetic v4 RGB, mAB/mBA, non-zero slightly chromatic black Lab(20 4 -3)",
-    );
+    let mut tags_ =
+        v4_meta("iccce synthetic v4 RGB, mAB/mBA, non-zero slightly chromatic black Lab(20 4 -3)");
     tags_.push(wtpt());
     // Perceptual and media-relative carry the SAME tables. That is not
     // laziness: it makes the perceptual arm's use of the fixed A41 black
@@ -1706,8 +1942,7 @@ fn v4_rgb_mab_floored_b2a() -> Vec<u8> {
     for ri in 0..N {
         for gi in 0..N {
             for bi in 0..N {
-                let (l, a_star, b_star) =
-                    rgb_to_lab_floored(frac(ri, N), frac(gi, N), frac(bi, N));
+                let (l, a_star, b_star) = rgb_to_lab_floored(frac(ri, N), frac(gi, N), frac(bi, N));
                 a2b_clut.push(general_lab_l(l));
                 a2b_clut.push(general_lab_ab(a_star));
                 a2b_clut.push(general_lab_ab(b_star));
@@ -1997,6 +2232,191 @@ fn trailing_bytes() -> Vec<u8> {
 fn rendering_intent_high_bits() -> Vec<u8> {
     let mut p = v4_rgb_matrix_trc();
     crate::profile::set_u32(&mut p, 64, 0x0001_0001);
+    p
+}
+
+/// The **v2** counterpart of [`rendering_intent_high_bits`]: rendering intent
+/// `0x00010001` in a v2.4 profile. ★ **Well-formed** — this file breaks no
+/// rule ICC.1:2001-04 contains, and it exists to exercise a report a
+/// conformant consumer must **not** make.
+///
+/// ## What this fixture is for, in one sentence
+///
+/// The requirement its v4 sibling violates **does not exist in v2**, so the
+/// same four bytes at header offset 64 are a defect in one edition and
+/// ordinary vendor use in the other — and until this file existed nothing in
+/// the corpus could tell iccce's parser that.
+///
+/// ## The sourcing — SETTLED 2026-08-18, both halves
+///
+/// Established by `icc-spec-librarian` from the primary text of both
+/// editions, read and cross-verified through three independent extraction
+/// channels; ambiguity register rows **`A7`** (high half) and **`A56`** (low
+/// half).
+///
+/// | edition | clause | the high 16 bits | the low 16 bits |
+/// |---|---|---|---|
+/// | ICC.1:2022 (v4) | 7.2.15, Table 23 | "shall be set to zero" — **quoted prohibition** | prohibited outside 0–3 by a **two-step inference** (`A56`) |
+/// | ICC.1:2001-04 (v2) | 6.1.11, Table 18 | **no requirement at all**, and affirmatively vendor-available | four values **defined**, none **forbidden** |
+///
+/// Two points carry the v2 column and neither is a reading-between-lines:
+///
+/// * 6.1.11's complete clause body is *"Perceptual, media-relative
+///   colorimetric, saturation and ICC-absolute colorimetric are the four
+///   intents required to be supported. The least-significant 16 bits are
+///   reserved for the ICC."* — **no `shall`, no "must", no "only"**, and no
+///   *"other values are reserved for future use"* sentence, which the same
+///   document **does** use elsewhere when it means to close a set (6.5.4 /
+///   Table 38, `dataType`). The drafters had the words and did not use them
+///   here.
+/// * *"the least-significant 16 bits are reserved for the ICC"* is the
+///   **identical boilerplate 6.1.8 uses for the profile flags field**, where
+///   the high half is demonstrably vendor space and neither edition ever
+///   zeroes it. So the v2 high half is not merely un-forbidden; it is
+///   **invited**.
+///
+/// ## Why the category moved, and what the move is evidence of
+///
+/// This fixture was the sole member of [`Category::Disputed`] from
+/// 2026-08-18 until the sourcing landed the same day. It is now
+/// **well-formed**, and the `expect` row says what a consumer must not do
+/// rather than what iccce happened to do. That transition — Disputed to a
+/// real claim, on the arrival of clause text and nothing else — is the event
+/// the third category was built to produce, and it is the only evidence that
+/// the category does anything.
+///
+/// ★ **What "well-formed" asserts here is narrow and worth stating.** It
+/// asserts the *file* violates no rule of its edition, hence that no consumer
+/// may truthfully report one against it. It does **not** assert that the
+/// bytes are ordinary, and it does not assert that iccce is silent because it
+/// understands them: iccce is silent because it has nothing to say. The value
+/// `0x0001` in the high half means nothing to this project, and a consumer
+/// that needed to know what a vendor put there would have to ask the vendor.
+///
+/// ## Why it is not byte-identical to its v4 sibling
+///
+/// The two members of this pair differ in more than the version word, and
+/// that is deliberate. The v4 base carries `mluc` metadata and
+/// `parametricCurveType` TRCs — **v4-only types**. Flipping only the version
+/// bytes of `rendering-intent-high-bits.icc` would produce a file with two
+/// unrelated era violations in it, and the corpus's own rule is one named
+/// mutation per fixture. So this one is built on the v2 base
+/// (`v2-rgb-matrix-trc-curv`: `textDescriptionType`/`textType` metadata,
+/// `curveType` TRCs) with the same four bytes changed at header offset 64.
+///
+/// **Byte identity is not needed to isolate the variable here, and the reason
+/// is structural rather than an assurance.** `Malformation::UnknownRenderingIntent`
+/// is raised inside `Header::parse` from the 128 header bytes alone; no tag
+/// content is in scope at that point, so no difference in tag types can reach
+/// the observable. The isolation is instead carried by the **control that is
+/// already in the corpus**: this fixture's own base,
+/// `v2-rgb-matrix-trc-curv.icc`, differs from it in exactly the four bytes at
+/// offset 64 and reports **zero** malformations. That is a control by
+/// construction — it is the same generator call with one mutation — and it is
+/// asserted in `crates/iccce-profile/tests/rendering_intent_report_is_edition_specific.rs`.
+///
+/// Contrast the `probe_profile` pair (`v2-rgb-mft2-lab` / `v4-rgb-mft2-lab`),
+/// which *is* byte-identical apart from the version word: there the observable
+/// is a **tag decode** that the version selects between, so the tags had to be
+/// held constant and a metadata non-conformity in the v4 member was the
+/// accepted price. Here the observable is in the header and the price is not
+/// worth paying.
+fn v2_rendering_intent_high_bits() -> Vec<u8> {
+    let mut p = v2_rgb_matrix_trc_curv();
+    crate::profile::set_u32(&mut p, 64, 0x0001_0001);
+    p
+}
+
+/// Rendering intent `0x00000004` in a **v4** profile — the *other* half of
+/// the field, and the half whose prohibition iccce reaches by **inference**
+/// rather than by quotation.
+///
+/// ## Why this fixture had to exist
+///
+/// `rendering-intent-high-bits` (the v4 sibling) sets the **high** half, and
+/// ICC.1:2022 7.2.15 forbids that in as many words: *"the most significant 16
+/// bits shall be set to zero"*. So every v4 report iccce has ever been tested
+/// on rests on a **quoted `shall`**. The low half has no such sentence. The
+/// prohibition is reached only by chaining 7.2.15's *"The rendering intent
+/// field shall specify the rendering intent"* to *"These shall be identified
+/// using the values shown in Table 23"* — a value naming none of the four
+/// specifies no intent. **Two steps, and the register labels it as such**
+/// (`A56`, "RESOLVED-BY-INFERENCE in v4").
+///
+/// ★ Until this fixture, **the weaker of iccce's two v4 claims was the
+/// untested one.** That is the wrong way round: the arm most likely to be
+/// overturned by a later edition — `A56` names ICC.1:2010-12, which this
+/// corpus does not hold, as the plausible place for a wording change — was
+/// the arm with no input that could see it move.
+///
+/// ## Why the value is 4 and not something larger
+///
+/// 4 is the **boundary**: the smallest value the standard does not define. A
+/// larger value (`0x0000FFFF`, say) would test the same branch while making
+/// an off-by-one at the top of the defined range invisible. The fixture set
+/// therefore probes `3 | 4` at the edge, not `3 | 65535` at a distance.
+///
+/// ## What "malformed" claims here, and the limit of it
+///
+/// It claims a conformant consumer **must report**, and the licence for that
+/// is the inference chain above — **not** a quotation. Read the `expect` row
+/// with that qualifier attached; it is recorded there too, because a manifest
+/// row is what gets quoted and a doc comment is not.
+fn v4_rendering_intent_low_half() -> Vec<u8> {
+    let mut p = v4_rgb_matrix_trc();
+    crate::profile::set_u32(&mut p, 64, 0x0000_0004);
+    p
+}
+
+/// Rendering intent `0x00000004` in a **v2** profile — the fourth and last
+/// cell of the rendering-intent matrix, and the one whose report is a
+/// **project choice rather than a requirement**.
+///
+/// ## The matrix this fixture completes
+///
+/// The gate in `crates/iccce-profile/src/header.rs` is two conditions, which
+/// makes four cells. Before 2026-08-18 the corpus held one of them.
+///
+/// | edition | half mutated | iccce | what licenses that |
+/// |---|---|---|---|
+/// | v4 | high — `rendering-intent-high-bits` | reports | **quoted** `shall`, 7.2.15 |
+/// | v4 | low — `v4-rendering-intent-low-half` | reports | **two-step inference**, `A56` |
+/// | v2 | high — `v2-rendering-intent-high-bits` | **silent** | 6.1.11 imposes nothing; 6.1.8's parallel makes the half vendor space |
+/// | v2 | low — **this fixture** | reports, in **weaker words** | **nothing in ICC.1** — see below |
+///
+/// A gate with four cells and one fixture is not a tested gate. The two
+/// low-half members were added when the version gate landed, for the same
+/// reason the high-half v2 member was added when the question was raised: an
+/// arm with no input cannot be observed to break.
+///
+/// ## ★ The only cell whose report no clause requires
+///
+/// ICC.1:2001-04 defines four values and forbids none (`A56`, and the full
+/// argument is on [`v2_rendering_intent_high_bits`]). A v2 profile carrying
+/// intent 4 therefore **violates nothing**, and iccce's report is not an
+/// accusation — its own emitted text says so: *"unrecognised rendering intent
+/// value 0x00000004 (ICC.1:2001-04 6.1.11 / Table 18 define only 0..=3 and do
+/// not forbid others)"*.
+///
+/// So why is this filed `Malformed` rather than `WellFormed`? Because the
+/// corpus's two categories are, in practice, claims about **what a consumer
+/// must emit**, and there is already a member that reports without accusing:
+/// `trailing-bytes`, whose own doc says the condition is *normal* for a
+/// profile embedded in a PDF or TIFF. `Malformed` has meant "exactly one
+/// named report is required" since Pass 2, not "the file is illegal". This
+/// fixture is the second member of that shape and the first where the
+/// distinction is load-bearing.
+///
+/// ★ **The cost of that, stated rather than smoothed:** `Malformation` is
+/// the only disclosure channel `Profile` has, and `iccce inspect` prints
+/// `malformations: 1` for this file. A consumer that reads that count as a
+/// conformance verdict will call a conformant profile non-conformant. The
+/// *words* are careful and the *channel* is not. That is a finding filed
+/// against `iccce-profile`, not a property of these bytes, and this fixture
+/// is the input that makes it demonstrable rather than arguable.
+fn v2_rendering_intent_low_half() -> Vec<u8> {
+    let mut p = v2_rgb_matrix_trc_curv();
+    crate::profile::set_u32(&mut p, 64, 0x0000_0004);
     p
 }
 
@@ -2314,6 +2734,10 @@ fn xyz_trailing_bytes() -> Vec<u8> {
 /// manifest.
 #[must_use]
 pub fn all() -> Vec<Recipe> {
+    // `Category::Disputed` is deliberately absent: it has no members.
+    // It is still referenced by `cmd_manifest`, which prints its section
+    // and says so explicitly rather than omitting a heading a reader
+    // might otherwise assume was never written.
     use Category::{Malformed, WellFormed};
     vec![
         // ---------------- well-formed ----------------
@@ -2428,6 +2852,22 @@ pub fn all() -> Vec<Recipe> {
             what: "v2.1.0.0 twin of v4-rgb-mft2-lab, differing ONLY in the version word",
             expect: "parses; 0 malformations; identical decoded summaries to v4-rgb-mft2-lab",
             build: v2_rgb_mft2_lab,
+        },
+        Recipe {
+            name: "v2-rgb-header-intent-perceptual",
+            category: WellFormed,
+            covers: "header renderingIntent = 0 (clause 7.2.15); A2B0 != A2B1",
+            what: "v2.4.0.0 scnr RGB, Lab PCS, mft2 A2B0 AND A2B1 carrying deliberately different tables; header renderingIntent = 0",
+            expect: "parses; 0 malformations; header.intent 0 (perceptual); lut16 in=3 out=3 clutPoints=2 on both A2B0 and A2B1; byte-identical to v2-rgb-header-intent-relative except file offset 67",
+            build: v2_rgb_header_intent_perceptual,
+        },
+        Recipe {
+            name: "v2-rgb-header-intent-relative",
+            category: WellFormed,
+            covers: "the other arm of the header rendering-intent pair",
+            what: "byte-for-byte twin of v2-rgb-header-intent-perceptual with header renderingIntent = 1",
+            expect: "parses; 0 malformations; header.intent 1 (media-relative colorimetric); identical decoded summaries otherwise; exactly one byte differs from its twin, at offset 67",
+            build: v2_rgb_header_intent_relative,
         },
         Recipe {
             name: "v4-cmyk-mab-lab",
@@ -2572,10 +3012,77 @@ pub fn all() -> Vec<Recipe> {
         Recipe {
             name: "rendering-intent-high-bits",
             category: Malformed,
-            covers: "Malformation::UnknownRenderingIntent (ambiguity A7)",
-            what: "v4 base with rendering intent 0x00010001 — low half legal, high half non-zero",
-            expect: "parses; exactly 1 malformation: rendering intent 0x00010001 is outside the defined 0..=3",
+            covers: "Malformation::UnknownRenderingIntent{rule: V4Prohibited} — the QUOTED \
+                     half of the v4 rule (ambiguity A7)",
+            what: "v4 base with rendering intent 0x00010001 — low half legal (1, \
+                   media-relative), high half non-zero",
+            expect: "parses; exactly 1 malformation: rendering intent 0x00010001 is outside \
+                     the defined 0..=3 (ICC.1:2022 7.2.15 + Table 23). ★ This is iccce's \
+                     STRONGEST rendering-intent claim: ICC.1:2022 7.2.15 forbids a non-zero \
+                     high half in as many words — 'the most significant 16 bits shall be set \
+                     to zero'. Quoted, not inferred.",
             build: rendering_intent_high_bits,
+        },
+        Recipe {
+            name: "v2-rendering-intent-high-bits",
+            category: WellFormed,
+            covers: "the EDITION GATE on the rendering-intent check in iccce-profile's \
+                     Header::parse — a report iccce must NOT make (ambiguity A56, and A7 for \
+                     the v4 rule this file does NOT break)",
+            what: "v2.4 base (v2-rgb-matrix-trc-curv) with rendering intent 0x00010001 — the \
+                   same four header bytes at offset 64 that its v4 sibling \
+                   rendering-intent-high-bits mutates, in a file of the other edition",
+            expect: "parses; ZERO malformations. ★ This row asserts a SILENCE, which is why \
+                     the fixture exists. ICC.1:2001-04 6.1.11 imposes nothing whatever on \
+                     the high 16 bits, and its 'the least-significant 16 bits are reserved \
+                     for the ICC' is the same boilerplate 6.1.8 uses for the profile flags \
+                     field, where the high half is vendor space — so these bytes are \
+                     INVITED, not merely un-forbidden. A consumer that reports this file is \
+                     making a false statement about the standard, and there is no layer \
+                     above a parser that can catch a report the parser should not have made. \
+                     (Was CATEGORY: DISPUTED from 2026-08-18 until the sourcing landed the \
+                     same day; that move is the event the disputed category exists to \
+                     produce.)",
+            build: v2_rendering_intent_high_bits,
+        },
+        Recipe {
+            name: "v4-rendering-intent-low-half",
+            category: Malformed,
+            covers: "Malformation::UnknownRenderingIntent{rule: V4Prohibited} — the INFERRED \
+                     half of the v4 rule (ambiguity A56)",
+            what: "v4 base with rendering intent 0x00000004 — high half zero, low half 4, \
+                   the smallest value ICC.1:2022 Table 23 does not define",
+            expect: "parses; exactly 1 malformation: rendering intent 0x00000004 is outside \
+                     the defined 0..=3 (ICC.1:2022 7.2.15 + Table 23). ★ READ THE LICENCE: \
+                     no sentence in ICC.1:2022 forbids a low-half value outside 0-3. The \
+                     prohibition is a TWO-STEP INFERENCE — 'shall specify the rendering \
+                     intent' chained to 'These shall be identified using the values shown in \
+                     Table 23' — and register row A56 labels it as one. This report is \
+                     weaker-licensed than its high-half sibling's and must not be quoted as \
+                     though it were the same claim.",
+            build: v4_rendering_intent_low_half,
+        },
+        Recipe {
+            name: "v2-rendering-intent-low-half",
+            category: Malformed,
+            covers: "Malformation::UnknownRenderingIntent{rule: V2Undefined} — the ONLY \
+                     report in this corpus that no clause requires (ambiguity A56)",
+            what: "v2.4 base (v2-rgb-matrix-trc-curv) with rendering intent 0x00000004 — \
+                   high half zero, low half 4, the smallest value ICC.1:2001-04 Table 18 \
+                   does not define",
+            expect: "parses; exactly 1 malformation: unrecognised rendering intent value \
+                     0x00000004 (ICC.1:2001-04 6.1.11 / Table 18 define only 0..=3 and do \
+                     not forbid others). ★ THIS FILE VIOLATES NOTHING. v2 defines four \
+                     values and forbids none (A56), so the report is a DISCLOSURE that iccce \
+                     cannot interpret the value, not an accusation against the file — and \
+                     the emitted wording says so. It is filed malformed on the same footing \
+                     as trailing-bytes, whose condition is likewise normal: this category \
+                     has meant 'exactly one named report is required' since Pass 2, never \
+                     'the file is illegal'. ★ Known cost, filed against iccce-profile and \
+                     not against these bytes: Malformation is the only disclosure channel \
+                     Profile has, so `iccce inspect` prints 'malformations: 1' for a \
+                     conformant profile.",
+            build: v2_rendering_intent_low_half,
         },
         Recipe {
             name: "tag-overrun",
@@ -2821,6 +3328,70 @@ mod tests {
             diffs.iter().all(|&i| (8..12).contains(&i)),
             "differences outside the version word: {diffs:?}"
         );
+    }
+
+    /// ★ The header rendering-intent pair isolates **one byte**, and this is
+    /// where that is proved rather than asserted.
+    ///
+    /// The claim the pair exists to support is of the form *"changing the
+    /// header's rendering intent, and nothing else, does not change the
+    /// output"*. A pair that differed anywhere else would still produce a
+    /// green test, and the green would mean something strictly weaker and
+    /// unstated. So the isolation is checked on the produced bytes: same
+    /// length, exactly one differing index, and that index is 67 — the low
+    /// byte of the `uInt32Number` at header offset 64 (clause 7.2.15).
+    ///
+    /// The values are checked too. `00h` vs `01h` is not incidental: they are
+    /// the two intents whose `A2Bx` tags this fixture carries, so the rival
+    /// hypothesis (the header field is consumed) predicts a *specific*
+    /// different answer rather than merely some difference.
+    #[test]
+    fn the_header_intent_pair_differs_only_at_offset_67() {
+        let a = v2_rgb_header_intent_perceptual();
+        let b = v2_rgb_header_intent_relative();
+        assert_eq!(a.len(), b.len(), "the pair must be the same length");
+        let diffs: Vec<usize> = (0..a.len()).filter(|&i| a[i] != b[i]).collect();
+        assert_eq!(
+            diffs,
+            vec![67],
+            "the pair must differ in exactly one byte, at offset 67 (the low byte of \
+             renderingIntent); got {diffs:?}"
+        );
+        assert_eq!((a[67], b[67]), (0, 1), "intents must be 0 and 1");
+        // And the high three bytes of the field are zero in both, so offset 67
+        // really is the whole field's value and not part of it.
+        assert_eq!(&a[64..67], &[0, 0, 0]);
+        assert_eq!(&b[64..67], &[0, 0, 0]);
+    }
+
+    /// The pair's two `A2B` tables differ at **every** CLUT node.
+    ///
+    /// This is the property that makes the companion integration test's
+    /// control capable of failing: if `A2B0` and `A2B1` coincided anywhere, an
+    /// input landing there would show no difference between the two intents,
+    /// and a test evaluated at that input would report agreement while the
+    /// mechanism under test was fully live. Asserted on the encoded tags, not
+    /// on the constants that built them.
+    #[test]
+    fn the_intent_split_tables_differ_at_every_node() {
+        let p = intent_split_mft2(true);
+        let c = intent_split_mft2(false);
+        assert_eq!(p.len(), c.len());
+        // mft2 header: 8 (base) + 4 (chan/points/pad) + 36 (matrix) + 4
+        // (entry counts) = 52, then the input tables (3 channels x 2 entries
+        // x 2 bytes = 12), then the CLUT.
+        const CLUT_START: usize = 52 + 12;
+        const NODES: usize = 8;
+        for node in 0..NODES {
+            let o = CLUT_START + node * 3 * 2;
+            let pv = &p[o..o + 6];
+            let cv = &c[o..o + 6];
+            assert_ne!(
+                pv, cv,
+                "CLUT node {node} is identical in both tables — the fixture cannot separate \
+                 the two intents at that node"
+            );
+        }
     }
 
     /// The `mBA ` fixture carries the curve counts clause 10.13 states, not

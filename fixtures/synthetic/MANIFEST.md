@@ -137,6 +137,26 @@ These assert that the parser **reads** correctly. Each must parse with zero malf
 | Contents | v2.1.0.0 twin of v4-rgb-mft2-lab, differing ONLY in the version word |
 | Expected of a consumer | parses; 0 malformations; identical decoded summaries to v4-rgb-mft2-lab |
 
+### `v2-rgb-header-intent-perceptual.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v2-rgb-header-intent-perceptual v2-rgb-header-intent-perceptual.icc` | 
+| Size | 708 bytes | 
+| Covers | header renderingIntent = 0 (clause 7.2.15); A2B0 != A2B1 |
+| Contents | v2.4.0.0 scnr RGB, Lab PCS, mft2 A2B0 AND A2B1 carrying deliberately different tables; header renderingIntent = 0 |
+| Expected of a consumer | parses; 0 malformations; header.intent 0 (perceptual); lut16 in=3 out=3 clutPoints=2 on both A2B0 and A2B1; byte-identical to v2-rgb-header-intent-relative except file offset 67 |
+
+### `v2-rgb-header-intent-relative.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v2-rgb-header-intent-relative v2-rgb-header-intent-relative.icc` | 
+| Size | 708 bytes | 
+| Covers | the other arm of the header rendering-intent pair |
+| Contents | byte-for-byte twin of v2-rgb-header-intent-perceptual with header renderingIntent = 1 |
+| Expected of a consumer | parses; 0 malformations; header.intent 1 (media-relative colorimetric); identical decoded summaries otherwise; exactly one byte differs from its twin, at offset 67 |
+
 ### `v4-cmyk-mab-lab.icc`
 
 | | |
@@ -176,6 +196,16 @@ These assert that the parser **reads** correctly. Each must parse with zero malf
 | Covers | ncl2 with legacy Lab pcsCoords |
 | Contents | v2.4.0.0 nmcl CMYK/Lab NamedColor profile, 4 entries, prefix/suffix, 4 device coords each |
 | Expected of a consumer | parses; 0 malformations; ncl2 colors=4 deviceCoords=4 |
+
+### `v2-rendering-intent-high-bits.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v2-rendering-intent-high-bits v2-rendering-intent-high-bits.icc` | 
+| Size | 700 bytes | 
+| Covers | the EDITION GATE on the rendering-intent check in iccce-profile's Header::parse — a report iccce must NOT make (ambiguity A56, and A7 for the v4 rule this file does NOT break) |
+| Contents | v2.4 base (v2-rgb-matrix-trc-curv) with rendering intent 0x00010001 — the same four header bytes at offset 64 that its v4 sibling rendering-intent-high-bits mutates, in a file of the other edition |
+| Expected of a consumer | parses; ZERO malformations. ★ This row asserts a SILENCE, which is why the fixture exists. ICC.1:2001-04 6.1.11 imposes nothing whatever on the high 16 bits, and its 'the least-significant 16 bits are reserved for the ICC' is the same boilerplate 6.1.8 uses for the profile flags field, where the high half is vendor space — so these bytes are INVITED, not merely un-forbidden. A consumer that reports this file is making a false statement about the standard, and there is no layer above a parser that can catch a report the parser should not have made. (Was CATEGORY: DISPUTED from 2026-08-18 until the sourcing landed the same day; that move is the event the disputed category exists to produce.) |
 
 ## Malformed fixtures
 
@@ -257,9 +287,29 @@ These assert that the parser **reports** correctly — `docs/ARCHITECTURE.md` §
 |---|---|
 | Invocation | `gen-profiles rendering-intent-high-bits rendering-intent-high-bits.icc` | 
 | Size | 648 bytes | 
-| Covers | Malformation::UnknownRenderingIntent (ambiguity A7) |
-| Contents | v4 base with rendering intent 0x00010001 — low half legal, high half non-zero |
-| Expected of a consumer | parses; exactly 1 malformation: rendering intent 0x00010001 is outside the defined 0..=3 |
+| Covers | Malformation::UnknownRenderingIntent{rule: V4Prohibited} — the QUOTED half of the v4 rule (ambiguity A7) |
+| Contents | v4 base with rendering intent 0x00010001 — low half legal (1, media-relative), high half non-zero |
+| Expected of a consumer | parses; exactly 1 malformation: rendering intent 0x00010001 is outside the defined 0..=3 (ICC.1:2022 7.2.15 + Table 23). ★ This is iccce's STRONGEST rendering-intent claim: ICC.1:2022 7.2.15 forbids a non-zero high half in as many words — 'the most significant 16 bits shall be set to zero'. Quoted, not inferred. |
+
+### `v4-rendering-intent-low-half.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v4-rendering-intent-low-half v4-rendering-intent-low-half.icc` | 
+| Size | 648 bytes | 
+| Covers | Malformation::UnknownRenderingIntent{rule: V4Prohibited} — the INFERRED half of the v4 rule (ambiguity A56) |
+| Contents | v4 base with rendering intent 0x00000004 — high half zero, low half 4, the smallest value ICC.1:2022 Table 23 does not define |
+| Expected of a consumer | parses; exactly 1 malformation: rendering intent 0x00000004 is outside the defined 0..=3 (ICC.1:2022 7.2.15 + Table 23). ★ READ THE LICENCE: no sentence in ICC.1:2022 forbids a low-half value outside 0-3. The prohibition is a TWO-STEP INFERENCE — 'shall specify the rendering intent' chained to 'These shall be identified using the values shown in Table 23' — and register row A56 labels it as one. This report is weaker-licensed than its high-half sibling's and must not be quoted as though it were the same claim. |
+
+### `v2-rendering-intent-low-half.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v2-rendering-intent-low-half v2-rendering-intent-low-half.icc` | 
+| Size | 700 bytes | 
+| Covers | Malformation::UnknownRenderingIntent{rule: V2Undefined} — the ONLY report in this corpus that no clause requires (ambiguity A56) |
+| Contents | v2.4 base (v2-rgb-matrix-trc-curv) with rendering intent 0x00000004 — high half zero, low half 4, the smallest value ICC.1:2001-04 Table 18 does not define |
+| Expected of a consumer | parses; exactly 1 malformation: unrecognised rendering intent value 0x00000004 (ICC.1:2001-04 6.1.11 / Table 18 define only 0..=3 and do not forbid others). ★ THIS FILE VIOLATES NOTHING. v2 defines four values and forbids none (A56), so the report is a DISCLOSURE that iccce cannot interpret the value, not an accusation against the file — and the emitted wording says so. It is filed malformed on the same footing as trailing-bytes, whose condition is likewise normal: this category has meant 'exactly one named report is required' since Pass 2, never 'the file is illegal'. ★ Known cost, filed against iccce-profile and not against these bytes: Malformation is the only disclosure channel Profile has, so `iccce inspect` prints 'malformations: 1' for a conformant profile. |
 
 ### `tag-overrun.icc`
 
@@ -440,4 +490,10 @@ These assert that the parser **reports** correctly — `docs/ARCHITECTURE.md` §
 | Covers | TagIssue::XyzTrailingBytes |
 | Contents | v4 base whose wtpt carries one XYZNumber plus four spare bytes |
 | Expected of a consumer | parses; wtpt decodes n=1 AND reports remainder 4 |
+
+## Disputed fixtures — required consumer behaviour NOT yet writable
+
+★ **Read nothing in this section as a requirement on a consumer.** Both sections above state what a conformant consumer *must* do. A fixture lands here when the specification has not been read on the exact point the fixture probes, so neither 'must report' nor 'must be silent' can be written down without inventing the answer. The `Expected of a consumer` row therefore carries a **dated measurement of what iccce does today** and names the outstanding sourcing question. When that question is answered the fixture moves into one of the two sections above and its row becomes a real expectation — that move is the visible event this section exists to produce.
+
+**No fixtures are currently in this category.** That is a statement, not an omission: every fixture in this corpus has a settled category. A fixture lands here only when a dispatch to `icc-spec-librarian` is outstanding on the exact point the fixture probes — not when iccce's behaviour is doubted (that is a defect, and the fixture is filed under what the standard says), and not when the text has been read and licenses more than one consumer behaviour (that is settled, and the project's choice is recorded in the row as a choice). The last member was `v2-rendering-intent-high-bits`, which moved to well-formed on 2026-08-18 when ICC.1:2001-04 6.1.11 was read.
 

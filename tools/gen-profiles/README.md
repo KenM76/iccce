@@ -20,9 +20,19 @@ anything a consumer would open with `inspect`, and nothing outside
 `cargo test` can use them — not a differential run, not a fuzzing run, not an
 external consumer.
 
-This crate is the other half. It produces **38 whole profiles on disk**, all
-category (a) per `docs/LEGAL.md` §3 (authored here, no third-party content,
-unrestricted, and each one says so in its own `cprt` tag).
+This crate is the other half. It produces the whole-profile corpus in
+`fixtures/synthetic/` — **46 files as of 2026-08-18**, all category (a) per
+`docs/LEGAL.md` §3 (authored here, no third-party content, unrestricted, and
+each one says so in its own `cprt` tag).
+
+★ **`gen-profiles list` is the authoritative count, not this sentence.** The
+figure above is dated because it is a typed numeral in prose, and a typed
+numeral goes stale silently the first time a recipe is added — this one had
+said 38 while the directory held 41, and 44 while it held 46. Dated figures
+elsewhere in this file
+(§6's verification record in particular) are **historical records of a run**
+and are deliberately *not* updated; they say what was true on the day they
+were taken.
 
 ### The property that makes the corpus worth having
 
@@ -593,6 +603,37 @@ version 5 profile**, where iccce identifies and refuses iccMAX by name. That is
 a deliberate divergence, not a defect on either side, and `iccmax-version.icc`
 is now the fixture that keeps it visible.
 
+### 6.4 The header rendering-intent pair — a second dated record, 2026-08-18
+
+**Appended, not merged into §6 above.** §6's record is what was true on
+2026-08-11 and stays as it stands; this is a separate run covering only the two
+fixtures added on 2026-08-18.
+
+**Scope, so it cannot be rounded up.** One machine (Windows 11, MSVC), one run,
+2026-08-18. Consumer: `target/debug/iccce.exe` built from the working tree at
+`60c32dd` plus the uncommitted change that added these fixtures. Oracle:
+`tools/difftest/vendor/build-msvc/transicc.exe`, *ColorSpace conversion
+calculator 5.1 / LittleCMS 2.19*. Destination for every conversion:
+`v4-rgb-matrix-trc.icc`. Probe: one interior point.
+
+| Fixture | `iccce inspect` | Oracle |
+|---|---|---|
+| `v2-rgb-header-intent-perceptual` | parses; **0 malformations**; 5 tags; `header.intent: 0 (perceptual)`; both `A2B0` and `A2B1` decode as `lut16 in=3 out=3 clutPoints=2` | accepted; converts at every `-t0..-t3` |
+| `v2-rgb-header-intent-relative` | as above but `header.intent: 1 (media-relative)` | as above |
+
+**What the pair was built to measure, and the result.** `iccce transform` with
+no `--intent` gives **byte-identical output for the two members**; so does
+`transicc`, at every intent tried. **Neither engine's transform consumes the
+header field** on a non-DeviceLink profile.
+
+★ **That is a cross-check, and it does not settle anything.** Whether ICC.1
+requires, permits or forbids consuming the field when no intent is otherwise
+specified is **UNSOURCED as of 2026-08-18**; an `icc-spec-librarian` dispatch
+is outstanding. The full account — including the one place lcms2 *does* read
+the field (DeviceLink profiles, `src/cmsio1.c`) — is in
+`crates/iccce-cli/tests/header_rendering_intent_not_consumed.rs` and
+`docs/TOLERANCES.md` §3.11.
+
 ---
 
 ## 7. Coverage, stated honestly
@@ -603,6 +644,16 @@ is now the fixture that keeps it visible.
 Classes `mntr`, `prtr`, `scnr`, `nmcl`. Spaces RGB, GRAY, CMYK. PCS XYZ and Lab.
 Both PCSLAB encodings, on the tag types the specification assigns each to.
 Legal full tag aliasing.
+
+**Added 2026-08-18:** intent-indexed tag *selection* — one profile carrying
+**both `A2B0` and `A2B1`**, with deliberately different tables, so clause
+8.10.2 b)'s choice between them is observable rather than inferred. Before
+this pair no fixture carried a second A2B tag at all, and a consumer that
+selected the wrong one could not have been caught here. **`A2B2` is still
+absent**, so the saturation arm of that selection remains uncovered, as does
+the `link` (DeviceLink) class — which matters more than it looks, because
+DeviceLink is the one class where lcms2 *does* read the header's rendering
+intent (§6.4).
 
 **Not covered, and named rather than implied:**
 

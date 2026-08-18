@@ -240,11 +240,45 @@ fn cmd_manifest() -> ExitCode {
              mutation: a fixture broken in two ways cannot tell you which one the consumer \
              reported.",
         ),
+        (
+            recipes::Category::Disputed,
+            "## Disputed fixtures \u{2014} required consumer behaviour NOT yet writable",
+            "\u{2605} **Read nothing in this section as a requirement on a consumer.** Both \
+             sections above state what a conformant consumer *must* do. A fixture lands here \
+             when the specification has not been read on the exact point the fixture probes, \
+             so neither 'must report' nor 'must be silent' can be written down without \
+             inventing the answer. The `Expected of a consumer` row therefore carries a \
+             **dated measurement of what iccce does today** and names the outstanding \
+             sourcing question. When that question is answered the fixture moves into one of \
+             the two sections above and its row becomes a real expectation \u{2014} that \
+             move is the visible event this section exists to produce.",
+        ),
     ] {
         println!("{heading}");
         println!();
         println!("{blurb}");
         println!();
+        // \u{2605} An empty category prints an explicit sentence rather than a
+        // heading with nothing under it. A bare heading reads as a generator
+        // bug or as a section someone forgot to fill; the sentence says the
+        // set is empty ON PURPOSE and names what would put something in it.
+        // The disputed section is the one this exists for \u{2014} it emptied on
+        // 2026-08-18 when its only member's sourcing landed.
+        if !all.iter().any(|r| r.category == cat) {
+            println!(
+                "**No fixtures are currently in this category.** That is a statement, not an \
+                 omission: every fixture in this corpus has a settled category. A fixture \
+                 lands here only when a dispatch to `icc-spec-librarian` is outstanding on \
+                 the exact point the fixture probes \u{2014} not when iccce's behaviour is \
+                 doubted (that is a defect, and the fixture is filed under what the standard \
+                 says), and not when the text has been read and licenses more than one \
+                 consumer behaviour (that is settled, and the project's choice is recorded \
+                 in the row as a choice). The last member was \
+                 `v2-rendering-intent-high-bits`, which moved to well-formed on 2026-08-18 \
+                 when ICC.1:2001-04 6.1.11 was read."
+            );
+            println!();
+        }
         for r in all.iter().filter(|r| r.category == cat) {
             let bytes = (r.build)();
             println!("### `{}.icc`", r.name);
