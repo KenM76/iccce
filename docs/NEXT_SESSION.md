@@ -2,7 +2,216 @@
 
 ---
 
-# ★★★ HANDOFF — 2026-08-18, session ended cleanly
+# ★★★ HANDOFF — 2026-08-18 (later), work PAUSED by the operator
+
+**Read this block first. It supersedes every block below it and anything
+else that conflicts; everything below is otherwise still true and still
+the reference.** The operator asked for a release build, a `FEATURES.md`,
+a handoff, and then for work to **pause**. All four were done. The tree
+is clean, the suite is green, and nothing is half-applied.
+
+## If the operator types only "continue"
+
+1. **List `D:\Dev\FeatureRequests\iccce_FeatureRequests\open\`** (§0's
+   standing rule). **Nothing was owed by us when work paused.**
+2. **Re-arm the 15-minute channel poll.** Monitors die with the session,
+   so this is gone and must be re-armed *every* session. Persistent
+   `Monitor`, 900 s loop, baseline `stat -c '%n %Y %s' "$DIR"/*` into
+   `prev`, `comm -13` against a fresh listing. Track **mtime and size**,
+   not names — an edited request is new work.
+   ★ **It will echo your OWN writes.** Requests flow both ways and
+   filenames carry no direction; read the file's `**from:**` header
+   before treating an event as inbound.
+3. **Go to "WHAT TO DO NEXT" below.**
+
+## State of the tree — measured after committing, not before
+
+| | |
+|---|---|
+| tip | **`2a9e126`** |
+| commits this session | **5** (`60c32dd..HEAD`) |
+| working tree | **clean** — 0 modified, 0 untracked |
+| **ahead of `origin/master`** | ★★ **14 commits. NOTHING IS PUSHED.** |
+| `cargo test --workspace` | **185 passed, 0 failed** |
+| `cargo fmt --all --check` / `clippy --workspace --all-targets -D warnings` | **exit 0** — measured, not asserted |
+| release build | `target/release/iccce.exe`, 377 344 bytes, exit 0 |
+| synthetic fixtures | **46** (18 well-formed / 28 malformed / 0 disputed) |
+
+★ **`cargo fmt --all` does NOT cover `tools/gen-profiles`** — it is not a
+workspace member. Check it separately (`cd tools/gen-profiles && cargo
+fmt --check`); it was left clean, but the root gate is blind to it.
+
+**Pushing is not authorised.** Fourteen unpushed commits is a state, not
+a backlog to clear on your own initiative.
+
+## ★★ TWO THINGS THE OPERATOR BELIEVES THAT THE TREE DOES NOT SUPPORT
+
+Both were stated on 2026-08-18 and both were checked, not assumed. They
+are first because acting on either without re-checking wastes a session.
+
+1. **"pdfce consumes iccce by path."** ★ **It does not, as of
+   2026-08-18.** `grep -rn 'iccce' /d/Dev/pdfce --include=Cargo.toml
+   --include=Cargo.lock --include=*.rs` returns **nothing** — no path
+   dependency, no lockfile entry, no source reference. So **no commit or
+   build in this repository currently reaches `pdfce` or any GUI built
+   from it.** Either the wiring is planned-but-not-done, or it lives
+   somewhere neither search covered. **Re-run that grep before believing
+   either story.**
+
+2. **`docs/FEATURES.md` did not exist** before this session; it was
+   created. `pdfce` has one at `D:\Dev\pdfce\docs\FEATURES.md`, which is
+   the likely source of the expectation. The new file is a
+   **consumer-facing capability inventory** — deliberately answering
+   *"can I call this tomorrow?"* rather than `README.md` §Status's *"how
+   far along is the plan?"*
+
+## What landed this session
+
+- **★★★ A real parser defect fixed** (`7f89829`). The rendering-intent
+  malformation was reported **unconditionally**, so a **v2** profile was
+  accused in the same words as a v4 one — for a requirement
+  ICC.1:2001-04 imposes on **neither half** of the field. v2's *"the
+  least-significant 16 bits are reserved for the ICC"* is the identical
+  boilerplate 6.1.8 uses for the profile flags, where the high half is
+  demonstrably vendor space: **a v2 profile with high bits set is using
+  the field as its own edition invites.** `Malformation::UnknownRenderingIntent`
+  now carries an `IntentRule`, and the emitted string differs by edition
+  because *"outside the defined 0..=3"* is true of v4 and **false of
+  v2**. ★ **This is a public API break** — consumers matching that
+  variant will fail to compile, which is the good failure mode.
+- **The header rendering-intent field is not consumed**, now sourced
+  (ICC.1:2022 7.2.15's `shall` binds the *field*, not a CMM; 8.10.2 is
+  **silent**) and tested on a synthetic pair differing in **exactly one
+  byte**.
+- **Pass K filed** — `NC-243`…`NC-266`, `NA-012`, ~24 claims across
+  §3.34, and the ROADMAP entry it never had.
+- **`DL-062`** — a stale *status* decays faster and more silently than a
+  stale *number*. **Two instances, the second arising while writing up
+  the first.**
+- **`TOLERANCES.md` §3.10.12.7 and `difftest/README.md` §25.13.7
+  corrected** — both asserted a compiled-path defect fixed **28 seconds
+  before** the doc claiming it was not.
+- **Five new fixtures**, closing all four cells of the two-condition
+  gate; `Category::Disputed` invented, used, and retained empty.
+- **Sourcing**: the IEC 61966-2-1 free preview and BT.709-3:1998 are now
+  held; two corpus defects retracted (`C10`, `C11`).
+
+## ★★ WHAT TO DO NEXT
+
+**Nothing is half-done. These are choices, in the order I would take
+them.**
+
+1. **★ Verify the `pdfce` link before anything else** — see the box
+   above. If a consumer genuinely needs these changes, the wiring is the
+   blocker, not the code, and it is ten minutes of work that unblocks
+   everything downstream.
+2. **The CLI's `header.intent` line has no test.** It prints
+   `65537 (UNKNOWN)` for the v2 high-bits fixture while reporting **zero
+   malformations** — correct output, but from an **unnamed mechanism**.
+   A later tidy-up masking to `& 0xFFFF` would print `media-relative`,
+   silently deleting the disclosure, **with a green suite**. One file in
+   `crates/iccce-cli/tests/`, five minutes. Deliberately not written,
+   because writing it decides the question.
+3. **★★ `Malformation`'s doc comment is falsified by two of its own
+   variants.** It says *"A rule violation the file carries"*; both
+   `TrailingBytes` and the v2 unrecognised-intent report carry none. The
+   emitted **words** are careful; the **channel** is not, and
+   `malformations: N` is a machine-readable count a consumer will read
+   as a conformance verdict. File the named choice in
+   `ARCHITECTURE.md` — *"`malformations: N` counts disclosures, not only
+   violations"*. Not `TOLERANCES.md`; there is no number.
+4. **Tail debt #1, now for the tenth filing: no `published-ground-truth`
+   row for any transform.** ★ Every **free** route is now closed with a
+   *positive structural reason*, not "we looked": W3C CSS Color 4 and
+   web-platform-tests are both downstream of the same paywall, contain
+   no matrix and no breakpoint, and assert three orders coarser than the
+   question. **CHF 210 for IEC 61966-2-1 pp. 16–51 is the only remaining
+   route, and it is an operator decision.**
+5. **The perceptual cost of black preservation is unmeasured** — the
+   ΔE2000 between the preserved and colorimetric answers on a
+   cross-press pair, which is the number a caller weighing the policy
+   actually wants. `NA-012`. ★ Do **not** substitute `NC-244`'s
+   `1.360900e-1`: that is the same-profile pair, where the policy is
+   nearly a no-op.
+6. **Still no difftest row for the compiled path**, even though the
+   defect is fixed. Its purpose changed from *disclosure* to *regression
+   guard* — weaker reason, permanent one.
+7. **`blind=11`**, all Pass I `chad` rows — judged **intrinsic** and to
+   be left alone. Resist any tightening that makes them look green
+   rather than honest.
+
+## Owed to the operator — do not decide these
+
+- **Pushing / tagging / releasing / crates.io.** Fourteen commits
+  unpushed. All six crate names were unregistered on 2026-08-17 — **a
+  dated observation, not a reservation**; re-check immediately before
+  any publish.
+- **CHF 210 for IEC 61966-2-1 clauses 3–5**, plus AMD1:2003 and the
+  newly discovered **COR1:2014** (which means every pre-2014 restatement
+  may be restating uncorrected text).
+- **`ICC.1:2010-12` (v4.3)** remains unheld — and ISO 32000-2 cl. 10.3.1
+  normatively requires ISO 15076-1:2010, which **is the same document
+  under an ISO designation**: a purchase, not a scraping problem.
+- **`KMapping::Ratio` (Cholewo)** stays a refusal unless a research
+  implementation is wanted.
+
+## ★★★ The traps this session paid for
+
+1. **A compile error can MASK a designed red.** The conformance test was
+   built to fail when the version gate landed — and it did, but only
+   after I added `rule: _` to a pattern, because the enum gained a field
+   and the file would not **compile**. *"The test went red as intended"*
+   and *"the test could not run"* are indistinguishable in an exit code.
+2. **`$?` after a pipe is the LAST command's exit code.** I ran
+   `cargo fmt --all --check | tail -5; echo $?` and read `0` from
+   `tail`. Caught only by re-running. This is the fifth-trap family from
+   the previous handoff, recurring immediately.
+3. **Check the edition before comparing formatter output.** I compared
+   `rustfmt --edition 2021` against a crate that is **edition 2024** and
+   got a phantom difference that looked like an agent had touched code
+   it said it had not.
+4. **A retraction filed as a BANNER leaves the body live.** The `C10`
+   retraction was written at the head of a file whose body still carried
+   the retracted bullet. ★ *"The banner is the failure mode; it makes a
+   file LOOK checked."*
+5. **An existence blocker without a positive reason stops future
+   searching.** *"No worked sRGB triple anywhere"* was carried across
+   nine filings **and filed under EXISTENCE** — while the corpus already
+   held, had read, and had transcribed the document publishing four.
+6. **★ A test fixture's evidential precision is its ASSERTION
+   TOLERANCE, not its printed precision.** web-platform-tests prints 5–6
+   significant figures and asserts at `epsilon = 0.01`: **47 of 69
+   published components are wrong at printed precision while 69 of 69
+   pass their assertion.** Find the comparison function and read the
+   epsilon.
+7. **n = 14 corpus defects, and all fourteen were caught from OUTSIDE
+   the file containing them.** That is no longer bad luck; it is a
+   property of how single-file edits work. Corollary from `C12`: **grep
+   the id, not the sentence** — a resolution and the stale text it
+   supersedes share no distinctive phrase.
+
+## Channel state
+
+`open/` held 16 files and **nothing was owed by us**. Two of our asks
+remain outstanding **with pdfce**: `request_profile_population_census.md`
+and `request_header_tag_channel_disagreement.md`.
+
+★ **Not yet written, and it should be**: a note correcting pdfce's belief
+that GWG 130 carries *"two deliberately corrupted profiles"*. It carries
+**four**, iccce reports `malformations: 0` on **all** of them, and the
+trap is **semantic, not structural** — the colorants are channel-permuted
+(red↔green in RGB, magenta↔cyan in CMYK), which was confirmed in the
+running transform, not read off a tag table. **GWG 130 is therefore
+undiagnosable by profile validation**, which matters because it means
+pdfce's failure is confirmation it is not applying the embedded
+`ICCBased` profile at all — the right conclusion, for a different reason
+than they recorded. ★ **None of those measured numbers may enter this
+repository** (`GHENT_COMPATIBILITY.md` §2.3); the durable, corpus-free
+part is the structural claim.
+
+---
+
+# ★★ SUPERSEDED — HANDOFF of 2026-08-18 (early), session ended cleanly
 
 **Read this block first. It supersedes the 2026-08-17 handoff below it
 and anything else that conflicts; everything below is otherwise still
