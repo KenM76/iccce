@@ -7,12 +7,37 @@
 //!
 //! ## What this module is for, and what it deliberately is not
 //!
-//! `crates/` contains **no black-preservation code** at the commit this was
-//! written against. That is not an oversight in this file — it is the premise.
-//! The engineer is implementing K-only / black preservation separately, and
-//! this module is the apparatus that will measure it, written first so that
-//! the numbers it will be graded by were chosen before anybody knew which
-//! numbers would be convenient.
+//! `crates/` contained **no black-preservation code** at the commit this was
+//! written against. That was not an oversight in this file — it was the
+//! premise. This module is the apparatus that measures the feature, written
+//! first so that the numbers it would be graded by were chosen before anybody
+//! knew which ones would be convenient.
+//!
+//! ### ★★★ THE FEATURE LANDED 2026-08-18, AND THE TOLERANCES DID NOT MOVE
+//!
+//! `crates/iccce-cmm/src/black_preserve.rs` implements
+//! `KMapping::EqualLightness` behind `Chain::with_black_preservation`, exposed
+//! as `iccce transform --preserve-black <policy>`. §E and §F were repointed at
+//! that surface the same day. **What a reader should check first is not that
+//! the rows are green but that the BOUNDS are the ones written before the code
+//! existed** — `EXACT_ZERO` is still exactly `0`, `TABLE_INTERPOLATION` is
+//! still one 16-bit quantum, `ORACLE_CHAIN` is still two, and `E4`'s bound is
+//! still computed at run time from the fixture. Nothing was widened; two rows
+//! moved from red to green because two numbers moved.
+//!
+//! | row | before | after |
+//! |---|---|---|
+//! | `E1` `k-only-in-implies-k-only-out` (licensed) | `0.705320` | **`0.000000`** |
+//! | `F5` the same on the committed fixture (CI) | `0.420705` | **`0.000000`** |
+//!
+//! ★★ **Four rows were ADDED rather than any bound relaxed**, because the
+//! landed feature made four questions askable that had no answer before:
+//! `E7`/`F8` (the preservation path must not touch an input that does not
+//! qualify — graded at exactly zero, `SelfConsistency`), `E8` (on a
+//! same-profile pair the construction is provably the identity — a
+//! `DerivedExpectation`, and **iccce is right where lcms2 is `6.1e-5` wrong**),
+//! and `E9` (the only row in this suite that can tell *which* of the two
+//! published definitions iccce implements).
 //!
 //! It therefore does three things and refuses a fourth:
 //!
@@ -22,8 +47,9 @@
 //! 2. **§B–§C measure the two predicates the requirement is usually stated
 //!    in** — the Ghent Output Suite's *Four different Grays* patch — as quantities, on both
 //!    sides of a boundary this project does not own.
-//! 3. **§D–§E build the discriminating probes**, one of which is **RED on
-//!    purpose** until the feature exists.
+//! 3. **§D–§E build the discriminating probes**, one of which was **RED on
+//!    purpose** until the feature existed, and is now the row that says the
+//!    feature does what it is named for.
 //! 4. It **does not implement, model, prototype or recommend** a
 //!    black-preservation algorithm. Where it needs to know what a K-preserving
 //!    answer looks like it asks **lcms2**, and every such row is labelled a
@@ -116,14 +142,16 @@
 //! CMYK profile whose `B2A0` **separates a neutral into all four inks by
 //! construction**. Its two candidate answers are **`0.420 705` apart** in
 //! device units, against a floor of `4e-2` declared in advance, and **§F's
-//! seven rows all run in CI**, including a deliberately red
-//! `k-only-in-implies-k-only-out`.
+//! eight rows all run in CI** — including `k-only-in-implies-k-only-out`,
+//! which was deliberately red until 2026-08-18 and is now the pass's only
+//! in-CI evidence that the feature works at all.
 //!
-//! What that *does* buy: the predicate is now graded where anybody can see it,
+//! What that *does* buy: the predicate is graded where anybody can see it,
 //! against expectations derived from the fixture's own bytes, and a regression
 //! guard on 50 **chromatic grays** — points that are not K-only under any
-//! definition — makes the red attributable to the missing feature rather than
-//! to a misread table.
+//! definition — made the red attributable to the missing feature rather than
+//! to a misread table, and now makes the green attributable to the feature
+//! rather than to a fixture that stopped separating.
 //!
 //! What it does **not** buy, and this must not be blurred: §F measures a
 //! **synthetic instrument**, not a press. Its models are affine by
@@ -288,7 +316,7 @@
 //! ## ★★★ The boundary, now SETTLED — and §C measures it anyway, on purpose
 //!
 //! The "four different grays" page puts a `DeviceGray`, a `DeviceCMYK`
-//! `0/0/0/K`, an `ICCBased` gray and a `Separation /Black` side by side and
+//! `0/0/0/K`, a `DeviceN [/Black]` and a `Separation /Black` side by side and
 //! requires them to match. **`icc-spec-librarian` settled where that is
 //! discharged, and it is not here:**
 //!
@@ -369,16 +397,44 @@
 //! surface**, and a feature that exists in the library but is unreachable from
 //! the binary must show up as a failure rather than as a green in-process row.
 //!
-//! Correspondingly: **when the feature lands, `E1` and `E3` must be pointed at
-//! whatever surface exposes it.** They drive `--intent media-relative` today
-//! because that is the only surface there is, and each of them prints the
-//! argument vector it actually used, computed at run time, in its own `detail`.
+//! Correspondingly, this header used to say: *when the feature lands, `E1` and
+//! `E3` must be pointed at whatever surface exposes it.* **Discharged
+//! 2026-08-18** — and the discharge was larger than the instruction, in a way
+//! worth recording because the same mistake is available to any future pass:
+//!
+//! ★★★ **`E4`'s own text claimed it was where a leaking preservation path
+//! `shows up and nowhere else`. That was FALSE of `E4` as written**, because
+//! black preservation is **opt-in and applied never by default**: a row driving
+//! the plain surface has no preservation code in its chain to leak. The
+//! instruction named `E1` and `E3` — the rows about the *predicate* — and
+//! missed the row about the *regression*, which is exactly the row a repointing
+//! is least likely to touch and most needs to. `E4`, `E5`, `F4` and `F7` are
+//! therefore all driven with `--preserve-black` now, and `E7`/`F8` grade the
+//! on/off difference **directly, at exactly zero**, which is a sharper
+//! instrument than either cross-check.
+//!
+//! Generalisation, and it is Pass H's lesson turned on its own remedy: *ask
+//! which layer is in the loop of the FIX, not only of the row.*
 //!
 //! ## What this pass cannot measure, stated here and not only in the report
 //!
-//! - **Which of the two K-mapping definitions iccce will implement** — lcms2's
-//!   equal-`L*` rule or Cholewo's `K_MIN`/`K_MAX` ratio. Until that is stated,
-//!   `E2` can print a distance but cannot mean one.
+//! - **Whether lcms2's equal-`L*` rule or Cholewo's `K_MIN`/`K_MAX` ratio is
+//!   the RIGHT definition.** ICC.1 states neither (register entry A51, a closed
+//!   negative), so nothing here can settle it and rule 7's remedy does not
+//!   apply. iccce implements the first and **names it in a mandatory CLI
+//!   argument**; `E9` grades that it implements the one it names, which is a
+//!   different and much weaker claim, stated as such on the row.
+//! - **The K value itself, on a same-press pair.** `E2` is REPORTED for ever
+//!   and the reason is now MEASURED rather than argued: on `ISO Coated v2 300%`
+//!   → itself the two candidate definitions coincide to `6.1e-5`, which is
+//!   exactly the observation, so the row is **BLIND** — a bound iccce passed,
+//!   "copy K through" would pass too. `E9` exists because a cross-press pair is
+//!   not blind.
+//! - **The width of the near-neutral transition.** `E3`/`F6` report iccce's
+//!   zero against the oracle's `1/16` and grade neither. That gap is now a
+//!   real, measured behavioural difference between two implementations of an
+//!   unspecified policy, not an artefact of a missing feature — and it is
+//!   stated rather than tuned toward.
 //! - **Anything about the PDF leg's correctness.** ISO 32000-1 §10.3.3 settles
 //!   that it is `pdfce`'s; §C measures the distance to it and grades nothing.
 //! - **Ink cost, moiré, registration or text sharpness** — the reasons the
@@ -506,8 +562,7 @@ impl<'a> KOnlyOracle<'a> {
     pub const PRESERVE_K_ONLY_RELATIVE: u8 = 11;
 
     /// The sentence that goes on the front of every record's `source`.
-    pub const CAVEAT: &'static str =
-        "ORACLE IS A NON-ICC INTENT: lcms2 rendering intent 11 \
+    pub const CAVEAT: &'static str = "ORACLE IS A NON-ICC INTENT: lcms2 rendering intent 11 \
          (INTENT_PRESERVE_K_ONLY_RELATIVE_COLORIMETRIC), a VENDOR EXTENSION outside the ICC \
          intent numbering. ICC.1 numbers four rendering intents, 0..3, and defines no \
          black-preserving intent. Every row from this oracle is an IMPLEMENTATION CROSS-CHECK \
@@ -515,9 +570,7 @@ impl<'a> KOnlyOracle<'a> {
 
     #[must_use]
     pub fn new(oracle: &'a Oracle) -> KOnlyOracle<'a> {
-        KOnlyOracle {
-            exe: oracle.path(),
-        }
+        KOnlyOracle { exe: oracle.path() }
     }
 
     /// Convert CMYK rows (normalised `0..1`) `src → dst` at a non-ICC intent,
@@ -793,6 +846,35 @@ pub const EXACT_ZERO: Tolerance = Tolerance::new(
      and a predicate about zero has no instrument error: lcms2's own K-only intent returns \
      0.000000 in all three chromatic channels at every point of this ramp. Any bound above zero \
      would be an allowance for ink the requirement forbids",
+);
+
+/// **The two printed floors, and nothing else** — `E8`'s bound.
+///
+/// `E8`'s expectation is not an implementation's output and not a
+/// measurement: it is **algebra**. When the source and destination models are
+/// the same model, the destination `K` whose `K`-only patch has the same `L*`
+/// as the source's at `K_in` **is `K_in`** — the equal-lightness construction
+/// is the identity on a same-profile pair, exactly, for any strictly
+/// monotonic ramp. Nothing about a press, an encoding or an interpolation
+/// scheme enters that statement.
+///
+/// So the only instrument between the claim and the observation is the
+/// printing: `iccce transform` writes six decimals in `0..1` (`1e-6`), and the
+/// probe's own `K` values are `j/40`, every one of which is exactly
+/// representable in six decimals. One printed unit is therefore the whole
+/// budget.
+///
+/// ★ **The premise is a property of the fixture and is stated rather than
+/// assumed.** If this destination's `L*(K)` ramp ever contained a flat stretch
+/// — ink saturating, which is a real thing a press profile does — the
+/// inversion would be ill-posed there, `crates/iccce-cmm`'s inverter takes the
+/// **lower** `K` by a documented choice, and the identity would fail *for a
+/// correct implementation*. That would be a red row about the fixture, not
+/// about the code, and a reader who sees this row go red must check the ramp
+/// before touching the inverter.
+pub const PRINT_FLOOR: Tolerance = Tolerance::new(
+    1e-6,
+    "ONE printed unit of `iccce transform`'s six decimals in 0..1. The expectation is ALGEBRA,      not a measurement: on a same-profile pair the equal-lightness construction is the identity      K_out = K_in for any strictly monotonic L*(K) ramp, so no press, encoding or interpolation      term exists to allow for. The probe's own K values are j/40 and are exactly representable      in six decimals. ★ The premise is the fixture's strict monotonicity; a flat stretch would      make the inversion ill-posed and this row would go red about the FIXTURE",
 );
 
 /// **§D1: two 16-bit quanta**, the encoding's own precision.
@@ -1310,7 +1392,19 @@ pub struct GrayLeg {
     /// max ΔE2000 between the two legs, both rendered through the
     /// destination's own `A2B1`.
     pub colorimetric_distance: f64,
-    /// The same ΔE at `g = 0.5` — GWG's own patch value.
+    /// The same ΔE at the ramp midpoint `g = 0.5`.
+    ///
+    /// ★ This was documented as "GWG's own patch value" until
+    /// 2026-08-18. **It is not.** Patch 23.0's panels are `DeviceGray`
+    /// **25 %** and `DeviceCMYK` **0/0/0/75** — read from the patch's
+    /// own content stream (`.25 g`, `0 0 0 .75 k`) and from its readme,
+    /// which sets them in a FIGURE that text extraction silently omits.
+    /// `1 − 0.25 = 0.75` is ISO 32000-1 clause 10.3.3 evaluated, which
+    /// is itself evidence for DL-059.
+    ///
+    /// The midpoint is a perfectly good place to sample a ramp. Only
+    /// the justification was false — the number never depended on it,
+    /// which is exactly why no test could have caught this.
     pub at_half: f64,
 }
 
@@ -1406,12 +1500,7 @@ fn analyse_oracle_model(oracle: &Oracle) -> Result<OracleModel, Unavailable> {
 
     let cell = cell_ramp();
     let preserved = k
-        .convert_cmyk(
-            &dst,
-            &dst,
-            KOnlyOracle::PRESERVE_K_ONLY_RELATIVE,
-            &cell,
-        )
+        .convert_cmyk(&dst, &dst, KOnlyOracle::PRESERVE_K_ONLY_RELATIVE, &cell)
         .map_err(|e| Unavailable::Error(e.to_string()))?;
     let req = Request {
         input: Space::profile(&dst),
@@ -1433,10 +1522,7 @@ fn analyse_oracle_model(oracle: &Oracle) -> Result<OracleModel, Unavailable> {
     let (a, b) = (preserved[0], preserved[preserved.len() - 1]);
     let mut residual = 0.0_f64;
     for (i, obs) in preserved.iter().enumerate() {
-        #[expect(
-            clippy::cast_precision_loss,
-            reason = "i is at most 32; exact in f64"
-        )]
+        #[expect(clippy::cast_precision_loss, reason = "i is at most 32; exact in f64")]
         let t = i as f64 / 32.0;
         for c in 0..4 {
             residual = residual.max((obs[c] - (a[c] * (1.0 - t) + b[c] * t)).abs());
@@ -1488,14 +1574,32 @@ fn analyse_oracle_model(oracle: &Oracle) -> Result<OracleModel, Unavailable> {
 }
 
 // ===========================================================================
-// §E — the predicates the FEATURE will be graded by
+// §E — the predicates the FEATURE is graded by (written before it existed)
 // ===========================================================================
+
+/// **The policy `--preserve-black` is driven with throughout §E and §F.**
+///
+/// ★ Named as a constant rather than typed at four call sites because a number
+/// measured under one policy is uninterpretable beside a number measured under
+/// another: `crates/iccce-cmm`'s two variants disagree by up to `4.9e-2` on a
+/// cross-press pair, which is an order above the loosest device bound this
+/// document family has ever justified. Every §E and §F record interpolates
+/// this string into its `why`; none types it.
+///
+/// It is `k-only-equal-lightness` and **not** `k-only-ratio` for the plain
+/// reason that the latter is a named refusal at this commit — and that refusal
+/// is itself the honest answer, not a gap: Cholewo (2000)'s `K_MIN`/`K_MAX`
+/// determination is not held by this project.
+pub const PRESERVE_POLICY: &str = "k-only-equal-lightness";
 
 /// §E's measurements.
 #[derive(Debug, Clone)]
 pub struct FeatureGate {
-    /// **`E1`.** max chromatic ink in **iccce's** answer on the K ramp, through
-    /// the surface named by `surface`. RED until black preservation exists.
+    /// **`E1`.** max chromatic ink in **iccce's** answer on the K ramp,
+    /// through the surface named by `surface` — which since 2026-08-18 is the
+    /// **preserving** surface, `--preserve-black` [`PRESERVE_POLICY`]. Before
+    /// the feature existed this row was deliberately red at `0.705320`; it is
+    /// now the row that says the feature does what it is named for.
     pub chromatic: f64,
     /// ★ **`E1`'s candidate separation, and it is deliberately NOT
     /// [`FeatureGate::chromatic`].** The distance between the two candidate
@@ -1505,56 +1609,151 @@ pub struct FeatureGate {
     /// [`Separation::against`]'s trap: the distance would collapse to exactly
     /// zero on the day the feature lands and the row went green, the mechanism
     /// disclaiming its power on the one run that demonstrates it.
+    ///
+    /// ★★ **That day has now come and this field is why the row survived it.**
+    /// `chromatic` fell from `0.705320` to `0.000000`; this number did not
+    /// move, because nothing about iccce is in it.
     pub oracle_chromatic: f64,
     /// The exact argument the row drove, printed so that a future reader knows
     /// which surface was measured.
     pub surface: String,
-    /// **`E2`.** max `|K_iccce − K_oracle-t11|` on the K ramp.
+    /// **`E2`.** max `|K_iccce − K_oracle-t11|` over the whole 41-point ramp.
     pub k_vs_oracle: f64,
+    /// **`E2`'s node-aligned half.** The same quantity restricted to the `K`
+    /// values that land exactly on lcms2's **17-node** black-preserving CLUT
+    /// (`K = m/16`, which on a `j/40` ramp is `j ∈ {0,5,10,…,40}`).
+    ///
+    /// ★★ Splitting the ramp this way is the measurement that changed what
+    /// `E2` means: off those nodes lcms2 is interpolating **its own** table,
+    /// not evaluating its own construction, and the two are 120×–351× apart
+    /// on the four cross-press pairs measured (observed ratios 119.6, 140.7,
+    /// 210.1, 351.5).
+    pub k_vs_oracle_at_nodes: f64,
     /// **`E2`'s named rival.** max `|K_oracle-t11 − K_in|`, the distance
     /// between "re-map K" and "copy K through" for this pair.
     pub k_copy_rival: f64,
     /// **`E3`.** The width, in device units of cyan, of iccce's K-only region
     /// at `K = 0.5`: the largest `C` at which chromatic ink is still zero.
     pub transition_width: f64,
+    /// ★ **`E3`'s disambiguator, and it did not exist before the feature.**
+    /// Max chromatic ink at the cell ramp's **`C = 0` endpoint** — the point
+    /// that is itself K-only.
+    ///
+    /// Without it `transition_width` is degenerate: it reads `0.000000` both
+    /// when the K-only region is *one point wide* and when there is **no
+    /// K-only output at all**, and those are opposite states. The pre-feature
+    /// run reported the same `0.000000` for the second reason.
+    pub cell_zero_chromatic: f64,
     /// **`E4`.** max `|Δ|` device, iccce vs lcms2, on node-aligned off-neutral
-    /// points.
+    /// points — **measured through the preserving surface** since 2026-08-18.
     pub node_aligned: f64,
     /// **`E5`.** the same, off the nodes — the control.
     pub arbitrary: f64,
     /// **`E4`'s** run-time bound input.
     pub sensitivity: f64,
+    /// ★★ **`E7`.** max `|Δ|` between the **same** 192 off-neutral probes run
+    /// with `--preserve-black` and without it. Zero means the preservation
+    /// path did not touch an input that does not qualify for it.
+    pub leak: f64,
+    /// **`E8`.** max `|K_out − K_in|` on the same-profile pair, where the
+    /// construction is provably the identity.
+    pub identity_k: f64,
+    /// **`E8`'s rival**: max `|K_oracle-t11 − K_in|` on the same pair, i.e.
+    /// how far the *oracle's* answer sits from the value algebra requires.
+    pub identity_oracle_rival: f64,
+    /// **`E9`'s destination** — a genuinely different press, named so that the
+    /// row's scope is on its own line.
+    pub xp_dst: &'static str,
+    /// **`E9`.** `|K_iccce − K_oracle-t11|` on the cross-press pair, at the
+    /// oracle's own CLUT nodes only.
+    pub xp_k_at_nodes: f64,
+    /// **`E9`'s rival**: `|K_oracle-t11 − K_in|` at the same nodes — the
+    /// distance to the "copy K through" candidate.
+    pub xp_copy_rival_at_nodes: f64,
+    /// **`E9`'s** run-time bound input: the cross-press destination's device
+    /// response to one 16-bit PCS quantum at the K ramp's own PCS points.
+    pub xp_sensitivity: f64,
+    /// How many of the 41 ramp points are oracle CLUT nodes.
+    pub xp_node_points: usize,
     /// **`E6`.** max chromatic ink on the committed synthetic CMYK fixture's
     /// K ramp: zero, which is what makes it useless for this subject.
     pub synthetic_chromatic: f64,
     pub node_points: usize,
 }
 
+/// The K values of [`k_ramp`] that are exact nodes of lcms2's **17-node**
+/// black-preserving CLUT.
+///
+/// `_cmsReasonableGridpointsByColorspace` returns 17 for a 4-channel space, so
+/// the nodes sit at `m/16`. The ramp samples `j/40`, and `j/40 = m/16` exactly
+/// when `j` is a multiple of 5. **Derived from the two grid sizes, not chosen**
+/// — if lcms2's constant ever changes this set silently becomes wrong, which is
+/// why `D1`/`D2` grade that constant directly.
+fn oracle_node_indices() -> Vec<usize> {
+    (0..=40).filter(|j| j % 5 == 0).collect()
+}
+
 fn analyse_feature_gate(oracle: &Oracle, iccce: &Iccce) -> Result<FeatureGate, Unavailable> {
     let dst = need_corpus(file::ISOCOATED300)?;
     let ramp = k_ramp();
     let rows: Vec<Vec<f64>> = ramp.iter().map(|r| r.to_vec()).collect();
+    let err = |e: DiffError| Unavailable::Error(e.to_string());
+    let preserved = |src: &Path, d: &Path, r: &[Vec<f64>]| -> Result<Vec<[f64; 4]>, Unavailable> {
+        as_cmyk(
+            iccce
+                .transform_rows_shaped_preserve_black(
+                    src,
+                    d,
+                    Intent::RelativeColorimetric,
+                    r,
+                    4,
+                    PRESERVE_POLICY,
+                )
+                .map_err(err)?,
+        )
+    };
+    let plain = |src: &Path, d: &Path, r: &[Vec<f64>]| -> Result<Vec<[f64; 4]>, Unavailable> {
+        as_cmyk(
+            iccce
+                .transform_rows_shaped(src, d, Intent::RelativeColorimetric, r, 4)
+                .map_err(err)?,
+        )
+    };
+    let oracle_cmyk =
+        |s: &Path, d: &Path, probes: &[[f64; 4]]| -> Result<Vec<[f64; 4]>, Unavailable> {
+            let req = Request {
+                input: Space::profile(s),
+                output: Space::profile(d),
+                intent: Intent::RelativeColorimetric,
+                precalc: Precalc::Exact,
+                bpc: Bpc::Off,
+                values: probes.iter().flatten().map(|v| v * 100.0).collect(),
+            };
+            Ok(
+                as_cmyk(oracle.convert_batch_shaped(&req, 4, 4).map_err(err)?)?
+                    .into_iter()
+                    .map(|r| [r[0] / 100.0, r[1] / 100.0, r[2] / 100.0, r[3] / 100.0])
+                    .collect(),
+            )
+        };
 
-    let mine = as_cmyk(
-        iccce
-            .transform_rows_shaped(&dst, &dst, Intent::RelativeColorimetric, &rows, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?;
+    // ★ THE REPOINTING, 2026-08-18. Everything §E says about the PREDICATE now
+    // drives `--preserve-black`; the plain surface is still driven alongside
+    // it, so that the two can be compared against each other (E7) rather than
+    // only against lcms2.
+    let mine = preserved(&dst, &dst, &rows)?;
     let k = KOnlyOracle::new(oracle);
     let theirs = k
         .convert_cmyk(&dst, &dst, KOnlyOracle::PRESERVE_K_ONLY_RELATIVE, &ramp)
-        .map_err(|e| Unavailable::Error(e.to_string()))?;
+        .map_err(err)?;
 
     // E3: how wide is iccce's K-only region at K = 0.5? Walk the same cell the
     // oracle's model occupies and find the last point at which chromatic ink is
-    // still exactly zero. Today that is the single point C = 0.
+    // still exactly zero. `cell_zero_chromatic` records the C = 0 endpoint
+    // separately, because a width of zero has two opposite meanings without it.
     let cell = cell_ramp();
     let cell_rows: Vec<Vec<f64>> = cell.iter().map(|r| r.to_vec()).collect();
-    let cell_out = as_cmyk(
-        iccce
-            .transform_rows_shaped(&dst, &dst, Intent::RelativeColorimetric, &cell_rows, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?;
+    let cell_out = preserved(&dst, &dst, &cell_rows)?;
     let mut width = 0.0_f64;
     for (inp, out) in cell.iter().zip(&cell_out) {
         if out[0].max(out[1]).max(out[2]) == 0.0 {
@@ -1563,98 +1762,77 @@ fn analyse_feature_gate(oracle: &Oracle, iccce: &Iccce) -> Result<FeatureGate, U
             break;
         }
     }
+    let cell_zero_chromatic = cell_out
+        .first()
+        .map_or(f64::NAN, |r| r[0].max(r[1]).max(r[2]));
 
+    // §E's two off-neutral probe sets, run BOTH ways. The preserved run is what
+    // E4/E5 grade — the feature must be IN THE LOOP of the row that claims it
+    // does not leak — and the difference between the two runs is E7.
     let node = node_aligned_off_neutral();
     let node_rows: Vec<Vec<f64>> = node.iter().map(|r| r.to_vec()).collect();
-    let node_mine = as_cmyk(
-        iccce
-            .transform_rows_shaped(&dst, &dst, Intent::RelativeColorimetric, &node_rows, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?;
-    let node_req = Request {
-        input: Space::profile(&dst),
-        output: Space::profile(&dst),
-        intent: Intent::RelativeColorimetric,
-        precalc: Precalc::Exact,
-        bpc: Bpc::Off,
-        values: node.iter().flatten().map(|v| v * 100.0).collect(),
-    };
-    let node_theirs: Vec<[f64; 4]> = as_cmyk(
-        oracle
-            .convert_batch_shaped(&node_req, 4, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?
-    .into_iter()
-    .map(|r| [r[0] / 100.0, r[1] / 100.0, r[2] / 100.0, r[3] / 100.0])
-    .collect();
+    let node_mine = preserved(&dst, &dst, &node_rows)?;
+    let node_plain = plain(&dst, &dst, &node_rows)?;
+    let node_theirs = oracle_cmyk(&dst, &dst, &node)?;
 
     let arb = arbitrary_off_neutral();
     let arb_rows: Vec<Vec<f64>> = arb.iter().map(|r| r.to_vec()).collect();
-    let arb_mine = as_cmyk(
-        iccce
-            .transform_rows_shaped(&dst, &dst, Intent::RelativeColorimetric, &arb_rows, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?;
-    let arb_req = Request {
-        input: Space::profile(&dst),
-        output: Space::profile(&dst),
-        intent: Intent::RelativeColorimetric,
-        precalc: Precalc::Exact,
-        bpc: Bpc::Off,
-        values: arb.iter().flatten().map(|v| v * 100.0).collect(),
-    };
-    let arb_theirs: Vec<[f64; 4]> = as_cmyk(
-        oracle
-            .convert_batch_shaped(&arb_req, 4, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?
-    .into_iter()
-    .map(|r| [r[0] / 100.0, r[1] / 100.0, r[2] / 100.0, r[3] / 100.0])
-    .collect();
+    let arb_mine = preserved(&dst, &dst, &arb_rows)?;
+    let arb_plain = plain(&dst, &dst, &arb_rows)?;
+    let arb_theirs = oracle_cmyk(&dst, &dst, &arb)?;
+
+    let leak = max_dev(&node_mine, &node_plain).max(max_dev(&arb_mine, &arb_plain));
 
     let node_labs = to_lab(oracle, &dst, &node)?;
     let sensitivity = pcs_quantum_sensitivity(oracle, &dst, &node_labs)?;
 
+    // §E9 — the CROSS-PRESS arm. On a same-press pair the two candidate K
+    // answers (equal lightness, copy through) coincide to 6.1e-5, so the
+    // section's own destination cannot tell them apart. GWG_GenericCMYK can.
+    let xp = need_corpus(file::GENERIC_CMYK)?;
+    let xp_mine = preserved(&dst, &xp, &rows)?;
+    let xp_theirs = k
+        .convert_cmyk(&dst, &xp, KOnlyOracle::PRESERVE_K_ONLY_RELATIVE, &ramp)
+        .map_err(err)?;
+    let nodes = oracle_node_indices();
+    let xp_k_at_nodes = nodes
+        .iter()
+        .map(|&j| (xp_mine[j][3] - xp_theirs[j][3]).abs())
+        .fold(0.0_f64, f64::max);
+    let xp_copy_rival_at_nodes = nodes
+        .iter()
+        .map(|&j| (xp_theirs[j][3] - ramp[j][3]).abs())
+        .fold(0.0_f64, f64::max);
+    let ramp_labs = to_lab(oracle, &dst, &ramp)?;
+    let xp_sensitivity = pcs_quantum_sensitivity(oracle, &xp, &ramp_labs)?;
+
     let syn = need_synthetic(SYNTHETIC_CMYK)?;
-    let syn_out = as_cmyk(
-        iccce
-            .transform_rows_shaped(&syn, &syn, Intent::RelativeColorimetric, &rows, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?;
+    let syn_out = preserved(&syn, &syn, &rows)?;
 
     // The fixture's OWN separation between the two candidate answers, taken
     // from lcms2's colorimetric result so that it does not move when iccce's
     // does. See `FeatureGate::oracle_chromatic`.
-    let colorimetric_req = Request {
-        input: Space::profile(&dst),
-        output: Space::profile(&dst),
-        intent: Intent::RelativeColorimetric,
-        precalc: Precalc::Exact,
-        bpc: Bpc::Off,
-        values: ramp.iter().flatten().map(|v| v * 100.0).collect(),
-    };
-    let oracle_colorimetric: Vec<[f64; 4]> = as_cmyk(
-        oracle
-            .convert_batch_shaped(&colorimetric_req, 4, 4)
-            .map_err(|e| Unavailable::Error(e.to_string()))?,
-    )?
-    .into_iter()
-    .map(|r| [r[0] / 100.0, r[1] / 100.0, r[2] / 100.0, r[3] / 100.0])
-    .collect();
+    let oracle_colorimetric = oracle_cmyk(&dst, &dst, &ramp)?;
 
     Ok(FeatureGate {
         chromatic: max_chromatic(&mine),
         oracle_chromatic: max_chromatic(&oracle_colorimetric),
         surface: format!(
             "iccce transform --src <ISO Coated v2 300% (ECI)> --dst <same> --intent {} \
-             (the only surface the shipped binary exposes at this commit; when black \
-             preservation lands, THIS ROW MUST BE POINTED AT THE NEW SURFACE)",
-            Intent::RelativeColorimetric.name()
+             --preserve-black {} (repointed 2026-08-18, per this row's own pre-feature \
+             instruction; the plain surface is still driven alongside it and the difference is \
+             row passk/E/regression/preservation-does-not-touch-a-non-qualifying-input)",
+            Intent::RelativeColorimetric.name(),
+            PRESERVE_POLICY
         ),
         k_vs_oracle: mine
             .iter()
             .zip(&theirs)
             .map(|(a, b)| (a[3] - b[3]).abs())
+            .fold(0.0_f64, f64::max),
+        k_vs_oracle_at_nodes: nodes
+            .iter()
+            .map(|&j| (mine[j][3] - theirs[j][3]).abs())
             .fold(0.0_f64, f64::max),
         k_copy_rival: theirs
             .iter()
@@ -1662,9 +1840,26 @@ fn analyse_feature_gate(oracle: &Oracle, iccce: &Iccce) -> Result<FeatureGate, U
             .map(|(o, r)| (o[3] - r[3]).abs())
             .fold(0.0_f64, f64::max),
         transition_width: width,
+        cell_zero_chromatic,
         node_aligned: max_dev(&node_mine, &node_theirs),
         arbitrary: max_dev(&arb_mine, &arb_theirs),
         sensitivity,
+        leak,
+        identity_k: mine
+            .iter()
+            .zip(&ramp)
+            .map(|(a, r)| (a[3] - r[3]).abs())
+            .fold(0.0_f64, f64::max),
+        identity_oracle_rival: theirs
+            .iter()
+            .zip(&ramp)
+            .map(|(o, r)| (o[3] - r[3]).abs())
+            .fold(0.0_f64, f64::max),
+        xp_dst: "GWG_GenericCMYK",
+        xp_k_at_nodes,
+        xp_copy_rival_at_nodes,
+        xp_sensitivity,
+        xp_node_points: nodes.len(),
         synthetic_chromatic: max_chromatic(&syn_out),
         node_points: node.len(),
     })
@@ -1749,10 +1944,11 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
     let iccce = match Iccce::locate() {
         Ok(Some(i)) => i,
         Ok(None) => {
-            b.unavailable
-                .push("the shipped iccce binary was not found; build with `cargo build --release \
+            b.unavailable.push(
+                "the shipped iccce binary was not found; build with `cargo build --release \
                        -p iccce-cli` or set $ICCCE_BIN"
-                    .to_string());
+                    .to_string(),
+            );
             let u = Unavailable::Skip(
                 "the shipped iccce binary was not found — every remaining row in Pass K drives \
                  it as a subprocess, deliberately (a feature reachable only from the library is \
@@ -1761,7 +1957,12 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
                  binary"
                     .into(),
             );
-            skip_or_error(&mut records, &ALL_ROWS, &u, "Pass K, tools/difftest/src/passk.rs");
+            skip_or_error(
+                &mut records,
+                &ALL_ROWS,
+                &u,
+                "Pass K, tools/difftest/src/passk.rs",
+            );
             skip_or_error(&mut records, &F_XFORM_ROWS, &u, "Pass K §F");
             b.separating = separating.ok();
             return (b, records);
@@ -1769,7 +1970,12 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
         Err(e) => {
             b.unavailable.push(e.to_string());
             let u = Unavailable::Error(e.to_string());
-            skip_or_error(&mut records, &ALL_ROWS, &u, "Pass K, tools/difftest/src/passk.rs");
+            skip_or_error(
+                &mut records,
+                &ALL_ROWS,
+                &u,
+                "Pass K, tools/difftest/src/passk.rs",
+            );
             skip_or_error(&mut records, &F_XFORM_ROWS, &u, "Pass K §F");
             b.separating = separating.ok();
             return (b, records);
@@ -1883,56 +2089,239 @@ const OR: Kind = Kind::OracleReproducibility;
 /// body has printed a number for. Every §F row carries it except the one that
 /// is explicitly the third reading.
 const DE_KIND: Kind = Kind::DerivedExpectation;
+/// ★ **The kind of the two post-feature LEAK rows** (`E7`, `F8`). Both
+/// sides are `iccce transform`, differing only in whether `--preserve-black`
+/// was passed, so nothing outside this project is in the loop and the claim is
+/// **self-consistency**: the weakest evidence class this suite emits. It is
+/// used here anyway, and deliberately, because the *predicate* is exact —
+/// "these two invocations printed the same bytes" — where every cross-check
+/// available for the same question carries an interpolation envelope two
+/// orders wider. A weak class with an exact predicate catches a leak that a
+/// strong class with a loose bound would absorb.
+const SELF: Kind = Kind::SelfConsistency;
 const DEV: Metric = Metric::DeviceAbsMaxNormalised;
 const DE: Metric = Metric::DeltaE2000Max;
 const CNT: Metric = Metric::IndicatorCount;
 
 const A_ROWS: [(&str, Kind, Metric, Tolerance); 8] = [
-    ("passk/A/isocoated300/k-ramp/media-relative/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/media-relative/total-area-coverage", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/media-relative/black-channel-reduction", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/media-relative/dE-is-BLIND-to-the-defect", CC, DE, DE_PERCEPTIBLE),
-    ("passk/A/isocoated300/k-ramp/media-relative/agrees-with-lcms2", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/perceptual/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/A/isocoated300/k-ramp/absolute/chromatic-ink", CC, DEV, REPORTED),
+    (
+        "passk/A/isocoated300/k-ramp/media-relative/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/media-relative/total-area-coverage",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/media-relative/black-channel-reduction",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/media-relative/dE-is-BLIND-to-the-defect",
+        CC,
+        DE,
+        DE_PERCEPTIBLE,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/media-relative/agrees-with-lcms2",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/perceptual/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/A/isocoated300/k-ramp/absolute/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
 ];
 
 const B_ROWS: [(&str, Kind, Metric, Tolerance); 7] = [
-    ("passk/B/saturation-is-NOT-a-general-k-preservation-substitute", CC, CNT, SHORTCUT_SATURATION),
-    ("passk/B/isocoated300/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/B/isocoated350/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/B/fogra39/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/B/fogra27/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/B/generic-cmyk/saturation/chromatic-ink", CC, DEV, REPORTED),
-    ("passk/B/xrite-v4/saturation/chromatic-ink", CC, DEV, REPORTED),
+    (
+        "passk/B/saturation-is-NOT-a-general-k-preservation-substitute",
+        CC,
+        CNT,
+        SHORTCUT_SATURATION,
+    ),
+    (
+        "passk/B/isocoated300/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/B/isocoated350/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/B/fogra39/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/B/fogra27/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/B/generic-cmyk/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/B/xrite-v4/saturation/chromatic-ink",
+        CC,
+        DEV,
+        REPORTED,
+    ),
 ];
 
 const C_ROWS: [(&str, Kind, Metric, Tolerance); 5] = [
-    ("passk/C/leg-I-icc/press-gray/device-distance-from-leg-P", CC, DEV, REPORTED),
-    ("passk/C/leg-I-icc/press-gray/colorimetric-distance-from-leg-P", CC, DE, REPORTED),
-    ("passk/C/leg-I-icc/synthetic-gamma22-gray/device-distance-from-leg-P", CC, DEV, REPORTED),
-    ("passk/C/leg-I-icc/synthetic-gamma22-gray/colorimetric-distance-from-leg-P", CC, DE, REPORTED),
-    ("passk/C/the-two-legs-are-NOT-interchangeable", CC, CNT, SHORTCUT_GRAY_LEG),
+    (
+        "passk/C/leg-I-icc/press-gray/device-distance-from-leg-P",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/C/leg-I-icc/press-gray/colorimetric-distance-from-leg-P",
+        CC,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/C/leg-I-icc/synthetic-gamma22-gray/device-distance-from-leg-P",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/C/leg-I-icc/synthetic-gamma22-gray/colorimetric-distance-from-leg-P",
+        CC,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/C/the-two-legs-are-NOT-interchangeable",
+        CC,
+        CNT,
+        SHORTCUT_GRAY_LEG,
+    ),
 ];
 
 const D_ROWS: [(&str, Kind, Metric, Tolerance); 7] = [
-    ("passk/D/lcms2-intent-11/k-only-region-is-ONE-clut-cell-wide", OR, DEV, CLUT_CELL_MODEL),
-    ("passk/D/lcms2-intent-11/coincides-with-colorimetric-at-one-cell", OR, DEV, EXACT_ZERO),
-    ("passk/D/lcms2-intent-11/chromatic-ink-on-the-k-ramp-is-exactly-zero", OR, DEV, EXACT_ZERO),
-    ("passk/D/lcms2-intent-11/ktone/isocoated300-to-itself", OR, DEV, REPORTED),
-    ("passk/D/lcms2-intent-11/ktone/isocoated300-to-fogra39", OR, DEV, REPORTED),
-    ("passk/D/lcms2-intent-11/ktone/isocoated300-to-fogra27", OR, DEV, REPORTED),
-    ("passk/D/lcms2-intent-11/ktone/isocoated300-to-generic-cmyk", OR, DEV, REPORTED),
+    (
+        "passk/D/lcms2-intent-11/k-only-region-is-ONE-clut-cell-wide",
+        OR,
+        DEV,
+        CLUT_CELL_MODEL,
+    ),
+    (
+        "passk/D/lcms2-intent-11/coincides-with-colorimetric-at-one-cell",
+        OR,
+        DEV,
+        EXACT_ZERO,
+    ),
+    (
+        "passk/D/lcms2-intent-11/chromatic-ink-on-the-k-ramp-is-exactly-zero",
+        OR,
+        DEV,
+        EXACT_ZERO,
+    ),
+    (
+        "passk/D/lcms2-intent-11/ktone/isocoated300-to-itself",
+        OR,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/D/lcms2-intent-11/ktone/isocoated300-to-fogra39",
+        OR,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/D/lcms2-intent-11/ktone/isocoated300-to-fogra27",
+        OR,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/D/lcms2-intent-11/ktone/isocoated300-to-generic-cmyk",
+        OR,
+        DEV,
+        REPORTED,
+    ),
 ];
 
-const E_ROWS: [(&str, Kind, Metric, Tolerance); 6] = [
+const E_ROWS: [(&str, Kind, Metric, Tolerance); 9] = [
     ("passk/E/k-only-in-implies-k-only-out", CC, DEV, EXACT_ZERO),
-    ("passk/E/preserved-k-value-vs-the-oracle-tone-curve", CC, DEV, REPORTED),
+    (
+        "passk/E/preserved-k-value-vs-the-oracle-tone-curve",
+        CC,
+        DEV,
+        REPORTED,
+    ),
     ("passk/E/near-neutral-transition-width", CC, DEV, REPORTED),
-    ("passk/E/regression/node-aligned-off-neutral-agrees-with-lcms2", CC, DEV, REPORTED),
-    ("passk/E/regression/off-node-envelope-is-NOT-zero", CC, DEV, REPORTED),
-    ("passk/E/synthetic-cmyk-fixture-is-ZERO-SEPARATION-for-this-subject", CC, DEV, REPORTED),
+    (
+        "passk/E/regression/node-aligned-off-neutral-agrees-with-lcms2",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/E/regression/off-node-envelope-is-NOT-zero",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/E/synthetic-cmyk-fixture-is-ZERO-SEPARATION-for-this-subject",
+        CC,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/E/regression/preservation-does-not-touch-a-non-qualifying-input",
+        SELF,
+        DEV,
+        EXACT_ZERO,
+    ),
+    (
+        "passk/E/preserved-k-is-the-IDENTITY-on-a-same-profile-pair",
+        DE_KIND,
+        DEV,
+        PRINT_FLOOR,
+    ),
+    (
+        "passk/E/cross-press/preserved-k-matches-the-oracle-at-its-own-clut-nodes",
+        CC,
+        DEV,
+        REPORTED,
+    ),
 ];
 
 /// ★ **§F's file-only rows.** They need neither the oracle nor the shipped
@@ -1941,24 +2330,65 @@ const E_ROWS: [(&str, Kind, Metric, Tolerance); 6] = [
 /// must be reported on a machine that has built nothing, and every other row
 /// in this module rests on the fixture being what its recipe says.
 const F_FILE_ROWS: [(&str, Kind, Metric, Tolerance); 3] = [
-    ("passk/F/synthetic-chromatic-neutral/b2a-is-a-b-INDEPENDENT-across-the-dead-band", DE_KIND, DEV, EXACT_ZERO),
-    ("passk/F/synthetic-chromatic-neutral/b2a-neutral-column-matches-the-authored-model", DE_KIND, DEV, HALF_QUANTUM),
-    ("passk/F/synthetic-chromatic-neutral/separation-is-above-the-declared-floor", DE_KIND, DEV, SEPARATION_FLOOR_MET),
+    (
+        "passk/F/synthetic-chromatic-neutral/b2a-is-a-b-INDEPENDENT-across-the-dead-band",
+        DE_KIND,
+        DEV,
+        EXACT_ZERO,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/b2a-neutral-column-matches-the-authored-model",
+        DE_KIND,
+        DEV,
+        HALF_QUANTUM,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/separation-is-above-the-declared-floor",
+        DE_KIND,
+        DEV,
+        SEPARATION_FLOOR_MET,
+    ),
 ];
 
 /// **§F's transform rows** — the ones that drive the shipped binary. All four
 /// run in CI: the fixture is committed and unlicensed, so nothing here skips
 /// for want of a corpus.
-const F_XFORM_ROWS: [(&str, Kind, Metric, Tolerance); 4] = [
-    ("passk/F/synthetic-chromatic-neutral/chromatic-gray-round-trip-matches-the-derived-table", DE_KIND, DEV, TABLE_INTERPOLATION),
-    ("passk/F/synthetic-chromatic-neutral/k-only-in-implies-k-only-out", DE_KIND, DEV, EXACT_ZERO),
-    ("passk/F/synthetic-chromatic-neutral/near-neutral-transition-width", DE_KIND, DEV, REPORTED),
-    ("passk/F/synthetic-chromatic-neutral/regression/chromatic-gray-round-trip-agrees-with-lcms2", CC, DEV, ORACLE_CHAIN),
+const F_XFORM_ROWS: [(&str, Kind, Metric, Tolerance); 5] = [
+    (
+        "passk/F/synthetic-chromatic-neutral/chromatic-gray-round-trip-matches-the-derived-table",
+        DE_KIND,
+        DEV,
+        TABLE_INTERPOLATION,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/k-only-in-implies-k-only-out",
+        DE_KIND,
+        DEV,
+        EXACT_ZERO,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/near-neutral-transition-width",
+        DE_KIND,
+        DEV,
+        REPORTED,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/regression/chromatic-gray-round-trip-agrees-with-lcms2",
+        CC,
+        DEV,
+        ORACLE_CHAIN,
+    ),
+    (
+        "passk/F/synthetic-chromatic-neutral/regression/preservation-does-not-touch-a-non-qualifying-input",
+        SELF,
+        DEV,
+        EXACT_ZERO,
+    ),
 ];
 
 /// Every row this pass can emit, for the "no iccce binary" case.
-const ALL_ROWS: [(&str, Kind, Metric, Tolerance); 33] = {
-    let mut out = [A_ROWS[0]; 33];
+const ALL_ROWS: [(&str, Kind, Metric, Tolerance); 36] = {
+    let mut out = [A_ROWS[0]; 36];
     let mut i = 0;
     while i < 8 {
         out[i] = A_ROWS[i];
@@ -1980,7 +2410,7 @@ const ALL_ROWS: [(&str, Kind, Metric, Tolerance); 33] = {
         l += 1;
     }
     let mut m = 0;
-    while m < 6 {
+    while m < 9 {
         out[27 + m] = E_ROWS[m];
         m += 1;
     }
@@ -2097,7 +2527,11 @@ fn baseline_records(x: &Baseline) -> Vec<Record> {
                  report nothing, which is why every preservation row in this module is in \
                  DEVICE units",
                 mr.4,
-                if mr.4 > 0.0 { 1.0 / mr.4 } else { f64::INFINITY },
+                if mr.4 > 0.0 {
+                    1.0 / mr.4
+                } else {
+                    f64::INFINITY
+                },
                 mr.1,
                 mr.1
             ),
@@ -2140,32 +2574,34 @@ fn baseline_records(x: &Baseline) -> Vec<Record> {
     );
 
     for (i, (intent, chroma, tac, dk, de)) in x.per_intent.iter().enumerate().skip(1) {
-        out.push(Record::graded(
-            A_ROWS[4 + i].0,
-            CC,
-            DEV,
-            REPORTED,
-            *chroma,
-            SRC_BASELINE,
-            format!(
-                "The same ramp at {}: max chromatic ink {:.6}, max TAC {:.6}, max |K_out-K_in| \
+        out.push(
+            Record::graded(
+                A_ROWS[4 + i].0,
+                CC,
+                DEV,
+                REPORTED,
+                *chroma,
+                SRC_BASELINE,
+                format!(
+                    "The same ramp at {}: max chromatic ink {:.6}, max TAC {:.6}, max |K_out-K_in| \
                  {:.6}, max dE2000 from the K-only build {:.6}. ★ The saturation row is the one \
                  to read twice - on THIS vendor's profiles it is nearly K-only already, and §B \
                  shows on five other destinations that that is not a general property",
-                intent.name(),
-                chroma,
-                tac,
-                dk,
-                de
-            ),
-        )
-        .with_separation(Separation::none(
-            "considered: this is the SAME observable as the media-relative baseline row at a \
+                    intent.name(),
+                    chroma,
+                    tac,
+                    dk,
+                    de
+                ),
+            )
+            .with_separation(Separation::none(
+                "considered: this is the SAME observable as the media-relative baseline row at a \
              different ICC intent, and the rival candidate for all four is the K-preserving \
              answer, stated once on rows passk/A/.../black-channel-reduction and \
              passk/E/k-only-in-implies-k-only-out. Restating it here would inflate the \
              discriminating count without adding a second reading of anything",
-        )));
+            )),
+        );
     }
     out
 }
@@ -2181,7 +2617,10 @@ fn sweep_records(rows: &[SweepRow]) -> Vec<Record> {
         clippy::cast_precision_loss,
         reason = "a population count of 6 is exact in f64"
     )]
-    let holds = rows.iter().filter(|r| r.saturation <= NEARLY_K_ONLY).count() as f64;
+    let holds = rows
+        .iter()
+        .filter(|r| r.saturation <= NEARLY_K_ONLY)
+        .count() as f64;
     let names: Vec<&str> = rows
         .iter()
         .filter(|r| r.saturation <= NEARLY_K_ONLY)
@@ -2296,7 +2735,7 @@ fn gray_records(rows: &[GrayLeg]) -> Vec<Record> {
             SRC_GRAY,
             format!(
                 "Source {}. max dE2000 between the two legs, both rendered through the \
-                 destination's own A2B1: {:.6}; at GWG's own g = 0.5 patch value, {:.6}. Read \
+                 destination's own A2B1: {:.6}; at the ramp midpoint g = 0.5, {:.6} (★ NOT a                  GWG patch value — patch 23.0's gray panel is 25 %, its CMYK panel 0/0/0/75;                  the earlier attribution here was false and the number is unaffected). Read \
                  this beside the device row for the same source: same colour, different ink, or \
                  different colour, depending ENTIRELY on which gray profile is in the loop",
                 r.name, r.colorimetric_distance, r.at_half
@@ -2409,31 +2848,29 @@ fn model_records(x: &OracleModel) -> Vec<Record> {
          it is stated WITH a computed distance on the row above, which is the row that would \
          detect it. Restating it here would double-count one alternative",
     )));
-    out.push(Record::graded(
-        D_ROWS[2].0,
-        OR,
-        DEV,
-        EXACT_ZERO,
-        x.chromatic_on_ramp,
-        k_source("both sides lcms2; this row is what EXACT_ZERO is calibrated against"),
-        format!(
-            "Over the whole 41-point K-only ramp the oracle's K-only answer carries {:.6e} \
+    out.push(
+        Record::graded(
+            D_ROWS[2].0,
+            OR,
+            DEV,
+            EXACT_ZERO,
+            x.chromatic_on_ramp,
+            k_source("both sides lcms2; this row is what EXACT_ZERO is calibrated against"),
+            format!(
+                "Over the whole 41-point K-only ramp the oracle's K-only answer carries {:.6e} \
              chromatic ink. This is the measurement that makes a tolerance of EXACTLY ZERO \
              defensible for row passk/E/k-only-in-implies-k-only-out: a real implementation of \
              this requirement returns the encoded value zero, not something small",
-            x.chromatic_on_ramp
-        ),
-    )
-    .with_separation(Separation::none(
-        "considered, and there is genuinely no second candidate: the sampler either writes the \
+                x.chromatic_on_ramp
+            ),
+        )
+        .with_separation(Separation::none(
+            "considered, and there is genuinely no second candidate: the sampler either writes the \
          encoded value zero into the three chromatic channels or it does not, and there is no \
          reading of 'zero' that returns something else",
-    )));
-    let worst = x
-        .ktone
-        .iter()
-        .map(|(_, v)| *v)
-        .fold(0.0_f64, f64::max);
+        )),
+    );
+    let worst = x.ktone.iter().map(|(_, v)| *v).fold(0.0_f64, f64::max);
     for (i, (name, v)) in x.ktone.iter().enumerate() {
         out.push(
             Record::graded(
@@ -2473,9 +2910,12 @@ fn model_records(x: &OracleModel) -> Vec<Record> {
     out
 }
 
-const SRC_GATE: &str = "Pass K §E — the rows the FEATURE will be graded by, written before it \
-    exists. iccce's numbers come from the shipped binary; the K-preserving reference comes from \
-    the non-ICC lcms2 intent 11 and is labelled on every row that uses it";
+const SRC_GATE: &str = "Pass K §E — the rows the FEATURE is graded by, and they were written \
+    BEFORE it existed (2026-08-17) and repointed at it on 2026-08-18 without a bound moving. \
+    iccce's numbers come from the shipped binary, driven with --preserve-black k-only-equal-lightness \
+    where the row is about the preservation policy and BOTH ways where the row is about the \
+    policy not being applied; the K-preserving reference comes from the non-ICC lcms2 intent 11 \
+    and is labelled on every row that uses it";
 
 fn gate_records(x: &FeatureGate) -> Vec<Record> {
     let mut out = Vec::new();
@@ -2488,20 +2928,26 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
             x.chromatic,
             SRC_GATE,
             format!(
-                "★★★ DELIBERATELY RED UNTIL THE FEATURE EXISTS. THE REMEDY IS THE FEATURE, NOT \
-                 THE NUMBER. Observed max chromatic ink {:.6} against a required 0. Surface \
-                 driven: {}. ★ This row SKIPs in CI permanently (licensed corpus), so the red is \
-                 visible to whoever is implementing black preservation and invisible to CI - \
-                 which is an honest consequence of the corpus's licence and is recorded as a \
-                 coverage gap in §3.10.8, not as a convenience",
+                "★★★ THE ROW THE FEATURE WAS BUILT AGAINST, REPOINTED 2026-08-18 AT THE SURFACE \
+                 THAT NOW EXISTS. Observed max chromatic ink {:.6} against a required 0, over \
+                 the 41-point K-only ramp. Surface driven: {}. ★ THE NUMBER MOVED BECAUSE THE \
+                 CODE MOVED: this row read 0.705320 before black preservation existed and the \
+                 tolerance has not been touched — it was and is exactly 0, written before \
+                 anybody could see which value would be convenient. ★ This row still SKIPs in \
+                 CI permanently (licensed corpus); its committed twin \
+                 passk/F/synthetic-chromatic-neutral/k-only-in-implies-k-only-out is what runs \
+                 there, and §3.10.8 records the coverage gap",
                 x.chromatic, x.surface
             ),
         )
         .with_separation(Separation::against_distance(
             "a K-preserving path, which lcms2's non-ICC intent 11 shows returns exactly 0.000000 \
-             chromatic ink at every point of this ramp",
+             chromatic ink at every point of this ramp. ★ The distance is taken from LCMS2'S \
+             COLORIMETRIC ANSWER on this same ramp and not from iccce's observation, which is \
+             why it did not collapse to zero on the run that turned the row green — the trap \
+             Separation::against exists to name",
             0.0,
-            x.chromatic,
+            x.oracle_chromatic,
             SepUnits::SameAsMetric,
         )),
     );
@@ -2514,23 +2960,32 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
             x.k_vs_oracle,
             SRC_GATE,
             format!(
-                "max |K_iccce - K_oracle| on the K-only ramp = {:.6}. REPORTED FOR EVER, and \
-                 that is a decision: the K value a preserving path should emit is lcms2's \
-                 _cmsBuildKToneCurve construction, a VENDOR choice with no normative text \
-                 behind it (the A27/A42 posture §3.7 takes for BPC). Gating iccce against it \
-                 would gate a choice no standard makes. The number is printed so that a reader \
-                 can see how far the two policies sit apart",
-                x.k_vs_oracle
+                "max |K_iccce - K_oracle| over the whole 41-point ramp = {:.6e}; over the {} \
+                 points that are EXACT NODES of lcms2's own 17-node black-preserving CLUT it is \
+                 {:.6e}. ★★ THE SPLIT IS THE FINDING AND IT IS WHY THIS ROW STAYS REPORTED. Off \
+                 those nodes lcms2 is INTERPOLATING ITS OWN TABLE rather than evaluating its own \
+                 construction, so the whole-ramp figure measures lcms2's grid, not either \
+                 party's K mapping — the same node/off-node shape row \
+                 passk/E/regression/off-node-envelope-is-NOT-zero reports at 32x for the \
+                 colorimetric path. ★★ AND ON THIS PAIR THE ROW IS BLIND ANYWAY: source and \
+                 destination are the same press, where the two published definitions coincide, \
+                 so the named rival sits {:.6e} away — the SAME distance as the observation. A \
+                 bound iccce passed here, 'copy K through' would pass too. The pair that CAN \
+                 discriminate is graded at \
+                 passk/E/cross-press/preserved-k-matches-the-oracle-at-its-own-clut-nodes; the \
+                 exact answer this pair does admit is graded at \
+                 passk/E/preserved-k-is-the-IDENTITY-on-a-same-profile-pair",
+                x.k_vs_oracle, x.xp_node_points, x.k_vs_oracle_at_nodes, x.k_copy_rival
             ),
         )
         .with_separation(Separation::against_distance(
             "K is copied through unchanged instead of mapped through the destination's black-ink \
              tone curve — measured on this pair as the distance between the oracle's answer and \
-             the input. ★ There is a SECOND named rival with no computed distance yet, and it \
-             matters more: lcms2 maps K by EQUAL L* on the K ramp, while Cholewo (2000) maps it \
-             by the K_MIN/K_MAX RATIO. Two definitions, one name. Whichever iccce implements must \
-             be stated before this row's number means anything, which is a further reason it is \
-             REPORTED",
+             the input. ★★ Read the number: on a SAME-PRESS pair it equals the observation, so \
+             this row cannot discriminate the rival and must not be quoted as though it had. ★ \
+             The second named rival, Cholewo (2000)'s K_MIN/K_MAX ratio, is a NAMED REFUSAL in \
+             crates/iccce-cmm at this commit rather than an implemented arm, so no distance to \
+             it can be measured from any surface iccce exposes",
             x.k_copy_rival,
             x.k_copy_rival,
             SepUnits::SameAsMetric,
@@ -2545,14 +3000,23 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
         SRC_GATE,
         format!(
             "The width of iccce's K-only region at K = 0.5, measured by walking C from 0 to 1/16 \
-             and finding the last point at which chromatic ink is still exactly zero: {:.6}. \
-             Today that is the single point C = 0, i.e. THERE IS NO K-ONLY REGION. The oracle's \
-             is exactly one CLUT cell, {:.6} (row passk/D/.../k-only-region-is-ONE-clut-cell-wide \
-             establishes the shape). ★ This is the row that catches 'right on the neutral ramp, \
-             wrong off-neutral': an implementation that preserved only at C exactly 0 and one \
-             that snapped everything within 0.2 to K-only would both satisfy §E's first row and \
-             differ HERE",
-            x.transition_width, CELL
+             and finding the last point at which chromatic ink is still exactly zero: {:.6}. ★★ \
+             THAT ZERO NOW MEANS THE OPPOSITE OF WHAT IT MEANT BEFORE THE FEATURE, AND ONLY A \
+             SECOND NUMBER CAN TELL THE TWO APART: chromatic ink at the C = 0 endpoint itself is \
+             {:.6e}, so the K-only region EXISTS and is exactly one point wide. Before the \
+             feature this row also read 0.000000 — because there was no K-only output at all. A \
+             row whose observation is unchanged across the change it was written to detect is \
+             the failure mode this pass's own memory calls a blinded row. ★★★ THE GAP TO THE \
+             ORACLE IS NOW A REAL BEHAVIOURAL DIFFERENCE AND NOT AN ARTEFACT OF A MISSING \
+             FEATURE. lcms2's K-only region is exactly one cell of its 17-node CLUT, {:.6}; \
+             iccce's is zero by construction, because crates/iccce-cmm tests the three chromatic \
+             channels against EXACT ZERO (matching lcms2's own In[0]==0 && In[1]==0 && In[2]==0) \
+             while lcms2's width is a consequence of sampling that test into a CLUT and \
+             interpolating it. ICC.1 says nothing about either (register entry A51, a closed \
+             negative), so there is no text to settle it from and rule 7's remedy does not \
+             apply: this is REPORTED, deliberately and permanently, and inventing a width so \
+             that the section had a gate would invent the thing the pass exists to derive",
+            x.transition_width, x.cell_zero_chromatic, CELL
         ),
     )
     .with_separation(Separation::against_distance(
@@ -2574,14 +3038,24 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
             x.node_aligned,
             SRC_GATE,
             format!(
-                "★ THE REGRESSION GUARD FOR THE NON-PRESERVED PATH. {} deterministic OFF-NEUTRAL \
-                 points whose device coordinates are A2B CLUT nodes (j/15, grid 16), converted \
-                 at media-relative: iccce agrees with lcms2 to {:.6e} against a run-time bound \
-                 of {:.6e} (PCS-quantum sensitivity {:.6e} + two print floors). ★ When black \
-                 preservation lands, THIS ROW MUST STAY GREEN: a preservation path that leaks \
-                 into the ordinary colorimetric answer shows up here and nowhere else in this \
-                 module, because every other §E row is on or near the neutral axis",
-                x.node_points, x.node_aligned, tol.value, x.sensitivity
+                "★ THE REGRESSION GUARD FOR THE NON-PRESERVED PATH, AND SINCE 2026-08-18 IT IS \
+                 DRIVEN WITH --preserve-black {} SO THAT THE FEATURE IS ACTUALLY IN ITS LOOP. \
+                 {} deterministic OFF-NEUTRAL points whose device coordinates are A2B CLUT nodes \
+                 (j/15, grid 16), converted at media-relative: iccce agrees with lcms2's ORDINARY \
+                 colorimetric answer to {:.6e} against a run-time bound of {:.6e} (PCS-quantum \
+                 sensitivity {:.6e} + two print floors). ★★ WHY THE SURFACE HAD TO CHANGE: this \
+                 row's pre-feature text said a leaking preservation path 'shows up here and \
+                 nowhere else'. That was true only if the path were in the chain — and black \
+                 preservation is OPT-IN and applied never by default, so a row driving the plain \
+                 surface would have contained no preservation code to leak. Repointing it at the \
+                 preserving surface is what makes the sentence true rather than aspirational. ★ \
+                 An input with any chromatic ink is not K-only under the exact-zero rule, so a \
+                 correct implementation must return bit-identical answers on both surfaces; row \
+                 passk/E/regression/preservation-does-not-touch-a-non-qualifying-input grades \
+                 that difference directly and at exactly zero, which is the sharper instrument. \
+                 Read the two together: this row red and that one green means the ordinary path \
+                 drifted; both red means the preservation path leaked",
+                PRESERVE_POLICY, x.node_points, x.node_aligned, tol.value, x.sensitivity
             ),
         )
         .with_separation(Separation::against_distance(
@@ -2593,34 +3067,39 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
             SepUnits::SameAsMetric,
         )),
     );
-    out.push(Record::graded(
-        E_ROWS[4].0,
-        CC,
-        DEV,
-        REPORTED,
-        x.arbitrary,
-        SRC_GATE,
-        format!(
-            "★★ THE CONTROL THAT EARNS THE PRECEDING ROW'S TIGHTNESS. The same comparison over \
-             96 points that are NOT node-aligned: {:.6e}, which is {:.1}x the node-aligned \
-             figure. That difference IS the CLUT interpolation-method envelope (NA-006) - the \
-             term Pass G's SWEEP_DEVICE had to admit at 4e-3 and the reason a bound derived for \
-             one probe set is not a bound for another. Without this row a reader could not tell \
-             a derived tolerance from a lucky one",
+    out.push(
+        Record::graded(
+            E_ROWS[4].0,
+            CC,
+            DEV,
+            REPORTED,
             x.arbitrary,
-            if x.node_aligned > 0.0 {
-                x.arbitrary / x.node_aligned
-            } else {
-                f64::INFINITY
-            }
-        ),
-    )
-    .with_separation(Separation::none(
-        "considered: this row IS a control, and a control's rival is the row it controls. The \
+            SRC_GATE,
+            format!(
+                "★★ THE CONTROL THAT EARNS THE PRECEDING ROW'S TIGHTNESS. The same comparison over \
+             96 points that are NOT node-aligned, through the same preserving surface: {:.6e}, \
+             which is {:.1}x the node-aligned figure. That difference IS the CLUT \
+             interpolation-method envelope (NA-006) - the term Pass G's SWEEP_DEVICE had to \
+             admit at 4e-3 and the reason a bound derived for one probe set is not a bound for \
+             another. Without this row a reader could not tell a derived tolerance from a lucky \
+             one. ★ The same 32x shape reappears in the K channel between iccce and lcms2's \
+             black-preserving CLUT, at 351x, and is why \
+             passk/E/preserved-k-value-vs-the-oracle-tone-curve reports two figures",
+                x.arbitrary,
+                if x.node_aligned > 0.0 {
+                    x.arbitrary / x.node_aligned
+                } else {
+                    f64::INFINITY
+                }
+            ),
+        )
+        .with_separation(Separation::none(
+            "considered: this row IS a control, and a control's rival is the row it controls. The \
          named alternative belongs to \
          passk/E/regression/node-aligned-off-neutral-agrees-with-lcms2 above, where it is stated \
          with a computed distance",
-    )));
+        )),
+    );
     out.push(
         Record::graded(
             E_ROWS[5].0,
@@ -2636,13 +3115,17 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
                  chromatic ink - its B2A0 is built by gen-profiles' `lab_to_cmyk_clut`, which \
                  emits [0,0,0,k] at every node, so it is K-only ALREADY and stays K-only whether \
                  or not black preservation exists. Its two candidate answers are the same \
-                 number: ZERO-SEPARATION, the one state no tolerance can rescue. ★ CLOSED \
-                 2026-08-17 by a NEW committed recipe, v2-cmyk-chromatic-neutral, whose B2A0 \
-                 puts chromatic ink into neutrals by construction — see §F, whose rows grade \
-                 the same predicate IN CI at a separation of 0.4207. THIS ROW IS NOT DELETED \
-                 and its ZERO-SEPARATION verdict is not a defect to be tidied away: it is the \
-                 measurement that says WHY the second fixture had to exist, and a future reader \
-                 who repoints something at v2-cmyk-mft2-lab needs to find it",
+                 number: ZERO-SEPARATION, the one state no tolerance can rescue. ★★ THE FEATURE \
+                 HAS NOW LANDED AND THIS ROW IS UNCHANGED, WHICH IS THE PROOF OF THE POINT: it \
+                 reads the same number with --preserve-black as without it, so a suite built on \
+                 this fixture alone would have reported the identical figure before and after \
+                 the work and graded nothing. ★ CLOSED 2026-08-17 by a NEW committed recipe, \
+                 v2-cmyk-chromatic-neutral, whose B2A0 puts chromatic ink into neutrals by \
+                 construction — see §F, whose rows grade the same predicate IN CI at a \
+                 separation of 0.4207. THIS ROW IS NOT DELETED and its ZERO-SEPARATION verdict \
+                 is not a defect to be tidied away: it is the measurement that says WHY the \
+                 second fixture had to exist, and a future reader who repoints something at \
+                 v2-cmyk-mft2-lab needs to find it",
                 x.synthetic_chromatic
             ),
         )
@@ -2651,6 +3134,152 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
              which is the point of the row",
             x.synthetic_chromatic,
             0.0,
+            SepUnits::SameAsMetric,
+        )),
+    );
+    out.push(
+        Record::graded(
+            E_ROWS[6].0,
+            SELF,
+            DEV,
+            EXACT_ZERO,
+            x.leak,
+            SRC_GATE,
+            format!(
+                "★★★ THE LEAK GUARD, NEW 2026-08-18, AND THE SHARPEST INSTRUMENT IN THIS \
+                 SECTION. The SAME {} off-neutral probes (96 node-aligned + 96 arbitrary) run \
+                 twice through the same function, differing in nothing but --preserve-black {}: \
+                 max |on - off| = {:.6}, required exactly 0. ★★ WHY EXACTLY ZERO IS THE RIGHT \
+                 TOLERANCE AND NOT A TIGHT ONE. Every probe has at least one of C, M, Y strictly \
+                 positive, so under the exact-zero qualifying rule crates/iccce-cmm documents \
+                 (matching lcms2's In[0]==0 && In[1]==0 && In[2]==0) NONE of them qualifies, the \
+                 preservation branch returns None for every one, and the two invocations execute \
+                 the identical arithmetic. This is not an agreement claim with an instrument \
+                 error; it is the claim that a branch was not taken, and a branch is taken or it \
+                 is not. ★ EVIDENCE CLASS IS SELF-CONSISTENCY, THE WEAKEST THIS SUITE EMITS - \
+                 both sides are iccce and nothing outside this project is in the loop. It is \
+                 used anyway because the predicate is EXACT where every available cross-check \
+                 for the same question carries an interpolation envelope two orders wider, and a \
+                 widening of the qualifying test to a tolerance - the single most plausible \
+                 future change to this module - would move this row and might not move the \
+                 cross-check at all",
+                2 * x.node_points,
+                PRESERVE_POLICY,
+                x.leak
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the qualifying test is widened from exact zero to a tolerance - the alternative \
+             crates/iccce-cmm's own module doc names and rejects, and the change a future \
+             contributor is most likely to make on the grounds that 1e-9 of cyan 'is really \
+             K-only'. Under it the arbitrary probe set's smallest chromatic coordinate would \
+             begin to qualify and this difference would become the whole distance between the \
+             preserved and colorimetric answers, which this section's own baseline measures at \
+             0.705320 on the K ramp. ★ The distance is bounded below by the off-node envelope \
+             the control row reports, which is what a leak would at minimum have to exceed to \
+             be visible to the cross-check instead",
+            0.0,
+            x.arbitrary,
+            SepUnits::SameAsMetric,
+        )),
+    );
+    out.push(
+        Record::graded(
+            E_ROWS[7].0,
+            DE_KIND,
+            DEV,
+            PRINT_FLOOR,
+            x.identity_k,
+            "Pass K §E — an expectation from ALGEBRA, not from an implementation: on a \
+             same-profile pair the equal-lightness construction is the identity. iccce's number \
+             comes from the shipped binary; the oracle appears in this row only as the named \
+             RIVAL, never as the expectation",
+            format!(
+                "★★★ THE ONE ROW IN THIS SECTION WHOSE EXPECTATION IS NOT AN IMPLEMENTATION'S \
+                 OUTPUT. When the source and destination models are the same model, the \
+                 destination K whose K-only patch has the same L* as the source's at K_in IS \
+                 K_in — exactly, for any strictly monotonic L*(K) ramp, with no press, encoding \
+                 or interpolation term in the statement. Observed max |K_out - K_in| over the \
+                 41-point ramp = {:.6}, against one printed unit ({:.1e}). ★★★ AND IT IS A \
+                 DISAGREEMENT WITH THE ORACLE IN ICCCE'S FAVOUR (project rule 7): lcms2's \
+                 intent-11 answer on this same pair is {:.6e} away from K_in, because its K \
+                 curve is sampled into a 17-node CLUT and read back, while iccce inverts the \
+                 ramp directly. THE ORACLE IS WRONG HERE AND THE ENGINE IS RIGHT, by algebra \
+                 rather than by preference, and the number is recorded rather than tolerated. ★ \
+                 THE PREMISE IS THE FIXTURE'S: a flat stretch in this destination's L*(K) ramp \
+                 (ink saturating) would make the inversion ill-posed, crates/iccce-cmm takes the \
+                 LOWER K there by a documented choice, and the identity would fail FOR A CORRECT \
+                 IMPLEMENTATION. A future red here is a question about the ramp before it is a \
+                 question about the inverter",
+                x.identity_k, PRINT_FLOOR.value, x.identity_oracle_rival
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "an implementation that reproduced the ORACLE's CLUT-quantised K instead of \
+             evaluating the construction — i.e. one whose K came back through a 17-node table. \
+             ★ The distance is lcms2's own measured departure from the algebraic answer on this \
+             pair, so the rival is not hypothetical: it is a shipping CMM. ★★ The rival this row \
+             does NOT have is 'K is copied through unchanged', which on a same-profile pair IS \
+             the correct answer — ZERO-SEPARATION against that candidate, deliberately, and the \
+             reason a second row exists on a cross-press pair",
+            x.identity_oracle_rival,
+            x.identity_oracle_rival,
+            SepUnits::SameAsMetric,
+        )),
+    );
+    let xp_tol = pcs_quantum_tolerance(x.xp_sensitivity);
+    out.push(
+        Record::graded(
+            E_ROWS[8].0,
+            CC,
+            DEV,
+            xp_tol,
+            x.xp_k_at_nodes,
+            k_source(
+                "the CROSS-PRESS arm, added 2026-08-18: ISO Coated v2 300% (ECI) -> \
+                 GWG_GenericCMYK, the pair on which the two published definitions of 'preserve \
+                 the black' are furthest apart in this corpus",
+            ),
+            format!(
+                "★★★ THE ONLY ROW ANYWHERE IN THIS SUITE THAT CAN TELL WHICH DEFINITION OF \
+                 BLACK PRESERVATION ICCCE IMPLEMENTS, and that is the claim it supports — not \
+                 'the K value is right', which no standard states. Source ISO Coated v2 300% \
+                 (ECI), destination {}, at the {} ramp points that are EXACT NODES of lcms2's \
+                 17-node black-preserving CLUT: |K_iccce - K_lcms2| = {:.6e} against a run-time \
+                 bound of {:.6e} (the destination's own device response to one 16-bit PCS \
+                 quantum at this ramp's PCS points, {:.6e}, plus two print floors). The rival \
+                 answer — 'copy K through' — sits {:.6e} away at the same points, which is {:.0}x \
+                 the observation. ★★ WHY ONLY AT THE NODES. Between them lcms2 interpolates its \
+                 own 17-node table rather than evaluating its own construction, and the residual \
+                 grows by two orders (up to 1.09e-2); a row graded over the whole ramp would be \
+                 grading lcms2's grid density. This is the same node/off-node structure the \
+                 colorimetric control row measures at 32x, in a different channel. ★ EVIDENCE \
+                 CLASS: cross-check, and weaker than it looks — iccce implements lcms2's OWN \
+                 construction by design, so agreement is expected and the row is not evidence \
+                 that equal lightness is the right definition. It is evidence that iccce \
+                 implements the definition it names, which is exactly what the mandatory \
+                 --preserve-black policy argument promises a caller",
+                x.xp_dst,
+                x.xp_node_points,
+                x.xp_k_at_nodes,
+                xp_tol.value,
+                x.xp_sensitivity,
+                x.xp_copy_rival_at_nodes,
+                if x.xp_k_at_nodes > 0.0 {
+                    x.xp_copy_rival_at_nodes / x.xp_k_at_nodes
+                } else {
+                    f64::INFINITY
+                }
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "K is copied through unchanged instead of mapped through the destination's black-ink \
+             tone curve — the 'plausible-but-wrong implementation' this pass named before the \
+             feature existed, and the value Cholewo's formula collapses to if its K_MIN/K_MAX \
+             ranges turn out to be unconstrained on the pure-K axis. The distance is measured \
+             from the ORACLE's answer and the ramp's own input, never from iccce's output",
+            x.xp_copy_rival_at_nodes,
+            x.xp_copy_rival_at_nodes,
             SepUnits::SameAsMetric,
         )),
     );
@@ -2857,9 +3486,8 @@ impl Mft2Bytes {
                 break;
             }
         }
-        let (off, size) = found.ok_or_else(|| {
-            format!("tag {} absent", String::from_utf8_lossy(sig))
-        })?;
+        let (off, size) =
+            found.ok_or_else(|| format!("tag {} absent", String::from_utf8_lossy(sig)))?;
         if bytes.get(off..off + 4) != Some(b"mft2") {
             return Err(format!("tag {} is not mft2", String::from_utf8_lossy(sig)));
         }
@@ -3133,7 +3761,12 @@ fn analyse_separating() -> Result<Separating, Unavailable> {
     // `v2-cmyk-mft2-lab` has a 3-node grid and is the obvious mistake) gets a
     // named error instead.
     let want = (4usize, 3usize, 3usize, 4usize);
-    let got = (a2b.input_chan, a2b.output_chan, b2a.input_chan, b2a.output_chan);
+    let got = (
+        a2b.input_chan,
+        a2b.output_chan,
+        b2a.input_chan,
+        b2a.output_chan,
+    );
     if got != want {
         return Err(Unavailable::Error(format!(
             "{}: §F needs A2B0 4->3 and B2A0 3->4, found {got:?}",
@@ -3227,15 +3860,31 @@ fn analyse_separating() -> Result<Separating, Unavailable> {
 pub struct SeparatingRun {
     /// **`F4`.** max `|iccce − derived|` over the three chromatic channels of
     /// the 50 chromatic grays. `K` is excluded on purpose.
+    ///
+    /// **Measured through the PRESERVING surface** since 2026-08-18: a
+    /// chromatic gray has `C`, `M` and `Y` all strictly positive, so no
+    /// definition of K-only admits it and the answer must be unchanged. A
+    /// guard that did not drive the flag would contain no preservation code to
+    /// guard against.
     pub gray_vs_derived: f64,
-    /// **`F5`.** max chromatic ink iccce returns on the K-only ramp.
+    /// **`F5`.** max chromatic ink iccce returns on the K-only ramp, through
+    /// the preserving surface.
     pub chromatic: f64,
     /// **`F6`.** the width, in device units of cyan, of iccce's K-only region
     /// at `K = 0.5` on this fixture.
     pub transition_width: f64,
+    /// ★ **`F6`'s disambiguator** — chromatic ink at the cell ramp's `C = 0`
+    /// endpoint. Without it a width of `0.000000` reads the same whether the
+    /// K-only region is one point wide or does not exist. See
+    /// [`FeatureGate::cell_zero_chromatic`].
+    pub cell_zero_chromatic: f64,
     /// **`F7`.** max `|iccce − lcms2|` over the same three channels and the
     /// same 50 points.
     pub gray_vs_oracle: f64,
+    /// ★★ **`F8`.** max `|Δ|` over all four channels of the 50 chromatic grays
+    /// between the run with `--preserve-black` and the run without it. The
+    /// committed-fixture twin of `E7`, and the only leak guard that runs in CI.
+    pub leak: f64,
     pub gray_points: usize,
 }
 
@@ -3246,14 +3895,30 @@ fn analyse_separating_run(
 ) -> Result<SeparatingRun, Unavailable> {
     let path = need_synthetic(SYNTHETIC_SEPARATING)?;
     let err = |e: DiffError| Unavailable::Error(e.to_string());
+    let preserved = |r: &[Vec<f64>]| -> Result<Vec<[f64; 4]>, Unavailable> {
+        as_cmyk(
+            iccce
+                .transform_rows_shaped_preserve_black(
+                    &path,
+                    &path,
+                    Intent::RelativeColorimetric,
+                    r,
+                    4,
+                    PRESERVE_POLICY,
+                )
+                .map_err(err)?,
+        )
+    };
 
     let gray = chromatic_gray_probes();
     let gray_rows: Vec<Vec<f64>> = gray.iter().map(|r| r.to_vec()).collect();
-    let mine = as_cmyk(
+    let mine = preserved(&gray_rows)?;
+    let mine_plain = as_cmyk(
         iccce
             .transform_rows_shaped(&path, &path, Intent::RelativeColorimetric, &gray_rows, 4)
             .map_err(err)?,
     )?;
+    let leak = max_dev(&mine, &mine_plain);
     let chromatic_max = |a: &[[f64; 4]], b: &[[f64; 4]]| -> f64 {
         a.iter()
             .zip(b)
@@ -3278,19 +3943,11 @@ fn analyse_separating_run(
 
     let ramp = k_ramp();
     let ramp_rows: Vec<Vec<f64>> = ramp.iter().map(|r| r.to_vec()).collect();
-    let ramp_out = as_cmyk(
-        iccce
-            .transform_rows_shaped(&path, &path, Intent::RelativeColorimetric, &ramp_rows, 4)
-            .map_err(err)?,
-    )?;
+    let ramp_out = preserved(&ramp_rows)?;
 
     let cell = separating_cell_ramp(f.a2b_points);
     let cell_rows: Vec<Vec<f64>> = cell.iter().map(|r| r.to_vec()).collect();
-    let cell_out = as_cmyk(
-        iccce
-            .transform_rows_shaped(&path, &path, Intent::RelativeColorimetric, &cell_rows, 4)
-            .map_err(err)?,
-    )?;
+    let cell_out = preserved(&cell_rows)?;
     let mut transition_width = 0.0_f64;
     for (inp, out) in cell.iter().zip(&cell_out) {
         if out[0].max(out[1]).max(out[2]) == 0.0 {
@@ -3299,12 +3956,17 @@ fn analyse_separating_run(
             break;
         }
     }
+    let cell_zero_chromatic = cell_out
+        .first()
+        .map_or(f64::NAN, |r| r[0].max(r[1]).max(r[2]));
 
     Ok(SeparatingRun {
         gray_vs_derived,
         chromatic: max_chromatic(&ramp_out),
         transition_width,
+        cell_zero_chromatic,
         gray_vs_oracle,
+        leak,
         gray_points: gray.len(),
     })
 }
@@ -3431,10 +4093,7 @@ const SRC_SEP_FILE: &str = "Pass K §F — fixtures/synthetic/v2-cmyk-chromatic-
     its own n-linear interpolator. No implementation's output enters these expectations; no \
     licence is needed; they run in CI";
 
-const SRC_SEP_RUN: &str = "Pass K §F — the same committed fixture, driven through the SHIPPED \
-    iccce binary as a subprocess and, where the row says so, through the pinned lcms2. The \
-    expectation is the harness's own evaluation of the fixture's bytes; the oracle appears on \
-    exactly one row and is labelled there";
+const SRC_SEP_RUN: &str = "Pass K §F — the same committed fixture, driven through the SHIPPED \n    iccce binary as a subprocess and, where the row says so, through the pinned lcms2. Since \n    2026-08-18 every transform row is driven with --preserve-black k-only-equal-lightness, and \n    one row is driven BOTH ways so that the difference itself can be graded. The expectation is \n    the harness's own evaluation of the fixture's bytes; the oracle appears on exactly one row \n    and is labelled there";
 
 fn separating_file_records(x: &Separating) -> Vec<Record> {
     let mut out = Vec::new();
@@ -3547,18 +4206,21 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
             x.gray_vs_derived,
             SRC_SEP_RUN,
             format!(
-                "★★ THE ROW THAT MAKES F5's RED ATTRIBUTABLE, AND IT MUST STAY GREEN WHEN BLACK \
-                 PRESERVATION LANDS. {} CHROMATIC GRAYS - (c, 6c/7, 0.984127c, k), the family \
-                 for which this A2B0 returns a* = b* = 0 exactly - converted at media-relative: \
-                 iccce agrees with the harness's own evaluation of the same CLUT bytes to \
-                 {:.6e} against a counted bound of {:.6e}. ★ A chromatic gray has C, M and Y all \
-                 STRICTLY POSITIVE, so it is not K-only under any definition and no \
+                "★★ THE ROW THAT MAKES F5's VERDICT ATTRIBUTABLE, AND IT HAS SURVIVED THE \
+                 FEATURE. {} CHROMATIC GRAYS - (c, 6c/7, 0.984127c, k), the family for which \
+                 this A2B0 returns a* = b* = 0 exactly - converted at media-relative WITH \
+                 --preserve-black {}: iccce agrees with the harness's own evaluation of the same \
+                 CLUT bytes to {:.6e} against a counted bound of {:.6e}. ★ REPOINTED AT THE \
+                 PRESERVING SURFACE 2026-08-18, for the same reason its §E counterpart was: a \
+                 guard against a leak has to have the leaking code in its loop, and black \
+                 preservation is opt-in and applied never by default. A chromatic gray has C, M \
+                 and Y all STRICTLY POSITIVE, so it is not K-only under any definition and no \
                  black-preservation path may touch it - which is why this guard survives the \
-                 feature while a guard on the K ramp could not. If F5 is red and THIS row is \
-                 green, the red means what it says; if both are red, the fault is in reading \
-                 the fixture and not in the missing feature. ★ Three chromatic channels only: \
-                 the K channel is the open fork of E2",
-                x.gray_points, x.gray_vs_derived, TABLE_INTERPOLATION.value
+                 feature while a guard on the K ramp could not. If F5 disagreed with the fixture \
+                 and THIS row were green, the disagreement would mean what it says; if both were \
+                 red, the fault would be in reading the fixture. ★ Three chromatic channels \
+                 only: the K channel is the open fork of E2",
+                x.gray_points, PRESERVE_POLICY, x.gray_vs_derived, TABLE_INTERPOLATION.value
             ),
         )
         .with_separation(Separation::against_distance(
@@ -3585,18 +4247,20 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
             x.chromatic,
             SRC_SEP_RUN,
             format!(
-                "★★★ DELIBERATELY RED UNTIL THE FEATURE EXISTS, AND — UNLIKE \
-                 passk/E/k-only-in-implies-k-only-out — THIS ONE RUNS IN CI. Observed max \
-                 chromatic ink {:.6} on the K-only ramp against a required 0, through the \
-                 COMMITTED fixture, which needs no licence and is byte-verified by \
-                 gen-profiles. THE REMEDY IS THE FEATURE, NOT THE NUMBER. ★ The Ghent row is \
-                 NOT repointed here and does not go green: it stays exactly as it was, measuring \
-                 a real press profile, and its figure is printed on ITS OWN row and deliberately \
-                 not restated here — this row adds reach, it does not launder the red. ★ This \
-                 row's separation is taken from the FIXTURE'S OWN TABLE ({:.6}, row \
-                 .../separation-is-above-the-declared-floor), not from iccce's observation, so \
-                 it cannot collapse to zero on the day the row goes green",
-                x.chromatic, f.separation
+                "★★★ THE COMMITTED TWIN OF THE PASS'S HEADLINE ROW, REPOINTED 2026-08-18 AT \
+                 --preserve-black {} — AND UNLIKE passk/E/k-only-in-implies-k-only-out THIS ONE \
+                 RUNS IN CI. Observed max chromatic ink {:.6} on the 41-point K-only ramp \
+                 against a required 0, through the COMMITTED fixture, which needs no licence and \
+                 is byte-verified by gen-profiles. It read 0.420705 before the feature existed \
+                 and the tolerance has not moved: it was and is exactly 0. ★ The Ghent row is \
+                 NOT repointed here and its figure is printed on ITS OWN row and deliberately \
+                 not restated: §F adds reach, it does not launder anything. ★★ This row's \
+                 separation is taken from the FIXTURE'S OWN TABLE ({:.6}, row \
+                 .../separation-is-above-the-declared-floor) and not from iccce's observation, \
+                 which is precisely why it did not collapse to zero on the run that turned the \
+                 row green — the injection experiment of 2026-08-17 showed that a collapsed \
+                 fixture does not merely fail to inform, it MANUFACTURES this row's green",
+                PRESERVE_POLICY, x.chromatic, f.separation
             ),
         )
         .with_separation(Separation::against_distance(
@@ -3619,14 +4283,23 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
             format!(
                 "The width of iccce's K-only region at K = 0.5 on the committed fixture, \
                  measured by walking C from 0 to one A2B0 cell ({:.6}, grid {}) and finding the \
-                 last point at which chromatic ink is still exactly zero: {:.6}. Today that is \
-                 the single point C = 0, i.e. THERE IS NO K-ONLY REGION - the same posture \
-                 passk/E/near-neutral-transition-width reports on the licensed profile, now \
-                 visible without a licence. ★ REPORTED, exactly as its §E twin is: no standard \
-                 states how wide the region should be, and inventing a width so the section had \
-                 a gate would invent the thing the pass exists to derive. It is the row that \
-                 catches 'right on the neutral ramp, wrong off-neutral' once the feature lands",
-                f.a2b_cell, f.a2b_points, x.transition_width
+                 last point at which chromatic ink is still exactly zero: {:.6}. ★★ THAT ZERO \
+                 NOW MEANS THE OPPOSITE OF WHAT IT MEANT BEFORE THE FEATURE, and the second \
+                 number is what distinguishes them: chromatic ink at the C = 0 endpoint itself \
+                 is {:.6e}, so the K-only region EXISTS and is exactly one point wide, where \
+                 before it did not exist at all. ★★★ THE GAP TO THE ORACLE IS A REAL \
+                 BEHAVIOURAL DIFFERENCE BETWEEN ICCCE AND LCMS2 AND NOT AN ARTEFACT OF A MISSING \
+                 FEATURE: iccce's width is zero BY CONSTRUCTION because crates/iccce-cmm tests \
+                 the three chromatic channels against exact zero (matching lcms2's own \
+                 In[0]==0 && In[1]==0 && In[2]==0), while lcms2's own width of one CLUT cell is \
+                 a consequence of sampling that same test into a 17-node table and interpolating \
+                 it. ICC.1 contains no black-preservation construct at all (register entry A51, \
+                 a CLOSED NEGATIVE), so there is no specification text to settle it from and \
+                 rule 7's remedy does not apply. REPORTED, deliberately and permanently: \
+                 inventing a width so that the section had a gate would invent the thing the \
+                 pass exists to derive, and tuning iccce toward the oracle's width would be \
+                 adopting a vendor's CLUT resolution as a colour requirement",
+                f.a2b_cell, f.a2b_points, x.transition_width, x.cell_zero_chromatic
             ),
         )
         .with_separation(Separation::against_distance(
@@ -3648,15 +4321,19 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
             x.gray_vs_oracle,
             SRC_SEP_RUN,
             format!(
-                "★ THE THIRD READING. The same {} chromatic grays, iccce against the pinned \
-                 lcms2: {:.6e} against a counted bound of {:.6e}. This row is a CROSS-CHECK and \
-                 the rest of §F is not, and the difference is the point: a derived expectation \
-                 is defeated when the DERIVATION shares a misreading with the fixture, and both \
-                 are this project's reading of clause 10.10. lcms2 is a third party that read \
-                 the same clause independently. Agreement here is what stops §F from being a \
-                 closed loop; it is NOT ground truth, and a disagreement would be a finding to \
-                 settle from the specification text (rule 7), not a bound to widen",
-                x.gray_points, x.gray_vs_oracle, ORACLE_CHAIN.value
+                "★ THE THIRD READING. The same {} chromatic grays, iccce (with --preserve-black \
+                 {}) against the pinned lcms2's ordinary colorimetric answer: {:.6e} against a \
+                 counted bound of {:.6e}. This row is a CROSS-CHECK and the rest of §F is not, \
+                 and the difference is the point: a derived expectation is defeated when the \
+                 DERIVATION shares a misreading with the fixture, and both are this project's \
+                 reading of clause 10.10. lcms2 is a third party that read the same clause \
+                 independently. Agreement here is what stops §F from being a closed loop; it is \
+                 NOT ground truth, and a disagreement would be a finding to settle from the \
+                 specification text (rule 7), not a bound to widen. ★ Driven through the \
+                 preserving surface since 2026-08-18 so that it also witnesses the feature not \
+                 reaching an input that does not qualify — the exact form of which is the next \
+                 row",
+                x.gray_points, PRESERVE_POLICY, x.gray_vs_oracle, ORACLE_CHAIN.value
             ),
         )
         .with_separation(Separation::against_distance(
@@ -3666,6 +4343,44 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
              to catch",
             0.0,
             x_index_order_rival,
+            SepUnits::SameAsMetric,
+        )),
+    );
+    out.push(
+        Record::graded(
+            F_XFORM_ROWS[4].0,
+            SELF,
+            DEV,
+            EXACT_ZERO,
+            x.leak,
+            SRC_SEP_RUN,
+            format!(
+                "★★★ THE LEAK GUARD THAT RUNS IN CI, NEW 2026-08-18. The same {} chromatic \
+                 grays run twice through the same harness function, differing in nothing but \
+                 --preserve-black {}: max |on - off| over ALL FOUR channels = {:.6}, required \
+                 exactly 0. ★★ Note the channel count: this is the ONE §F row that includes K. \
+                 Every other row here excludes it because the K value a preserving path should \
+                 emit is E2's open fork — but the claim here is not about what K should be, it \
+                 is that the preservation branch was NOT TAKEN, and a branch that was not taken \
+                 leaves every channel alone. ★★ WHY EXACTLY ZERO. Each probe has C, M and Y all \
+                 strictly positive, so under the exact-zero qualifying rule none of them \
+                 qualifies and the two invocations execute identical arithmetic. This is not an \
+                 agreement claim with an instrument error; it is the claim that a branch was not \
+                 taken. ★ EVIDENCE CLASS IS SELF-CONSISTENCY, the weakest this suite emits: both \
+                 sides are iccce. It earns its place because the predicate is EXACT where the \
+                 cross-check on the same probes (the preceding row) carries a two-quantum bound \
+                 — a leak smaller than 3.05e-5 would be invisible there and is visible here",
+                x.gray_points, PRESERVE_POLICY, x.leak
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the qualifying test is widened from exact zero to a tolerance — the alternative \
+             crates/iccce-cmm's module doc names and rejects, and the change a future \
+             contributor is most likely to make. Under it these probes would begin to qualify \
+             and the difference would become the full distance between this fixture's two \
+             candidate answers, which §F measures from the committed bytes",
+            0.0,
+            f.separation,
             SepUnits::SameAsMetric,
         )),
     );
@@ -3723,9 +4438,21 @@ pub fn note(b: &Bundle) -> String {
     }
     if let Some(g) = &b.gate {
         parts.push(format!(
-            "GATE: k-only-in-implies-k-only-out observed {:.6} against a required 0 (RED by \
-             design); regression guard {:.3e} node-aligned vs {:.3e} off-node",
-            g.chromatic, g.node_aligned, g.arbitrary
+            "GATE (repointed 2026-08-18 at --preserve-black {}): k-only-in-implies-k-only-out \
+             observed {:.6} against a required 0; leak on/off over {} non-qualifying probes \
+             {:.6}; K identity on a same-profile pair {:.6} (the oracle is {:.3e} away from \
+             it); cross-press K at the oracle's own CLUT nodes {:.3e} with the copy-K rival \
+             {:.3e} away; regression guard {:.3e} node-aligned vs {:.3e} off-node",
+            PRESERVE_POLICY,
+            g.chromatic,
+            2 * g.node_points,
+            g.leak,
+            g.identity_k,
+            g.identity_oracle_rival,
+            g.xp_k_at_nodes,
+            g.xp_copy_rival_at_nodes,
+            g.node_aligned,
+            g.arbitrary
         ));
     }
     if let Some(f) = &b.separating {
@@ -3738,11 +4465,12 @@ pub fn note(b: &Bundle) -> String {
     }
     if let Some(r) = &b.separating_run {
         parts.push(format!(
-            "§F GATE: k-only-in-implies-k-only-out observed {:.6} against a required 0 on the \
-             COMMITTED fixture (RED by design, and this one is red in CI); the chromatic-gray \
-             guard that must survive the feature is {:.3e} vs the derived table and {:.3e} vs \
-             lcms2 over {} points",
-            r.chromatic, r.gray_vs_derived, r.gray_vs_oracle, r.gray_points
+            "§F GATE (repointed 2026-08-18, and this one runs in CI): \
+             k-only-in-implies-k-only-out observed {:.6} against a required 0 on the \
+             COMMITTED fixture; the chromatic-gray guard that had to survive the feature \
+             is {:.3e} vs the derived table and {:.3e} vs lcms2 over {} points, and the \
+             leak guard on the same points is {:.6}",
+            r.chromatic, r.gray_vs_derived, r.gray_vs_oracle, r.gray_points, r.leak
         ));
     }
     if parts.is_empty() {

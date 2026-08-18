@@ -450,16 +450,22 @@ jobs:
           # RAISED 15 -> 22 on 2026-08-17: Pass K §F adds seven rows that
           # need no licensed corpus (three read the committed fixture's
           # bytes and need not even the iccce binary; four drive it, and
-          # one of those four drives lcms2). THE FLOOR MUST ONLY EVER
-          # RISE — see the paragraph above the job. If a change makes
-          # fewer than 22 rows runnable here, that is a regression in
-          # CI's reach and this step says so.
-          FLOOR=22
+          # one of those four drives lcms2).
+          # RAISED 22 -> 23 on 2026-08-18: black preservation landed and §F
+          # gained an eighth corpus-free row, F8, which runs the same 50
+          # chromatic grays with and without --preserve-black and requires
+          # the two to be bit-identical. It is the ONLY leak guard visible
+          # to CI; the §E twin needs the licensed corpus and skips here for
+          # ever. THE FLOOR MUST ONLY EVER RISE — see the paragraph above
+          # the job. If a change makes fewer than 23 rows runnable here,
+          # that is a regression in CI's reach and this step says so.
+          FLOOR=23
           echo "executed=$executed (pass=$ran fail=$fail) skipped=$skip floor=$FLOOR"
           if [ "$executed" -lt "$FLOOR" ]; then
             echo "::error::Only $executed rows executed; the declared floor for a corpus-free"
             echo "Linux runner is $FLOOR (15 measured at tip 68d4601, 2026-08-17; raised to 22"
-            echo "the same day when Pass K §F added seven corpus-free rows). Fewer rows"
+            echo "the same day when Pass K §F added seven corpus-free rows; raised to 23 on"
+            echo "2026-08-18 when the landed black-preservation feature added F8). Fewer rows"
             echo "runnable here is a regression in CI's reach, not a pass. Raise the floor"
             echo "deliberately if coverage genuinely improved; never lower it silently."
             exit 1

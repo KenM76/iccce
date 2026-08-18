@@ -4771,14 +4771,23 @@ files; the CI job is `icc-engineer`'s):
 
 ## 25. ★★★ Pass K — black preservation, and the instrument built before the feature
 
-`src/passk.rs` (**40 rows**), instrument `src/bin/passk_probe.rs`, bounds
+`src/passk.rs` (**44 rows**), instrument `src/bin/passk_probe.rs`, bounds
 `docs/TOLERANCES.md` **§3.10**. Filed 2026-08-17 at tip `506fcd3` with 33 rows
-(suite `pass=325 fail=1 skip=9 error=0`); **§F, added the same day, brings it
-to 40** and the suite to `pass=331 fail=2 skip=9 error=0`. **Both failures are
-deliberate, and they are the SAME predicate on two profiles** —
-`k-only-in-implies-k-only-out` on the licensed press profile (`E1`, which skips
-in CI) and on a committed synthetic one (`F5`, which is **red in CI**, which is
-the whole reason §F exists). See §25.12.
+(suite `pass=325 fail=1 skip=9 error=0`); **§F, added the same day, brought it
+to 40** and the suite to `pass=331 fail=2 skip=9 error=0`, both failures
+deliberate and both the same predicate on two profiles.
+
+> ### ★★★ 2026-08-18 — the feature landed, and §E/§F were repointed at it
+>
+> `iccce transform --preserve-black <policy>` exists. **44 rows, suite
+> `pass=337 fail=0 skip=9 error=0`; corpus-free `pass=184 fail=0 skip=94`, of
+> which §F contributes eight.** Graded in **§25.13**, which is where to start.
+>
+> **The two deliberate reds are green and neither bound moved** — both were and
+> are exactly `0`. **Four rows were added** — E7, E8, E9, F8 — not because anything needed
+> loosening but because the feature made four questions askable. One of them,
+> `E7`/`F8`, exists because the repointing found that `E4` **could not see the
+> defect its own text claimed it was the only place to see** (§25.13.2).
 
 **The letter names the channel, not a position in the alphabet.** Passes G, H
 and I are a sequence; this one is *K* because its subject is the fourth
@@ -4910,10 +4919,16 @@ of the fixture* (§22's tolerance lesson 1) that cannot go stale.
 are *not* node-aligned observes `1.750×10⁻³`, **32×** larger. Without it a
 reader could not tell a derived tolerance from a lucky one.
 
-### 25.7 ★★★ The row that is RED on purpose
+### 25.7 ★★★ The row that was RED on purpose
+
+> ★★★ **Discharged 2026-08-18: observed `0.000000`, at the same tolerance of
+> exactly `0`.** The paragraph below is kept in the present tense of the day it
+> was written, because the argument for the bound is what matters and it did
+> not change. `F5`, the committed-fixture twin, went green on the same commit
+> **and in CI**.
 
 `passk/E/k-only-in-implies-k-only-out`, tolerance **exactly `0`**, observed
-`0.705320`. *K-only means K-only*: `D3` measures that lcms2's own K-only intent
+`0.705320` on 2026-08-17. *K-only means K-only*: `D3` measures that lcms2's own K-only intent
 returns the encoded value zero in all three chromatic channels at every point
 of the ramp, so any bound above zero would be an allowance for **ink the
 requirement forbids**, not for noise. **The remedy is the feature, not the
@@ -5008,6 +5023,14 @@ preservation lands, `E1`, `E3` and `E4` are the three to point at it: `E1` must
 go green, `E3` must start showing a transition, and **`E4` must stay green**,
 because a preservation path that leaks into the ordinary colorimetric answer
 shows up there and nowhere else in the module.
+
+> ★★★ **2026-08-18 — the last clause of that paragraph was WRONG, and the
+> error is the most useful thing in this section.** `E4` drove the surface with
+> the feature **switched off**, and black preservation is opt-in and applied
+> never by default. There was no preservation code in `E4`'s chain to leak, so
+> it would have stayed green through any leak whatever — while its own sentence
+> vouched for the silence. See §25.13.2. The injection debt is **not** paid: the
+> two new leak rows have been shown to pass and not to fail.
 
 ★ **§F does not change that, and slightly sharpens the checklist.** When black
 preservation lands, **six** rows are the ones to point at it, and they split
@@ -5201,9 +5224,190 @@ both are stated here because a reader of a red CI run deserves to find the
 reason in the same document as the row:
 
 - the `oracle` job's **coverage floor rises from 15 to 22** — §F adds seven rows
-  that a corpus-free Linux runner executes, and the floor must only ever rise;
+  that a corpus-free Linux runner executes, and the floor must only ever rise
+  (**raised again to 23 on 2026-08-18**, when `F8` joined §F);
 - the floor step and the summary re-emission become **`if: always()`**, so that
   a suite red for a deliberate reason does not also silence the guard that
   watches CI's reach. Before this, a red suite aborted the job before the floor
   was checked — which would have traded one blind spot for another.
 
+### 25.13 ★★★ Grading the landed feature — 2026-08-18
+
+`crates/iccce-cmm/src/black_preserve.rs` implements `KMapping::EqualLightness`;
+`KMapping::Ratio` is a **named refusal**. The CLI surface is
+`iccce transform --preserve-black <policy>`, and **the policy name is
+mandatory** — no bare `--preserve-black` — because two published definitions
+disagree by up to `4.9e-2` and a default would be iccce choosing one silently.
+
+The harness reaches it through
+`Iccce::transform_rows_shaped_preserve_black`, which is a thin wrapper over the
+**same** `transform_rows_shaped_opts` that `--bpc` uses. That is deliberate and
+it is load-bearing here: §E and §F both compare the same probe set through the
+same function with the flag on and off, and two copies of that function would
+have been free to drift in the intent, the profile order or the stdin encoding,
+with the difference then attributed to the preservation path.
+
+#### 25.13.1 What was re-measured rather than taken on trust
+
+The engineer's handover made three claims. All three hold, re-measured here
+through the shipped release binary:
+
+- **chromatic ink is exactly `0.000000` on every K-only input, on all ten CMYK
+  destinations in the corpus** — and the ten were enumerated from the profile
+  headers rather than counted from the handover;
+- **`K` is genuinely re-mapped**: `0.500000` into the same press (correct, and
+  provably so — see `E8`), `0.502608`, `0.461018`, `0.366689`;
+- **one destination the handover did not name returns `0.881462` at `K = 1.0`**
+  — it is *darker* than the source, so equal lightness lands below full ink
+  rather than clamping to it. That is the construction behaving correctly on a
+  case the handover's four examples did not cover.
+
+Two checks the handover did not make, both of which are now rows:
+
+- **every named refusal exercised through the binary** — absolute intent,
+  either side not 4-channel, `k-only-ratio`, a bare flag, an unknown policy.
+  Each refuses with a distinct message; the policy refusals exit `1`, the usage
+  errors exit `2`, and none falls back to an unpreserved conversion;
+- **on/off bit-identity on non-qualifying input** — `E7` and `F8`.
+
+#### 25.13.2 ★★★ The repointing instruction named the wrong rows to watch
+
+Pass K's own pre-feature text said *"when black preservation lands, `E1` and
+`E3` must be pointed at the new surface"*, and `E4`'s text said a leak *"shows
+up here and nowhere else in this module"*.
+
+**The first instruction was right and incomplete; the second sentence was
+false.** Preservation is opt-in, so a row driving the plain surface contains no
+preservation code to leak. The instruction named the rows about the
+**predicate** and missed the row about the **regression** — which is exactly
+the row a repointing is least likely to touch and most needs to.
+
+Remedy, and it is two things and not one:
+
+1. **`E4`, `E5`, `F4` and `F7` are now driven WITH `--preserve-black`.** The
+   feature is inside the loop of every regression guard.
+2. **`E7` and `F8` are new**, and they are sharper than either cross-check:
+   the same probes, twice, differing in nothing but the flag, graded at
+   **exactly zero**.
+
+Why exactly zero is *derived*: every probe has one of `C`, `M`, `Y` strictly
+positive, so none qualifies under the exact-zero rule, the branch returns
+`None` for all of them, and the two runs execute identical arithmetic. **The
+claim is not "these agree to within X"; it is "a branch was not taken."**
+
+Their kind is `SelfConsistency`, the weakest this crate emits — both sides are
+iccce. They earn it because the predicate is exact where `F7`'s bound is
+`3.05e-5`, so a leak smaller than that is invisible to the cross-check and
+visible here. ★ `F8` is the only §F row that includes the `K` channel, because
+a branch that was not taken leaves every channel alone — which needs no answer
+to `E2`'s open fork.
+
+★ **Read together, they localise a fault.** `E4` red + `E7` green ⇒ the
+ordinary path drifted. Both red ⇒ the preservation path leaked.
+
+#### 25.13.3 The three new §E rows, and the claim each supports
+
+| row | kind | claim it supports | observed / bound |
+|---|---|---|---|
+| `E7` regression/preservation-does-not-touch-a-non-qualifying-input | self-consistency | the branch is not taken for anything with chromatic ink | `0` / `0` |
+| `E8` preserved-k-is-the-IDENTITY-on-a-same-profile-pair | **derived-expectation** | the construction is the identity when source ≡ destination — **algebra**, no implementation in the expectation | `0` / `1e-6` |
+| `E9` cross-press/preserved-k-matches-the-oracle-at-its-own-clut-nodes | cross-check | iccce implements the definition it **names** | `3.1e-5` / `1.09e-4`, rival `4.890e-2` (`1577x`) |
+
+★★★ **`E8` is a row where lcms2 is wrong and iccce is right** (project rule 7).
+lcms2 intent 11 sits `6.1e-5` from the algebraic answer on that pair, because
+its `K` returns through a 17-node CLUT while iccce inverts the ramp directly.
+Its rival is named as **the oracle's own answer**, not "copy K through" —
+because on a same-profile pair copy-through *is* correct and naming it would
+have produced a row that looked discriminating and was not.
+
+★★ **`E9` grades only at the oracle's own CLUT nodes**, and the reason is a
+measurement: off those nodes lcms2 interpolates its own 17-node table rather
+than evaluating its construction, and the residual grows `120x`–`351x` (to
+`1.089 5e-2` on the `GWG_GenericCMYK` pair). A row graded over the whole ramp
+would be grading lcms2's choice of grid density. Same shape as `E5`'s `32x`
+control, in a different channel.
+
+#### 25.13.4 ★★ `E2` stays REPORTED, and the reason is now a number
+
+On `ISO Coated v2 300% (ECI)` → **itself**, the observation (`6.1e-5`) **equals**
+the named rival's distance (`6.1e-5`). Separation ratio `1.0` — which is what a
+blind row is. On a same-press pair the two published definitions coincide, so a
+bound iccce passed, "copy K through" would pass too.
+
+★ **The emitted verdict is `UNGRADED`, not `BLIND`**, and the difference is worth
+knowing: `Separation`'s classifier only reaches `BLIND` for a row carrying a
+finite tolerance, and this one's is infinite by decision. Pass K's contribution
+to the suite tally is therefore still `blind = 0`. The number that says the row
+cannot discriminate is **on the row**, not in the tally — so a reader auditing
+the tally alone would not find it.
+
+That is a stronger reason than the pre-feature one (which was about provenance:
+`_cmsBuildKToneCurve` is a vendor construction with no normative text). Both
+are recorded. `E9` exists because a **cross-press** pair is not blind.
+
+#### 25.13.5 ★★ `E3`/`F6`: the transition width is now a real divergence
+
+iccce's K-only region is **zero wide** — the single point `C = 0`. lcms2's is
+**one cell of its 17-node CLUT**, `1/16`. Before the feature that gap was an
+artefact of a missing capability; it is now a measured behavioural difference
+between two implementations, and rule 7 says state it.
+
+Settling it from the specification is **not available**: ICC.1 contains no
+black-preservation construct at all (register entry **A51**, a closed
+negative). Both rows stay REPORTED permanently — and tuning iccce toward `1/16`
+would be adopting a vendor's CLUT resolution as a colour requirement.
+
+★★ **The rows also gained a second number.** `E3` read `0.000000` before the
+feature and reads `0.000000` after it, for *opposite* reasons: before there was
+no K-only output at all, after there is one and it is a single point. An
+observation that does not move across the change it was written to detect is a
+blinded row, and it took `cell_zero_chromatic` — the chromatic ink at the
+`C = 0` endpoint itself — to tell the two states apart.
+
+#### 25.13.7 ★★★ The finding no row in this crate can see — the compiled path
+
+`CompiledTransform::new` samples `chain.convert` on a uniform grid, and
+`chain.convert` applies black preservation, so the **nodes** are right. The
+preservation is a **discontinuity at `C = M = Y = 0` exactly**, and an
+interpolant cannot represent one. Measured out of tree, `ISO Coated v2 300%
+(ECI)` → itself, media-relative, `k-only-equal-lightness`:
+
+| | grid 17 | grid 33 |
+|---|---|---|
+| max chromatic ink **on** the K axis | `0.000000` | `0.000000` |
+| max `|compiled − reference|` within **one cell** of the axis | **`0.617121`** | **`0.617148`** |
+| the same, far from the axis (control) | `1.138e-3` | `5.34e-4` |
+
+**Doubling the grid halves the control and does not move the near-axis error.**
+That is `O(1)` beside `O(h^1.32)` — the signature §21's row `R6` exists to
+detect, and R6's own band already says what it means. At grid 33 the near-axis
+error is `1156x` the control.
+
+**The direction is over-application.** At `C = 3.906e-3`, `K = 1.0`, grid 33,
+compiled returns `(0.0896, 0.0763, 0.0725, 0.9815)` where the reference chain
+returns `(0.7068, 0.6115, 0.5862, 0.8498)`. The compiled path applies
+preservation to pixels that do not qualify — `E7`/`F8`'s defect in a layer
+neither can reach.
+
+**Unreachable from the CLI** (`iccce bench` takes no `--preserve-black`), and
+**reachable from the library**, which is where a per-pixel consumer lives.
+Filed in full at `docs/TOLERANCES.md` §3.10.12.7, including the two candidate
+remedies and why choosing between them is not a conformance decision.
+
+#### 25.13.6 Coverage of this grading, stated
+
+- **one source profile** for §E, **one intent** (media-relative), **one
+  policy**, **two destinations** (itself; `GWG_GenericCMYK` for `E9` alone);
+- the ten-destination sweep of §25.13.1 was run **by hand** as a check on the
+  handover and is **not a row** — it has no oracle leg;
+- **no `--bpc` anywhere**; a chain carrying both flags is untested at any layer;
+- **`KMapping::Ratio` has no row** because it has no implementation, and if it
+  gains one the oracle for it is **not lcms2**, which computes the other
+  definition;
+- **no injection proof for `E7`/`F8`** — they have been shown to pass, not to
+  fail under an injected widening of the qualifying test. §25.11's debt, now
+  with two more rows against it;
+- **the perceptual cost of preservation is unmeasured** — nobody has asked what
+  `ΔE2000` the preserved answer sits from the colorimetric one on a cross-press
+  pair, which is the number a caller weighing the policy would want;
+- ★★★ **the compiled path is unmeasured and measurably wrong** — §25.13.7.

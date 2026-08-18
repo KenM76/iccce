@@ -246,9 +246,12 @@ pub mod passi;
 // into a real CMYK destination comes back with up to 0.705 of chromatic ink
 // while sitting 0.13 dE2000 from where it started, so **dE is blind to the
 // defect black preservation exists to fix** and every preservation row here is
-// in device units. Third, one row is RED BY DESIGN until the feature lands, and
-// it SKIPs in CI for ever because its fixture is licensed. Same
-// `//`-not-`///` reason as the comments above.
+// in device units. Third, two rows were RED BY DESIGN until the feature landed
+// on 2026-08-18; both are green now and NEITHER BOUND WAS TOUCHED - the
+// tolerance on both is still exactly zero, written before the code existed.
+// The licensed half still SKIPs in CI for ever; the committed half (§F) does
+// not, and it is where the in-CI evidence lives. Same `//`-not-`///` reason as
+// the comments above.
 pub mod passk;
 
 // ===========================================================================
@@ -414,9 +417,7 @@ impl Oracle {
                 // for the values a fixture supplies.
                 buf.push_str(&format!("{v}\n"));
             }
-            stdin
-                .write_all(buf.as_bytes())
-                .map_err(DiffError::Pipe)?;
+            stdin.write_all(buf.as_bytes()).map_err(DiffError::Pipe)?;
         }
 
         let out = child
@@ -500,7 +501,10 @@ impl Oracle {
         in_components: usize,
         out_components: usize,
     ) -> Result<Vec<Vec<f64>>, DiffError> {
-        assert!(in_components > 0 && out_components > 0, "widths must be > 0");
+        assert!(
+            in_components > 0 && out_components > 0,
+            "widths must be > 0"
+        );
         let components_per_row = out_components;
         if req.values.len() % in_components != 0 {
             return Err(DiffError::Internal(format!(
@@ -556,11 +560,12 @@ impl Oracle {
             });
         }
 
-        let rows = parse_rows(&stdout, components_per_row).ok_or_else(|| DiffError::Unparsable {
-            args: args.clone(),
-            stdout: stdout.clone(),
-            stderr: stderr.clone(),
-        })?;
+        let rows =
+            parse_rows(&stdout, components_per_row).ok_or_else(|| DiffError::Unparsable {
+                args: args.clone(),
+                stdout: stdout.clone(),
+                stderr: stderr.clone(),
+            })?;
         if rows.len() != rows_in {
             return Err(DiffError::Arity {
                 expected: rows_in,
@@ -700,6 +705,43 @@ impl InspectRun {
             .lines()
             .find_map(|l| l.strip_prefix(key)?.strip_prefix(": "))
     }
+}
+
+/// The optional flags `iccce transform` accepts, as one value.
+///
+/// ## Why a struct and not a tail of positional parameters
+///
+/// The shipped binary has gained **one optional flag per major feature** —
+/// `--bpc` when Pass 5 needed it, `--preserve-black` when Pass K's subject
+/// landed — and there is no reason to expect that to stop. A positional
+/// `bool, Option<&str>` tail reads acceptably at two flags, becomes unreadable
+/// at three, and forces every call site in this crate to be edited when the
+/// third arrives. Gathering them means a new flag is an added field with a
+/// [`Default`], and existing callers keep compiling.
+///
+/// ★ **What it must NOT become is a second entry point.** The reason both
+/// wrappers above funnel into one function is that Pass 5 and Pass K each
+/// compare *the same probe set through the same code path with one flag
+/// changed*, and a bit-identical result is the observation. Two functions
+/// would be free to drift in the intent, the profile order or the stdin
+/// encoding, and the difference would then be attributed to the flag. This
+/// struct is what keeps the single path while keeping the signature readable.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TransformOpts<'a> {
+    /// `--bpc`. Black point compensation, never forced; the binary refuses by
+    /// name where it cannot estimate.
+    pub bpc: bool,
+    /// `--preserve-black <policy>`. **A policy NAME, not a flag**, because the
+    /// binary has no default and refuses a bare `--preserve-black`: two
+    /// published definitions of "preserve the black" disagree by up to
+    /// `4.9e-2`, and a number measured under one is uninterpretable beside a
+    /// number measured under the other.
+    ///
+    /// Held as a `&str` rather than an enum on purpose: the harness must stay
+    /// able to send a policy name the binary does not know, because *"an
+    /// unknown policy is refused and not substituted"* is itself a behaviour
+    /// worth being able to drive.
+    pub preserve_black: Option<&'a str>,
 }
 
 impl Iccce {
@@ -997,6 +1039,99 @@ impl Iccce {
         out_channels: usize,
         bpc: bool,
     ) -> Result<Vec<Vec<f64>>, DiffError> {
+        self.transform_rows_shaped_opts(
+            src,
+            dst,
+            intent,
+            rows,
+            out_channels,
+            TransformOpts {
+                bpc,
+                preserve_black: None,
+            },
+        )
+    }
+
+    /// ★ **Added 2026-08-18 for Pass K's post-feature repointing.** As
+    /// [`Iccce::transform_rows_shaped_bpc`], but with the shipped binary's
+    /// **`--preserve-black <policy>`** flag optionally set.
+    ///
+    /// ## Why the policy is a `&str` and not an enum
+    ///
+    /// The CLI's whole design point is that **the policy name is mandatory and
+    /// has no default**, because two published definitions of "preserve the
+    /// black" disagree by up to `4.9e-2` on a cross-press pair. Mirroring the
+    /// name as a *string the harness types* keeps the harness able to drive a
+    /// policy name the binary does not know — which is a behaviour Pass K
+    /// grades (an unknown policy must be refused, not substituted). An enum
+    /// here would make the harness structurally incapable of asking the
+    /// question.
+    ///
+    /// ## Why this is a parameter and not a second entry point
+    ///
+    /// The same argument [`Iccce::transform_rows_shaped_bpc`] makes for
+    /// `--bpc`, and it matters more here: Pass K's post-feature regression
+    /// guards compare **the same probe set through the same function with the
+    /// flag on and off**, and a bit-identical result is the observation. Two
+    /// copies of this function would be free to drift in the intent, the
+    /// profile order or the stdin encoding, and the difference would be
+    /// attributed to the preservation path.
+    ///
+    /// ## What a refusal looks like
+    ///
+    /// `iccce transform --preserve-black` **exits 1 with a named reason** for
+    /// each of its five refusals (absolute intent; either side not 4-channel;
+    /// no destination `A2B`; a non-monotonic K ramp; an unimplemented
+    /// mapping). That surfaces here as [`DiffError::NonZeroExit`] carrying the
+    /// child's `stderr`, exactly as the BPC refusals do, and a caller that
+    /// wants to grade the refusal reads the message off it.
+    ///
+    /// # Errors
+    /// As [`Iccce::transform_rows_shaped_bpc`].
+    pub fn transform_rows_shaped_preserve_black(
+        &self,
+        src: &Path,
+        dst: &Path,
+        intent: Intent,
+        rows: &[Vec<f64>],
+        out_channels: usize,
+        policy: &str,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
+        self.transform_rows_shaped_opts(
+            src,
+            dst,
+            intent,
+            rows,
+            out_channels,
+            TransformOpts {
+                bpc: false,
+                preserve_black: Some(policy),
+            },
+        )
+    }
+
+    /// The one place `iccce transform` is actually spawned for a row grid.
+    ///
+    /// Every optional flag is a parameter of this single function so that two
+    /// invocations differing in one flag cannot differ in anything else. See
+    /// the two public wrappers above for why each flag is shaped the way it is.
+    ///
+    /// # Errors
+    /// Spawn, pipe, non-zero exit, unparsable output, or an arity mismatch
+    /// between the rows written and the rows read back.
+    pub fn transform_rows_shaped_opts(
+        &self,
+        src: &Path,
+        dst: &Path,
+        intent: Intent,
+        rows: &[Vec<f64>],
+        out_channels: usize,
+        opts: TransformOpts<'_>,
+    ) -> Result<Vec<Vec<f64>>, DiffError> {
+        let TransformOpts {
+            bpc,
+            preserve_black,
+        } = opts;
         let intent_arg = match intent {
             Intent::Perceptual => "perceptual",
             Intent::RelativeColorimetric => "media-relative",
@@ -1014,6 +1149,10 @@ impl Iccce {
         ];
         if bpc {
             args.push("--bpc".to_string());
+        }
+        if let Some(policy) = preserve_black {
+            args.push("--preserve-black".to_string());
+            args.push(policy.to_string());
         }
 
         let mut child = Command::new(&self.exe)
@@ -1702,14 +1841,24 @@ pub struct Check {
 /// different things — see the module header.
 #[derive(Debug, Clone)]
 pub enum Outcome {
-    Pass { observed: f64, got: Vec<f64> },
-    Fail { observed: f64, got: Vec<f64> },
+    Pass {
+        observed: f64,
+        got: Vec<f64>,
+    },
+    Fail {
+        observed: f64,
+        got: Vec<f64>,
+    },
     /// Could not run. Carries the reason, which is always printed: a skip
     /// whose reason is not recorded is indistinguishable from a pass in a
     /// summary line, and that is how coverage silently goes to zero.
-    Skip { reason: String },
+    Skip {
+        reason: String,
+    },
     /// The harness or the oracle failed.
-    Error { detail: String },
+    Error {
+        detail: String,
+    },
 }
 
 impl Outcome {
@@ -2193,7 +2342,13 @@ impl Report {
 /// Strip tabs and newlines so a free-text field cannot break the TSV framing.
 pub fn sanitise(s: &str) -> String {
     s.chars()
-        .map(|c| if c == '\t' || c == '\n' || c == '\r' { ' ' } else { c })
+        .map(|c| {
+            if c == '\t' || c == '\n' || c == '\r' {
+                ' '
+            } else {
+                c
+            }
+        })
         .collect()
 }
 
@@ -2398,14 +2553,25 @@ mod tests {
     /// apart, and that is the state this classifier exists to name.
     #[test]
     fn a_separation_smaller_than_the_tolerance_is_blind() {
-        let sep = || Separation::against("outRamp[first] = MinL", 4.799109, 8.1668e-2, SepUnits::SameAsMetric);
+        let sep = || {
+            Separation::against(
+                "outRamp[first] = MinL",
+                4.799109,
+                8.1668e-2,
+                SepUnits::SameAsMetric,
+            )
+        };
         assert_eq!(row(1.0, sep()).separation_power(), SepPower::Discriminating);
         assert_eq!(row(5.0, sep()).separation_power(), SepPower::Blind);
         // Exactly equal counts as blind: `Record::graded` passes on
         // `observed <= tolerance`, so a difference of exactly the tolerance is
         // admitted there and must not be claimed as discriminated here.
         assert_eq!(
-            row(1.0, Separation::against("x", 1.0, 0.0, SepUnits::SameAsMetric)).separation_power(),
+            row(
+                1.0,
+                Separation::against("x", 1.0, 0.0, SepUnits::SameAsMetric)
+            )
+            .separation_power(),
             SepPower::Blind
         );
     }
@@ -2449,8 +2615,7 @@ mod tests {
         );
         assert_eq!(d.separation_power(), SepPower::Unstated);
         assert_eq!(
-            row(1.0, Separation::none("both terms are measured in this run"))
-                .separation_power(),
+            row(1.0, Separation::none("both terms are measured in this run")).separation_power(),
             SepPower::NoAlternative
         );
     }
@@ -2463,7 +2628,12 @@ mod tests {
         assert_eq!(
             row(
                 f64::INFINITY,
-                Separation::against("outRamp[first] = L* 20 = InitialLab", 5.0, 5.0, SepUnits::SameAsMetric)
+                Separation::against(
+                    "outRamp[first] = L* 20 = InitialLab",
+                    5.0,
+                    5.0,
+                    SepUnits::SameAsMetric
+                )
             )
             .separation_power(),
             SepPower::ZeroSeparation

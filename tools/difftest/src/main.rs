@@ -117,8 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi,
-    passk,
+    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi, passk,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -294,7 +293,11 @@ fn main() {
              interpolation experiment)",
             a.grid.len(),
             a.iccce_exe.display(),
-            if a.iccce_is_debug { "DEBUG BUILD" } else { "release" },
+            if a.iccce_is_debug {
+                "DEBUG BUILD"
+            } else {
+                "release"
+            },
             a.structure
         ));
     }
