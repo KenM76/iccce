@@ -202,6 +202,32 @@ permanently.
    transcribed into iccce freely, with a clause citation. The prose
    around them may not.
 
+> ★★★ **CORRECTION, 2026-08-18 — the paragraph below OVERSTATES a tool
+> limit and the overstatement was load-bearing. It is left standing, not
+> rewritten, because the wrong claim is the record (DL-060).**
+>
+> **`pdftoppm` is genuinely absent — that part is true, and it is all the
+> one failing invocation demonstrated.** But **`pypdfium2` IS installed,
+> and the Read tool renders its PNG output**, so a PDF page **can** be
+> rasterised and read here. Recipe: `ARCHITECTURE.md` **DL-060**;
+> canonical copy `ICC_Spec\LEGAL_NOTE.md` §1b.
+>
+> ★★ **Why this is not a footnote.** The three engines named below **drop
+> the Symbol-font glyphs in the same way, for the same reason** — so
+> their agreement is **correlated, not independent**, wherever a passage
+> turns on `+`, `−`, `×`, `≤` or `≥`. **A rasterised page is the only
+> independent channel this project currently has for a typeset
+> equation**, and for six days it was believed unavailable.
+>
+> **Scope:** this corrects a *capability*, and nothing else. **No
+> sourcing permission changes; DL-002's bar on automated retrieval from
+> `color.org` is untouched; §2.1's reproduction posture is untouched.**
+> Reading a page as an image is not a reproduction right.
+>
+> *(Capability `[REPORTED]` by `icc-spec-librarian`, whose corpus records
+> the first successful use. This librarian has no shell and rendered
+> nothing.)*
+
 **Tool limitation encountered and reported rather than worked around:**
 the agent's PDF *page-image* reader requires `pdftoppm` (poppler), which
 is not installed for it, so no page was read as an image. Text
@@ -244,6 +270,21 @@ stays private and uncommitted on local `D:\` only, **the `_sources\` PDFs are
 never committed and never copied out**, and facts — offsets, encodings,
 constants, equations — remain freely transcribable with a citation while the
 prose around them does not.
+
+> ★★★ **CORRECTION, 2026-08-18 — same overstatement as §2.4, and here it
+> has a concrete consequence.** `pdftoppm` is absent; **`pypdfium2` is
+> not**, and pages of these four documents **can** be rendered and read
+> (DL-060). ★ **The figures listed below as "not seen" are therefore
+> "not yet seen", not "unseeable"** — `AdobeBPC.pdf` Figures 1–6 and
+> ISO/CD 18619 Figures 1–3, A.1–A.3 are **now readable on request.** The
+> accompanying statement — *that no claim this project makes depends on a
+> figure* — **is unaffected and still stands**; it was a scope claim
+> about our claims, not about the tooling.
+>
+> **Unchanged:** reproduction terms for all four documents (§2.5's
+> table), the bar on agent retrieval, and summarise-and-cite. **A page
+> rendered as an image may no more be pasted into `docs/` than extracted
+> text may.**
 
 **Tool limitation, reported rather than worked around (unchanged from §2.4):**
 `pdftoppm` is still not installed for the agent, so **no page of any of these

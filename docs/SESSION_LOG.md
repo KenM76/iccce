@@ -5665,3 +5665,290 @@ received.
 - **That anything about Ghent may now be said in public.** ★★★ **No.**
   §7.16's three operator decisions are untouched. **A clearer boundary is
   not a permission.**
+
+---
+
+## 2026-08-18 — the **PDF-rasterisation retraction** filing (twenty-sixth `SESSION_LOG` entry). **A capability this project recorded as absent was present all along; the false claim was inferred from ONE failing call; and what it cost was not convenience but the only INDEPENDENT check on any transcribed equation**
+
+**Filed by `icc-librarian`.** **No code changed. No Pass shipped. No
+numeric claim moved — no ΔE, no tolerance, no measured error, no coverage
+figure.** Next free identifiers remain **NC-243** and **NA-012**.
+
+### ★★★ Four things that bound everything below
+
+1. **Nothing here was measured by this librarian.** It **has no shell**,
+   ran nothing, rendered no page, and did not confirm `pdftoppm`'s
+   absence. The capability claim is **`[REPORTED]` by
+   `icc-spec-librarian`**, corroborated by reading its
+   `ICC_Spec\LEGAL_NOTE.md` §1b **at the tip**.
+2. **The dispatch was verified against live source, and one of its
+   specifics was WRONG** — see "A premise check that failed" below.
+   `docs/` was **swept**, not taken from the dispatch's list of three
+   files.
+3. **Nothing is committed and nothing is pushed.** No authorisation was
+   sought or given, and this librarian ran no `git`.
+4. **The correct claim is narrow.** ★★★ ***"PDF pages can be rasterised
+   via `pypdfium2` and read"*** — **NOT** *"PDF reading works"*.
+   `pdftoppm` really is missing and the Read tool really does refuse a
+   `.pdf` handed to it directly.
+
+### The retraction
+
+`icc-spec-librarian` retracted, on its own initiative, the claim that the
+Read tool **cannot render PDF pages in this environment**. It found the
+claim had been **overgeneralised from a single failing invocation**.
+
+| | as recorded | as measured |
+|---|---|---|
+| `pdftoppm` (poppler) | absent | **absent — true, and the only thing the failing call showed** |
+| rasterising a page at all | impossible here | **possible** — `pypdfium2` is installed |
+| Read on the resulting PNG | never attempted | **works** |
+
+It fixed its own corpus (seven files) and placed the canonical recipe in
+`ICC_Spec\LEGAL_NOTE.md` §1b. **It escalated the occurrences in this
+repository rather than editing them**, which is the correct boundary and
+is worth recording as such.
+
+### ★★★ Why this is a decision-log entry and not a typo fix
+
+**It is not a convenience issue.** ICC.1:2022 sets `+`, `−`, `×`, `≤`,
+`≥` in the **Symbol font**. **All three text engines drop them, for the
+same reason.**
+
+> **This project has been treating agreement between text-extraction
+> engines as corroboration. For that glyph class it is not: the engines
+> agree BECAUSE THEY SHARE THE SAME WRONG ASSUMPTION. Their errors are
+> correlated, so three-engine agreement is not independent evidence.**
+
+**A rasterised page does not share the assumption.** So the retraction
+restores **the only currently-available independent check on any
+transcribed equation in this project** — and for six days that check was
+believed unavailable.
+
+★ **This is DL-033/DL-056's shape in the sourcing layer.** There, a
+differential test was blind toward its own reference; here, three
+instruments are blind in the same direction and their agreement was read
+as confirmation.
+
+### ★★ It is THREE instances, not two — and the third already had the rule
+
+The dispatch offered this as a second instance after `pdfce`'s
+2026-08-08. **There is a third, in this project's own supply chain**
+*(verified — `ICC_Spec\LEGAL_NOTE.md` §4 rule 6, read at the tip)*:
+incident **C6**, 2026-08-12 — *"`itu.int`'s WAF rejects every agent
+request"* propagated to three corpus files, when in fact the WAF rejects
+the bare UA `Mozilla/5.0` and **only** that. **The document was one
+`curl` away for five days.**
+
+★★★ **C6 produced the correct binding rule** — state the tool, the exact
+flags, the UA, the status and the response size — **and instance 3 was
+written anyway, because that rule lives in the corpus and had no
+counterpart in this repository's decision log.** ★ **A rule recorded only
+in `ICC_Spec` does not bind `docs/`.** That gap, more than the pattern,
+is what **DL-060** closes.
+
+### ★ A premise check on the dispatch, which failed
+
+The dispatch asked that **`TOLERANCES.md`'s "Sharma & Starr" row** — an
+inequality glyph read as `<` by derivation from a sibling glyph,
+labelled `DERIVED` — be named as now-checkable.
+
+> **No such row exists.** *(Verified — `Starr` returns **zero hits
+> anywhere in this repository**. `TOLERANCES.md` §3.1.1's Sharma row is
+> **Sharma, Wu & Dalal (2005)**, tolerance `1×10⁻⁴`, justified by the
+> published data's printed precision — no glyph, no inequality, no
+> `DERIVED` label.)*
+
+**What was being reached for is in `icc-spec-librarian`'s corpus, not
+ours, and is already discharged there:** *Sharma & Starr, JIST
+54(6):060504, 2010* sits beside **Cholewo 2000**, whose **Eq. (1)** was
+promoted RECONSTRUCTION → **VERIFIED** on 2026-08-18 **by a rasterised
+page that recovered the `≤` glyphs**. **Nothing is owed to anyone by this
+item.**
+
+★★ **DL-048 for the second filing running** — §7.20 item 6 was the first.
+**A correction aimed at a document that does not contain the thing being
+corrected is settled the same way as a wrong citation: read the
+destination.**
+
+### What was written
+
+| document | what changed |
+|---|---|
+| **`ARCHITECTURE.md` §5** | **DL-060** — the retraction, the narrow correct claim, the recipe, the correlated-error finding, the three-instance table, why **DL-042** does not already cover it, an explicit statement of what this librarian did **not** verify, and five non-effects |
+| **`LEGAL.md`** | dated correction blocks above **§2.4** and **§2.5**; ★ **the original paragraphs left standing, not rewritten** — the wrong claim is the record. §2.5's *"figures not seen"* becomes *"not yet seen"* |
+| **`NUMERIC_CLAIMS.md`** | **§3.33.1**'s blockquote corrected in place (the *fact* stands, the *reason* was wrong); **§7's owed item 2** marked **UNBLOCKED**; **new §7.21** |
+| **`SESSION_LOG.md`** | this entry |
+
+### ★ What was examined and deliberately NOT changed
+
+- **`ARCHITECTURE.md` DL-014's *"No PDF was opened…"*** *(line 1343)* —
+  a **dated scope statement about what one librarian did**, not a
+  capability claim. **True when written, true now.** ★★ **Correcting it
+  would be over-reach**, and the discipline that keeps this correction
+  honest is the same one that made it necessary.
+- **Entry 23 of this log (item 4, *"the PDF … could not be read"*)** —
+  **this log is append-only.** The statement is corrected **by this
+  entry**, not edited where it stands.
+- **Every measured row.** No transform, ΔE, fixture or runner is touched.
+
+### What is owed (`NUMERIC_CLAIMS.md` §7.21)
+
+1. **★★★ NC-230's second reading of §B.2 — UNBLOCKED, still UNDONE**, and
+   it must be a **raster**, not a fourth text extraction.
+   `icc-spec-librarian`.
+2. **★★ A sweep for rows resting on multi-engine agreement over a
+   glyph-sensitive passage.** §7.21 names **two** places; **that is an
+   identified instance, not an inventory.**
+3. **★ Record the render route WITH ITS INVOCATION** the first time a
+   shell-holding agent here uses it. `icc-engineer` / `icc-conformance`.
+
+### Passed on as a courtesy, and it is not ours
+
+`icc-spec-librarian` reports that its **ambiguity register's `revised:`
+line claims 56 rows where a recount gives 58**, before its new entry. **It
+flagged rather than silently corrected**, which is the right disposal.
+**Nothing in this repository depends on the total**, and no `iccce`
+document cites it. Recorded here only so the flag is not lost.
+
+### What a reader must NOT take from this filing
+
+- **That "PDF reading works".** ★★★ **It does not.** `pdftoppm` is
+  absent; the route is `pypdfium2` → PNG → Read. A future session will
+  meet that same error message and must find the workaround here rather
+  than re-derive the wrong conclusion.
+- **That this librarian confirmed the capability.** ★★ **It did not** —
+  no shell, no render. `[REPORTED]` with a named first use.
+- **That any sourcing permission widened.** ★★★ **None did.** DL-002's
+  `color.org` bar and DL-007's ITU-R test stand. **A new way to READ a
+  held document is not a new way to OBTAIN one.**
+- **That a reproduction right appeared.** **No.** A rendered page may no
+  more be pasted into `docs/` than extracted text may.
+- **That any row was downgraded.** ★★ **None was.** Rows are
+  **qualified**; two-engine agreement remains sound, it is simply no
+  longer the ceiling and not independent for Symbol-font glyphs.
+- **That NC-001 is affected.** ★★★ **It is not** — different document,
+  different publisher, provenance is not engine agreement on ICC.1:2022.
+
+---
+
+## 2026-08-18 — the **first use of the rasterisation route** filing (twenty-seventh `SESSION_LOG` entry). **The capability is VERIFIED one day after being retracted into `[REPORTED]`; its first use in this repository found that a superseded row's NUMBERS were wrong too — and the right numbers are ISO 32000's formula already evaluated, which is DL-059 confirmed by the artwork itself**
+
+**Filed by `icc-librarian`.** **No code changed. No Pass shipped. No
+numeric claim moved — no ΔE, no tolerance, no measured error, no coverage
+figure.** Next free identifiers remain **NC-243** and **NA-012**
+*(verified — the highest in `NUMERIC_CLAIMS.md` are NC-242 and NA-011)*.
+
+### ★★★ Three things that bound everything below
+
+1. **This librarian still has no shell.** The capability promotion rests
+   on evidence `icc-engineer` **carried** — a `which` result, a stated
+   render call, a stated PNG size, and the Read tool displaying it.
+   ★ **The panel values and the intent declaration were read by
+   `icc-engineer` from that image, not by this librarian**, and they are
+   filed as `[QUOTED-FROM-RASTER]` for exactly that reason.
+2. **★★ "The readme declares" — never "the patch paints".** Every new
+   fact here comes from the GWG 23.0 **README**. The **patch PDF has
+   never been opened**, and on a corpus that deliberately ships two
+   corrupted trap profiles that gap is not free. Owed at
+   `NUMERIC_CLAIMS.md` §7.22 item 2.
+3. **Everything below was re-read in the live source**, including two
+   things the dispatch did not mention and one it got slightly wrong.
+
+### What the dispatch carried, and what verifying it added
+
+| | the dispatch | after reading the source |
+|---|---|---|
+| DL-060's capability | promote `[REPORTED]` → VERIFIED | **done** — and §7.21's owed item 3 discharged after **one** filing |
+| §3.1's GWG 23.0 numbers | *"wrong twice over"* | **confirmed**, and §3.1 is **the only place in that file those values appear** *(verified — the whole file grepped)* |
+| §3.4's intents table | *"incomplete, 23.0 absent"* | **confirmed** — ★ and the new datum is **readme-declared, not file-read**, so it is kept **out** of that table rather than added to it |
+| the `passk.rs` wrong clause (DL-059, owed) | not mentioned | ★★ **DISCHARGED** — nine `§10.3.3` citations, **zero** `8.6.4.4` |
+| — | not mentioned | ★★★ **`passk.rs:1342`/`:2446` call `g = 0.5` *"GWG's own patch value"* and PRINT it into the report.** The patch's value is **25 %** |
+| — | not mentioned | ★★ **`passk.rs:291`** lists an **`ICCBased` gray** panel; the readme says **`DeviceN`** |
+| where 50/50 came from | *"someone reasoning from 'a gray-equivalence test'"* | ★ **a checkable candidate in the same file**: **§3.3 attributes "50 % K, 50 % Gray, 50 % spot black" to GWG 3.0**, one table later, and calls it the deceptive lookalike |
+
+### ★★★ The two findings that are new work
+
+**1. `1 − 0.25 = 0.75`.** The readme's panels — **25 % · 0/0/0/75 · 75 ·
+75** — are **ISO 32000-1 §10.3.3 / 32000-2 §10.4.2.3 evaluated**. GWG
+**authored the patch on the device-space rule**, so the equivalence it
+tests is the PDF formula's own output and **a CMM cannot be what
+produces it**. That is DL-059's conclusion reached from a **third
+direction** — after the clause text and the readme prose — and reached
+**by the artefact speaking about itself**. ★ The order is what makes it
+worth having: **the clause argument came first and the artwork agreed
+afterwards.**
+
+**2. A number labelled with its source is harder to check than a bare
+one** — **DL-061**. *"GWG's own patch value"* is the phrase that stops a
+reader looking it up, and it is **printed into the Pass K report** for a
+value the patch does not contain. **The ΔE is correct; only the
+justification is false**, so nothing recomputes, **no test can fail on
+it**, and a change ledger has nothing to record.
+
+### ★★ A second failure mode for text extraction, broader than DL-060's
+
+DL-060 recorded three engines dropping Symbol-font glyphs **together** —
+agreement that is **correlated, not independent**. Both facts read on
+2026-08-18 are set in a **figure**, which no text engine returns at all.
+
+> **For figure-borne content, engine agreement is not correlated — it is
+> VACUOUS, and the shared silence reads as absence of the fact.** The
+> first mode **corrupts a value you can see**; the second **hides that a
+> value exists.**
+
+⇒ §7.21's owed sweep widens from *"glyph-sensitive passages"* to
+*"glyph-sensitive **or possibly set in a figure**"*, and **the second
+half cannot be found by comparing extractions.**
+
+★ **The stumble is filed too:** `pypdfium2.V_PYPDFIUM2` **raised** while
+the render **succeeded**. **A capability is falsified by the capability
+failing, never by its metadata failing** — DL-060's own error, met
+inside the act of verifying its retraction.
+
+### What was written
+
+| document | what changed |
+|---|---|
+| **`ARCHITECTURE.md` §5** | **DL-061** (new); **dated addition to DL-059** (third-direction corroboration + the discharged clause + the two new prose defects); **promotion block appended to DL-060** (`[REPORTED]` → VERIFIED, the version-probe stumble, the figure/vacuity extension, and a precise first-use record) |
+| **`GHENT_COMPATIBILITY.md`** | §3.1 supersession block **EXTENDED** — the row is wrong twice, its numbers too; **§3.5 dated addition** (panel values, the `1 − 0.25` arithmetic, what is still unknown, why a new provenance class); **§3.5's owed clause DISCHARGED with two new defects recorded**; **§3.4 marked INCOMPLETE** with 23.0's readme-declared intent kept deliberately out of the table; **§9 gains `[QUOTED-FROM-RASTER]` and five rows**, and its `passk.rs`/tip row gets a dated correction |
+| **`NUMERIC_CLAIMS.md`** | §7.21 item 3 **struck and discharged**; **new §7.22** — no row, three owed items, six explicit non-effects |
+
+★ **§3.1's row is STILL not edited.** It is now wrong in two independent
+ways and stays in place under a dated block — the same practice §4.3's
+withdrawal and §4.5's downgrade received.
+
+### What is owed (`NUMERIC_CLAIMS.md` §7.22)
+
+1. **★★★ `passk.rs`'s two prose defects** — `icc-engineer`. The emitted
+   string is the urgent half: **it leaves the repository.**
+2. **★★ A content-stream read of `GWG230_Four_different Grays_x1a.pdf`**
+   — whoever holds a shell. **A raster will not do it.**
+3. **★★★ The multi-engine sweep, with a widened criterion** —
+   `icc-spec-librarian`.
+
+### What a reader must NOT take from this filing
+
+- **That the patch's painted values are known.** ★★★ **They are not.**
+  The **readme** declares them.
+- **That any Pass K number is in doubt.** ★★ **None is.** `TOLERANCES.md`
+  §3.10 stands; **neither defect appears anywhere in `docs/`** *(verified
+  — grepped)*. Both are in one source file, in prose.
+- **That DL-059 was reopened.** ★★★ **It was corroborated.** The
+  ownership call was right; only §3.1's numbers were also wrong.
+- **That §3.3's `50 %` figures are wrong.** ★ **They are GWG 3.0's and
+  correct there** — and are the most plausible origin of the wrong pair,
+  which is recorded as **a reading, labelled as one**.
+- **That "PDF reading works".** ★★ **The verified claim is narrower:**
+  `pdftoppm` is **absent**, the Read tool still refuses a `.pdf`
+  directly, and **`pypdfium2` → PNG → Read** is the route.
+- **That the scale or the index is now measured.** ★ The verified run
+  used **`scale=2`**; DL-060's recipe says `scale=3.2`. **The call shape
+  is verified; those two parameters are not.**
+- **That the tree is clean, committed or pushed.** ★★ **Two `.git` files
+  were read as text.** They show the tip at **`1a0509b`** and Pass K
+  landed as **`846952f`**; **`git status` was not run and nothing about
+  the working tree's tracked state is claimed.** ★ The `passk.rs` lines
+  cited above were read **in the working tree**, not in a commit's tree.
+- **That anything about Ghent may now be said in public.** ★★★ **No.**
+  §7.16's three operator decisions are untouched.

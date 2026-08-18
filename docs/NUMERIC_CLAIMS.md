@@ -6032,6 +6032,31 @@ ICC profiles"**, **Jack Holm, International Color Consortium,
 > exists.** Everything about the document's *content* is a single
 > transcription by a single agent. **That is a real limit on the row's
 > strength and it is condition (b) of the ruling.**
+>
+> ★★★ **CORRECTED 2026-08-18 — the FACT stands, the REASON was wrong,
+> and the difference is that the blocker is gone (DL-060).**
+>
+> **Still true:** §B.2 has been read **once**, by one agent, and **no
+> second reading exists.** Condition (b) of §3.33.2 is **undischarged**
+> and NC-230 must still not be quoted outside this repository without it.
+>
+> **False:** that a second reading was *unavailable*. `pdftoppm` is
+> absent, but **`pypdfium2` is installed and the Read tool renders its
+> PNG output** — a page of this PDF **can** be rasterised and read. The
+> Read tool's refusal was of the `.pdf` **handed to it directly**, and
+> that single message was overgeneralised into an environment-wide
+> incapability.
+>
+> ★★ **So condition (b) changes character: from a limit that could only
+> be disclosed, to a debt that can be PAID** — and §7.21 records it as
+> newly actionable rather than newly discovered.
+>
+> ★ **And the case for paying it is stronger than it looked.** §B.2 is a
+> **15-decimal-place table**, and this document is one whose typesetting
+> is already known defective (two verified §B.1 transcription defects).
+> A **rasterised** second reading is independent of the text engines in
+> exactly the way a second *text* extraction would not have been — the
+> Symbol-font failure is correlated across all three.
 
 #### 3.33.2 ★★★ THE RULING — `published-ground-truth` is ACCEPTED for NC-230, with four conditions that are part of the claim
 
@@ -8853,12 +8878,19 @@ working in `ICC_Spec/`, and two of this filing's items are owed there.
    repair is not merely to change a sentence but to make the **status
    table** speak in the acquisition list's register (DL-054).
 2. **★★★ A SECOND READING of §B.2 is owed before NC-230 is quoted outside
-   this repository.** One agent, one transcription, and **this librarian
-   could not open the PDF** (`pdftoppm` absent — §3.33.1). ★ The document
+   this repository.** One agent, one transcription, and ~~**this librarian
+   could not open the PDF** (`pdftoppm` absent — §3.33.1)~~ ★★★
+   **UNBLOCKED 2026-08-18 (DL-060) — the reason given was wrong.**
+   `pdftoppm` is absent, but **`pypdfium2` is installed and a page can be
+   rendered and Read**, so the second reading is **no longer prevented by
+   tooling; it is simply not done.** ★ The document
    contains **two verified transcription defects in §B.1**, which do not
    touch §B.2's table but do lower the prior that printed equals
    intended. **Owed to `icc-spec-librarian`**, together with a corpus file
-   for the document so DL-014's terms have something to bind to.
+   for the document so DL-014's terms have something to bind to. ★★ **The
+   second reading must be a RASTER, not a fourth text extraction** — a
+   15-dp table in a document that sets `−` in the Symbol font is precisely
+   where text engines fail *together*.
 3. **★★ `builtin.rs`'s own doc comment contradicts itself** — the *"trap
    worth naming"* subsection still ends *"no document publishes them at
    all"*, seventy lines below the rewrite that names the document
@@ -9023,6 +9055,250 @@ was not, and the sentence gave no way to tell them apart.
   are **not re-opened**. More clarity about *whose* a patch is does not
   make *"passes the Ghent suite"* available; that is a permission
   question, not an evidence one.
+
+---
+
+### 7.21 Status of §7 … §7.20, re-checked 2026-08-18 at the **PDF-rasterisation retraction** filing
+
+**★★★ NO ROW IS ADDED, CHANGED OR INVALIDATED BY THIS FILING.** The next
+free identifiers remain **NC-243** and **NA-012**. No ΔE, no tolerance, no
+observed error and no coverage figure moves. This subsection exists for
+two reasons: **a blocker cleared**, and **an evidence class was
+qualified**.
+
+**The occasion.** A capability claim carried in this repository's
+documents was false: *"the Read tool cannot render PDF pages in this
+environment."* **`pdftoppm` is genuinely absent — that is the true part,
+and it is all the one failing invocation demonstrated — but `pypdfium2`
+is installed and the Read tool renders its PNG output.** Retracted by
+`icc-spec-librarian` on its own initiative; decision recorded at
+**`ARCHITECTURE.md` §5 — DL-060**; canonical recipe at
+`ICC_Spec\LEGAL_NOTE.md` §1b.
+
+#### ★★ The part that belongs in THIS document — an evidence class is weaker than it reads
+
+> ★★★ **Where a row's provenance is *"agreement between text-extraction
+> engines"*, that agreement is NOT independent for Symbol-font glyphs.**
+> ICC.1:2022 sets `+`, `−`, `×`, `≤`, `≥` in the Symbol font
+> (`LEGAL.md` §2.4). **All three engines — `pypdf`, poppler
+> `pdftotext`, `pdfminer.six` — drop them, for the same reason.** They
+> agree because they share the assumption, so **their concordance
+> measures the shared failure mode, not the quantity.**
+
+**This is flagged, not fixed.** No re-derivation is performed or
+implied here, and **no row is downgraded**. What changes is that a reader
+who meets a `cross_verified_2src`-backed number can no longer treat
+"two engines agreed" as settling a **sign, an inequality direction or an
+operator**.
+
+★ **Where it actually bites, named rather than counted** *(this is an
+identified instance, not an inventory — the full sweep is owed below)*:
+
+| where | the provenance | why the qualification applies |
+|---|---|---|
+| **§3.22's discussion of NC-084** | the corpus file `ICC_Spec\icc\icc__ref__bpc.md` grades **§2 and §3** as **`cross_verified_2src` (ICC.1:2022 by two engines)** *(verified — read at line 1898 of this document)* | BPC is **defined by inequalities and signed offsets**; the glyph class that fails is exactly the one its clause text turns on |
+| **§3.33.1 / NC-230, condition (b)** | one transcription of a **15-dp** table, second reading recorded as impossible | ★★ **corrected in place** — the second reading was never impossible, and is now **owed rather than barred** |
+
+★★★ **NC-001 is NOT affected and must not be swept in.** Its expectation
+comes from **Sharma, Wu & Dalal (2005)**, transcribed via
+`ICC_Spec\cie\cie__ref__delta_e.md` — a different document, a different
+publisher, and its provenance is not "engine agreement on ICC.1:2022".
+**The project's only `published-ground-truth` transform-adjacent anchor
+is untouched.**
+
+#### ★ A correction to the dispatch that occasioned this filing, recorded because DL-048 is the reason it is checked
+
+The dispatch asked that ***"`TOLERANCES.md`'s Sharma & Starr row"*** — an
+inequality glyph read as `<` **by derivation from a sibling glyph**, said
+to be labelled `DERIVED` — be named as now-checkable.
+
+> **No such row exists.** *(Verified — grepped `docs/` for `Starr`: **zero
+> hits anywhere in this repository**. `TOLERANCES.md`'s Sharma row is
+> §3.1.1's **Sharma, Wu & Dalal (2005)** 34-pair ground-truth row, whose
+> tolerance is `1×10⁻⁴` justified by the published data's printed
+> precision. It carries **no glyph, no inequality and no `DERIVED`
+> label**; the file's only `DERIVED` mention is NC-017's D50
+> chromaticity.)*
+
+**What the dispatch was reaching for lives in `icc-spec-librarian`'s
+corpus, not ours, and is already discharged there:** *Sharma & Starr,
+JIST 54(6):060504, 2010* sits beside **Cholewo 2000**, whose **Eq. (1)**
+was promoted from RECONSTRUCTION to **VERIFIED** on 2026-08-18 — **by a
+rasterised page, recovering the `≤` glyphs every text engine drops.**
+That is the retraction's first successful use, and **it is the corpus's
+row to close, not this ledger's. Nothing is owed to anyone by this item;
+it is closed by being recorded.**
+
+★★ **DL-048 arriving for the second time in two filings** (§7.20 item 6
+was the first). **A correction aimed at a document that does not contain
+the thing being corrected is settled the same way as a wrong citation —
+read the destination.**
+
+#### Newly owed as of this filing
+
+1. **★★★ The second reading of §B.2 (NC-230 condition (b)) is UNBLOCKED
+   and still UNDONE.** It must be a **raster**, not a fourth text
+   extraction — a 15-dp table in a document that sets `−` in the Symbol
+   font is exactly where text engines fail *together*, and the document
+   has **two verified transcription defects in §B.1** already. **Owed to
+   `icc-spec-librarian`.** ★ This is §7's oldest item to have its
+   *stated reason* falsified rather than its status restated — **DL-042's
+   mechanism, caught by DL-060's check.**
+2. **★★ A sweep for rows whose provenance is multi-engine text agreement
+   ON A GLYPH-SENSITIVE PASSAGE.** The table above names **two** places;
+   **that is an identified instance, not an inventory**, and the
+   distinction is this document's own rule. The sweep must cover the
+   corpus's `cross_verified_2src` files, not just this ledger, because
+   the tier is awarded there. **Owed to `icc-spec-librarian`**, with the
+   result filed back here.
+3. ~~**★ The rendering route should be recorded WITH ITS INVOCATION the
+   first time a shell-holding agent in this project uses it.**~~ DL-060
+   records the capability as **`[REPORTED]`** — this librarian has no
+   shell, rendered nothing, and did not confirm `pdftoppm`'s absence.
+   ★★ **Filing a capability as a fact on a dispatch would be the same
+   error with the sign flipped**, which is the whole subject of DL-060.
+   **Owed to `icc-engineer` or `icc-conformance`**, whoever renders next.
+   > ★★★ **DISCHARGED 2026-08-18, one day later** — `icc-engineer` ran
+   > it and carried the evidence: `which` for `pdftoppm`'s absence, a
+   > **1225 × 1619** PNG from
+   > `PdfDocument(…)[0].render(scale=2).to_pil()`, and the Read tool
+   > displaying it. **DL-060's capability claim is promoted `[REPORTED]`
+   > → VERIFIED.** See **§7.22**, and the promotion block appended to
+   > DL-060. ★ **The item was owed for exactly one filing** — worth
+   > noting only because §7's other standing items are counted in
+   > filings-since-registered, and this one has a denominator of one.
+
+#### What is explicitly NOT affected
+
+- **No sourcing permission changes.** ★★★ **DL-002's bar on automated
+  retrieval from `color.org` / `archive.color.org` stands**, as does
+  DL-007's test before any ITU-R fetch. **A new way to READ a document
+  already held is not a new way to OBTAIN one**, and all four affected
+  PDFs were operator browser downloads.
+- **`LEGAL.md` §2.1's reproduction posture is untouched.** Rendering a
+  page is not a reproduction right; **a rendered page may no more be
+  pasted into `docs/` than extracted text may.**
+- **Two-text-engine agreement is not repudiated.** It remains the
+  corpus's `cross_verified_2src` bar and remains sound for structure,
+  wording and unaccented numerals. ★ **It is no longer the ceiling, and
+  it is not independent for the glyph class named above.**
+- **`ARCHITECTURE.md` DL-014's *"No PDF was opened…"* is CORRECT AS
+  WRITTEN and was deliberately left alone** *(verified — read at line
+  1343)*. It states what one librarian did on a date; it makes no
+  capability claim. **Over-correcting a true statement would be the same
+  carelessness in the opposite direction.**
+- **Every measured row in §3.** Nothing in this filing touches a
+  transform, a ΔE, a fixture or a runner.
+
+---
+
+### 7.22 Status of §7 … §7.21, re-checked 2026-08-18 at the **first use of the rasterisation route** filing
+
+**★★★ NO ROW IS ADDED, CHANGED OR INVALIDATED BY THIS FILING.** The next
+free identifiers remain **NC-243** and **NA-012** *(verified — the
+highest identifiers in this document are **NC-242** and **NA-011**)*. No
+ΔE, no tolerance, no observed error and no coverage figure moves. Three
+things happened, and only the third is new work.
+
+#### 1. ★★★ A capability is PROMOTED — §7.21's owed item 3 is discharged after one filing
+
+`icc-engineer`, **2026-08-18**, with a shell:
+
+| the claim | before | now |
+|---|---|---|
+| `pdftoppm` absent | inferred from one failing call | **VERIFIED** — `which` |
+| `pypdfium2` renders | `[REPORTED]` | **VERIFIED** — `PdfDocument(…)[0].render(scale=2).to_pil()` → a **1225 × 1619** PNG |
+| Read displays the PNG | `[REPORTED]` | **VERIFIED** — displayed, and read from |
+
+★ **Not rounded up.** The invocation's **path was elided** in the
+dispatch, and the run used **`scale=2`** where DL-060's recipe says
+`scale=3.2`. **The call shape is verified; the scale and the index are
+not measured claims.**
+
+★★ **The stumble is the part worth keeping:** `pypdfium2.V_PYPDFIUM2`
+**raised** on this install while the render **succeeded**. A version
+probe failing is evidence about an attribute, not about a library —
+**DL-060's own error, met inside the act of verifying its retraction.**
+
+#### 2. ★★ A fact in another document was wrong, and this ledger holds none of it
+
+`GHENT_COMPATIBILITY.md` §3.1's superseded GWG 23.0 row states
+*"DeviceGray 50 % and DeviceCMYK 0/0/0/50"*. **The readme's four panels
+are 25 % · 0/0/0/75 · 75 · 75**, and **`1 − 0.25 = 0.75`** is
+ISO 32000's own `k = 1.0 − gray` evaluated — so **the artwork is a third
+line of evidence for DL-059**, after the clause text and the readme
+prose.
+
+> **This ledger gains nothing from it.** A patch's documented panel value
+> is **not a tolerance, not a measured error and has no oracle** — the
+> same judgement recorded for DL-058, DL-059 and DL-060. It is recorded
+> here **only** because §7 tracks corrections to facts this project has
+> published, and because item 3 below is owed as a consequence.
+
+Filed at: `GHENT_COMPATIBILITY.md` §3.1 (extended supersession), §3.5
+(dated addition), §3.4 (the incomplete intents table), §9 (a fourth
+provenance class, `[QUOTED-FROM-RASTER]`); decision **`ARCHITECTURE.md`
+§5, DL-061**.
+
+#### Newly owed as of this filing
+
+1. **★★★ Two false statements in `tools/difftest/src/passk.rs`, one of
+   which LEAVES THE REPOSITORY.** *(Verified — both lines read in the
+   working tree at the tip.)*
+   - **`passk.rs:1342` and `:2446`** call `g = 0.5` ***"GWG's own patch
+     value"***, and **`:2446` prints it into the Pass K report**. The
+     patch's gray panel is **25 %**. **The ΔE is measured correctly;
+     only its justification is false**, so **nothing recomputes and no
+     test can fail on it** (DL-051's shape; the rule is DL-061).
+   - **`passk.rs:291`** lists the patch's fourth panel as an
+     ***`ICCBased` gray***; the readme says **`DeviceN`**. §C's
+     reasoning survives on its own terms, **but not if line 291 is read
+     as its warrant.**
+   - **Owed to `icc-engineer`** (the module's author's session). ★ This
+     librarian does not edit code and has not.
+2. **★★ The GWG 23.0 patch PDF's CONTENT STREAM is owed a read.**
+   Everything above is **the README's declaration**. Whether the artwork
+   paints those values is **unverified**, and this corpus **deliberately
+   ships two corrupted trap profiles** (`GHENT_COMPATIBILITY.md` §4.3),
+   so *documentation matches artwork* is not free here. The file
+   is `…\3-ICC-CMS\Patches\GWG230_Four_different Grays_x1a.pdf`; **it
+   needs a content-stream read, not a raster.** ★ Owed **not because the
+   answer is doubted** but because the claim's *class* would change.
+   **Owed to whoever holds a shell.**
+3. **★★★ §7.21's owed item 2 — the multi-engine-agreement sweep — must
+   WIDEN its criterion.** It was registered as *"rows whose provenance
+   is multi-engine text agreement **on a glyph-sensitive passage**"*.
+   The 2026-08-18 use found a **second and broader failure mode**: both
+   facts read off that page are **set in a figure**, and **no text
+   engine returns figure-borne content at all**. For that class,
+   agreement is **not correlated — it is vacuous**, and the engines'
+   **shared silence reads as absence of the fact**. ⇒ the criterion
+   becomes *"glyph-sensitive **or possibly set in a figure**"*, and
+   **the second half is undetectable by comparing extractions.** Only a
+   render finds it. **Still owed to `icc-spec-librarian`**, now with a
+   larger scope than when registered.
+
+#### What is explicitly NOT affected
+
+- **DL-059 is corroborated, not reopened.** The ownership call was right;
+  the panel values argue *for* it.
+- **`GHENT_COMPATIBILITY.md` §3.3's `50 %` figures.** They belong to
+  **GWG 3.0** and are correct there. ★ They are also the most likely
+  origin of the wrong pair — *a reading, labelled as one* in DL-061 —
+  and sweeping them up would be an over-correction.
+- **Every Pass K number.** `TOLERANCES.md` §3.10 stands, and **neither
+  `passk.rs` defect appears anywhere in `docs/`** *(verified — grepped
+  for `g = 0.5`, `patch value`, `GWG's own`, `50 %`, `midpoint` and
+  `at_half`)*.
+- **Sourcing permissions.** DL-002 and DL-007 are untouched. **A route
+  for READING a file already held is not a route for OBTAINING one**,
+  and this filing added no fetch of any kind.
+- **`LEGAL.md` §2.1.** A rendered page is not a reproduction right; the
+  panel values are **quoted as facts, not pasted as artwork**.
+- **NC-230's condition (b)** — §7.21's owed item 1 — **remains unblocked
+  and still UNDONE.** Nothing in this filing performs it. ★ It is now
+  owed with a *demonstrated* route rather than a reported one, which
+  removes the last excuse rather than the obligation.
 
 ---
 

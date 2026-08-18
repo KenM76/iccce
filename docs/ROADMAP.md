@@ -5540,6 +5540,36 @@ and **NA-012**.
 - **★★ Nothing here changes the operator block below.** A clearer
   boundary is not a permission.
 
+> ### ★★★ Dated addition, 2026-08-18 — **the artwork itself now confirms the reclassification, and the superseded row's NUMBERS were wrong too**
+>
+> The GWG 23.0 README was **rasterised and read** on 2026-08-18 (the
+> route restored by **DL-060**, verified with a shell the same day). Its
+> four panels are **`DeviceGray` 25 %**, **`DeviceCMYK` 0/0/0/75**,
+> **`Separation` 75**, **`DeviceN` 75**.
+>
+> **`1 − 0.25 = 0.75` — that is ISO 32000's `k = 1.0 − gray` evaluated.**
+> **GWG authored the patch on the device-space rule**, so the equivalence
+> it tests is the PDF formula's own output. **DL-059 is corroborated from
+> a third direction** — clause text, readme prose, and now the artefact
+> itself — with the corroboration arriving *after* the decision.
+>
+> ★★ It also shows `GHENT_COMPATIBILITY.md` §3.1's superseded row was
+> **wrong twice**: it said *"DeviceGray 50 % and DeviceCMYK 0/0/0/50"*.
+> The row is **still not edited**; the supersession block now covers the
+> numbers as well.
+>
+> ★ **The limit:** the **README** declares those values. **The patch
+> PDF's content stream has never been read** — *"the readme declares"*,
+> not *"the patch paints"*. Owed at `NUMERIC_CLAIMS.md` **§7.22**, which
+> also carries **two false statements found in `passk.rs`'s prose**, one
+> of them printed into the Pass K report. Rule: **`ARCHITECTURE.md` §5,
+> DL-061**.
+>
+> ★★ **DL-059's `passk.rs` clause defect is DISCHARGED** — the module
+> cites **§10.3.3** at nine lines and **`8.6.4.4` has zero hits**
+> *(verified — working tree read)*. **Nothing in this block changes the
+> operator decisions below**, and no number moved.
+
 ### ★★★ Blocked on the operator — three decisions, and no agent may take any of them
 
 *(There was no "blocked-on-operator" section in this document before

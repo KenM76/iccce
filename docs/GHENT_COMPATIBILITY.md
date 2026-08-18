@@ -230,6 +230,37 @@ mine.
 > over **patch-readme** source material (§9 records §3.1 as
 > `[REPORTED]`). It is not GWG requirement text, and §3.5 explains why
 > that distinction is load-bearing rather than pedantic.
+>
+> ### ★★★ EXTENDED 2026-08-18 — **the row is wrong TWICE. Its NUMBERS are wrong too, and they are wrong in a way that reads as authoritative**
+>
+> The supersession above disposes of the row's **ownership** claim. It
+> left the row's **arithmetic** standing, and a raster of the patch's own
+> readme shows that half is wrong as well:
+>
+> | | the row says | the readme's four panels say |
+> |---|---|---|
+> | `DeviceGray` | **50 %** | **25 %** |
+> | `DeviceCMYK` | **0/0/0/50** | **0/0/0/75** |
+> | `Separation` | not stated | **75** |
+> | `DeviceN` | not stated | **75** |
+>
+> ★★★ **`1 − 0.25 = 0.75`. Those are not two arbitrary numbers — they are
+> ISO 32000's own `k = 1.0 − gray` evaluated**, which means the patch was
+> *authored on the device-space rule*. **The artwork is therefore a third,
+> independent line of evidence for §3.5's conclusion**, after the clause
+> text and the readme prose. **The row's own numbers argue against the row.**
+>
+> ★★ **Where the wrong pair most likely came from is checkable in this
+> document** *(this is a reading, labelled as one)*: **§3.3, one table
+> later, describes GWG 3.0 as comparing "50 % K, 50 % Gray and 50 % spot
+> black"** and warns that it *"reads like a gray-equivalence test"*. The
+> figure written into the 23.0 row is the figure belonging to the patch
+> this document already flags as the deceptive lookalike. **A number can
+> migrate between neighbouring rows without anyone mistyping anything.**
+>
+> **Do not quote the row's numbers either.** Full evidence, source class
+> and the one thing still unverified: **§3.5, "Dated addition,
+> 2026-08-18"**. Decision: **`ARCHITECTURE.md` §5, DL-061**.
 
 | patch | what GWG says it tests | the capability it demands of a CMM |
 |---|---|---|
@@ -298,6 +329,42 @@ consumer will ask for:
 | 18.0, 18.2 | Perceptual | `Custom` |
 | 22.1 | **both Perceptual ×2 and RelativeColorimetric ×2, in one file** | ISO Coated v2 300% (ECI) |
 | 16.4 (ICC) | none declared | `Custom`, empty RegistryName |
+
+> ### ★★ INCOMPLETE — dated addition, 2026-08-18: **23.0 is missing from this table, and its absence has been reading as "not applicable"**
+>
+> **GWG 23.0 has no row above, and it should not be read as having no
+> declaration.** Its readme declares, in the figure:
+>
+> - **Rendering Intent: Relative Colorimetric *with Black Point
+>   Compensation***
+> - **Output Intent: ISO Coated v2 300% (ECI)**
+>
+> ★★★ **This is NOT a peer of the rows above, and must not be promoted
+> into the table.** Every row above was read **out of the patch file's
+> own bytes** (`/Intent`, the `ri` operator, `DestOutputProfile`). This
+> one is **what the patch's README says**, read off a **rasterised page**
+> — patch-documentation authority, the weaker class §3.5 spends a
+> subsection establishing. **Nobody has read 23.0's `/Intent`.** Merging
+> the two source classes in one table is precisely the move that would
+> make the weaker claim invisible; it is kept out of the table for that
+> reason, not for tidiness.
+>
+> ★ It does **corroborate** the paragraph immediately below, which
+> already generalises over *every* ICC-CMS patch: 23.0's declared output
+> condition is the same ISO Coated v2 300% (ECI). The generalisation now
+> has one more instance behind it — from a weaker source.
+>
+> ★★ **BPC is the one capability in this whole table that iccce
+> implements.** `with_bpc` exists *(verified — present in
+> `crates/iccce-cmm/src/{transform.rs,lib.rs}` and
+> `crates/iccce-cli/src/main.rs`)*, per Pass 5 and the ISO/CD 18619
+> §4.2.5 procedure. Two things follow, and the second is the one that
+> matters: **iccce never *forces* BPC (DL-022, NC-100)** — so a consumer
+> honouring this patch's declaration must ask for it — and **a patch
+> naming a capability this project has does not make the patch this
+> project's.** 23.0's ownership is settled in §3.5 and is unchanged by
+> this row's existence. **`TOLERANCES.md` §3.10 also records that no row
+> anywhere in Pass K exercises `--bpc`.**
 
 Every ICC-CMS patch embeds **ISO Coated v2 300% (ECI)** as its
 `DestOutputProfile`. Two observations that matter to a consumer:
@@ -380,6 +447,81 @@ conversion*, and the **unconverted `DeviceCMYK` object is the reference**
 the other three are compared against. That makes 23.0 a **non-conversion
 test** — structurally the same as GWG 8.2, which §3.3 had already
 classified correctly one table earlier.
+
+#### ★★★ Dated addition, 2026-08-18 — **the readme's PANEL VALUES, read off a raster, and they are ISO 32000's formula already evaluated**
+
+`[QUOTED-FROM-RASTER]` — a new provenance class for this document; see
+the dated extension to §9. Read by `icc-engineer` on **2026-08-18** from
+a `pypdfium2` render of
+`…\3-ICC-CMS\ReadMes\GWG230_Four_different Grays_README.pdf`, displayed
+through the Read tool. **The values are set in the figure, not in the
+text stream** — see the last block of this subsection, which is the
+reason the class had to be invented.
+
+| panel | the readme's value |
+|---|---|
+| `DeviceGray` | **25 %** |
+| `DeviceCMYK` | **0/0/0/75** |
+| `Separation` | **75** |
+| `DeviceN` | **75** |
+
+> ★★★ **`1 − 0.25 = 0.75`.** The panels are **ISO 32000-1 §10.3.3 /
+> ISO 32000-2 §10.4.2.3's `k = 1.0 − gray` evaluated at one point.**
+> GWG authored the patch **on the device-space rule.**
+
+**This strengthens the reclassification; it does not disturb it.** The
+section already had two lines of evidence — the **clause text** (four
+legs, four clauses, none of them ICC's) and the readme's **prose**
+(*"without performing color conversion"*, `DeviceCMYK` as the reference).
+The panel values are a **third, and they come from the artwork itself**:
+the equivalence the patch asserts is the PDF formula's own output, so a
+CMM cannot be what produces it. ★ Note the direction — this is
+corroboration arriving *after* the decision, which is the weaker and
+more trustworthy order.
+
+★★ **And it makes §3.1's row wrong twice over: wrong about ownership
+*and* wrong about the numbers** (*"DeviceGray 50 % and DeviceCMYK
+0/0/0/50"*). The row is still **not edited** — same reasoning as before
+— and the supersession block at §3.1 now says so explicitly. **The wrong
+numbers are the more interesting half**, because *50/50* is what a
+reader would write reasoning from *"it is a gray-equivalence test"*
+rather than from the patch, and because **§3.3 attributes exactly
+"50 % K, 50 % Gray, 50 % spot black" to GWG 3.0** — the patch this
+document itself flags as the deceptive lookalike, one table later.
+
+#### ★★★ What is STILL NOT KNOWN — the readme declares; the patch has not been read
+
+> **State it as *"the readme declares"*, never as *"the patch paints"*.**
+
+**Nobody has read the patch PDF's content stream.** Everything above
+comes from the **README**, a separate file. Whether the artwork's painted
+values match its own documentation is **unverified** — and on a corpus
+that **deliberately ships two corrupted trap profiles** (§4.3), a
+documentation-matches-artwork assumption is not a safe one to make for
+free. Closing it needs a **content-stream read**, not a raster:
+
+- `D:\Dev\temp\pdfce\…\3-ICC-CMS\Patches\GWG230_Four_different Grays_x1a.pdf`
+- Owed at **`NUMERIC_CLAIMS.md` §7.22**, to whoever holds a shell.
+- ★ **It is not owed because the answer is doubted.** It is owed because
+  the claim's *class* would change — from patch documentation to the
+  artefact — and this document's whole discipline is that those are not
+  the same strength.
+
+#### ★★ Why this needed a new provenance class, and why §7.21 should point here
+
+`pdftotext -layout` on this same readme returns **the prose and not the
+figure** — the four panel values and the intent declaration are simply
+**not in the text stream**. A reader working from extracted text would
+not know there was anything to check.
+
+★★★ **This is a second and broader failure mode than the one DL-060
+recorded.** There, three text engines dropped Symbol-font glyphs
+*together*, so their agreement was **correlated rather than
+independent**. Here, **no text engine can return figure-borne content at
+all**, so agreement between them is not merely correlated — it is
+**vacuous**, and their shared silence reads as *absence of the fact*. The
+first mode corrupts a value you can see; **the second hides that a value
+exists.**
 
 #### ★★ The premise that failed: there is no GWG requirement "23.0"
 
@@ -477,6 +619,46 @@ preservation, or of the `TOLERANCES.md` §3.10.8 that the module cites**
 `lib.rs`. **Pass K is in flight in a concurrent session; nothing from it
 is quoted or claimed anywhere in this document.** Registered as owed at
 `NUMERIC_CLAIMS.md` **§7.20**.
+
+> ### ★★ DISCHARGED, and one NEW defect found in its place — 2026-08-18
+>
+> **The wrong clause is gone.** `passk.rs` in the working tree at the tip
+> cites **§10.3.3** at **nine** lines — **296, 382, 762, 858, 863, 1332,
+> 1360, 2406, 2474** — and **`8.6.4.4` has zero hits in the file**
+> *(verified — grepped and read)*. Pass K has landed —
+> `846952f`, reflog — so the item DL-059 registered as *owed* is
+> **closed**. ★ *This librarian read the working tree, not the commit's
+> tree; that they are identical is not something it can verify without a
+> shell.*
+>
+> **Two things in the same module are still wrong, and both are in
+> DOC TEXT rather than in arithmetic:**
+>
+> 1. ★★★ **`passk.rs:1342` calls `g = 0.5` *"GWG's own patch value"*, and
+>    `passk.rs:2446` prints that phrase into the report:** *"at GWG's own
+>    g = 0.5 patch value, {:.6}"*. **The patch's gray panel is 25 %, not
+>    50 %** (§3.5's dated addition). The ΔE at `g = 0.5` is measured
+>    correctly and is a perfectly good sample of the ramp — **only its
+>    justification is false.** The wrong figure from §3.1's superseded row
+>    reached emitted output by way of a doc comment, and **no test can
+>    fail on it.** Owed at **`NUMERIC_CLAIMS.md` §7.22**; the rule is
+>    **DL-061**.
+> 2. ★★ **`passk.rs:291` describes the patch's four panels as
+>    *"`DeviceGray`, `DeviceCMYK` `0/0/0/K`, an `ICCBased` gray and a
+>    `Separation /Black`"*.** The readme's fourth panel is **`DeviceN`**,
+>    and **there is no `ICCBased` panel** — §3.1's row and §3.5's clause
+>    table both say `DeviceN [/Black]`. This matters because the module's
+>    §C is kept on the ground that *"iccce still owns the non-CMYK-native
+>    device case — a gray ICC profile into a CMYK destination"*. **§C's
+>    reasoning survives on its own terms** (a consumer may hand us a gray
+>    profile whatever the patch contains) — **but if the sentence at 291
+>    is read as its warrant, the warrant is not there.** A defect in a
+>    justification, not in a number: DL-049's shape.
+>
+> ★ **Neither defect moves a measured value**, and no Pass K row in
+> `TOLERANCES.md` §3.10 repeats either error *(verified — grepped `docs/`
+> for `g = 0.5`, `patch value`, `GWG's own`, `50 %`, `midpoint` and
+> `at_half`; the phrases appear only in `passk.rs`)*.
 
 ★ **One adjacent trap, so the correction is not over-applied.** ISO
 32000-1 **contradicts itself** between §11.5.3 NOTE 3 and §10.3.3 — but
@@ -1088,6 +1270,25 @@ byte-level scan of the patch PDFs and **not independently re-derived
 here** — which is a weaker claim, and is flagged wherever it is load-
 bearing.
 
+> ### ★★ Dated extension, 2026-08-18 — a **fourth** class, because `[QUOTED]`'s definition named a tool that is no longer the only one
+>
+> **`[QUOTED]` as defined above says *"extracted with `pdftotext
+> -layout`"*.** That definition cannot carry anything read off a
+> **rasterised page**, and as of 2026-08-18 this document contains such
+> readings (§3.4's note, §3.5's dated addition).
+>
+> **`[QUOTED-FROM-RASTER]`** = lifted from a **page image** produced by
+> `pypdfium2` and displayed through the Read tool.
+>
+> ★★ **It is not a weaker class than `[QUOTED]` — it is a different
+> channel, and for some content it is the ONLY one.** Text engines drop
+> Symbol-font glyphs *together* (`ARCHITECTURE.md` DL-060) and return
+> **nothing at all** for content set in a figure. ★ Its own failure mode
+> is the opposite of a text engine's: **a raster can be misread by an
+> eye where an extractor would have been exact.** Neither class
+> subsumes the other, which is why a fourth name was cheaper than
+> widening the third.
+
 | § | statement | source |
 |---|---|---|
 | 1 | the instruction | operator, 2026-08-17 **[QUOTED]** |
@@ -1100,7 +1301,11 @@ bearing.
 | 3.5 | **§10.3.3 / §10.4.2.3** (gray→CMYK), **§8.6.6.4** (`Separation` clause identity), and **§8.6.4.4 = *DeviceCMYK Colour Space*** | re-derived by `icc-librarian` from `D:\Dev\Rag-Specialized\PDF_Spec\`, cited to file and line **[VERIFIED]** — deliberately **not** taken from the dispatch that requested the filing |
 | 3.5 | **§10.3.2**'s ICC-branch sentence, **§10.3.1**, **§8.6.6.5**, the `Separation` ignore-rule, and the **GWG 2022** `D0013`/`R0011` findings | `icc-spec-librarian` dispatch, 2026-08-17 **[REPORTED]** — **not re-derived here**. ★ §10.3.2 is the load-bearing one and is the one still owed a re-derivation (`NUMERIC_CLAIMS.md` **§7.20**) |
 | 3.5 | the GWG 23.0 readme quotations | `GWG230_Four_different Grays_README.pdf` via `pdftotext -layout`, `icc-engineer` **[QUOTED]** |
-| 3.5 | *"`passk.rs` is in no commit; tip is `506fcd3`"* | `.git/refs/heads/master` and `.git/logs/HEAD` read directly by `icc-librarian` **[VERIFIED]**. ★ This librarian has **no shell**; it is a statement about two files' contents, not about `git status`, and it does not survive the next commit |
+| 3.5 / 3.4 | GWG 23.0's **four panel values** (25 % · 0/0/0/75 · 75 · 75) and its **declared RelCol+BPC / ISO Coated v2 300% (ECI)** | the **same readme**, `pypdfium2` render read by `icc-engineer`, 2026-08-18 **[QUOTED-FROM-RASTER]**. ★ **Neither fact is in that file's text stream**; `pdftotext -layout` returns the prose and omits the figure |
+| 3.5 | *"the patch PDF's content stream matches its readme"* | **NOT CLAIMED, and not read.** The patch itself has never been opened. **Owed — `NUMERIC_CLAIMS.md` §7.22** |
+| 3.1 | the row's *"DeviceGray 50 % / DeviceCMYK 0/0/0/50"* | **WRONG** — see the row above and §3.1's extended supersession block. It is the only place in this file those values appear *(verified — the whole file grepped for `50 %`, `0/0/0`, `25 %` and `75`; §3.3's three `50 %` figures belong to **GWG 3.0** and are not disturbed)* |
+| 3.4 | *"23.0 is absent from the intents table"* | `icc-librarian`, read at the tip 2026-08-18 **[VERIFIED]** — a statement about this file's own contents |
+| 3.5 | *"`passk.rs` is in no commit; tip is `506fcd3`"* | `.git/refs/heads/master` and `.git/logs/HEAD` read directly by `icc-librarian` **[VERIFIED]**. ★ This librarian has **no shell**; it is a statement about two files' contents, not about `git status`, and it does not survive the next commit. **★★ It did not: as of 2026-08-18 the tip is `1a0509b` and the reflog shows `846952f` *"conformance: Pass K — black preservation, measured before the feature exists"*** *(verified — the same two files re-read)*. The row is left as written because it was true on its date; the dated note is the correction |
 | 3.2 | GWG 22.0's *"does not necessarily mean the workflow is wrong"* | `GWG220_ColorConversionIndicator_README.pdf` **[QUOTED]** |
 | 3.2 | the `/Lab` D50 parameters in GWG 22.1 | patch bytes **[REPORTED]** — not re-derived here |
 | 3.4 | declared intents, `DestOutputProfile`s, the FOGRA27 mismatches | patch bytes **[REPORTED]** — not re-derived here. ★ The mismatch claim is the one most worth re-deriving before it is passed to `pdfce` as fact |
