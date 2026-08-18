@@ -31,12 +31,31 @@ iccce — ICC colour management engine
 USAGE:
   iccce inspect <profile>   Print the profile header and tag table.
   iccce transform --src <profile> --dst <profile> [--intent <i>] [--bpc]
+                  [--preserve-black <policy>]
                             Convert device values, source -> destination.
                             <i>: media-relative (default), perceptual,
                             saturation, absolute. --bpc opts in to black
                             point compensation (never forced; refused by
                             name at absolute or outside the estimation
-                            subset). Reads one set of source device
+                            subset).
+                            --preserve-black <policy> opts in to K-only
+                            black preservation: an input carrying black
+                            alone produces an output carrying black
+                            alone. <policy> is REQUIRED and has no
+                            default, because two published definitions
+                            of 'preserve the black' disagree:
+                              k-only-equal-lightness  lcms2's mapping.
+                                Vendor construction, no normative text;
+                                it is also this project's oracle.
+                              k-only-ratio  Cholewo (2000), published.
+                                NOT IMPLEMENTED - refused by name; its
+                                K_MIN/K_MAX determination is not held
+                                here and approximating it would be
+                                indistinguishable from implementing it.
+                            ICC.1 specifies no black preservation at
+                            all, so this is a named policy rather than
+                            a conformance feature.
+                            Reads one set of source device
                             values per line from stdin (floats in 0..1,
                             whitespace-separated; count = source channel
                             count); writes one converted set per line,
@@ -267,6 +286,9 @@ fn cmd_transform(args: &[String]) -> ExitCode {
     let mut dst_path: Option<&String> = None;
     let mut intent = iccce_cmm::matrix_trc::Intent::MediaRelative;
     let mut bpc = false;
+    // None = no preservation (the default, and the only behaviour before
+    // 2026-08-18). Some(mapping) = the caller named a policy.
+    let mut preserve_black: Option<iccce_cmm::black_preserve::KMapping> = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -297,6 +319,38 @@ fn cmd_transform(args: &[String]) -> ExitCode {
             "--bpc" => {
                 bpc = true;
                 i += 1;
+            }
+            // ★ The POLICY NAME IS MANDATORY. There is deliberately no
+            // bare `--preserve-black`: two published definitions of
+            // "preserve the black" disagree by up to 4.9e-2 on a
+            // cross-press pair, so a default would be this library
+            // choosing one and reporting it under a name that means
+            // both. The same reasoning as the unknown-intent refusal
+            // below: a substituted policy produces plausible wrong ink.
+            "--preserve-black" if i + 1 < args.len() => {
+                preserve_black = match args[i + 1].as_str() {
+                    "k-only-equal-lightness" => {
+                        Some(iccce_cmm::black_preserve::KMapping::EqualLightness)
+                    }
+                    "k-only-ratio" => Some(iccce_cmm::black_preserve::KMapping::Ratio),
+                    other => {
+                        eprintln!(
+                            "iccce transform: unknown black-preservation policy `{other}`
+
+{USAGE}"
+                        );
+                        return ExitCode::from(2);
+                    }
+                };
+                i += 2;
+            }
+            "--preserve-black" => {
+                eprintln!(
+                    "iccce transform: --preserve-black requires a policy name; there is no default because the two published definitions disagree
+
+{USAGE}"
+                );
+                return ExitCode::from(2);
             }
             other => {
                 eprintln!("iccce transform: unknown argument `{other}`\n\n{USAGE}");
@@ -337,6 +391,22 @@ fn cmd_transform(args: &[String]) -> ExitCode {
                 // A refusal (absolute intent; estimation outside the
                 // named subset) is the deliverable, not a crash.
                 eprintln!("iccce transform: --bpc refused: {e}");
+                return ExitCode::from(1);
+            }
+        }
+    } else {
+        chain
+    };
+    let chain = if let Some(mapping) = preserve_black {
+        match chain.with_black_preservation(mapping) {
+            Ok(c) => c,
+            Err(e) => {
+                // Every refusal here is named: absolute intent, a
+                // non-CMYK side, a non-monotonic K ramp, or a policy
+                // this project has not sourced. Reporting the refusal
+                // is the deliverable — silently converting without
+                // preservation would give the caller no way to tell.
+                eprintln!("iccce transform: --preserve-black refused: {e}");
                 return ExitCode::from(1);
             }
         }

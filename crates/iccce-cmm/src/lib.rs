@@ -44,6 +44,7 @@
 //! [`named_color`] (Pass 7's core: ncl2 with the always-legacy Lab
 //! decode, A26). Still to come: compiled transforms (Pass 6).
 
+pub mod black_preserve;
 pub mod bpc;
 pub mod builtin;
 pub mod clut;

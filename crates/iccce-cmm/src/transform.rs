@@ -395,6 +395,54 @@ pub enum ChainError {
         bytes: usize,
         budget_bytes: usize,
     },
+    /// Black preservation requested at the absolute intent.
+    ///
+    /// Refused rather than applied. lcms2's black-preserving intents
+    /// (10-15) are wrappers around intents 0/1/2 only
+    /// (`TranslateNonICCIntents`), and ICC-absolute's whole subject is
+    /// the media white relationship rather than the ink split — so
+    /// "preserve the black separation" and "reproduce the colour
+    /// relative to the illuminant" are answering different questions.
+    /// Guessing at the combination would invent a policy nobody has
+    /// published.
+    BlackPreserveNotApplicable,
+    /// Black preservation requested on a chain whose source or
+    /// destination is not 4-channel.
+    ///
+    /// K-only preservation is a statement about a CMYK separation. On a
+    /// 3-channel side there is no K to preserve, and on a 6- or
+    /// 7-channel side "the black channel" is not identified by channel
+    /// count alone — `colorantTableTag` would have to be read, and this
+    /// project does not yet do so. Named refusal, not a silent no-op:
+    /// a caller who asked for preservation and got an ordinary
+    /// conversion would have no way to tell.
+    BlackPreserveNeedsCmyk {
+        side: crate::black_preserve::Side,
+        channels: usize,
+    },
+    /// Black preservation requested but the destination's forward
+    /// (A2B) direction is unavailable, so its K-only ramp cannot be
+    /// sampled and the mapping cannot be built.
+    BlackPreserveNeedsDestinationA2b,
+    /// A K ramp is not monotonic in `L*`, so inverting it is ill-posed.
+    ///
+    /// There is no single destination K for the requested lightness.
+    /// Refused rather than resolved by picking one of the candidates —
+    /// which would be an unstated policy inside an already-unstandardised
+    /// policy.
+    BlackPreserveRampNotMonotonic,
+    /// The requested K mapping is named but not implemented, and the
+    /// reason is recorded rather than approximated.
+    ///
+    /// See [`crate::black_preserve::KMapping::Ratio`]: the determination
+    /// of `K_MIN`/`K_MAX` is the whole content of Cholewo's method and
+    /// this project does not hold it. A plausible approximation would be
+    /// indistinguishable from the real method at the distances this
+    /// project measures, which is precisely why it refuses.
+    KMappingNotAvailable {
+        mapping: crate::black_preserve::KMapping,
+        why: &'static str,
+    },
 }
 
 impl std::fmt::Display for ChainError {
@@ -420,6 +468,25 @@ impl std::fmt::Display for ChainError {
                 f,
                 "black point not estimable within iccce's named subset (A42); refused, not guessed"
             ),
+            Self::BlackPreserveNotApplicable => write!(
+                f,
+                "black preservation is excluded at the absolute intent (it and ICC-absolute answer different questions; refused rather than combined)"
+            ),
+            Self::BlackPreserveNeedsCmyk { side, channels } => write!(
+                f,
+                "black preservation needs a 4-channel {side}; this one has {channels} (on a wider space the black channel is not identified by count alone)"
+            ),
+            Self::BlackPreserveNeedsDestinationA2b => write!(
+                f,
+                "black preservation needs the destination's forward (A2B) direction to sample its K ramp, and this chain has none"
+            ),
+            Self::BlackPreserveRampNotMonotonic => write!(
+                f,
+                "a K-only ramp is not monotonic in L*, so inverting it is ill-posed; refused rather than resolved by picking one candidate"
+            ),
+            Self::KMappingNotAvailable { mapping, why } => {
+                write!(f, "K mapping {} is not implemented: {why}", mapping.name())
+            }
             Self::EvaluationFailed { stage } => {
                 write!(f, "internal: the {stage} stage produced no value")
             }
@@ -510,6 +577,12 @@ pub struct Chain {
     /// explicit caller act, which is itself a recorded policy
     /// difference from the oracle.
     bpc: Option<crate::bpc::BpcScale>,
+    /// K-only black preservation, when the caller opted in via
+    /// [`Chain::with_black_preservation`]. NEVER forced and never
+    /// inferred: it implements no standard (ICC.1 is silent — A51), so
+    /// applying it unasked would be iccce imposing a policy the caller
+    /// did not choose. See `crate::black_preserve`.
+    k_preserve: Option<crate::black_preserve::KPreserve>,
     /// Major versions captured at build — the fixed-perceptual-black
     /// estimation rule keys on them.
     src_major: u8,
@@ -530,7 +603,7 @@ pub struct Chain {
 }
 
 /// Device channel count of a captured A2B model.
-fn a2b_channels(m: &SourceModel) -> usize {
+pub(crate) fn a2b_channels(m: &SourceModel) -> usize {
     match m {
         SourceModel::MatrixTrc(_) => 3,
         SourceModel::Lut16(l) => l.input_channels(),
@@ -541,7 +614,7 @@ fn a2b_channels(m: &SourceModel) -> usize {
 
 /// Evaluate a captured A2B model to Lab (the BT round trip's return
 /// leg, and the darkest-vertex search's probe).
-fn a2b_to_lab(m: &SourceModel, device: &[f64]) -> Option<iccce_color::Lab> {
+pub(crate) fn a2b_to_lab(m: &SourceModel, device: &[f64]) -> Option<iccce_color::Lab> {
     let xyz = match m {
         SourceModel::MatrixTrc(mt) => {
             if device.len() < 3 {
@@ -774,6 +847,7 @@ impl Chain {
             // profile, this needs no caveat.
             dst_white: Some(D50),
             bpc: None,
+            k_preserve: None,
             src_major: src.header.version.major(),
             // The constructed model is v4-shaped. ★ This field is
             // consulted ONLY by the perceptual black-point estimation
@@ -925,6 +999,7 @@ impl Chain {
             src_white,
             dst_white,
             bpc: None,
+            k_preserve: None,
             src_major: src.header.version.major(),
             dst_major: dst.header.version.major(),
             dst_a2b,
@@ -962,6 +1037,108 @@ impl Chain {
                 .ok_or(ChainError::BpcEstimationUnsupported)?,
         );
         Ok(self)
+    }
+
+    /// Opt in to **K-only black preservation** under a named policy.
+    ///
+    /// An input carrying black alone (`C = M = Y = 0`) produces an
+    /// output carrying black alone. Everything else takes the ordinary
+    /// colorimetric path, unchanged.
+    ///
+    /// # ★ This implements no standard
+    ///
+    /// ICC.1 contains no black-preservation construct in any edition —
+    /// verified exhaustively, `ICC_Spec` register **A51**, and
+    /// structurally unsurprising because the PCS is three components so
+    /// every device->device transform is 4->3->4 and K has no carrier.
+    /// This is therefore a **named policy** the caller opts into, never
+    /// a default. The harm it addresses is named by PDF rather than by
+    /// ICC: ISO 32000-1/2 clause 8.6.5.7 NOTE 2, a 4->3->4 conversion
+    /// "results in a loss of fidelity in the black component".
+    ///
+    /// # The mapping argument is not a detail
+    ///
+    /// Two published definitions of "preserve the black" disagree about
+    /// what K to emit, and they are up to `4.9e-2` apart on a
+    /// cross-press pair. The caller states which it wants; iccce does
+    /// not choose one and call it "black preservation". See
+    /// [`crate::black_preserve::KMapping`].
+    ///
+    /// # Refusals, each named
+    ///
+    /// - **Absolute intent** — [`ChainError::BlackPreserveNotApplicable`].
+    /// - **Either side not 4-channel** —
+    ///   [`ChainError::BlackPreserveNeedsCmyk`].
+    /// - **No destination A2B** to sample the destination K ramp —
+    ///   [`ChainError::BlackPreserveNeedsDestinationA2b`].
+    /// - **A non-monotonic K ramp** —
+    ///   [`ChainError::BlackPreserveRampNotMonotonic`].
+    /// - **[`KMapping::Ratio`](crate::black_preserve::KMapping::Ratio)**
+    ///   — [`ChainError::KMappingNotAvailable`], because the method's
+    ///   content is a determination this project does not hold and a
+    ///   plausible approximation of it would be indistinguishable from
+    ///   the real thing at the distances measured here.
+    ///
+    /// # Errors
+    ///
+    /// Returns the variants above. Every one is a refusal with a name;
+    /// none is a fallback to an unpreserved conversion, because a caller
+    /// who asked for preservation and silently got none would have no
+    /// way to tell (rule 6, applied to a policy rather than to a parse).
+    pub fn with_black_preservation(
+        mut self,
+        mapping: crate::black_preserve::KMapping,
+    ) -> Result<Chain, ChainError> {
+        use crate::black_preserve::{KMapping, KPreserve, Side};
+
+        if self.intent == Intent::Absolute {
+            return Err(ChainError::BlackPreserveNotApplicable);
+        }
+        if mapping == KMapping::Ratio {
+            return Err(ChainError::KMappingNotAvailable {
+                mapping,
+                why: "Cholewo 2000 requires a fitted differentiable printer model and five constrained optimisations per colour, and is an offline device-link procedure rather than a runtime transform (ICC_Spec A53); on a same-press pair a wrong approximation of it is indistinguishable from a right one by construction",
+            });
+        }
+
+        let src_ch = a2b_channels(&self.source);
+        if src_ch != 4 {
+            return Err(ChainError::BlackPreserveNeedsCmyk {
+                side: Side::Source,
+                channels: src_ch,
+            });
+        }
+        let dst_a2b = self
+            .dst_a2b
+            .as_ref()
+            .ok_or(ChainError::BlackPreserveNeedsDestinationA2b)?;
+        let dst_ch = a2b_channels(dst_a2b);
+        if dst_ch != 4 {
+            return Err(ChainError::BlackPreserveNeedsCmyk {
+                side: Side::Destination,
+                channels: dst_ch,
+            });
+        }
+
+        let built = KPreserve::build_equal_lightness(&self.source, dst_a2b)
+            .ok_or(ChainError::BlackPreserveRampNotMonotonic)?;
+        self.k_preserve = Some(built);
+        Ok(self)
+    }
+
+    /// The built policy itself, for the compiled path to carry.
+    pub(crate) fn k_preserve_built(&self) -> Option<&crate::black_preserve::KPreserve> {
+        self.k_preserve.as_ref()
+    }
+
+    /// The black-preservation policy in force, if any.
+    ///
+    /// Disclosed rather than internal: a number measured through this
+    /// chain means different things under different policies, so a
+    /// reader of the output needs to be able to ask.
+    #[must_use]
+    pub fn black_preservation(&self) -> Option<crate::black_preserve::KMapping> {
+        self.k_preserve.as_ref().map(|k| k.mapping())
     }
 
     fn estimate_src_black(&self) -> Result<Xyz, ChainError> {
@@ -1144,6 +1321,78 @@ impl Chain {
     /// Convert one set of source device values to destination device
     /// values (`output_channels()` of them — 3 for RGB, 4 for CMYK…).
     pub fn convert(&self, device: &[f64]) -> Result<Vec<f64>, ChainError> {
+        let expected = self.input_channels();
+        if device.len() != expected {
+            return Err(ChainError::ChannelMismatch {
+                expected,
+                actual: device.len(),
+            });
+        }
+
+        // ★ K-only black preservation, when the caller opted in.
+        //
+        // BEFORE the PCS, deliberately: the whole point is that this
+        // input never reaches a 4->3->4 round trip, because that round
+        // trip is what destroys the separation (ISO 32000-1/2 clause
+        // 8.6.5.7 NOTE 2). Applying it afterwards would mean undoing a
+        // conversion rather than not performing one, and the two are
+        // not the same — the first cannot recover the K the PCS threw
+        // away.
+        //
+        // Non-qualifying inputs fall straight through to the ordinary
+        // path, untouched. `apply` returns None for them.
+        if let Some(kp) = &self.k_preserve {
+            if let Some(preserved) = kp.apply(device) {
+                return Ok(preserved);
+            }
+        }
+        self.convert_colorimetric(device)
+    }
+
+    /// The conversion with the black-preservation branch **removed** —
+    /// the ordinary colorimetric answer for every input, including the
+    /// K-only ones.
+    ///
+    /// # ★★★ Why this is a separate entry point, and why it is not an
+    /// # implementation detail
+    ///
+    /// Black preservation introduces a **step discontinuity at
+    /// `C = M = Y = 0`**: the qualifying input is answered from a
+    /// different rule than its neighbours. That is intended in a
+    /// per-pixel evaluator, where the test is exact and the branch is
+    /// taken or not.
+    ///
+    /// It is **catastrophic in a sampled grid.**
+    /// [`crate::compiled::CompiledTransform`] samples a chain onto a
+    /// uniform lattice and interpolates between nodes. An interpolator
+    /// cannot represent a step: sampling the *preserving* conversion
+    /// puts preserved values on the `C = 0` face and ordinary values on
+    /// the next node in, and every point between them comes back a
+    /// blend of two answers to different questions.
+    ///
+    /// **Measured, by `icc-conformance`, before this split existed:**
+    /// max |compiled − reference| within one cell of the neutral axis
+    /// was **0.617121 at grid 17 and 0.617148 at grid 33** — while the
+    /// control far from the axis *halved*, `1.138e-3` → `5.34e-4`.
+    /// **`O(1)` beside `O(h^1.32)`: refining the grid did not touch
+    /// it**, which is the signature of an error that is not an
+    /// interpolation error at all. The direction was
+    /// **over-application** — the compiled path preserved pixels that
+    /// did not qualify, e.g. returning `(0.0896, 0.0763, 0.0725,
+    /// 0.9815)` where the reference returns `(0.7068, 0.6115, 0.5862,
+    /// 0.8498)`.
+    ///
+    /// So the compiled path samples **this** function — smooth, no
+    /// discontinuity, safe to interpolate — and applies the
+    /// preservation branch itself, outside the grid, where the exact
+    /// test still means what it says. The two paths then compute the
+    /// same thing by construction rather than by coincidence.
+    ///
+    /// ★ Not `pub`: a caller who wants the unpreserved answer builds a
+    /// chain without the policy. This exists so that ONE crate-internal
+    /// consumer can sample the smooth part, and widening it would offer
+    /// callers a way to silently bypass a policy they asked for.
+    pub(crate) fn convert_colorimetric(&self, device: &[f64]) -> Result<Vec<f64>, ChainError> {
         let expected = self.input_channels();
         if device.len() != expected {
             return Err(ChainError::ChannelMismatch {

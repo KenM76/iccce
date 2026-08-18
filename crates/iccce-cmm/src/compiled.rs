@@ -207,6 +207,15 @@ pub struct CompiledTransform {
     input_channels: usize,
     output_channels: usize,
     grid_points: usize,
+    /// ★ The black-preservation policy, carried OUTSIDE the grid.
+    ///
+    /// The grid holds the smooth colorimetric answer only. This branch
+    /// is applied per-pixel in [`CompiledTransform::convert`], exactly
+    /// as `Chain::convert` applies it — see
+    /// `Chain::convert_colorimetric` for the measurement that forced
+    /// this shape (0.617 of wrong ink within one cell of the neutral
+    /// axis, and refining the grid did not move it).
+    k_preserve: Option<crate::black_preserve::KPreserve>,
 }
 
 impl CompiledTransform {
@@ -304,7 +313,13 @@ impl CompiledTransform {
                 let v = idx as f64 / (grid_points - 1) as f64;
                 device[ch] = v;
             }
-            let out = chain.convert(&device)?;
+            // ★ `convert_colorimetric`, NOT `convert`: the grid must
+            // hold the smooth answer. Sampling the preserving
+            // conversion bakes a step discontinuity into data that is
+            // about to be linearly interpolated, and no grid density
+            // fixes it — measured at O(1) in h. See
+            // `Chain::convert_colorimetric`'s doc comment.
+            let out = chain.convert_colorimetric(&device)?;
             samples.extend_from_slice(&out);
         }
 
@@ -315,6 +330,7 @@ impl CompiledTransform {
             input_channels,
             output_channels,
             grid_points,
+            k_preserve: chain.k_preserve_built().cloned(),
         })
     }
 
@@ -331,6 +347,19 @@ impl CompiledTransform {
     /// Convert one pixel. `out.len()` must be [`Self::output_channels`].
     #[must_use]
     pub fn convert(&self, device: &[f64], out: &mut [f64]) -> bool {
+        // ★ The policy runs BEFORE the grid and never through it. The
+        // exact-zero test is meaningful only on the caller's actual
+        // input; once a value has been interpolated between nodes it is
+        // no longer exactly zero and the question cannot be asked.
+        if let Some(kp) = &self.k_preserve {
+            if let Some(preserved) = kp.apply(device) {
+                if out.len() != preserved.len() {
+                    return false;
+                }
+                out.copy_from_slice(&preserved);
+                return true;
+            }
+        }
         self.grid.eval(device, out)
     }
 
