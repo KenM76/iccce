@@ -2,7 +2,164 @@
 
 ---
 
-# ★★★ HANDOFF — 2026-08-17, session paused mid-flight
+# ★★★ HANDOFF — 2026-08-18, session ended cleanly
+
+**Read this block first. It supersedes the 2026-08-17 handoff below it
+and anything else that conflicts; everything below is otherwise still
+true and still the reference.** Unlike the last one, this session ended
+**deliberately** — the tree is clean, the suite is green, and nothing was
+left half-applied.
+
+## If the operator types only "continue"
+
+1. **List `D:\Dev\FeatureRequests\iccce_FeatureRequests\open\`** (§0's
+   standing rule). **Nothing is owed by us as of 2026-08-18 02:00.**
+2. **Re-arm the 15-minute channel poll.** Monitors die with the session,
+   so this is gone and must be re-armed *every* session. Persistent
+   `Monitor`, 900 s loop, baseline `stat -c '%n %Y %s' "$DIR"/*` into
+   `prev`, `comm -13` against a fresh listing. Track **mtime and size**,
+   not names — an edited request is new work.
+   ★ **It will echo your OWN writes.** Requests flow both ways and
+   filenames carry no direction; read the file's `**from:**` header
+   before treating an event as inbound.
+3. **Go to "WHAT TO DO NEXT" below.**
+
+## State of the tree — measured, not remembered
+
+| | |
+|---|---|
+| tip | **`9dc9d70`** |
+| commits this session | **8** (`506fcd3..HEAD`) |
+| working tree | **clean** — 0 modified |
+| **ahead of `origin/master`** | ★★ **8 commits. NOTHING IS PUSHED.** |
+| `cargo test --workspace` | **170 passed, 0 failed** |
+| `cargo fmt --all --check` / `clippy --workspace -D warnings` | clean |
+| difftest, licensed corpus present | **`pass=337 fail=0 skip=9 error=0`** |
+| difftest, corpus genuinely absent (CI shape) | **`pass=184 fail=0 skip=94 error=0`** |
+
+★ **"Corpus absent" means an EMPTY `$ICCCE_PRIVATE_FIXTURES`, not an
+unset one** — the resolver falls back to a default path that exists on
+this machine, so `env -u` proves nothing. That mistake was made and
+caught here; do not repeat it.
+
+**Pushing is not authorised.** Rule 9 unchanged; eight unpushed commits
+is a state, not a backlog to clear on your own initiative.
+
+## What landed
+
+- **★★★ K-only black preservation** (`crates/iccce-cmm/src/black_preserve.rs`).
+  Opt-in named policy, five named refusals, `--preserve-black <policy>`
+  on the CLI with **no default** (two published definitions disagree by
+  up to `4.9e-2`, so a default would be iccce choosing one and reporting
+  it under a name that means both). Exactly zero chromatic ink on all
+  ten CMYK destinations; K genuinely re-mapped (`0.366689` at `K_in=0.5`
+  on the furthest cross-press pair), which is what distinguishes it from
+  "copy K through".
+- **Pass K** (40 → 44 rows), built by `icc-conformance` **before** the
+  feature existed, then repointed at it. Both deliberately-red rows are
+  green and their separations never moved.
+- **A false capability retracted**: PDF pages *can* be rasterised here
+  via `pypdfium2`; only `pdftoppm` is missing. DL-060.
+- **DL-059 / DL-061**: GWG patch 23.0 is PDF device routing, not a CMM
+  problem — we had claimed it. Four independent confirmations.
+- **Licence manifest fixed** — `iccce-measure` had no `clarify` block and
+  would have shipped `Copyright (c) <year> <copyright holders>`.
+
+## ★★ WHAT TO DO NEXT
+
+**Nothing is half-done. These are choices, in the order I would take
+them.**
+
+1. **`NUMERIC_CLAIMS.md` is unfiled for the whole of Pass K**, including
+   §F and the grading. Free ids: **`NC-243`**, **`NA-012`**. This is the
+   largest bookkeeping debt and `icc-librarian` owns it.
+2. **The `docs/` sweep owed by §7.21 / §7.22** — every row whose
+   provenance is "agreement between text-extraction engines" is weaker
+   than it reads, and the sweep now widens to *"glyph-sensitive **or
+   possibly set in a figure**"*. The figure half **cannot be found by
+   comparing extractions**; it needs rasters.
+3. **pdfce's Ask 2** — a `convert_buffer_u8` / `_f32` surface.
+   Deliberately deferred under rule 8. ★ The reply already tells them the
+   thing worth remembering: **`u8` fixes the MEMORY ask
+   (268 MB → 67 MB) and does nothing for the TIME ask**, because
+   `1.4 Mpix/s` is the grid evaluation and that cost is per pixel however
+   the pixel arrived.
+4. **Tail debt #1, now for the ninth filing: no `published-ground-truth`
+   row for any transform.** `IEC 61966-2-1`'s sRGB primaries remain the
+   cheapest route and nobody has dispatched for it. **This is still the
+   largest hole in the project.**
+5. **`blind=11`**, all Pass I `chad` rows — judged **intrinsic** and to
+   be left alone. Resist any tightening that makes them look green rather
+   than honest.
+
+## Owed to the operator — do not decide these
+
+- **Pushing / tagging / releasing / crates.io.** All six crate names were
+  unregistered on 2026-08-17 — **a dated observation, not a
+  reservation**; re-check immediately before any publish.
+- **`ICC.1:2010-12`** — and it got *more* valuable: **ISO 32000-2
+  cl. 10.3.1 normatively requires ISO 15076-1:2010 (= ICC.1:2010)**, so
+  our named consumer's own standard points at it with a `shall`. ★ A new
+  acquisition route exists: **ISO 15076-1 is the same document under an
+  ISO designation** — a purchase, not a scraping problem.
+- **`KMapping::Ratio` (Cholewo)** stays a refusal unless the operator
+  wants a research implementation. It needs a fitted differentiable
+  printer model and five constrained optimisations *per colour*; its six
+  weights are three-unspecified, so **two faithful implementations of the
+  paper will not agree with each other**.
+
+## ★★★ The traps this session paid for — all four are general
+
+1. **A zero-separation fixture MANUFACTURES a false pass.** Measured by
+   injection: the headline red row went **green at `0.000000`** and a
+   transition-width row reported a number that *looks like a working
+   feature*. Grade the separation as its own row with a floor declared in
+   advance; a classifier verdict prints in a column beside a green row,
+   and nobody reads columns.
+2. **Ask which layer is in the loop of the FIX, not just of the test.**
+   A guard whose own text said a leak *"shows up here and nowhere else"*
+   was **inert** — the feature is opt-in, so a row driving the plain
+   surface had no feature in its chain to leak. It would have stayed
+   green through any leak, vouching for the silence.
+3. **An interpolator cannot represent a step.** Black preservation is a
+   discontinuity at `C=M=Y=0`; sampling the *preserving* conversion onto
+   a grid gave **0.617 of wrong ink** within one cell of the axis, and
+   **refining the grid did not move it** — `O(1)` beside `O(h^1.32)`. The
+   fix is structural (sample the smooth conversion, carry the policy
+   outside the grid), and the test asserts **convergence, not a bound**:
+   a wrong constant passes a threshold test; nothing passes a convergence
+   test by luck.
+4. **A constraint an agent infers about its own environment is a
+   READING, not a fact.** Third recorded instance. The useful finding is
+   not the pattern but *why it recurred*: the rule from instance 2 lived
+   in `ICC_Spec`'s notes and **had no counterpart in `docs/`**, so it did
+   not bind. DL-060 closes the gap rather than restating the rule.
+
+★ **And a fifth, about the engineer rather than the code:** three times
+this session I measured the wrong thing and caught it only by
+re-running — a `tail -25` that captured only doctests, a `grep` in a
+stale working directory whose errors `2>/dev/null` swallowed, and an
+`env -u` that did not disable what it appeared to. **Every one of them
+looked like a result.**
+
+## Channel state
+
+`open/` holds 16 files. **Nothing is owed by us.** Two of our asks are
+outstanding **with pdfce**: `request_profile_population_census.md` and
+`request_header_tag_channel_disagreement.md` (the second is *one extra
+column* in the first's corpus sweep — say so if they schedule them
+apart).
+
+★ **`reply_ghent_render_harness.md` is the highest-value thing in that
+folder.** pdfce built the harness and measured: **22 of 51 Ghent patches
+show a trap X, 20 of them pdfce's own features, and zero attributable to
+an iccce defect.** Overprint is 10 of the 22 — the largest bucket by
+nearly two, and the first *evidence* for the boundary note's claimed
+ordering rather than an assertion of it.
+
+---
+
+# ★★ SUPERSEDED — HANDOFF of 2026-08-17, session paused mid-flight
 
 **Read this block first. It supersedes anything below it that conflicts,
 and everything below it is still true and still the reference.** Written
