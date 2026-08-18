@@ -6574,3 +6574,256 @@ would argue for checking labels systematically rather than on sight; or
 a mechanism appears that can **test a doc comment's factual claims**,
 which would move this out of "caught by nothing" and change what the
 entry is for.
+
+---
+
+### DL-062 — ★★★ **a document that records *"X is broken and someone else owns the fix"* has an expiry date set by SOMEONE ELSE'S COMMIT. A stale STATUS decays faster than a stale NUMBER and it decays silently, because the act that invalidates it happens in another role's tree and appears in no review that either side runs. It has TWO dated instances, and the second one arose while writing up the first**
+
+**Date:** 2026-08-18 (later the same day) · **Occasioned by:**
+`icc-conformance`'s currency re-check of the Pass K evidence package,
+which found `docs/TOLERANCES.md` §3.10.12.7 asserting a compiled-path
+defect that had already been fixed · **Drafted by:**
+`icc-conformance`, who handed it here because the decision log is this
+role's · **Filed by:** `icc-librarian`, **with every statement below
+re-verified against live source, and the two statements that could not
+be verified without a shell labelled as such** — one cross-reference in
+the draft was wrong and is rewritten, see "What was rejected from the
+draft" · **Distinguish from** **DL-048** and `TOLERANCES.md` §3.5.8.6 —
+the same failure applied to a *numeral* rather than to a *status* ·
+**Relates to** **DL-051** (documented is not tested) and **DL-053**
+(`[VERIFIED]` certifies that a measurement happened, not what it ranged
+over — here, not *when*).
+
+#### What happened, in one line
+
+> **The conformance role wrote *"not fixed here, deliberately — the
+> remedy belongs to the engineer"*; the engineer had fixed it
+> twenty-eight seconds before that text was committed; and the document
+> went on asserting a non-existent defect in the section it had headed
+> as the grading's most consequential finding.**
+
+#### The two commits, and this is the one hard number in the entry
+
+*(Verified by this librarian from `.git/logs/HEAD`, which is plain text
+and readable without a shell — lines 99 and 100.)*
+
+| commit | reflog epoch (`-0400`) | local time | subject as recorded |
+|---|---|---|---|
+| `a05476c` | `1787035205` | **02:40:05** | *cmm: K-only black preservation, and the compiled path that nearly broke it* |
+| `a1bd818` | `1787035233` | **02:40:33** | *conformance: grade the landed feature — and the guard that would not have caught a leak* |
+
+`1787035233 − 1787035205 = 28`. **The twenty-eight seconds are measured,
+not reported.** `a05476c` is the fix; `a1bd818` is the commit that filed
+the defect as open. They are adjacent.
+
+★ **Two things about that table are NOT established by it, and the
+entry does not rest on them.** (1) A reflog line evidences a commit's
+**existence, time and subject — never its contents.** That `a05476c`
+is where the `k_preserve` change landed is
+**`icc-conformance`'s `git show` report**, which this librarian has no
+shell to repeat; what *is* verified here is that the fix is **in the
+tree now** — `crates/iccce-cmm/src/compiled.rs:218` declares
+`k_preserve: Option<crate::black_preserve::KPreserve>` outside the grid,
+`:333` populates it from the chain, and `:354` branches on it per pixel
+in `convert`, which is the second of the two remedies §3.10.12.7 itself
+named. (2) The draft's *"nothing in the fixing commit's own review
+touches the document that made the claim"* is a statement about a review
+this librarian did not observe. **What is observed is the outcome**: the
+stale text survived `a1bd818`, `f3b6b87`, `9dc9d70` and `60c32dd` — four
+subsequent commits, two of them documentation commits — and was found by
+a *deliberate currency re-check*, not by any of them. The claim about
+review scope is a **reading**; the survival across four commits is the
+evidence.
+
+#### ★★★ Why this is not DL-048, and the asymmetry is the whole entry
+
+A **numeral** goes stale when the world moves, and it invites
+re-derivation the next time anybody measures — *the correction is
+triggered by the same act that produced the drift*. A **status** goes
+stale when **a different role commits in a different directory**, and
+**there is no act that triggers the correction at all**:
+
+- from the **document's** point of view, the fixing commit is an
+  unrelated change in a tree it does not read;
+- from the **fixing commit's** point of view, the document is not in the
+  diff;
+- **neither side's review has the other in scope**, so the interval
+  between the two is bounded by nothing except somebody deciding to
+  re-check.
+
+★★ **And the consequence is worse in kind, not merely in duration.** A
+wrong number invites checking. A wrong *status* invites a reader either
+to **spend effort discharging an obligation already discharged**, or —
+the direction this one took — to **distrust working code**. ★ Note the
+polarity: **the document understated the code.** This project's
+discipline is built almost entirely against the opposite error, and a
+mechanism that runs in the flattering-to-nobody direction is caught by
+none of the guards aimed at the other one.
+
+#### The rule
+
+> **★★★ Any sentence that assigns a remedy to another role is a DATED
+> CLAIM ABOUT THAT ROLE'S TREE, and must be re-checked against their
+> commits before it is quoted, restated, or acted on.**
+
+**Carrier phrases to grep at the start of every currency check** —
+*"not fixed here"*, *"belongs to the engineer"*, *"when it is fixed"*,
+*"is measurably wrong"*, *"has no implementation"*, *"needs a `crates/`
+edit"*.
+
+★ **One member of that list was swept at this filing and is still
+true.** `TOLERANCES.md` §3.10.12.6 says *"`KMapping::Ratio` has no row,
+because it has no implementation"*; at the tip the variant exists
+(`black_preserve.rs:223`, described at `:238` as *"ratio (Cholewo 2000,
+published)"*) and `transform.rs:1097` **refuses** it — `if mapping ==
+KMapping::Ratio`. **A refusal is not an implementation, so the sentence
+holds.** Recorded because a phrase list is worth more once one of its
+members has been checked and *survived*: the list is an instrument, and
+an instrument that has only ever fired is untested in the passing
+direction.
+
+#### ★★ The correction has its own bar, because DELETING THE SENTENCE IS THE WRONG FIX
+
+1. **Keep the defect's numbers as dated history, with the fixing commit
+   named.** `0.617121` / `0.617148` are the evidence for **why the
+   structural remedy was chosen over the refusal remedy**; deleting them
+   erases the reason the decision went that way. *(Verified — they
+   survive at `TOLERANCES.md:3765` under a header reading
+   `quantity (pre-a05476c)`, and at `tools/difftest/README.md:5391`
+   under `(pre-fix)`.)*
+2. **Split anything the defect shared a sentence with.** The `O(1)` half
+   of *"`O(1)` beside `O(h^1.32)`"* is the **defect's signature and is
+   gone**; `O(h^1.32)` is Pass 6's still-live measured convergence order
+   (**DL-025**, **NC-149** — the paired medians `2,69 · 2,47 · 2,51`,
+   `log₂ 2,5 = 1,32`). Quoting the pair without the split reads as
+   though both were retracted or both still live, and neither is true.
+3. **★★★ The fix does not discharge the debt.** A correction that reads
+   as *"closed"* converts a live coverage gap into a discharged one,
+   which is **the same error running the other way**. There is still
+   **no difftest row for the compiled path**; what changed is only the
+   row's *purpose* — **disclosure → regression guard**, a weaker reason
+   to build it and a permanent one.
+4. **Date it, attribute it, quote the retracted wording verbatim,
+   append a change row.**
+
+#### ★★★ The second instance — and it is why this is a log entry rather than a section note
+
+**The mechanism reproduced inside the same session, within minutes, in
+the document that was filing the first instance's evidence — with the
+roles reversed.**
+
+`icc-librarian` read `TOLERANCES.md` at the tip, correctly found
+§3.10.12.7 stale, and filed it in `NUMERIC_CLAIMS.md` **§7.23** as
+newly-owed item 1. `icc-conformance` discharged it **concurrently**. The
+result is that **`NUMERIC_CLAIMS.md` §7.23 item 2 — headed *"`TOLERANCES.md`
+§3.10.12.7 is STALE"* and opening *"Verified by this librarian, read at
+the tip"* — became a stale status claim about another role's file at
+some point between being written and being read.** It is superseded in
+place, dated, at §7.23.
+
+★★ **Two instances, the second arising while writing up the first, is a
+much stronger claim than one dated anecdote.** One instance is a story
+about two commits landing 28 seconds apart. Two say the mechanism is
+**structural to how this project divides file ownership across roles** —
+`TOLERANCES.md` is `icc-conformance`'s, the ledger and this log are
+`icc-librarian`'s, `crates/` is `icc-engineer`'s, and **no role may edit
+another's file**, which is a good rule that *guarantees* every
+cross-role status claim is a claim about a tree the author cannot fix.
+★ **And it is not about haste: the second instance happened under full
+awareness of the first.** Care is not the remedy, because care was
+present.
+
+★★ **The `[VERIFIED]` tag did not help, and DL-053 says why in the
+neighbouring register.** DL-053's finding is that `[VERIFIED]` certifies
+that a measurement really happened while saying nothing about **what it
+ranged over**. The transfer here is to the other axis: `[VERIFIED]`
+certifies that a reading really happened while saying nothing about
+**when** — *"read at the tip"* is a true sentence with an expiry, and
+the expiry is set by somebody else.
+
+#### ★★★ The constructive half, which must not be lost — the defence is in the WRITING, not in the CHECKING
+
+Re-checking before quoting is necessary and **insufficient**, because
+the claim can go stale **between being written and being committed** —
+which is exactly the interval both instances died in. So a filing that
+assigns work to another role must **either re-verify at commit time, or
+be written to be correct regardless of the other file's state.**
+
+**The worked example is in this ledger and it held.** **NC-264** carries
+what is true now (near-axis `6.234231×10⁻⁷ → 3.330669×10⁻¹⁶` across
+grids 17 and 33) and **NC-265** carries the pre-fix numbers dated
+`pre-a05476c` with the fixing commit named — **two rows, not one edited
+row.** Both were correct before `icc-conformance`'s correction landed
+and are correct after it. **The ledger survived the race; the §7 prose
+about the ledger did not** — and the difference is that the rows were
+written as *dated measurements with their commit anchors*, while the §7
+item was written as a *statement about the current contents of somebody
+else's file*.
+
+> ★ **The generalisation for this role specifically:** a ledger row is
+> a claim about a measurement, and measurements do not change under
+> another agent's commit. A §7 "owed" item is a claim about a **state**.
+> **Prefer to discharge a doubt with a row.** Where a §7 item is
+> genuinely needed, write its *done when* clause so that it names
+> checkable text — §7.23's item 1 did exactly this, which is why the
+> discharge could be adjudicated in one reading by a third party rather
+> than accepted on either agent's word.
+
+#### What was rejected or rewritten from the draft after verification
+
+1. **The DL-053 cross-reference was wrong, and tracing WHERE IT CAME
+   FROM was the more useful half.** The draft glossed DL-053 as
+   *"`[VERIFIED]` certifies a date, not an evidence class"*. DL-053's
+   own text (`:5349`, and the rule at `:5378`) says something else:
+   *"**A `[VERIFIED]` tag certifies that the measurement happened; it
+   certifies nothing about what the measurement RANGED OVER**"* — the
+   **denominator** axis, a sample recorded as a population.
+   ★★ **But the gloss was not invented by the drafter.** `SESSION_LOG.md`
+   `:6063`–`:6064` — **this librarian's own Pass K entry, written hours
+   earlier** — says *"a `[VERIFIED]` tag on it certifies **when it ran**,
+   never its evidence class (DL-053)"*. That is a **genuine and useful
+   extension of DL-053 along a third axis, published without being
+   labelled an extension**, in the document a drafter would reasonably
+   read as this project's account of its own log. **The drafter cited
+   accurately from a source that had already drifted.**
+   ★★★ **That is DL-048's mechanism — a citation that authenticates its
+   destination — running through TWO documents**, and it is the third
+   dated instance in this entry's neighbourhood rather than a mistake
+   worth attributing to anybody. `SESSION_LOG.md` is **append-only and
+   is not edited**; the correction lives here. **All three readings are
+   true of `[VERIFIED]` and only the first is DL-053's**: it does not
+   certify the **denominator** (DL-053), it does not certify the
+   **date it will be read** (this entry), and it does not certify the
+   **evidence class** (the Pass K entry's own point about a sweep with
+   no oracle leg). Cite the axis, not just the number.
+2. **The contents of `a05476c` are `[REPORTED]`, not verified**, and the
+   entry now says so. The draft asserted the commit carried the fix as
+   plain fact. What this role can and did verify is the **tree at the
+   tip**.
+3. **The "nothing in the fixing commit's own review" clause is relabelled
+   a reading**, with the four-commit survival given as the actual
+   evidence.
+4. **The heading gained the second instance.** The draft was a
+   single-instance entry; filing it that way would have understated it
+   to exactly the degree the operator's addition corrects.
+
+#### What this entry does NOT touch
+
+1. **No numeric claim moves and no row is added.** Next free identifiers
+   remain **NC-267** and **NA-013**. Nothing was measured here.
+2. **NC-264 and NC-265 stand unchanged** and are cited above as the
+   defence, not as a subject.
+3. **`O(h^1.32)`, DL-025, NC-149 and every Pass 6 number** are
+   untouched — only the `O(1)` half of the retired pairing is gone.
+4. **The compiled-path difftest row is STILL OWED.** This entry is about
+   how the *document* went wrong; the *coverage gap* it described is
+   real and open.
+5. **No file belonging to another role was edited by this librarian**,
+   here or at the Pass K filing.
+
+**Revisit if:** a third instance appears, which would argue for a
+mechanical guard — a phrase grep in a pre-commit check, or a convention
+that cross-role status claims carry the other role's tip hash so that
+staleness is *detectable* rather than merely *possible*; or a role
+gains the ability to observe another's uncommitted work, which would
+change the interval the mechanism lives in rather than removing it.

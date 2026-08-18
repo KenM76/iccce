@@ -5952,3 +5952,259 @@ withdrawal and §4.5's downgrade received.
   cited above were read **in the working tree**, not in a commit's tree.
 - **That anything about Ghent may now be said in public.** ★★★ **No.**
   §7.16's three operator decisions are untouched.
+
+---
+
+## 2026-08-18 — the **Pass K** filing (twenty-eighth `SESSION_LOG` entry). **The largest block of rows this ledger has ever taken in one filing — and not one of them is `published-ground-truth`, because for this subject none can exist; the ORACLE is measurably wrong on the Pass's best row; and the defect a document still described as open had been fixed one commit earlier**
+
+**Filed by `icc-librarian`.** **No code changed.** Rows added:
+**`NC-243 … NC-266`** and **`NA-012`**; next free **`NC-267`** /
+**`NA-013`**. Files touched: `NUMERIC_CLAIMS.md` (new **§3.34**, new
+**NA-012**, five new **§6** dependency rows, new **§7.23**),
+`ROADMAP.md` (a retrospective section), this log.
+★★ **`TOLERANCES.md` was NOT touched** — it is `icc-conformance`'s and it
+was in it concurrently.
+
+### ★★★ Three things that bound everything below
+
+1. **This librarian has no shell and ran nothing.** Every number came
+   from an evidence package `icc-conformance` produced by re-running
+   everything at tip **`60c32dd`**. ★ **The package lived in a temp
+   directory outside every git repository** — a transport, not a record —
+   so this filing is what makes it durable (`CLAUDE.md` rule 10:
+   *nothing may exist only there*).
+2. **The package was verified against live source, not filed on its own
+   authority.** Everything load-bearing held; **two numbers in its
+   suggested allocation were not carried by its own evidence tables** and
+   were checked (see below).
+3. **Commit ORDER was corroborated from `.git/logs/HEAD` read as text.**
+   That is a statement about a file's contents — **`git status` was not
+   run and nothing about the working tree's tracked state is claimed.**
+
+### ★★★ The four findings this filing exists to preserve
+
+**1. Zero `published-ground-truth` rows, and none is possible.** ICC.1
+specifies **no black-preservation construct at all** (`ICC_Spec` **A51**,
+a closed negative — the PCS is three components, so every device→device
+transform is 4→3→4 and **K has no carrier**). ★★★ **24 rows landed in the
+ledger's weakest classes while the strongest class stayed empty**, and
+the standing debt is at its **ninth-plus** consecutive filing. **A large
+section is not a strong one**, and §7.23 says so rather than leaving it
+to be inferred from a row count. ★ It is also a **different**
+impossibility from DL-041's — that one is a silence *inside* a specified
+construct; this is a silence where **the construct does not exist**.
+
+**2. ★★★ Rule 7 in its strongest form yet: the ORACLE is wrong and the
+engine is right, BY ALGEBRA.** On a same-profile pair the equal-lightness
+construction **is the identity** for any strictly monotonic `L*(K)`.
+iccce returns **`0.000000`**; **lcms2 intent 11 sits `6.100000e-5` from
+it** — **61× that row's own tolerance** — because its K returns through a
+**17-node CLUT** while iccce inverts the ramp directly. **NC-256** is the
+only Pass K row whose expectation comes from **neither implementation**,
+and therefore the only one that could ever have adjudicated between them.
+★ It carries its own falsifier: a flat stretch in the ramp would make the
+inversion ill-posed and the identity would fail *for a correct
+implementation*.
+
+**3. ★★★ Seven rows are about the ORACLE, not about this engine.** §D's
+rows have **lcms2 on both legs** *(verified — `passk/D/lcms2-intent-11/…`
+in `passk.rs`)*. Filed as **NC-248 / NC-249** with that stated in the row
+itself, because a reader seeing them green in a suite summary would
+otherwise attribute lcms2's properties to iccce — ★★ and the engine's
+actual behaviour is **the opposite** of D1's: iccce's K-only region is
+**zero wide by construction**, lcms2's is **1/16**.
+
+**4. ★★★ A document described as open a defect that had been fixed one
+commit earlier.** `TOLERANCES.md` §3.10.12.7 reads *"**Not fixed here,
+deliberately**"* and prints `0.617121` / `0.617148` as a measurement
+table. **The fix landed in `a05476c`, immediately before `a1bd818`, the
+grading commit that filed it as open.** Today the same measurement
+converges: near-axis **`6.234231e-7` → `3.330669e-16`** (≈1.5 ULP of 1.0
+— noise, not a residual). ★★ **A stale STATUS decays faster than a stale
+number, because the event that invalidates it lands in someone else's
+commit** — a wrong number invites re-derivation, a wrong status invites a
+reader to act on a discharged obligation or to distrust working code.
+**Filed as TWO rows** — **NC-265** (history, dated, fixing commit named)
+and **NC-264** (what is true now) — so the ledger is right **whatever
+state that document is in when next read.**
+
+### What verifying the package added
+
+| | the package | after reading the source |
+|---|---|---|
+| the leak guards' probe counts | *"192 / 50"*, with **no source in its own evidence tables** for the `50` | ★ **UPGRADED, not rejected** — `passk.rs:3884` documents F8 as *"the 50 chromatic grays"* |
+| E5, *"the control that earns E4's tightness (32×)"* | one ratio | ★ **`32.4×` the OBSERVATION; `8.75×` the TOLERANCE** — the same two-denominator trap the package itself flags for E9 (`1577×` vs `448.6×`). **Quote a ratio with its denominator or not at all** |
+| the suggested `NC-262` | sweep **and** K re-mapping in one row | ★ **SPLIT.** Different rivals — the sweep's is *pre-feature ink*, the re-mapping's is *`K_out = K_in`* — so different rows. Downstream ids shifted by one |
+| `passk.rs`'s wrong clause, its dangling §3.10.8, and two false GWG statements | not mentioned | ★★ **ALL THREE DISCHARGED** *(verified)* — zero `8.6.4.4`, `TOLERANCES.md:3163` is §3.10.8, and the *"GWG's own patch value"* attribution is repaired **inside the emitted report string itself**. ★ **The correction was carried, not deleted** |
+| `ROADMAP.md` | not mentioned | ★★★ **It had NO Pass K entry and no black-preservation entry at all** — the **third** instance of a capability shipping with no roadmap record. A retrospective section was added |
+
+### ★★ The absences, filed as rows' equals
+
+**NC-251's separation EQUALS its own observation — ratio `1.0` — so it
+can never discriminate**, and it prints `UNGRADED` rather than `BLIND`
+only because `BLIND` requires a finite tolerance. ★★★ **So `blind = 0` is
+true of the classifier and false of the suite**, demonstrated rather than
+suspected for the first time. **NC-254 is `ZERO-SEPARATION` and REPORTED,
+so nothing gates it.** **No injection proof for the leak rows** — DL-051
+says a passing test is not evidence until one turns it red. **No `--bpc`
++ preservation row anywhere.** **`KMapping::Ratio` has no row because it
+has no implementation.** **Eight of the ten swept destinations are graded
+by nothing.** And ★★★ **the perceptual cost of preservation is
+UNMEASURED** — the ΔE2000 between the preserved and colorimetric answers
+on a cross-press pair, which is **the number a caller weighing the policy
+actually wants**. That is **NA-012**'s stated cost, registered on the day
+the code landed rather than late, as NA-011 was.
+
+### What is explicitly NOT claimed
+
+- **That Pass K improves this project's evidence position.** ★★★ It adds
+  volume to the weakest classes. The ground-truth debt is unmoved.
+- **That the ten-destination sweep is a row.** ★★ It has **no oracle leg**
+  and is `self-comparison`; a `[VERIFIED]` tag on it certifies **when it
+  ran**, never its evidence class (DL-053).
+- **That the compiled path is covered.** ★★ **No difftest row reaches
+  it**; a `crates` test is the only detector, and `iccce bench` cannot
+  build the combination at all.
+- **That `fmt` or `clippy` passed.** ★ **Neither was run.** The session
+  handoff asserts all three gates; **only `cargo test --workspace` (170
+  passed) is filed.**
+- **That the equal-lightness definition is correct.** ★★★ Nothing can
+  establish that — ICC.1 states nothing for it to be right against, and
+  **the two published definitions disagree by up to `4.889900e-2`.**
+- **That anything is committed or pushed.** ★ This filing fetched
+  nothing, authorised nothing, and makes no claim about push state.
+
+---
+
+## 2026-08-18 — the **stale-status** filing (twenty-ninth `SESSION_LOG` entry). **A decision-log entry with TWO dated instances, the second of which arose inside the document that was filing the first one's evidence — and no numeric claim moves at all**
+
+**Filed by `icc-librarian`.** Two jobs: discharge `NUMERIC_CLAIMS.md`
+§7.23's newly-owed item 1, and file **DL-062**, drafted by
+`icc-conformance` and handed here because the decision log is this
+role's. **No row added, changed or invalidated. Next free identifiers
+remain `NC-267` and `NA-013`.** `ROADMAP.md` untouched — no Pass moved,
+nothing shipped, nothing measured.
+
+### What was verified, and how
+
+★★★ **Nothing below was accepted from either agent's report.** The
+operator's dispatch carried an account of the correction; the drafter
+carried an account of the commits. **Both were re-checked against live
+source**, which is this role's standing rule and which paid twice.
+
+- **The 28 seconds are MEASURED, not reported.** `.git/logs/HEAD` lines
+  99–100: `a05476c` at epoch **`1787035205`** (`-0400` ⇒ **02:40:05**),
+  `a1bd818` at **`1787035233`** (**02:40:33**). Difference **28**.
+  Adjacent commits. *(A reflog file is plain text and reading one is not
+  running `git`.)*
+- **The fix is in the tree** — `crates/iccce-cmm/src/compiled.rs:218`
+  declares `k_preserve` **outside** the grid, `:333` populates it, `:354`
+  branches per pixel in `convert`. ★ **That it landed in `a05476c`
+  specifically stays `[REPORTED]`**: a reflog line evidences a commit's
+  existence, time and subject and **never its contents**, and this role
+  has no shell. What is verified is the **tip**.
+- **All three of the owed item's *done when* clauses**, adjudicated
+  separately against `TOLERANCES.md`: the `pre-a05476c` table header
+  (`:3757`, `:3762`); **both carrier phrases surviving only inside
+  quotation** (`:3718`, `:3720`, `:3968` — grepped the whole file, not
+  spot-checked at the line numbers supplied); and §3.10.12.6's bullet
+  now reading *"unmeasured by any row of this suite"* with a dated
+  `★ CORRECTED` note at `:3893`.
+- **A second verbatim copy in `tools/difftest/README.md`** §25.13.7
+  (`:5367`) and §25.13.6 (`:5446`), also corrected. ★ **Found by
+  `icc-conformance`, not by me, and named in no file list the evidence
+  package carried.** The owed item named one file; the defect was in
+  two.
+- **One carrier phrase from DL-062's grep list was swept and SURVIVED.**
+  *"`KMapping::Ratio` … has no implementation"* is still true:
+  `black_preserve.rs:223` declares the variant, `:238` names it, and
+  `transform.rs:1097` **refuses** it. ★ A refusal is not an
+  implementation. Recorded because **a phrase list that has only ever
+  fired is untested in the passing direction.**
+
+### ★★★ The finding, and it has two instances
+
+**DL-062** — *a document that records "X is broken and someone else owns
+the fix" has an expiry date set by someone else's commit.* The
+conformance role wrote *"not fixed here, deliberately — the remedy
+belongs to the engineer"*; the engineer had fixed it **28 seconds**
+before that text was committed.
+
+★★ **Why it is not DL-048's stale numeral.** A numeral goes stale when
+the world moves and **invites re-derivation the next time anyone
+measures** — the correction is triggered by the same act that caused the
+drift. A **status** goes stale when **a different role commits in a
+different directory**, and **no act triggers the correction**: the fixing
+commit is, from the document's side, an unrelated change; the document
+is, from the commit's side, not in the diff. ★ The stale text survived
+**four subsequent commits** (`a1bd818`, `f3b6b87`, `9dc9d70`,
+`60c32dd`, two of them documentation commits) and was found by a
+**deliberate currency re-check**. ★★★ **And the polarity is unusual: the
+document UNDERSTATED the code.** Almost every guard this project has is
+aimed the other way.
+
+★★★ **THE SECOND INSTANCE, and it is why this is a log entry rather than
+a section note.** The mechanism **reproduced inside this session, in the
+document filing the first instance's evidence, with the roles reversed**:
+this librarian read `TOLERANCES.md`, correctly found it stale, filed
+§7.23 item 1 as owed — and `icc-conformance` discharged it concurrently,
+leaving **`NUMERIC_CLAIMS.md` carrying a stale status claim about another
+role's file.** ★★ **Two instances, the second arising while writing up
+the first, is a claim about STRUCTURE, not an anecdote** — and **it is
+not about haste, because the second happened under full awareness of the
+first.** It is structural to how this project divides file ownership:
+no role edits another's file, which is a good rule that *guarantees*
+every cross-role status claim is a claim about a tree its author cannot
+fix.
+
+### ★★★ The constructive half — the defence is in the WRITING, not the CHECKING
+
+Re-checking before quoting is necessary and **insufficient**: the claim
+can go stale **between being written and being committed**, which is the
+interval both instances died in. A filing that assigns work to another
+role must **either re-verify at commit time, or be written to be correct
+regardless of the other file's state.**
+
+★★ **The worked example is in this ledger and it held.** **NC-264**
+(current: near-axis `6.234231e-7 → 3.330669e-16` across grids 17 and 33)
+and **NC-265** (pre-fix `0.617121` / `0.617148`, dated `pre-a05476c`
+with the fixing commit named) are **two dated rows, not one edited row**.
+Both were correct before the correction landed and are correct after it.
+**The rows survived the race; the §7 prose about the rows did not** —
+because a row is a claim about a *measurement*, and measurements do not
+change under another agent's commit, while a §7 owed item is a claim
+about a *state*. ★ **Prefer to discharge a doubt with a row.**
+
+### One thing found by reading that nobody dispatched
+
+★★ **The draft's DL-053 cross-reference was wrong, and where it came
+from is the better finding.** The draft glossed DL-053 as *"`[VERIFIED]`
+certifies a date, not an evidence class"*; DL-053's own rule
+(`ARCHITECTURE.md:5378`) is the **denominator** axis — *a tag certifies
+that the measurement happened, never what it RANGED OVER.* ★★★ **But the
+gloss traces to this librarian's own Pass K entry above** (`:6063`),
+which extended DL-053 to *"certifies when it ran, never its evidence
+class"* **without labelling the extension**. The drafter cited
+accurately from a source that had already drifted — **DL-048's mechanism
+running through two documents.** All three readings are true of
+`[VERIFIED]`; only the first is DL-053's. **This log is append-only, so
+the correction lives in DL-062, not above.**
+
+### What is explicitly NOT claimed
+
+- **That the compiled path is now covered.** ★★★ **The document is
+  corrected; the DEBT IS NOT DISCHARGED.** There is still **no difftest
+  row** for the compiled path — §7.23 newly-owed item **4**, which stays
+  **OPEN**. What changed is the row's *purpose*: **disclosure →
+  regression guard**. Reading item 1's discharge as covering the coverage
+  gap is **DL-062's error running the other way**.
+- **That any measurement was taken or re-run here.** ★ Every number in
+  this entry is quoted from a source named beside it. **No row moves.**
+- **That `a05476c`'s contents were read.** ★ `[REPORTED]`, per above.
+- **That `fmt` or `clippy` has been run since Pass K.** ★ §7.23's
+  newly-owed item 7 stands untouched; this filing ran nothing.
+- **That anything was committed or pushed.** ★ This filing edited three
+  documents in the working tree, fetched nothing and authorised nothing.
+- **That another role's file was edited by this librarian.** ★ It was
+  not — here or at the Pass K filing. `TOLERANCES.md` and
+  `tools/difftest/README.md` were **read only**.

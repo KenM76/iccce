@@ -6517,6 +6517,397 @@ NC-242 are not bare dispatch claims.
 
 ---
 
+### 3.34 ★★★ Pass K — K-only black preservation. **The first section in this ledger for which `published-ground-truth` is STRUCTURALLY IMPOSSIBLE, said before any row rather than in a coverage footnote**; the section in which **the oracle is measurably wrong and iccce is right by algebra**; and the section that files a **fixed** defect and its **history** as two separate rows
+
+**Filed 2026-08-18 by `icc-librarian`** from an evidence package produced
+by `icc-conformance`, which re-ran everything that day at tip **`60c32dd`**
+on a clean tree. **This librarian has no shell and ran nothing.** What it
+did do is re-read the named sources at the tip; every `(verified — …)`
+below marks a file this librarian opened for itself, and every number
+without one is `icc-conformance`'s measurement carried on its authority.
+
+★ **The package itself was a transport in a temp directory, outside every
+git repository.** Per `CLAUDE.md` rule 10's binding clause — *nothing may
+exist only there* — this section is the durable home of all of it.
+
+#### 3.34.0 ★★★ What this section is NOT — read before any row
+
+Four things, and each one is a distinction this filing exists to keep from
+being flattened.
+
+**1. ★★★ Pass K contains ZERO `published-ground-truth` rows, and cannot
+contain one.** ICC.1 specifies **no black-preservation construct at all**
+in either edition checked — `ICC_Spec` register entry **A51**, a *closed
+negative*, with the structural reason recorded at §7.20: the PCS is three
+components, so every device→device transform is 4→3→4 and **K has no
+carrier**. There is therefore no published number for any row here to
+check against, and **none can come into existence** short of a new edition
+of the standard. Every one of the 24 rows below is a **cross-check**, a
+**derived-expectation**, or a **self-comparison**.
+
+> ★★ **This is the NINTH-PLUS consecutive filing at which the standing
+> debt — *no `published-ground-truth` row for any transform* — stands
+> open**, and 24 new rows must not be allowed to disguise that. §7.11
+> called it the ninth filing, §7.12 the tenth, §7.14 the twelfth; it is
+> restated in §7.23 below rather than left to be inferred from a row
+> count. **A large section is not a strong one.** Pass K adds volume to
+> the ledger's weakest class and nothing to its strongest.
+>
+> ★ **And the impossibility here is a DIFFERENT impossibility from
+> DL-041's.** DL-041 says no published ground truth can exist for a *LUT
+> interpolation path* because ICC.1 mandates no interpolation method —
+> that is a silence *inside* a specified construct. A51 is a silence where
+> **the construct itself does not exist**. Neither is a gap effort would
+> close, and they must not be quoted as one finding.
+
+**2. ★★★ §D is self-comparison of the ORACLE. iccce is in the loop of
+none of it.** The seven rows NC-248 and NC-249 carry have **lcms2 on both
+legs** *(verified — the row names are `passk/D/lcms2-intent-11/…` at
+`tools/difftest/src/passk.rs:2237-2273`)*. They are evidence about **how
+lcms2's intent 11 is constructed** — that its K-only region is one cell of
+a 17-node CLUT wide, and how far its own re-mapping travels on four
+destinations. **No row in §D is a claim about this engine**, and any
+document that quotes `4.8899e-2` as *iccce's* re-mapping magnitude is
+quoting the wrong subject.
+
+**3. ★★ The ten-destination sweep is NOT a difftest row and has no oracle
+leg.** `TOLERANCES.md` §3.10.12.6 already says so *(verified — read at the
+tip)*. It is filed here (NC-262, NC-263) because a number in circulation
+must be findable in this ledger — the `0.366689` figure is in the `a05476c`
+commit message and in the session handoff — **not** because filing it
+strengthens it. It is `self-comparison`, and **eight of its ten
+destinations are covered by no graded row at all**.
+
+**4. ★★ No accuracy claim is made for the POLICY.** Every row establishes
+that iccce implements **the definition it names**, on inputs that qualify,
+without leaking onto inputs that do not. **Nothing here is evidence that
+equal-lightness K preservation is the right thing to do**, because ICC.1
+states nothing for it to be right or wrong against, and **the two
+published definitions disagree by up to `4.889900e-2`** (NC-249). The
+perceptual cost of choosing it is **unmeasured** — see NA-012 and
+§3.34.6.
+
+#### 3.34.1 The rows — NC-243 … NC-266
+
+Twenty-four identifiers. **The grouping is this librarian's**, taking
+`icc-conformance`'s suggested `NC-243 … NC-265` with **one split** (see
+the note under the table); the underlying emitted records are **44 difftest
+rows** plus three `crates` tests plus two hand-run sweeps.
+
+`observed` is at the precision the harness prints. `class` is
+`icc-conformance`'s strict assignment against **project rule 3**, not the
+harness's `kind` string; where the two differ it is said so.
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-243** | §A1–A3 — the pre-feature baseline on the 41-point K-only ramp `(0,0,0,K)`, `K = j/40`, `ISO Coated v2 300% (ECI)` → **itself**: max chromatic ink, total area coverage, `\|ΔK\|` | `7.053200e-1` · `2.753549e0` · `3.608890e-1` | `inf` (all three) | **self-comparison** — iccce's own output, nothing compared. ★ The harness `kind` says cross-check; **the row's own separation string admits "nothing is being read two ways"**, and this librarian files the weaker of the two | **UNGRADED** (REPORTED) |
+| **NC-244** | §A4 — **ΔE2000 between the colorimetric and K-only builds**. The defect §A exists to describe is `0.7053` of wrong ink and is **`1.36e-1` ΔE2000**, an eighth of the perceptibility anchor | `1.360900e-1` | `1.0` | cross-check | **GRADED**, verdict `INCOMMENSURATE` |
+| **NC-245** | §A5 — iccce and lcms2 agree on the **unpreserved** separation | `6.300000e-5` | `1.240000e-4` (computed at run time) | **cross-check-against-another-implementation** | **GRADED**, `DISCRIMINATING` |
+| **NC-246** | §B — the **saturation-intent shortcut refuted**: max chromatic ink at saturation intent on six real CMYK destinations, and the indicator count of how many keep it near zero | count **`2` of 6**; inks `3.599600e-2` · `3.875900e-2` · `7.300960e-1` · `7.593340e-1` · `7.832910e-1` · `5.065640e-1` | count vs `5` (bound = population − 1, **from the logic, never from the observation**); inks `inf` | cross-check + **refutation** | count **GRADED**; the six inks UNGRADED |
+| **NC-247** | §C — the **ICC leg vs the ISO 32000-1 §10.3.3 device-space leg** for `DeviceGray`→CMYK, two gray models, device units and ΔE2000; plus the refutation that they are not interchangeable | `7.163860e-1` · `7.516159e-1` · `8.534950e-1` · **`1.259583e1`** ΔE2000; indicator `1.000000e0` | `inf` ×4; indicator vs `1` | cross-check (**two legs, both iccce-evaluated**) — ★ **a distance to a rule this project does not own** | indicator **GRADED**; the four distances UNGRADED |
+| **NC-248** | §D1–D3 — **lcms2's** K-only region is **one cell of a 17-node CLUT** wide; it coincides with colorimetric at that cell; its chromatic ink on the ramp is exactly zero | `1.259375e-5`; `0.000000e0`; `0.000000e0` | `3.0517578125e-5` (`2 × 2⁻¹⁶`); `0` exactly; `0` exactly | ★★★ **self-comparison OF THE ORACLE — not a claim about iccce** | **GRADED** ×3 (`DISCRIMINATING`, sep `4.008090e-1` on D1) |
+| **NC-249** | §D4–D7 — **lcms2's own** K re-mapping magnitude, `ISO Coated v2 300%` → itself / fogra39 / fogra27 / generic-CMYK | `6.100000e-5` · `1.165000e-3` · `1.429600e-2` · **`4.889900e-2`** | `inf` | as NC-248 | UNGRADED |
+| **NC-250** | **§E1 — the headline predicate.** K-only in ⇒ K-only out, max chromatic ink, licensed corpus | **`0.000000e0`** (was `7.053200e-1` pre-feature) | **`0` exactly** | cross-check | **GRADED**, `DISCRIMINATING`, sep `7.053180e-1` |
+| **NC-251** | §E2 — the preserved K value against the oracle's tone curve. ★★ **The row that CANNOT DISCRIMINATE**: its separation distance **equals its own observation**, ratio **`1.0`** | `6.100000e-5` (sep `6.100000e-5`) | `inf` | cross-check | **UNGRADED, and permanently so** — see §3.34.5 |
+| **NC-252** | §E3 + §F6 — the **near-neutral transition width**: iccce's K-only region is **zero wide by construction**, lcms2's is `1/16`. A real behavioural divergence inside an ICC.1 silence (A51) | `0.000000e0` (both), and chromatic ink at the `C = 0` endpoint `0.000000e0` (both) | `inf` | cross-check / derived-expectation | UNGRADED, **REPORTED permanently**; sep `6.250000e-2` (E3), `2.500000e-1` (F6) |
+| **NC-253** | §E4 + §E5 — the node-aligned off-neutral **regression guard**, and the **off-node control that earns its tightness** | `5.400000e-5`; control `1.750000e-3` | `2.000000e-4` (run time); control `inf` | cross-check | E4 **GRADED**, `DISCRIMINATING`; E5 UNGRADED |
+| **NC-254** | §E6 — the **sibling** synthetic fixture (`v2-cmyk-mft2-lab.icc`) is **`ZERO-SEPARATION`** for this subject | `0.000000e0`, **separation `0.000000e0`** | `inf` | cross-check | UNGRADED, verdict **`ZERO-SEPARATION`** — ★ **REPORTED, so nothing gates it** |
+| **NC-255** | §E7 + §F8 — the **leak guards**: `max\|on − off\|` over inputs that do **not** qualify, both surfaces driven by `iccce transform` with the flag on and off | **`0.000000e0`** both | **`0` exactly** both | ★ **self-comparison** — nothing outside this project is in the loop *(verified — `passk.rs:2092-2094`)* | **GRADED**, `DISCRIMINATING`; sep `1.750000e-3` (E7), `4.207049e-1` (F8) |
+| **NC-256** | **★★★ §E8 — the ORACLE IS WRONG AND THE ENGINE IS RIGHT, by algebra.** On a same-profile pair the equal-lightness construction **is the identity**; iccce returns it exactly, **lcms2 intent 11 sits `6.100000e-5` from it** | iccce **`0.000000e0`**; **lcms2 `6.100000e-5` away** | `1e-6` — one printed unit *(verified — `PRINT_FLOOR`, `passk.rs:875-878`)* | **derived-expectation** — ★ **the only Pass K row whose expectation is not some implementation's output** | **GRADED**, `DISCRIMINATING`, sep `6.100000e-5` |
+| **NC-257** | **§E9 — which of the two published definitions iccce implements**, cross-press, evaluated at **the oracle's own 17 CLUT nodes** | `3.100000e-5` | `1.090000e-4` (run time) | **cross-check-against-another-implementation** | **GRADED**, `DISCRIMINATING`; rival `4.889900e-2` |
+| **NC-258** | §F1 + §F2 — the committed fixture's **authored model, read from its own bytes**: `B2A` is `a`/`b`-independent across the dead band, and its neutral column matches the authored model | `0.000000e0`; `7.629511e-6` | `0` exactly; `7.629510948348211e-6` (`0.5 × 2⁻¹⁶`) | derived-expectation | **GRADED**; F1 `NO-NAMED-ALTERNATIVE`, F2 `DISCRIMINATING`. ★ **F2's worst case is ATTAINED, not approached** — the `<=` is deliberate |
+| **NC-259** | **★★ §F3 — the SEPARATION IS ITSELF GRADED**, against a floor declared in advance | shortfall **`0.000000e0`**; separation **`4.207049e-1`** against floor **`4.0e-2`** | `0` exactly | derived-expectation | **GRADED**, `DISCRIMINATING` |
+| **NC-260** | §F4 + §F7 — the **chromatic-gray round trip** against the derived table, and **the third reading**: the same quantity against lcms2 | `4.965520e-7`; `1.400000e-5` | `1.5259021896696422e-5` (`1 × 2⁻¹⁶`); `3.0518043793392844e-5` (`2 × 2⁻¹⁶`) | derived-expectation; **cross-check-against-another-implementation** | **GRADED** both, `DISCRIMINATING`; sep `4.843550e-1` |
+| **NC-261** | §F5 — the **CI twin** of NC-250's predicate, on the committed fixture, **read as raw bytes by the harness's own `mft2` decoder rather than through `iccce-profile`** | **`0.000000e0`** (was `4.207050e-1`) | **`0` exactly** | derived-expectation | **GRADED**, `DISCRIMINATING`, sep `4.207049e-1` |
+| **NC-262** | ★ **The ten-destination sweep** — max chromatic ink over 41 ramp points × 3 chromatic channels, on **all ten CMYK profiles in the Ghent v5.0 corpus**, enumerated **by header** (`header.colorspace: 'CMYK'`, all `prtr`), through the shipped release binary | **`0.000000`** on all ten, at an observation floor of **`5e-7`** | none — **not a difftest row** | ★★ **self-comparison, no oracle leg** | **UNGRADED and ungradable in this form.** ★ **Eight of the ten destinations are covered by no graded row at all** |
+| **NC-263** | ★ **The K re-mapping on the same sweep** — `K_out` at `K_in = 0.5` and `K_in = 1.0`. This is the quantity that distinguishes `EqualLightness` from the *copy-K-through* rival | `K@0.5`: `0.500000` ×4, `0.501704`, `0.502608`, `0.505783`, `0.500381`, `0.461018`, **`0.366689`**; `K@1.0`: `1.000000` ×9 and **`0.881462`** | none — not a difftest row | as NC-262 | UNGRADED. ★★ **The graded form of this claim is NC-257 and nothing else** |
+| **NC-264** | **★★ The compiled path composes with preservation — AS OF `a05476c`.** max `\|compiled − reference\|` within one cell of the K axis, and the same far from it (control), at grid 17 and grid 33 | near-axis **`6.234231e-7` → `3.330669e-16`**; control **`3.710322e-4` → `6.289234e-8`** | ★ **none — the test asserts two strict inequalities and contains no constant** | **self-comparison** — both arms are iccce (compiled path vs reference chain) | **GRADED by convergence, not by a bound.** A `crates` test, **not** a difftest row |
+| **NC-265** | **★★★ HISTORY — the pre-fix compiled-path defect.** Superseded by NC-264 | near-axis **`0.617121`** (grid 17) → **`0.617148`** (grid 33) — a **rise**; control `1.138e-3` → `5.34e-4`; near-axis **`1156×`** the control at grid 33 | — | **dated observation, 2026-08-18 (pre-`a05476c`)** | ★★★ **NOT A CURRENT MEASUREMENT.** See §3.34.4 |
+| **NC-266** | Suite state and Pass K coverage at tip `60c32dd` | licensed corpus **`pass=337 fail=0 skip=9 error=0`**; empty corpus **`pass=184 fail=0 skip=94 error=0`**; both exit 0; `cargo test --workspace` **170 passed, 0 failed** (15 test binaries). Pass K: **44 rows**, **19 graded / 25 REPORTED**, `DISCRIMINATING 13` · `NO-NAMED-ALTERNATIVE 21` · `UNGRADED 8` · `ZERO-SEPARATION 1` · `INCOMMENSURATE 1` · **`unstated 0`, `blind 0`** | — | apparatus census (DL-031: **every count with its runner**) | — |
+
+★★ **The one split this librarian made, and why.** The suggested
+allocation bundled the sweep and the K re-mapping into a single
+`NC-262`. They are **two different quantities with two different
+rivals**: the sweep's rival is the pre-feature `7.053200e-1` of wrong ink
+(*is the feature doing anything?*), and the re-mapping's rival is
+`K_out = K_in`, the copy-through definition (*is it doing the RIGHT
+thing?*). A row carries one comparison; bundling them would let a reader
+cite `0.000000` as evidence for the definition, which it is not. The
+downstream ids shift by one: the package's `NC-263/264/265` are this
+document's **NC-264/265/266**.
+
+★ **A number in the suggested allocation that its own evidence tables did
+not carry, checked rather than filed on trust.** The suggestion said the
+leak guards run over *"192 / 50"* probes; the package's §E table states
+192 for E7 and **no count at all** for F8. **Verification upgraded it
+rather than rejecting it**: `passk.rs:3884` documents F8 as *"max `|Δ|`
+over all four channels of the **50 chromatic grays**"* — so **192 (96
+node-aligned + 96 arbitrary) for E7 and 50 for F8**, on the source's
+authority, not the package's.
+
+★ **An arithmetic clarification this librarian derived, in exactly the
+shape the package warns about elsewhere.** The package calls E5 *"the
+control that earns E4's tightness (32×)"*. That `32×` is
+`1.750000e-3 / 5.400000e-5 = 32.4×`, the ratio to E4's **observation**;
+the ratio to E4's **tolerance** is `1.750000e-3 / 2.000000e-4 = 8.75×`.
+**Both are true and they are different claims** — the same two-denominator
+trap the package itself flags for E9, where the rival `4.889900e-2` is
+**`1577×`** the observation and **`448.6147×`** the tolerance. **Quote a
+ratio with its denominator or do not quote it** (DL-031).
+
+#### 3.34.2 ★★★ NC-256 — rule 7, and this is the strongest form it has taken
+
+Project rule 7: *disagreement with lcms2 is a finding, not a failure; a
+case where iccce is deliberately right and lcms2 is wrong is worth writing
+down.* NC-256 is that case, and it is stronger than the two previous
+instances (DL-030, where iccce was **wrong**; NC-213, where the
+disagreement was about authoring) because **the arbiter is neither
+implementation**.
+
+**The algebra.** On a **same-profile pair**, `src == dst`, the
+equal-lightness construction requires `K_out = K_in` for **any strictly
+monotonic `L*(K)` ramp**: the forward map takes `K_in` to a lightness and
+the inverse takes that lightness back through *the same ramp*. No press
+model, no encoding and no interpolation term enters, so **there is nothing
+to allow for and the tolerance is one printed unit** — `1e-6`, the width
+of `iccce transform`'s six decimals *(verified — `PRINT_FLOOR`,
+`passk.rs:875-878`, whose justification string says exactly this)*.
+
+| leg | observed | why |
+|---|---|---|
+| **iccce** | **`0.000000e0`** | inverts the ramp **directly** |
+| **lcms2 intent 11** | **`6.100000e-5`** from the algebraic answer | its K returns through a **17-node CLUT**, so the round trip carries that grid's interpolation error |
+
+★★★ **The oracle is `61×` its own row's tolerance away from an answer that
+is not in dispute.** This is the only row in Pass K whose expectation
+comes from neither implementation, and it is therefore the **only** row
+here that could ever have adjudicated between them.
+
+★★ **What it does NOT establish.** It says nothing about which
+*definition* is right — both implementations are computing equal
+lightness; lcms2 is computing it through a coarser instrument. **The
+definition question is NC-257's**, and NC-257 is a cross-check, so it
+answers *which definition iccce implements* and not *which definition is
+correct*. **No row anywhere can answer the second** (§3.34.0 item 1).
+
+★ **And the row carries its own falsification condition**, which is why it
+is trustworthy: `passk.rs:867-874` states that if this destination's
+`L*(K)` ramp ever contained a **flat stretch** — ink saturating, a real
+thing a press profile does — the inversion is ill-posed, iccce's inverter
+takes the **lower** `K` by documented choice, and **the identity would
+fail for a correct implementation** *(verified — read at the tip)*. A
+future red here is a question about the fixture before it is a question
+about the code.
+
+#### 3.34.3 ★★★ NC-248 / NC-249 are about lcms2, and this is the second time this ledger has had to say so
+
+Both legs of all seven §D rows are lcms2 *(verified — `passk.rs:2237-2273`)*.
+They exist because **iccce implements lcms2's own construction by design**,
+so knowing how that construction is built is a precondition for reading
+NC-245, NC-257 and NC-251 at all — `D1`'s *one CLUT cell wide* is what
+makes `E2`'s and `E3`'s numbers interpretable, and `D7`'s `4.889900e-2` is
+the **rival distance** NC-257 is measured against.
+
+★★★ **They are not evidence of anything about iccce, and the failure mode
+is specific.** A reader who sees `passk/D/…` in a green suite summary and
+concludes *"Pass K verifies the K-only region is one cell wide"* has
+attributed **the oracle's property to the engine**. NC-252 is the row that
+states the actual iccce behaviour, and **it is the opposite one**: iccce's
+K-only region is **zero wide by construction** (an exact predicate), while
+lcms2's is `1/16`. **The two implementations genuinely differ here**, ICC.1
+is silent (A51), and neither is non-conformant.
+
+> ★ **This is DL-056's shape and it recurs for a reason.** A differential
+> instrument is blind toward its reference; a section that *measures the
+> reference* is the natural remedy, and the cost of that remedy is that
+> half the section's rows are about the wrong subject unless somebody says
+> so in the row itself. **They now say so.**
+
+#### 3.34.4 ★★★ NC-265 is HISTORY and NC-264 is what is true now — and the document that says otherwise is not this one
+
+★★★ **This is the correction the whole filing turns on, and it was made by
+`icc-conformance` against its own memory.**
+
+The compiled-path defect — *an interpolator cannot represent a step, so
+sampling the preserving conversion onto a grid spread the preservation
+over a whole cell* — was **fixed in `a05476c`**, the commit **immediately
+before** `a1bd818`, the grading commit that filed it as open.
+`CompiledTransform` now carries `k_preserve: Option<KPreserve>`
+**outside** the grid and branches per pixel in `convert` — the second of
+the two remedies `TOLERANCES.md` §3.10.12.7 named *(verified — this
+librarian read `crates/iccce-cmm/src/compiled.rs:218` (the field),
+`:333` (`chain.k_preserve_built().cloned()`) and `:354` (the branch in
+`convert`) at the tip; and the commit ORDER is corroborated from
+`.git/logs/HEAD`, which records `a05476c` "cmm: K-only black preservation,
+and the compiled path that nearly broke it" immediately followed by
+`a1bd818` "conformance: grade the landed feature". **That is a statement
+about two files' contents, not about `git status`; this librarian has no
+shell.**)*
+
+| | NC-265 — **pre-`a05476c`** | NC-264 — **at `60c32dd`** |
+|---|---|---|
+| near-axis, grid 17 → 33 | `0.617121` → `0.617148` — **a RISE** | `6.234231e-7` → **`3.330669e-16`** |
+| control, grid 17 → 33 | `1.138e-3` → `5.34e-4` | `3.710322e-4` → `6.289234e-8` |
+| verdict | **`O(1)` beside `O(h^1.32)`** — not grid-driven | **converges** |
+
+`3.330669e-16` is ≈**1.5 ULP of 1.0** — floating-point noise, **not a
+residual**.
+
+★★★ **`0.617121` / `0.617148` must never again be written in the present
+tense.** They are a **dated observation of a defect that no longer
+exists**, and they survive in three places *(verified — grepped the tree
+at the tip)*: `crates/iccce-cmm/src/transform.rs:1375`,
+`crates/iccce-cmm/tests/compiled_black_preservation_convergence.rs:18`,
+`:34` and `:146`, and `tools/difftest/README.md:5378`. **In the test and
+the two doc comments this is CORRECT usage** — they are explicitly
+labelled *"under the defect"*, which is exactly how a superseded number
+should appear. **In `TOLERANCES.md` §3.10.12.7 it is not**, and that is
+§7.23's owed item 1.
+
+★★ **The `O(1)` / `O(h^1.32)` pairing must be split when quoted.** The
+`O(1)` half is **the defect's signature and is gone**. `O(h^1.32)` is
+**Pass 6's still-live measured convergence order** — DL-025, NC-149 — and
+survives this filing untouched.
+
+★★★ **Why NC-264 is a `self-comparison` and is still worth more than most
+graded rows in this ledger.** Both arms are iccce: the compiled path
+against the reference chain path. It asserts **nothing** about whether
+either arm is colorimetrically right; it asserts that **compiling a
+transform does not change its answer**. What makes it strong is its
+*shape*, not its class — **it asserts convergence, not a bound**, in two
+strict inequalities with **no constant anywhere** *(verified — read at
+`compiled_black_preservation_convergence.rs:138-154`)*:
+
+- **the control must improve** (`far33 < far17`), *"or the fixture is not
+  exercising interpolation at all and the comparison below is
+  meaningless"*;
+- **then** the near-axis error must improve (`near33 < near17`).
+
+★★ **The control assertion is a PRECONDITION, not decoration.** If the
+fixture stopped exercising interpolation, the second assertion would pass
+**vacuously**; the first is what prevents that. **A threshold test has no
+equivalent** — a wrong constant passes a threshold test, and **nothing
+passes a convergence test by luck.** This is DL-018's principle (*a gate
+must not reward deletion*) reaching a case where the gate has no number in
+it at all.
+
+★ **Two companion tests in the same file, both passing** *(verified — read
+at the tip)*: `a_qualifying_input_is_preserved_by_the_compiled_path_too`
+asserts `assert_eq!(out[i], 0.0)` on C, M and Y at 11 `K` values through
+the **compiled** path at grid 17 — **bit equality, no tolerance and no
+print floor** — and `without_the_policy_the_compiled_path_is_unchanged`
+additionally asserts `reference[0] > 0.0`, **proving the fixture
+contaminates neutrals** so the test cannot prove nothing.
+
+#### 3.34.5 ★★★ The absences — filed as rows' equals, because this document's value is that it records them
+
+A ledger that only recorded measurements would make Pass K look like
+coverage. It is not, and each item below is a **specific** hole rather
+than a general caution.
+
+**1. ★★ Eight of the ten destinations are graded by nothing.** NC-262 and
+NC-263 sweep ten real CMYK profiles; only two of them appear in a graded
+row — `c6b4b62f…` (`ISO Coated v2 300% (ECI)`, NC-250) and `5bad92a6…`
+(`GWG_GenericCMYK`, NC-257). The other **eight are self-comparison only**.
+★ A `[VERIFIED]` tag on the sweep certifies that it was **run on
+2026-08-18** and certifies **nothing about its evidence class** — DL-053's
+lesson, applied here before anyone else has to apply it.
+
+**2. ★★★ NC-251 can never discriminate.** E2's separation distance —
+the distance to the rival answer — is `6.100000e-5`, and its observation
+is `6.100000e-5`. **Ratio `1.0`.** A row whose observation sits *exactly
+at* its rival cannot tell the two candidates apart no matter what value it
+takes. ★ **The classifier prints `UNGRADED` rather than `BLIND` only
+because `BLIND` requires a finite tolerance** — so the aggregate
+`blind = 0` in NC-266 **does not mean no row is blind**, and this is the
+concrete instance. DL-037's rule stands: **never quote `blind=0` without
+its denominator and its filing.**
+
+**3. ★★ NC-254 is `ZERO-SEPARATION` and REPORTED, so nothing gates it.**
+The sibling fixture cannot distinguish the candidates for this subject at
+all. ★★★ **This is not hypothetical harm.** Injection A in the previous
+session — zeroing the committed fixture's `B2A0` chromatic samples, i.e.
+rebuilding it like its sibling — turned **F5 GREEN at `0.000000`** while
+the suite summary said `fail=1`. **A zero-separation fixture does not
+merely fail to inform; it MANUFACTURES a pass that looks like a working
+feature.** NC-259 is what converts that from a column nobody reads into a
+red row.
+
+**4. ★★ NC-259's floor is the only one in Pass K.** §F has a
+separation-floor row; **§A–§E have none**. The floor is
+`SEPARATION_FLOOR = 4.0e-2` *(verified — `passk.rs:3409`)*, justified as
+**`10 ×` Pass G's `SWEEP_DEVICE` (`4e-3`)**, the loosest device-space
+tolerance this document family has ever justified — ★ **derived from the
+tolerance budget, never from what this fixture measures**, which is what
+keeps it from being tuned to pass.
+
+**5. ★★ No injection proof for the leak guards.** E7 and F8 (NC-255) were
+verified to **pass**; neither has been shown to **fail** under an injected
+widening of the qualifying test. **DL-051's whole finding is that a
+passing test is not evidence until an injection turns it red**, and the
+best-documented constant in the project was caught by none of five
+injections. This needs a `crates/` edit in a detached worktree. **Owed.**
+
+**6. ★ No `--bpc` + preservation row at any layer.** A chain carrying both
+flags is untested everywhere — no difftest row, no `crates` test.
+
+**7. ★ `KMapping::Ratio` has no row because it has no implementation.** If
+it gains one, NC-257's shape is what it needs — a cross-press pair at the
+oracle's own nodes — and ★★ **the oracle for it is NOT lcms2**, which
+computes the other definition.
+
+**8. ★★★ The perceptual cost of preservation is UNMEASURED, and it is the
+number a caller actually wants.** Every row in Pass K is in **device
+units**. Nobody has measured what **ΔE2000** the preserved answer sits
+from the colorimetric one on a cross-press pair. A caller weighing
+*"should I turn this on?"* is asking precisely that question and **this
+ledger cannot answer it**. Registered as **NA-012**'s stated cost.
+
+**9. ★ Still no difftest row for the compiled path**, even now that it is
+fixed. The shape `TOLERANCES.md` §3.10.12.7 specifies is still owed; what
+changed is that it would now be a **regression guard** rather than a
+**disclosure**.
+
+**10. ★ Two gates the package deliberately did not run**, so no claim is
+made about them: `cargo fmt --all --check` and
+`clippy --workspace -D warnings`. `cargo test --workspace` **was** run
+(NC-266). **The handoff asserts all three; only one is filed.**
+
+#### 3.34.6 Coverage of §3.34, stated because a number without it is not a claim
+
+- **One machine** (Windows 11 / MSVC), **one day** (2026-08-18), **one tip**
+  (`60c32dd`), **one run of each measurement, no repetition and no
+  variance** — except §F, whose eight rows were **byte-identical across the
+  two corpus conditions**, which is a **real reproducibility statement**
+  and holds only because §F reads committed bytes.
+- **One policy** — `k-only-equal-lightness`. The other is a refusal at this
+  commit.
+- **One intent for §E** (media-relative), **one source profile**
+  (`ISO Coated v2 300% (ECI)`), **two destinations** (itself, and
+  `GWG_GenericCMYK` for NC-257 alone).
+- **Six destinations for §B**, **ten for NC-262/NC-263**, **four for
+  NC-249** — and none of those three populations is the same population.
+- **36 of Pass K's 44 rows require the licensed corpus** and SKIP without
+  it; **the 8 that survive are all of §F**. ★ **CI is permanently in the
+  skipping case for 36 of 44.** A green CI run is **not** evidence that
+  Pass K passed.
+- **Pass K contributes NONE of the licensed run's 9 skips** (those are
+  3 × `pass4/…/icc-absolute/` and 6 × `passh/D/…`) and **36 of the
+  empty-corpus run's 94.**
+- ★★ **The `0.000000` in NC-262 is measured at a `5e-7` observation floor**
+  — the CLI prints six decimals in `0..1`, so an observed `0.000000`
+  certifies only `< 5×10⁻⁷`. **The exactness is attributable to
+  CONSTRUCTION, not to the measurement**: `KPreserve::apply` returns
+  `Some(vec![0.0, 0.0, 0.0, self.map_k(device[3])])` — **literal `f64`
+  zeros**, with no arithmetic that could make them small-but-nonzero
+  *(verified — `crates/iccce-cmm/src/black_preserve.rs:407`, read at the
+  tip)*. That claim is asserted separately and **at bit equality** by
+  `a_qualifying_input_is_preserved_by_the_compiled_path_too`.
+- ★★ **`icc-conformance` measured everything here; this librarian ran
+  nothing** and re-read the named sources at the tip.
+
+---
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -7320,6 +7711,33 @@ constants** — including **ICC's own reference CMM**.)*
 
 ---
 
+### NA-012 ★★★ *(registered 2026-08-18, Pass K filing)* — **K-only black preservation is a deliberate departure from the colorimetric answer, inside a specification silence, implementing a VENDOR construction that is also this project's ORACLE.** Cost **UNMEASURED**
+
+| Field | Value |
+|---|---|
+| **The approximation** | `--preserve-black k-only-equal-lightness` / `Chain::with_black_preservation(KMapping::EqualLightness)` **deliberately returns something other than the colorimetric conversion** for any input with `C = M = Y = 0` exactly. The colorimetric answer for a K-only input on a cross-press pair is a full four-ink separation; the preserved answer is `(0, 0, 0, K′)` with `K′` chosen to match lightness. ★ **This is not an error term or a rounding cost — it is a different answer on purpose**, and the caller opts into it by name. |
+| **Why it is a rule-4 entry at all** | ★★★ **ICC.1 mandates nothing here — it contains no black-preservation construct in either edition checked** (`ICC_Spec` register entry **A51**, a *closed negative*; structural reason: the PCS is three components, so every device→device transform is 4→3→4 and **K has no carrier**). A silence is not permission to depart silently: rule 4 says every departure from exact colorimetry is **named and measured**, and §4 is the only artifact that can answer *"what does iccce approximate?"* |
+| **Whose construction it is** | ★★ **lcms2's** — *equal lightness*, the definition little-cms implements as intent 11. ★★★ **That makes it a construction this project also uses as its ORACLE**, so agreement with lcms2 on it (NC-245, NC-257) is **expected by design and is not independent evidence that the definition is right.** The second published definition (**`KMapping::Ratio`**, Cholewo) is **unimplemented and a standing refusal**; the two disagree by up to **`4.889900e-2`** in `K` on the furthest cross-press pair measured (NC-249). ★ That disagreement is why the CLI ships **no default** — a default would be iccce choosing one definition and reporting it under a name that means both. |
+| **Cost — ★★★ UNMEASURED, and stated so rather than bounded** | **Nobody has measured the ΔE2000 between the preserved answer and the colorimetric one on a cross-press pair.** Every Pass K row is in **device units** (§3.34.6). ★★ **The number a caller weighing this policy actually wants is exactly the one that does not exist**, and no row in §3.34 is a substitute for it. |
+| **What must NOT be quoted as its cost** | ★★★ **NC-249's `4.889900e-2`** is *lcms2's* re-mapping magnitude and belongs to the oracle, not to this approximation (§3.34.3). ★★ **NC-263's `0.366689` / `0.881462`** are `K_out` values from a **self-comparison sweep with no oracle leg** — they show the re-mapping is non-identity, which is what distinguishes this policy from *copy-K-through*, and they are **not a cost**. ★ **NC-244's `1.360900e-1` ΔE2000** is the distance between the colorimetric and K-only builds on the **same-profile** pair, i.e. **the case where the policy is nearly a no-op** — it is a *lower* bound at best and must never be quoted as the policy's price. |
+| **What IS established, so the entry is not read as weaker than it is** | The policy **does what it says** on inputs that qualify (NC-250, NC-261, at exactly `0`), **does not touch inputs that do not** (NC-255, at exactly `0` over 192 and 50 probes), **is the identity where algebra says it must be** (NC-256 — and the oracle is not), and **implements the definition it names** at the oracle's own CLUT nodes (NC-257). ★ **All of that is about fidelity to the named construction, none of it about the construction being right.** |
+| **Where** | `crates/iccce-cmm/src/black_preserve.rs` (module doc; `KPreserve::apply` at `:407`, the literal-zero emit); `Chain::with_black_preservation` and the `k_preserve` field, `crates/iccce-cmm/src/transform.rs`; the compiled path's copy, `crates/iccce-cmm/src/compiled.rs` *(verified — all four read at the tip by symbol; DL-048: **cited by symbol, not by line**, except the two lines this filing measured)*. |
+| **Tolerance budget** | `TOLERANCES.md` §3.10 (Pass K). ★ §3.10.12.7 was **stale at the time of this filing** — see §7.23 owed item 1; `icc-conformance` was correcting it concurrently and **this librarian did not edit that file.** |
+| **Revisit if** | (a) anyone measures the ΔE2000 cost on a cross-press pair — **then this entry's cost field changes and the entry stays**; (b) `KMapping::Ratio` gains an implementation — **then iccce implements two policies that disagree and the register needs a second entry, not an edited one**; (c) ICC ever specifies a black-preservation construct — which would move rows in §3.34 from *no possible ground truth* to *ground truth available*, the single largest change any future edition could make to this section. |
+
+> ★★★ **Registered on the day the code landed, with its cost stated as
+> UNMEASURED — the same posture NA-006 and NA-009 were registered under,
+> and deliberately not the posture NA-011 was.** NA-011 was registered
+> **late**, after the obligation had been discharged against a doc comment
+> while this register ran `NA-001 … NA-010` with nothing between them for
+> the thing in question (§3.33.12 item 3). ★★ **An unmeasured cost is a
+> reason to file the entry, never a reason to defer it** — an entry with
+> `UNMEASURED` in it is findable and generates an obligation; an absent
+> entry generates nothing and looks identical to *"there is no
+> approximation here."*
+
+---
+
 ## 5. What Pass 1 does **not** claim
 
 Stated as prominently as the claims, because the failure mode of a ledger
@@ -7543,6 +7961,11 @@ are the rows to re-run or retire.
 | **★★ THE SEPARATION OF THE TWO CANDIDATE ANSWERS, in any cross-check** *(added 2026-08-12, DL-033)* | **Every `implementation-cross-check` row whose two implementations could compute a shared intermediate.** ★ **This row is new in kind and it invalidates nothing today** — it is a *reading instruction*: a small residual is evidence of **proximity**, not of correctness, and where the candidate answers are close for a reason unrelated to the code being right, **the cross-check has no power and the row cannot be quoted as though it had.** The founding instance is NC-164a/NC-174: `MinL(lcms2) = MinL(ISO) = 16,489 806` **exactly**, so a defective iccce agreed with the oracle to `0,08 ΔE76`. **Candidate-separation statements are OWED on the cross-check rows and this entry does not supply them** |
 | **★ A vendor profile leaving the fixture set** *(added 2026-08-12, DL-036)* | **NC-165, NC-167, NA-009's `swop` cost — and, going forward, any measurement whose power comes from quantities a real ink set separates.** ★ **The authored corpus would keep passing.** `v4-rgb-mab-chromatic-black.icc` has `InitialLab.L*` = `outRamp[first]` = **`L* 20`**, so on this measurement it had **zero** power. **Removing `USWebCoatedSWOP.icc` would not fail a single test; it would delete the only arm that can see** |
 | **★★ A ratio's DENOMINATOR or its RIVAL candidate moving** *(added 2026-08-12, DL-035)* | **NC-168 (T1) and NC-169 (T4) — and the direction of travel of every graded ratio in this ledger.** Both rows moved green-ward on the corrected code **for reasons opposite to what the numbers imply**: T1's error bar did not change (its *effect* grew 59×) and T4's numerator did not change (its *rival* got 4,03× worse). ★ **Nothing fails when this happens**, which is why it is a dependency row and not a test |
+| **★★★ `KPreserve::apply`'s QUALIFYING TEST, or `map_k`** *(added 2026-08-18, Pass K)* | **NC-250, NC-252, NC-255, NC-256, NC-257, NC-261, NC-263 and NA-012.** ★ **Not symmetrically, and the asymmetry is the point.** Widening the qualifying test from *`C = M = Y = 0` exactly* moves the **leak** rows (NC-255) and nothing else — they are the only rows that watch a non-qualifying input. Changing `map_k` moves the **K** rows (NC-256, NC-257, NC-263) and **leaves NC-250 and NC-261 green at `0.000000`**, because those assert only that the chromatic channels are zero and `map_k` cannot make them non-zero (`apply` returns **literal `f64` zeros**). ★★ **A wrong `map_k` is invisible to the headline predicate.** |
+| **★★★ `CompiledTransform`'s `k_preserve` field leaving the outside of the grid** *(added 2026-08-18, Pass K)* | **NC-264 — and NOTHING ELSE IN THIS LEDGER, which is exactly the exposure.** No difftest row drives the compiled path with preservation; the **only** detector is a `crates` test, and the CLI cannot reach the combination at all (`iccce bench` does not accept `--preserve-black`). ★★ **A regression here is invisible to the conformance suite and reachable only from the library** — which is where a per-pixel consumer lives. NC-265 records what that regression looked like the first time. |
+| **★★ `fixtures/synthetic/v2-cmyk-chromatic-neutral.icc`'s bytes** *(added 2026-08-18, Pass K)* | **NC-258, NC-259, NC-260, NC-261, NC-255's F8 half and NC-264** — **six rows on one file**, and it is the **only** part of Pass K that runs in CI. ★★★ **The sharp part: the fixture's SEPARATION is the thing to protect, not its bytes as such.** Rebuilding it like its sibling (zeroing the `B2A0` chromatic samples) was **measured by injection** to turn the headline row **GREEN at `0.000000`** — a manufactured pass that looks like a working feature. **NC-259 is the only detector**, and it exists because `SEPARATION_FLOOR = 4.0e-2` is declared **in advance and derived from the tolerance budget, not from this fixture** *(verified — `passk.rs:3409`)*. |
+| **★★ The lcms2 pin moving off `21c582a`** *(extended 2026-08-18, Pass K)* | Now additionally **NC-245, NC-248, NC-249, NC-251, NC-252, NC-253, NC-254, NC-257 and NC-256's rival half.** ★★★ **NC-248 and NC-249 are the sharp ones and they are sharp in a new way: their ENTIRE CONTENT is a statement about lcms2**, so a pin move does not weaken them — **it makes them false**. ★ **NC-250, NC-255, NC-261, NC-262, NC-263, NC-264 and NC-265 are the Pass K rows the pin cannot touch**, because no implementation but ours is in them. **Re-run, not re-read.** |
+| **★★★ ICC specifying a black-preservation construct in a future edition** *(added 2026-08-18, Pass K)* | **Nothing is invalidated — the whole of §3.34 changes CLASS.** Today `published-ground-truth` is **structurally impossible** for every row there (`ICC_Spec` **A51**, a closed negative), so the section's ceiling is *cross-check*. A specified construct would give the section an expectation for the first time and would **re-open NA-012** as a possible deviation from normative text rather than a choice inside a silence. ★ **This is the single largest change any future edition could make to this ledger**, and it is recorded so that a reader of A51 knows what turns on it. |
 | **★★ THE MACHINE'S LOAD, as distinct from the machine** *(added 2026-08-12, §3.27)* | **NC-161, NC-162 and NC-173 — the speedup, which is now WITHDRAWN because of this row.** The quantity spans **2,03× within one session at grid 33** with no change of grid, code or workload. ★ **NC-171 and NC-172 (build time and break-even) survive it**, because `N ≈ build × reference_rate` puts the noisy term where it barely enters — measured spread **1,13×** over the same five runs. **A quantity insensitive to the arm that varies is the one to publish** |
 
 ---
@@ -9299,6 +9722,248 @@ provenance class, `[QUOTED-FROM-RASTER]`); decision **`ARCHITECTURE.md`
   and still UNDONE.** Nothing in this filing performs it. ★ It is now
   owed with a *demonstrated* route rather than a reported one, which
   removes the last excuse rather than the obligation.
+
+---
+
+### 7.23 Status of §7 … §7.22, re-checked 2026-08-18 at the **Pass K** filing
+
+**★★★ TWENTY-FOUR ROWS AND ONE REGISTER ENTRY ARE ADDED: `NC-243 … NC-266`
+and `NA-012`.** The next free identifiers are now **`NC-267`** and
+**`NA-013`**. §3.34 is the section; NA-012 is in §4; five rows were added
+to §6.
+
+**★★★ Read the row count against this before anything else.** Pass K adds
+the largest single block of rows this ledger has ever taken in one filing
+— and **not one of them is `published-ground-truth`, nor can be.**
+
+#### 1. ★★★ The standing debt is UNMOVED, at its ninth-plus consecutive filing — and Pass K structurally cannot help
+
+**No `published-ground-truth` row exists for any transform.** §7.11 called
+it the ninth filing, §7.12 the tenth, §7.14 the twelfth; **it stands
+today.** `IEC 61966-2-1` remains **paywalled and unobtained**, and it
+remains the cheapest route — via **ITU-R BT.709**, free from ITU, which
+§3.32/§3.33 have now partly exploited for constants but not for a
+*transform*.
+
+★★★ **What is new is a reason it cannot be closed from this direction.**
+Pass K's subject admits **no published expectation at all**: ICC.1
+specifies no black-preservation construct (**A51**, a closed negative,
+structural reason at §7.20). So **24 new rows landed in the ledger's
+weakest classes and the strongest class stayed empty** — and the two facts
+are unrelated, which is exactly why they must be stated together. **A
+reader who measures this project's evidence by section length will get the
+wrong answer.**
+
+★ **And this is a different impossibility from DL-041's**, which concerns
+LUT interpolation inside a specified construct. Do not merge them into one
+debt: DL-041's is *closed by nothing*; this one would be *opened* by a
+future ICC edition (§6's new row).
+
+#### 2. ★★★ Owed item 1 — `TOLERANCES.md` §3.10.12.7 is STALE, and it is not this librarian's file
+
+**Verified by this librarian, read at the tip:** §3.10.12.7 says *"**Not
+fixed here, deliberately.** The remedy is a `crates/` change and belongs
+to the engineer"* and *"★ **What this role owes when it is fixed:** a
+row"*, and presents `0.617121` / `0.617148` in a table headed as a
+measurement. **The fix landed in `a05476c`, one commit BEFORE the grading
+commit `a1bd818` that filed it as open.** §3.10.12.6's bullet *"★★★ the
+COMPILED path is unmeasured by any row and is measurably wrong"* is **half
+stale**: still unmeasured by any **difftest** row, but now measured by a
+**`crates`** test and **not wrong**.
+
+★★ **`icc-conformance` was correcting `TOLERANCES.md` concurrently with
+this filing and this librarian did not edit that file.** ★★★ **This
+ledger's own filing does not depend on the correction**: NC-264 and NC-265
+carry the current and the historical numbers **as two separate rows with
+the fixing commit named**, so the ledger is correct whatever state that
+document is in when it is next read.
+
+> ★★★ **The failure class, because it generalises and is new here.** This
+> is a **stale STATUS**, not a stale numeral — and it **decays faster than
+> a number does**, because *the fix lands in someone else's commit*. A
+> wrong number invites re-derivation; a wrong *status* invites a reader to
+> act on an obligation that has already been discharged, or to distrust
+> working code. **DL-048's carrier mechanism, applied to a verb tense.**
+
+> ### ★★★ SUPERSEDED — 2026-08-18 (later the same day), and by the mechanism it describes
+>
+> **Everything above this note is left standing and is no longer true of
+> the tip.** `icc-conformance` corrected `TOLERANCES.md` §3.10.12.7 and
+> §3.10.12.6 concurrently with this filing; the discharge is recorded at
+> **newly-owed item 1** below, where the *done when* clauses are
+> adjudicated one by one against the live file.
+>
+> ★★★ **This block is the SECOND INSTANCE of its own subject, with the
+> roles reversed.** It is a **stale status claim about another role's
+> file**, written by the librarian who had just filed a decision-log
+> draft about stale status claims about other roles' files, inside the
+> document filing that draft's evidence. It went stale **between being
+> written and being read**, which is the interval re-checking cannot
+> reach. **Filed as `ARCHITECTURE.md` DL-062**, which carries both
+> instances; the second is why it is a log entry rather than a section
+> note, because *two instances, the second arising while writing up the
+> first, is a claim about structure and not an anecdote*.
+>
+> ★★ **It is NOT superseded by rewriting**, for the reason this project
+> gives every time: the wrong text is the only record of how the error
+> looked from inside. ★ And note what did **not** go stale — **NC-264
+> and NC-265**, which carry the current and the pre-fix numbers as **two
+> dated rows with the fixing commit named**, were correct before the
+> correction landed and are correct after it. **The rows survived the
+> race; this prose about the rows did not.** DL-062's constructive half
+> is exactly that difference.
+
+#### 3. ★★ Three items owed since §7.20 and §7.22 are DISCHARGED — verified in the live source, not taken from the dispatch
+
+| owed | where filed | status at `60c32dd` |
+|---|---|---|
+| `passk.rs:227` cites **PDF 32000-1 §8.6.4.4** for the `DeviceGray → DeviceCMYK` device rule; the rule is **§10.3.3** | §7.20 newly-owed 1 | **DISCHARGED.** *(Verified — grepped `passk.rs` at the tip: **`8.6.4.4` does not occur anywhere in the file**; `§10.3.3` occurs at `:324`, `:438`, `:815`, `:911`, `:916`, `:1385`, `:1402`, `:1425`, `:2699`.)* |
+| `passk.rs` cites `TOLERANCES.md` **§3.10.8, which did not exist** | §7.20 newly-owed 2 | **DISCHARGED.** *(Verified — `TOLERANCES.md:3163` is `#### 3.10.8 ★★★ The boundary, SETTLED by the librarian`.)* ★ The forward reference was legitimate *until it landed*; it landed with a destination. |
+| **Two false statements in `passk.rs`, one of which LEAVES THE REPOSITORY** — `g = 0.5` called *"GWG's own patch value"*, printed into the Pass K report; and the patch's fourth panel called an `ICCBased` gray | §7.22 newly-owed 1 | **DISCHARGED, and repaired in the stronger form.** *(Verified — `:1397` now reads *"This was documented as 'GWG's own patch value' until…"*, and the **emitted report string at `:2738`** now says *"★ NOT a GWG patch value — patch 23.0's gray panel is 25 %, its CMYK panel 0/0/0/75; the earlier attribution here was false and the number is unaffected"*. **`ICCBased` no longer occurs in the file.**)* ★★ **The correction was carried in the emitted string rather than deleted** — the shape of the error survives, which is DL-061 applied to itself. |
+
+★ **Not discharged and not touched by this filing:** §7.22's owed items 2
+(the GWG 23.0 patch PDF's **content stream** is owed a read) and 3 (the
+multi-engine-agreement sweep must widen to *"glyph-sensitive **or possibly
+set in a figure**"*). **NC-230's condition (b)** — §7.21's owed item 1 —
+**remains unblocked and still UNDONE.**
+
+#### Newly owed as of this filing
+
+1. **★★★ Correct `TOLERANCES.md` §3.10.12.7 and §3.10.12.6.** Item 2
+   above. **Owed to `icc-conformance`**, who was already in the file at
+   the time of filing. *Done when: §3.10.12.7's table is dated
+   `pre-a05476c` with the fixing commit named, its "Not fixed here" and
+   "what this role owes when it is fixed" paragraphs are re-based, and
+   §3.10.12.6's compiled-path bullet distinguishes "no difftest row" from
+   "measurably wrong".*
+
+   > ### ★★★ DISCHARGED — 2026-08-18 (later the same day). **The DOCUMENT is corrected; the DEBT it recorded is NOT closed**
+   >
+   > **All three *done when* clauses adjudicated by this librarian
+   > against the live file, clause by clause, not accepted from either
+   > agent's report** *(each line number read)*:
+   >
+   > | *done when* clause | live evidence at the tip | verdict |
+   > |---|---|---|
+   > | table dated `pre-a05476c`, fixing commit named | `TOLERANCES.md:3757` — *"**HISTORY — measured 2026-08-18 out of tree, BEFORE the fix in `a05476c`**"*, with *"★ These are not current measurements and must never be quoted as such"*; table header at `:3762` reads **`quantity (pre-a05476c)`** | **MET** |
+   > | *"Not fixed here"* / *"what this role owes when it is fixed"* re-based | **grepped the whole file**: *"Not fixed here"* occurs **once**, at `:3718`, **inside the correction block's verbatim quotation of the retracted wording**; *"what this role owes **when** it is fixed"* likewise at `:3720`; the only other occurrence is the §4 change row at `:3968`, also quoting. **Neither phrase is asserted anywhere in the document's own voice.** The section heading at `:3710` now reads *"FIXED in `a05476c`; a row is still owed"* | **MET** |
+   > | §3.10.12.6's bullet distinguishes *"no difftest row"* from *"measurably wrong"* | `:3889` now reads *"the COMPILED path is **unmeasured by any row of this suite**"*, with a dated inline **`★ CORRECTED`** note at `:3893` retracting the *"and is measurably wrong"* half by name and stating *"The coverage gap is narrower than this bullet claimed and it is not closed"* | **MET** |
+   >
+   > ★★ **A SECOND VERBATIM COPY was found and fixed in a file this
+   > filing's evidence package never listed** — `tools/difftest/README.md`
+   > **§25.13.7** (`:5367`, now headed *"FIXED in `a05476c`, and a row
+   > still owed"*, with the correction block at `:5369`–`:5378` and the
+   > pre-fix table preserved at `:5388`–`:5392`) and **§25.13.6**
+   > (`:5446`–`:5454`). *(Verified by this librarian — grepped and read;
+   > found by `icc-conformance`, not by me, and not carried by the
+   > package's file list.)* ★ **The owed item named one file and the
+   > defect was in two.** A correction scoped to the document that was
+   > *quoted* would have left the copy that was not.
+   >
+   > ★★★ **WHAT IS NOT DISCHARGED, and this must not read as closed:
+   > there is still NO DIFFTEST ROW for the compiled path.** That is
+   > **newly-owed item 4 below, which stays OPEN.** What changed is only
+   > the row's *purpose* — **disclosure → regression guard** — and
+   > `TOLERANCES.md` says so itself at `:3859`–`:3866` and at `:3847`
+   > (*"★★★ WHAT IS STILL OWED, and the fix does not discharge it"*).
+   > Every current number for that path comes from a `crates/` test,
+   > which carries no tolerance from `TOLERANCES.md`, is not
+   > separation-graded, and never reaches a `summary` line. **A fix that
+   > closes a defect does not close the coverage gap that failed to
+   > detect it** — the same error running the other way, and DL-062's
+   > third correction-bar clause.
+   >
+   > ★★ **NC-264 and NC-265 are UNAFFECTED, and that is the reason this
+   > ledger survived the race.** They were written as **two dated rows
+   > with the fixing commit named** — the current convergence and the
+   > pre-fix history — rather than as one row edited to track another
+   > document's state. They were correct before this correction landed
+   > and are correct after it, and **no row in this ledger changes at
+   > this discharge.** ★ The §7 prose *about* those rows (item 2 above)
+   > did go stale, which is the contrast DL-062 is built on.
+   >
+   > ★ **The fix's commit attribution stays `[REPORTED]`.** That
+   > `a05476c` is where the `k_preserve` change landed is
+   > `icc-conformance`'s `git show`; this librarian has no shell and a
+   > reflog line evidences a commit's existence, time and subject, never
+   > its contents. **What is verified here is the tree at the tip** —
+   > `crates/iccce-cmm/src/compiled.rs:218` / `:333` / `:354` carry the
+   > field outside the grid and the per-pixel branch in `convert` — and
+   > **the 28-second interval, which is measured** from `.git/logs/HEAD`
+   > (`1787035233 − 1787035205`), not reported.
+2. **★★★ Prove the leak guards by INJECTION.** NC-255 (E7/F8) were
+   verified to **pass**; neither has been shown to **fail**. **DL-051 is
+   the whole reason this is owed** — the best-documented constant in the
+   project survived five injections, and a passing test is not evidence
+   until one turns it red. Needs a `crates/` edit in a detached worktree.
+   **Owed to `icc-engineer` or `icc-conformance`.** *Done when: an
+   injected widening of the qualifying test turns E7 and F8 red while
+   their siblings stay green.*
+3. **★★★ Measure the perceptual cost of preservation, and retire
+   NA-012's `UNMEASURED`.** The **ΔE2000 between the preserved and the
+   colorimetric answer on a cross-press pair** is the number a caller
+   weighing the policy actually wants, and **nothing in this project has
+   it.** ★ Do not substitute NC-244's `1.360900e-1` — that is the
+   **same-profile** pair, where the policy is nearly a no-op. *Done when:
+   NA-012's cost field carries a measured ΔE2000 with its pair, its
+   direction and its intent.*
+4. **★★ A difftest row for the compiled path**, now that it converges.
+   The shape `TOLERANCES.md` §3.10.12.7 specifies is still owed; what
+   changed is that it would be a **regression guard**, not a disclosure.
+   ★★ Until it exists, **NC-264's `crates` test is the only detector for a
+   defect that is unreachable from the CLI and reachable from the
+   library** — see §6's new row. **Owed to `icc-conformance`.**
+
+   > ★★★ **STILL OPEN as of 2026-08-18 (later the same day).** Item 1
+   > above is discharged and **this item is the half of that debt which
+   > survives it.** `TOLERANCES.md` §3.10.12.7 was corrected, not
+   > closed, and says so at `:3847` and `:3859`–`:3866`; a reader who
+   > takes item 1's discharge as covering the compiled path has made
+   > **the DL-062 error in the opposite direction** — reading a
+   > corrected *document* as a closed *coverage gap*.
+5. **★ Grade something on the other eight CMYK destinations, or stop
+   quoting ten.** NC-262/NC-263 sweep ten profiles; **two** appear in a
+   graded row. *Done when: either a graded row covers more of them, or
+   every restatement of the sweep carries "eight of ten are graded by
+   nothing".*
+6. **★★ NC-266's `blind = 0` needs the same enumeration `ungraded` has
+   been owed since §7.14.** NC-251 **cannot discriminate** — its
+   separation equals its observation, ratio `1.0` — and the classifier
+   prints `UNGRADED` rather than `BLIND` **only because `BLIND` requires a
+   finite tolerance**. ★★★ **So `blind = 0` is true of the classifier and
+   false of the suite**, and this is the first row in the ledger for which
+   that gap is demonstrated rather than suspected. **Fifth-plus filing of
+   the enumeration debt**, now with a worked instance. **Owed to
+   `icc-conformance`.**
+7. **★ Two lint gates were NOT run and are NOT filed.**
+   `cargo fmt --all --check` and `clippy --workspace -D warnings`. **The
+   session handoff asserts all three gates; only `cargo test --workspace`
+   is filed** (NC-266). ★ Recorded so that a future filing does not
+   inherit the handoff's claim as though this ledger had checked it.
+
+#### What is explicitly NOT affected
+
+- **`O(h^1.32)` — Pass 6's measured convergence order (DL-025, NC-149) —
+  is UNTOUCHED.** Only the `O(1)` half of the pairing quoted in the
+  handoff is retired, and it was the **defect's** signature.
+- **§3.6's Pass 6 numbers are not falsified.** Pass 6 measured a chain
+  with **no preservation in it**; nothing there is wrong. What is now
+  known is that its premise — a smooth envelope with order in `[1, 3]` —
+  **is false for a preserving chain**, and NC-264 is the only measurement
+  of the combination.
+- **Every other Pass's rows, populations and coverage statements.** Pass K
+  adds a subject; it re-bases nothing.
+- **`ICC.1` register entries A51 and A52** and
+  `icc__ref__black_preservation.md` — the closed negative this section
+  rests on is **untouched and was not re-derived here**; it is carried
+  from §7.20 *(where it is recorded as verified exhaustively)*.
+- **DL-059 / DL-061 and `GHENT_COMPATIBILITY.md`.** The `passk.rs`
+  repairs in item 3 above **corroborate** DL-061; no ownership call moves,
+  and **no Pass K number depended on the false attribution** — the ΔE was
+  always measured correctly and only its justification was wrong.
+- **Sourcing permissions, and rule 9.** This filing fetched nothing and
+  authorises nothing. ★ The tree carries **unpushed commits**; that is a
+  state, and this document makes no claim about how many.
 
 ---
 

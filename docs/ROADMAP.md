@@ -4976,6 +4976,94 @@ refusal**.
 
 ---
 
+## ★★★ K-only black preservation + Pass K — RETROSPECTIVE. **A feature and a conformance Pass that both LANDED with no roadmap entry.** Filed 2026-08-18 by `icc-librarian`
+
+**Why this section exists, stated plainly and in the same terms as the
+Pass 8 retrospective above:** `--preserve-black k-only-equal-lightness`
+was **designed, built, graded and committed** (`a05476c`), and the
+44-row conformance Pass that grades it was **built before the feature
+existed and then repointed at it** (`846952f`, `a1bd818`) — and **this
+document said nothing about either.** As late as the 2026-08-17 boundary
+filing, `SESSION_LOG.md` recorded that *"`docs/` contains no mention of
+Pass K, of black preservation, or of the `TOLERANCES.md` §3.10.8 it
+cites"*. Two of those three are now closed. **This is the third instance
+of the same gap** (the built-in sRGB destination and the `/N` accessor
+were the first two), and the rule from that filing applies unchanged: **a
+completion record with no plan above it is better than a capability with
+no record**, and pretending it was planned would be worse than both.
+
+★★ **This is NOT a numbered Pass and is not being made one.** Pass K is
+`icc-conformance`'s suite designation (`tools/difftest/src/passk.rs`),
+the same family as Passes G, H and I. The *feature* is CMM work with no
+Pass number at all.
+
+### What landed
+
+| | |
+|---|---|
+| **The policy** | `crates/iccce-cmm/src/black_preserve.rs` — `KPreserve`, `KMapping`, `Side`. Opt-in, **five named refusals**, applied at `Chain::convert` and, since `a05476c`, **outside the grid** in `CompiledTransform::convert` |
+| **The CLI** | `iccce transform --preserve-black <policy>`, ★ **with NO default** — the two published definitions disagree by up to `4.889900e-2`, so a default would be iccce choosing one and reporting it under a name that means both |
+| **The qualifying test** | `C = M = Y = 0` **exactly**. A discontinuity, deliberately — which is why the compiled path had to carry the policy outside the interpolation |
+| **The grading** | Pass K, **44 rows**, §A–§F; **§F's 8 rows run in CI** on a committed synthetic fixture, the other 36 need the licensed corpus |
+| **The ledger** | `NUMERIC_CLAIMS.md` **§3.34** (`NC-243 … NC-266`), **NA-012**, five new §6 dependency rows, **§7.23** |
+| **The budget** | `TOLERANCES.md` §3.10 (`icc-conformance`'s file) |
+
+### Done-when, judged on these terms
+
+| Clause | Status |
+|---|---|
+| A K-only input produces a K-only output | **MET, at tolerance exactly `0`** — NC-250 (licensed corpus) and NC-261 (committed fixture, in CI). Pre-feature the same measure was `7.053200e-1` |
+| The policy does not touch inputs that do not qualify | **MET, at exactly `0`** over 192 + 50 probes — NC-255. ★ **But NOT proven by injection**, which is owed |
+| K is genuinely re-mapped, not copied through | **MET** — NC-263 (`0.366689` at `K_in = 0.5` on the furthest cross-press pair) and, in graded form, **NC-257** |
+| The construction is the identity where algebra says it must be | **MET, and it is the Pass's headline** — NC-256; ★★★ **the oracle is `6.100000e-5` away from an answer that is not in dispute** |
+| It composes with the compiled path | **MET as of `a05476c`, and it did NOT at first** — NC-264 (converges) and NC-265 (the pre-fix defect). See the warning below |
+| Named as a rule-4 departure from colorimetry | **MET** — **NA-012**, registered on the day, with its cost stated as **UNMEASURED** |
+| A published expectation anywhere in the Pass | ★★★ **NOT MET AND NOT MEETABLE.** ICC.1 specifies no black-preservation construct (`ICC_Spec` **A51**, a closed negative). **Zero `published-ground-truth` rows, and none can exist for this subject** |
+
+### ★★★ Two things about this work that must not be lost
+
+**1. The compiled path nearly shipped wrong, and the fix is structural.**
+An interpolator **cannot represent a step**. Sampling the *preserving*
+conversion onto a uniform grid put **`0.617` of wrong ink** within one
+cell of the K axis, and **refining the grid did not move it**. The remedy
+was not a tolerance: `CompiledTransform` now carries the policy
+**outside** the grid and branches per pixel. ★★ **The test asserts
+CONVERGENCE, not a bound** — *a wrong constant passes a threshold test;
+nothing passes a convergence test by luck* — and its **control assertion
+is a precondition**, without which the real assertion would pass
+vacuously. ★★★ **Still no difftest row for the combination**: the only
+detector is a `crates` test, and `iccce bench` cannot reach it, so **a
+regression here is invisible to the conformance suite and reachable only
+from the library** — which is exactly where a per-pixel consumer lives.
+
+**2. A zero-separation fixture MANUFACTURES a false pass.** Measured by
+injection: rebuilding the committed fixture like its sibling turned the
+**headline row green at `0.000000`**. The remedy is **NC-259** — grade
+the separation *as its own row*, against a floor **declared in advance
+and derived from the tolerance budget, not from the fixture**. A
+classifier verdict prints in a column beside a green row, and nobody
+reads columns.
+
+### What this does NOT close
+
+- **The perceptual cost of the policy is UNMEASURED.** Nobody has
+  measured the **ΔE2000** between the preserved and the colorimetric
+  answer on a cross-press pair — **the number a caller weighing the
+  policy actually wants.** NA-012 carries it as owed.
+- **`KMapping::Ratio` (Cholewo) remains a refusal**, unimplemented and an
+  operator scope call. ★ Its six weights are three-unspecified, so **two
+  faithful implementations of the paper would not agree with each
+  other**.
+- **No `--bpc` + preservation coverage** at any layer.
+- **Eight of the ten CMYK destinations swept are graded by nothing.**
+- ★ **Pass 8's remaining gap 2 is PARTLY discharged as a side effect**:
+  `ISO Coated v2 300% (ECI)` — named there as unexercised, and the
+  `DestOutputProfile` of every ICC-CMS Ghent patch — is now the **source
+  profile of §A–§E**. ★★ **That is exercise, not coverage of the other
+  three**, and the gap's entry is not deleted.
+
+---
+
 ## Passes added 2026-08-11 by operator decision
 
 Passes 9 and 10 were added after Ken answered the open scope questions
