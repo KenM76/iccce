@@ -87,8 +87,14 @@ it must never be de-prioritised by reasoning.
 
 **The consequences that are still live:** `ICC_Spec` still carries *"NO
 document states them"* at three places (owed to `icc-spec-librarian`);
-**a second reading of §B.2 is owed** (one agent, one transcription, and
-the librarian could not open the PDF — `pdftoppm` absent); the document
+**a second reading of §B.2 is owed** (one agent, one transcription —
+~~and the librarian could not open the PDF (`pdftoppm` absent)~~ ★
+**CORRECTED 2026-08-18: that reason was FALSE. `pdftoppm` is absent but
+`pypdfium2` renders and Read handles the PNG, so the second reading is
+UNBLOCKED and merely undone — and it must be a RASTER, not a fourth text
+extraction, because a 15-dp table in a Symbol-font document is exactly
+where text engines fail TOGETHER.** See
+[[iccce-inferred-environment-constraint-is-a-reading]]); the document
 contains **two transcription defects in §B.1**; and **the ground-truth
 row for chromatic adaptation moves from BLOCKED to
 AVAILABLE-AND-UNMEASURED**, because ICC's recommended `chad` is in the

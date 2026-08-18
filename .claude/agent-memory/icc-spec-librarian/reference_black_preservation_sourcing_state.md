@@ -1,6 +1,6 @@
 ---
 name: black-preservation-sourcing-state
-description: Black/K-only preservation is NOT in ICC.1 (both held editions, exhaustively searched) — the gray→CMYK rule is normative in ISO 32000 §10.3.3/§10.4.2.3 and belongs to pdfce; lcms2's intents 10–15 are self-labelled non-ICC; no published ΔE exists; and "GWG 23.0" could not be verified as a requirement
+description: Cholewo’s K_MIN/K_MAX ARE defined (per-colour, in Cholewo’s own words) and that is exactly what makes his method un-implementable as a policy — plus: black/K-only preservation is NOT in ICC.1 (both held editions, exhaustively searched) — the gray→CMYK rule is normative in ISO 32000 §10.3.3/§10.4.2.3 and belongs to pdfce; lcms2's intents 10–15 are self-labelled non-ICC; no published ΔE exists; and "GWG 23.0" could not be verified as a requirement
 metadata:
   type: reference
 ---
@@ -73,6 +73,57 @@ Site postures for `gwg.org`, `library.imaging.org`, `spiedigitallibrary.org`
 are now in [[icc-tos-automated-access-blocker]]. **Use
 `api.crossref.org/works/<doi>` for exact citations** — SPIE's own pages
 return empty content to WebFetch.
+
+
+---
+
+## ★★ 2026-08-18 follow-up — Cholewo’s `K_MIN`/`K_MAX`, ANSWERED. Register row **A53**.
+
+**The paper is NOW HELD:
+`_sources/literature/cholewo_2000_cic8_preserving_black_separation.pdf`**
+(with Sharma & Starr beside it). Do not re-fetch. Eq. (1) is **VERIFIED**,
+no longer a reconstruction — 3 text extractions **plus a visual read of the
+page rasterised with `pypdfium2`** (`pdftoppm` is NOT installed here;
+`pypdfium2` IS, and **the Read tool renders its PNG output fine** — that is
+the working route for typeset maths, and it is how the `≤` glyphs, which
+every text engine drops, were recovered).
+
+**The limits are DEFINED, per-colour, by Cholewo himself — VERBATIM §2.4:**
+*“For each color the maximum (K_MAX) and minimum (K_MIN) amounts of black
+with which it can be reproduced are determined … **In our method** K_MAX and
+K_MIN are found by inverting the device model by constraining the solution
+to have at least one of the CMY components equal to zero, and by penalizing
+K > 0, respectively.”* **So “Hung 1994” is the CONCEPT credit only — the
+construction is Cholewo’s and Hung is NOT needed to implement.** *(Shape of
+the near-miss: my own earlier file said “attributed to Hung 1994”, which
+reads as a deferral. **A credit is not a deferral** — check whether the
+citing paper then says “in our method”.)*
+
+**★★★ The finding that matters, and it inverts a test’s name: when source
+≡ destination printing condition the four limits coincide and Eq. (1)
+reduces EXACTLY to `K_d = K_i`, for every colour.** So on a same-press
+fixture **“copy K through” IS Cholewo’s answer, to the bit** — it is not
+the plausible-but-wrong candidate iccce’s suite names it. A wrong Cholewo
+and a right one are indistinguishable there **by construction**. Cross-press
+on the pure-K axis it does not copy through: `K_i = K_iMAX` ⇒ `K_d = K_MAX`
+(destination), which reproduces the paper’s own VERBATIM headline claim —
+the algebra and the prose agree, and that agreement is the cross-check.
+
+**Why it still cannot ship as a “policy” beside lcms2’s:** lcms2’s K rule is
+a **1-D tone curve**; Cholewo’s `K_d` is a **per-colour setpoint inside a
+solver** — **five constrained optimisations per colour** over a **fitted
+continuous MLAB forward printer model for BOTH devices** (not recoverable
+from an ICC LUT), **six weights the paper leaves unspecified** (“can vary
+depending on the desired color LCh_d”), a **soft** target the optimiser may
+miss, and an **unguarded division by zero** when `K_iMAX = K_iMIN`. **Named
+refusal is the supported outcome.** Three prerequisites are SPIE-paywalled
+and NOT held: `10.1117/12.186294` (Hung 1994), `10.1117/1.482716` (Hung
+1999, MLAB), `10.1117/12.373415` (Cholewo EI2000, the inversion).
+
+**Corpus defect found in passing, flagged not fixed:** the ambiguity
+register’s `revised:` line claims **56 rows**; a code recount finds **58
+before A53 / 59 after**. Pre-existing; the kind-bucket counts may share the
+drift. See [[corpus-defects-are-caught-from-outside]].
 
 Related: [[icc-spec-corpus-sourcing-route]], [[lcms2-measured-behaviour-file]],
 [[icc-bpc-sourcing-state]] (different "black" — do not merge them),

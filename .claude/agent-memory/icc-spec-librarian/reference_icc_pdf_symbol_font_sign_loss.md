@@ -1,6 +1,6 @@
 ---
 name: icc-pdf-symbol-font-sign-loss
-description: ICC.1-2022-05.pdf sets +/-/x/<=/>= in the Symbol font, so every text extractor silently drops minus signs — map the U+F0xx private-use range (exhaustive map inside, corrected 4th pass) before reading any number out of it; also which engine to use per structure
+description: ★ visual PDF page rendering IS available via pypdfium2+Read (the old "cannot render" line is RETRACTED) — ICC.1-2022-05.pdf sets +/-/x/<=/>= in the Symbol font, so every text extractor silently drops minus signs — map the U+F0xx private-use range (exhaustive map inside, corrected 4th pass) before reading any number out of it; also which engine to use per structure
 metadata:
   type: reference
 ---
@@ -55,7 +55,15 @@ is why the corpus quotes `(D.6)`/`(D.7)` verbatim and reconstructs
 
 **Working recipe, for re-extraction:** `pypdf` for a whole-document grep corpus (fast, page-tagged); **poppler `pdftotext -layout`** for tables and single-line equations (best column reconstruction, but it scrambles equation cells **and matrices**); **`pdfminer.six`** for equations, matrices and anything glyph-critical — it is the only one that preserved `parametricCurveType` Table 68 in recoverable order. `pdftotext` lives at `/mingw64/bin/pdftotext` in the Git-Bash environment.
 
-**Tool limitation worth not re-discovering:** the **Read tool cannot render PDF pages** here — it needs `pdftoppm`/poppler-utils, which is not installed for it, and fails with "pdftoppm is not installed". So visual page reading is unavailable and **cross-verification must be two *text* engines, not text-plus-vision.** Say so in the file when a passage is load-bearing.
+**★★ RETRACTED 2026-08-18 — VISUAL PAGE READING IS AVAILABLE, and it is the best tool for typeset maths.** ~~"the Read tool cannot render PDF pages here … cross-verification must be two *text* engines, not text-plus-vision."~~ **The true statement is narrower: the Read tool cannot open a `.pdf` directly (it shells out to `pdftoppm`, which is NOT on PATH here). But `pypdfium2` IS installed, and the Read tool renders a PNG perfectly.** Recipe:
+
+```python
+import pypdfium2 as p
+b = p.PdfDocument("x.pdf")[page_index].render(scale=3.2).to_pil()   # 0-based!
+w,h = b.size; b.crop((x0,y0,x1,y1)).save("crop.png")                # then Read the PNG
+```
+
+**Why this matters more than a convenience:** a rasterised crop is a genuinely *independent* channel — it does not share the font/ToUnicode assumptions that make all three text engines fail the SAME way on Symbol glyphs. It is how Cholewo 2000’s Eq. (1) was promoted from RECONSTRUCTION to VERIFIED, and how its `≤` glyphs (dropped by `pypdf`, `pdftotext -layout` AND `pdftotext -raw` alike) were recovered. **For any load-bearing equation, matrix or inequality: two text engines PLUS a render. Two text engines alone is now the weaker protocol, not the ceiling.** *(Lesson shape: a tool limit was recorded from one failing invocation and generalised into a capability claim — see [[corpus-defects-are-caught-from-outside]] and [[gap-vs-nonexistence-claim]].)*
 
 **This hazard is also recorded in the corpus itself** (`LEGAL_NOTE.md` §1b, `LEGAL.md` §2.4, and inline warnings in `icc__ref__v2_v4_divergence.md` D1, `icc__s__number_encodings.md`, `cie__ref__chromatic_adaptation.md`) because a future session may extract from the PDF without reading memory first.
 

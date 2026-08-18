@@ -1,6 +1,6 @@
 ---
 name: iccce-patch-named-for-what-it-looks-at
-description: DL-059 — a test patch is named for what it LOOKS at, not for the layer that PRODUCES it; GWG 23.0 "Four different Grays" was filed as ours and is pdfce's, and the over-claiming direction of a boundary error is caught by NOTHING
+description: DL-059 (CORROBORATED 2026-08-18 by the artwork itself — the panels are 25%/0/0/0/75, i.e. ISO 32000's formula evaluated) — a test patch is named for what it LOOKS at, not for the layer that PRODUCES it; GWG 23.0 "Four different Grays" was filed as ours and is pdfce's, and the over-claiming direction of a boundary error is caught by NOTHING
 metadata:
   type: project
 ---
@@ -95,7 +95,31 @@ a colour in its name; that is what made this one invisible. Treat a
 weaker class than specification authority, exactly as ground truth,
 cross-check and self-comparison are three classes.
 
-Related: [[iccce-compatibility-not-certification]] (DL-045/046/047, the
+**★★★ CORROBORATED 2026-08-18 FROM A THIRD DIRECTION — the artwork.**
+The readme's four panels, read off a raster: **`DeviceGray` 25 %**,
+**`DeviceCMYK` 0/0/0/75**, **`Separation` 75**, **`DeviceN` 75**.
+**`1 − 0.25 = 0.75` is ISO 32000's `k = 1.0 − gray` EVALUATED** — GWG
+**authored the patch on the device-space rule**, so the equivalence it
+tests is the PDF formula's own output and a CMM cannot be what produces
+it. ★ **The order is what makes it worth having: the clause argument came
+first and the artefact agreed afterwards.** Limit: **the README declares
+this; the patch's content stream has never been read.**
+
+**★★ It also made §3.1's row wrong TWICE** — it said *"DeviceGray 50 %
+and DeviceCMYK 0/0/0/50"*. **Still not edited**; the supersession block
+was extended instead. ★ **The wrong pair is the interesting half**, and a
+checkable origin sits one table later: **§3.3 attributes "50 % K, 50 %
+Gray, 50 % spot black" to GWG 3.0**, the patch that document itself flags
+as the deceptive lookalike.
+
+**★★ The `passk.rs` clause defect is DISCHARGED** (nine `§10.3.3` cites,
+zero `8.6.4.4`; Pass K landed as `846952f`) — **and the discharge found
+two NEW defects, both in PROSE**: `g = 0.5` called *"GWG's own patch
+value"* **and printed into the report**, and an **`ICCBased`** panel the
+readme does not list. See [[iccce-source-labelled-number]] (**DL-061**).
+
+Related: [[iccce-source-labelled-number]] (DL-061),
+[[iccce-compatibility-not-certification]] (DL-045/046/047, the
 Ghent posture), [[iccce-wrong-clause-refusal-and-discarded-halves]]
 (DL-057), [[iccce-stale-citation-worse-than-stale-number]] (DL-048),
 [[iccce-gate-must-not-reward-deletion]] (DL-055, a change with no number

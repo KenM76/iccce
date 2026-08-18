@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to the 2026-08-17 Ghent-boundary-reclassification filing (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; next free NC-243/NA-012, DL-059 newest, 25 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-18 first-use-of-the-raster filing (tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -425,8 +425,11 @@ stated D50 by **`4.9×10⁻⁵`**.
 ruled by this librarian at the engineer's explicit request, with **four
 conditions that are part of the claim**: (a) it grades **nine numbers,
 not a transform**; (b) **one transcription, one reader — a second reading
-is OWED**, and the librarian **could not open the PDF** (`pdftoppm`
-absent), and the document has **two transcription defects in §B.1**; (c)
+is OWED** ~~and the librarian could not open the PDF (`pdftoppm`
+absent)~~ ★ **that REASON was retracted 2026-08-18 — `pypdfium2` renders
+and Read reads the PNG, so (b) is UNBLOCKED-BUT-UNDONE, not barred;
+see [[iccce-inferred-environment-constraint-is-a-reading]]**, and the
+document has **two transcription defects in §B.1**; (c)
 it does **not** discharge Annex D.6.3 or touch DL-041; (d) *published* is
 **provenance, not physical exactness**. ★★ **"NC-001 is the only such
 row" — carried by eleven filings — RETIRES.** ★ `published-ground-truth`
@@ -581,7 +584,48 @@ phrase sweep). **DL-059 filed; 59 decision-log entries. `SESSION_LOG.md`
 has 25 entries.** ★ **§3.1 was NOT rewritten** — dated supersession, same
 as §4.3's and §4.5's withdrawals.
 
-Related: [[iccce-patch-named-for-what-it-looks-at]],
+**★★★ UPDATED 2026-08-18, THE FIRST-USE-OF-THE-RASTER FILING
+(twenty-SEVENTH `SESSION_LOG` entry — 27 `^## 202` headings *counted*).
+NO ROW ADDED — next free still NC-243 / NA-012** *(verified: highest are
+NC-242 and NA-011)*. See [[iccce-source-labelled-number]] (**DL-061**).
+
+**★★ Tip moved: `1a0509b`** *(read `.git/refs/heads/master`)*, and the
+two blocks above are overtaken — **Pass K LANDED as `846952f`**, the
+DL-059 docs filing as `7950dca` *(reflog read)*. **`passk.rs`'s
+§8.6.4.4 defect is DISCHARGED** (nine `§10.3.3` cites, zero `8.6.4.4`,
+working tree).
+
+**★★★ DL-060's capability is VERIFIED, one day after being filed
+`[REPORTED]`** — `which` for `pdftoppm`'s absence, a **1225×1619** PNG
+from `PdfDocument(…)[0].render(scale=2).to_pil()`, Read displayed it.
+§7.21's owed item 3 discharged after **one** filing. ★ **Scale and index
+are still NOT measured** (recipe says 3.2, the run used 2).
+
+**★★★ The first use found §3.1's row wrong a SECOND way: 25 % ·
+0/0/0/75 · 75 · 75, not 50/50.** `1 − 0.25 = 0.75` is **ISO 32000's
+formula evaluated** ⇒ the artwork is DL-059's **third** evidence
+direction, arriving *after* the decision. **The readme declares; the
+patch PDF has never been opened** — owed.
+
+**★★★ Two false statements found in `passk.rs` PROSE, neither carried by
+the dispatch:** `:1342`/`:2446` call `g = 0.5` *"GWG's own patch value"*
+**and print it into the report**; `:291` lists an **`ICCBased`** panel
+the readme does not have. **The ΔE is right; only the justification is
+false** ⇒ nothing recomputes, no test can fail, DL-051's shape.
+
+**★★ A SECOND text-extraction failure mode:** both new facts are set in
+a **figure**, so engine agreement is **vacuous, not merely correlated**
+— shared silence reads as *absence of the fact*. §7.21's sweep widens to
+*"glyph-sensitive OR possibly in a figure"*. `GHENT_COMPATIBILITY.md`
+§9 gained a fourth class **`[QUOTED-FROM-RASTER]`**.
+
+**Ledger: NO row. New §7.22** (three owed: the two `passk.rs` prose
+defects, the patch content-stream read, the widened sweep).
+**DL-061 filed; 61 decision-log entries.**
+
+Related: [[iccce-source-labelled-number]],
+[[iccce-inferred-environment-constraint-is-a-reading]],
+[[iccce-patch-named-for-what-it-looks-at]],
 [[iccce-artifact-existence-is-not-obligation-status]],
 [[iccce-absence-of-publication-is-not-evidence]],
 [[iccce-wrong-clause-refusal-and-discarded-halves]],

@@ -6,13 +6,15 @@
 - [The absence of a publication is not evidence](project_absence_of_publication_is_not_evidence.md) — DL-054: an ACCESS bar recorded as an EXISTENCE fact; the 12-ULP residual was the FILE's, and the wrong OWNER survived because the NUMBER was right.
 - [A wrong clause is worse than no clause](project_wrong_clause_refusal_and_discarded_halves.md) — DL-057: a discarded half's error is what the CALLER sees, and a correct citation on the wrong subject invites acceptance.
 - [An artifact's existence is not the obligation's status](project_artifact_existence_is_not_obligation_status.md) — DL-058: a GENERATED file goes quietly wrong while staying well-formed; and a crates.io check expires, reserves nothing, authorises nothing.
-- [A patch is named for what it LOOKS at](project_patch_named_for_what_it_looks_at.md) — DL-059: GWG 23.0 was ours and is pdfce's; the OVER-claiming direction of a boundary error is caught by nothing.
+- [A patch is named for what it LOOKS at](project_patch_named_for_what_it_looks_at.md) — DL-059: GWG 23.0 was ours and is pdfce's; corroborated 2026-08-18 by the artwork's own numbers.
+- [An inferred environment constraint is a READING](project_inferred_environment_constraint_is_a_reading.md) — DL-060, now VERIFIED: pypdfium2 renders; and engines' silence about a FIGURE reads as absence of the fact.
+- [A number labelled with its source](project_source_labelled_number.md) — DL-061: "GWG's own patch value" printed into a report for a value the patch lacks; the label is the untested half.
 
 - [Documented is not tested](project_documented_is_not_tested.md) — DL-051: five injections, the BEST-documented constant caught by NONE; the doc comment's length is what hid it. Injection, never inspection.
 - [A count from a sample is not the population](project_count_from_a_sample_is_not_the_population.md) — DL-053: "two iccMAX" was TEN; [VERIFIED] certifies the measurement happened, never what it ranged over.
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-17 tail-debt-#7 filing: crates.io names free but 5 of 6 and expiring; next free NC-243/NA-012, DL-058 newest, 24 log entries.
+- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-18 first-use-of-the-raster filing: tip `1a0509b`, Pass K landed; next free NC-243/NA-012, DL-061 newest, 27 log entries.
 - [Compatibility is not certification](project_compatibility_not_certification.md) — DL-045/046/047: a third-party corpus gives a CATEGORICAL expectation but never a number; promote a [REPORTED] claim only by re-running with a control.
 - [Ground truth: a test is not a row](project_ground_truth_cannot_exist.md) — DL-041: the LUT path's ground truth CANNOT exist; Annex D.6.3 now has a TEST but still no ledger row — NC-001 remains the only one.
 - [A negative finding removes its own auditor](project_negative_finding_removes_its_auditor.md) — DL-042: a wrong REJECTION survives forever; re-audit the REASON an item is owed, not just the item.
