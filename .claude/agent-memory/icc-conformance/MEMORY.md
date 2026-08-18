@@ -1,5 +1,9 @@
 # icc-conformance — memory index
 
+- [Pass K — black preservation, measured before the feature](project_passk_black_preservation_baseline.md) — ΔE is BLIND to it (0.705 ink at 0.136 ΔE00); the saturation shortcut works on 2 of 6 vendors; a rival CORPUS is not a rival candidate.
+- [Pass K §F — the fixture that SEPARATES](project_passk_f_separating_fixture.md) — a ZERO-SEPARATION fixture doesn't just fail to inform, it turns the red row GREEN; a symmetric misreading cancels, so it can't be a rival.
+- [ICC.1 is SILENT on black preservation](project_passk_icc1_is_silent_on_black.md) — closed negative (A51); ICC's only black tag disclaims itself; the gray→CMYK rule is ISO 32000-1 §10.3.3 and is pdfce's; "GWG 23.0" is not a GWG id.
+
 - [Pass I — ICC's published chad](project_passi_published_chad_findings.md) — the commissioned bound would have failed at 7.4x; a one-sided ground-truth row is not a gate; clippy's fix can BE the defect.
 
 - [Conformance can WORSEN the cross-check](project_conformance_can_worsen_the_crosscheck.md) — fixing our 4.2.5.4 defect moved us 58.8x further from lcms2; the defect's own size was 57.8x the gap it was blamed for.

@@ -26,4 +26,17 @@ previous session left running for you. Track **mtime and size**, not
 just filenames: a request that gets *edited* in place is as much new work
 as one that gets created.
 
+★ **The monitor echoes your OWN writes, and the echo is
+indistinguishable from inbound work.** Confirmed 2026-08-17: writing
+`open/note_ask_priority.md` fired a `CHANNEL:` event within the same
+turn. This matters because **requests flow both ways**, so an event is
+*not* evidence that pdfce sent something — filenames do not carry
+direction, and both sides use `note_*` and `request_*`. Before acting on
+an event, read the file's `**from:**` header line, which every file in
+that folder carries. Cheapest fix if the noise ever matters: filter the
+poll on `grep -L '^\*\*from:\*\* iccce'`. Left unfiltered so far
+because a self-echo fires once per file and is obvious in the moment —
+it is a *future* session, reading the event without the context of having
+written the file, that would misread it.
+
 Related: [[project-ghent-compatibility]].

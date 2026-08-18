@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to 2026-08-17 supplementary filing (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document arrived and INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; next free NC-243, NA-011 registered, DL-057 newest, 23 session-log entries; nothing committed or pushed; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-17 Ghent-boundary-reclassification filing (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; next free NC-243/NA-012, DL-059 newest, 25 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -485,7 +485,105 @@ none of §3.33 **except NC-230**, the one row that needs no corpus and
 falsified *"NO document states them"* at three places** — owed to
 `icc-spec-librarian`, who was the concurrent agent this filing.
 
-Related: [[iccce-absence-of-publication-is-not-evidence]],
+**★ UPDATED 2026-08-17, THE TAIL-DEBT #7 FILING (twenty-FOURTH
+`SESSION_LOG` entry, twenty-FIFTH librarian filing). Smallest filing in
+the log by substance: one tail-debt row, no Pass, no code, NO LEDGER
+ROW.** See [[iccce-artifact-existence-is-not-obligation-status]]
+(**DL-058**).
+
+**Tail debt #7 SPLIT, and only one half moved.** `icc-engineer` queried
+crates.io: **`iccce`, `iccce-color`, `iccce-profile`, `iccce-cmm`,
+`iccce-cli` all returned *"does not exist"* on 2026-08-17**
+(`[REPORTED]` — the librarian has no shell). ★★★ **crates.io has NO
+reservation mechanism**, so it is a **dated observation with an expiry**,
+**not a reservation**, and **it authorises nothing** (rule 9 and DL-009
+untouched). ★★ **It covered FIVE of SIX candidate names** — the query
+used **DL-009's list of 2026-08-11**, written before `iccce-measure`
+existed, so **the fifth crate was never queried** (DL-053 again).
+
+**★★★ The OTHER half is where reading paid.** `THIRD_PARTY_LICENSES.md`
+now exists at the repo root and **is** genuine cargo-about output (its
+prose is byte-identical to `about.hbs`) — **but it names FOUR crates at
+`0.0.1` against a FIVE-crate, `0.1.0` workspace**, and **`about.toml`
+has no `[iccce-measure.clarify]` block**, so by its own written rationale
+**regenerating today emits the generic SPDX MIT placeholder** for the
+fifth crate — which that comment calls *"worse than publishing nothing."*
+**Verdict: CARRIED WITH A CAVEAT — neither "still owed" nor
+"discharged."** ★ **The dispatch explicitly said not to discharge it on
+the filename, and that instruction paid for itself.**
+
+**Ledger: UNCHANGED — next free still NC-243, NA-012; no row added and no
+§7.20 opened** (deliberate, reasoned in DL-058: §7 has never carried a
+crates.io item and opening a status pass would inflate an integer §7
+itself tracks). **DL-058 filed; 58 decision-log entries.
+`SESSION_LOG.md` has 24 entries.**
+
+**★★★ UPDATED 2026-08-17, THE GHENT BOUNDARY RECLASSIFICATION FILING
+(twenty-FIFTH `SESSION_LOG` entry, twenty-SIXTH librarian filing). NO
+ROW ADDED, CHANGED OR INVALIDATED — next free still NC-243 / NA-012.**
+See [[iccce-patch-named-for-what-it-looks-at]] (**DL-059**).
+
+**★★★ GWG 23.0 "Four different Grays" LEAVES Tier A — it is `pdfce`'s.**
+`GHENT_COMPATIBILITY.md` §3.1 called it *"K-only preservation … CMM
+policy, engine plumbing."* **It is device-space channel routing, the same
+boundary class as overprint.** All four gray definitions resolve to the
+same single-channel device answer **inside PDF**: **ISO 32000-1 §10.3.3 =
+ISO 32000-2 §10.4.2.3** (`c=m=y=0`, `k=1.0−gray`, a **`shall`**),
+**§10.3.2** (which routes gray→CMYK to that rule **inside the ICC-enabled
+branch** — the load-bearing clause, still `[REPORTED]`),
+**§8.6.6.4/§8.6.6.5**, **§10.3.1**. ★ **The patch readme names
+`DeviceCMYK` as its reference and says the file was made "without
+performing color conversion"** — it is a **non-conversion test**, exactly
+like GWG 8.2, which §3.3 had classified correctly one table earlier.
+
+**★★ Counts corrected: 51 patches (27/8/16), not "~48"; 35 for the first
+two categories, not 32; "SIX genuinely ours" → FIVE.** The *"sixteen
+touch colour conversion"* figure **was right**. ★ The same enumeration
+returns **98 PDFs**, agreeing exactly with §4.1's extractor-derived 98 —
+two instruments, one number.
+
+**★★★ Pass K EXISTS IN THE WORKING TREE AND IN NO COMMIT.**
+`tools/difftest/src/passk.rs` (+ `passk_probe.rs`) is fully wired into
+`main.rs`/`lib.rs`, and **`docs/` contains not one word about it** — no
+ROADMAP entry, no ledger row, and **the `TOLERANCES.md` §3.10.8 it cites
+does not exist** (§3 runs 3.1 … 3.9.8). Branch tip is **`506fcd3`**
+*(read `.git/refs/heads/master` + `.git/logs/HEAD`)*. **Nothing from it
+was quoted or filed.** ★ It **got the boundary right on its own** — it
+refuses to assume, measures both legs — but **cites §8.6.4.4, which is
+*DeviceCMYK Colour Space***, not the rule (DL-057 again; the PDF corpus
+already carries a standing correction of the identical substitution at
+`color__iccbased.md:15`, so **§8.6.4.4 is an attractor**).
+
+**★★ There is NO GWG requirement "23.0".** GWG 2022 is current (**no
+2023**); requirements are `Dxxx`/`Rxxx`; `n.m` is **Output Suite *patch***
+numbering. Nearest construct **`D0013 "Black Colour"` is a definition
+consumed by the overprint requirements R0009–R0015** — **GWG files this
+under overprint too.** ⇒ the equivalence claim's authority is **patch
+documentation, not the GWG specification**.
+
+**★★ The dispatch's premise FAILED: *"GWG 23.0 demands…"* appears NOWHERE
+in the repository** *(grepped the whole tree)*. What exists is §3.1's
+**column heading** *"the capability it demands of a CMM"*. **No filing
+was made against it** — DL-048 from the other end (a *correction* aimed
+at text that was never written).
+
+**★★★ NOT changed, and the misreading to refuse: CMYK→CMYK black
+preservation remains GENUINELY OURS**, unimplemented, being built.
+**ICC.1 contains no black-preservation construct in either edition
+checked** (`ICC_Spec` **A51**/**A52**) — the PCS is three components, so
+every device→device transform is 4→3→4 and **K has no carrier**.
+
+**Ledger: NO row. New `NUMERIC_CLAIMS.md` §7.20** (six owed items —
+the `passk.rs` clause, its dangling §3.10.8, re-deriving §10.3.2, the
+*"name the clause and the layer"* sweep over the other five Tier-A rows,
+registering the GWG-2022 finding in `ICC_Spec`, and the closed-by-record
+phrase sweep). **DL-059 filed; 59 decision-log entries. `SESSION_LOG.md`
+has 25 entries.** ★ **§3.1 was NOT rewritten** — dated supersession, same
+as §4.3's and §4.5's withdrawals.
+
+Related: [[iccce-patch-named-for-what-it-looks-at]],
+[[iccce-artifact-existence-is-not-obligation-status]],
+[[iccce-absence-of-publication-is-not-evidence]],
 [[iccce-wrong-clause-refusal-and-discarded-halves]],
 [[iccce-count-from-a-sample-is-not-the-population]],
 [[iccce-ground-truth-cannot-exist]],

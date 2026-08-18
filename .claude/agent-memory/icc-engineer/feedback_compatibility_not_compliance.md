@@ -34,4 +34,20 @@ is still weaker than a cross-check, which is still weaker than ground
 truth. Compatibility changes *what* gets claimed, not *how well* it has
 to be supported.
 
+★ **One sharpening, 2026-08-17.** *"Compatible with"* is the right
+strength of claim, but for a **named** programme the strength of the
+claim is not the only constraint — **using the name is a separate
+question from earning the claim.** Ken proposed *"compatible with the
+Ghent suite"* and, weaker, *"tested with the Ghent suite"*; both are
+honest about evidence and **neither escapes the problem**, because
+`docs/GHENT_COMPATIBILITY.md` §2.2 anticipated the first phrase verbatim
+and holds that any public statement naming Ghent needs GWG's written
+permission first. Weakening the verb moves along the evidence axis; the
+binding axis is the mark. **So when the standard is a trademarked
+programme rather than a published document, check the name before
+drafting the sentence** — and prefer describing the corpus and the
+measurement (*"20 real-world print-industry ICC profiles, v2 and v4"*)
+over naming the suite, which is both permission-free and a stronger
+statement than *"tested with"*.
+
 Related: [[project-ghent-compatibility]].
