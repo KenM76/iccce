@@ -1,6 +1,6 @@
 ---
 name: project-passk-grading-the-landed-feature
-description: Grading black preservation after it landed — the repointing instruction named the predicate rows and MISSED the guard, which could not see the defect its own text claimed it was the only place to see; E2 is measurably unable to discriminate on a same-press pair; and the COMPILED path spreads the preservation over a whole cell at O(1) error.
+description: Grading black preservation after it landed — the repointing instruction named the predicate rows and MISSED the guard, which could not see the defect its own text claimed it was the only place to see; E2 is measurably unable to discriminate on a same-press pair; and the compiled-path defect I filed as OPEN was already fixed in a05476c (docs corrected 2026-08-18; the difftest row is still owed).
 metadata:
   type: project
 ---
@@ -35,9 +35,21 @@ was widened** — `E1` and `F5` are still exactly `0`.
   which is exactly what Pass 6's `R6` band exists to detect. Direction is
   **over-application**: it preserves pixels that do not qualify. Unreachable
   from the CLI (`iccce bench` takes no `--preserve-black`); **reachable from
-  the library**, which is where a per-pixel consumer lives. Filed §3.10.12.7,
-  **not fixed** — two defensible remedies and choosing is not a conformance
-  call.
+  the library**, which is where a per-pixel consumer lives. Filed §3.10.12.7.
+  ★★★ **CORRECTED 2026-08-18 (re-measured): IT WAS FIXED, in `a05476c`, the
+  commit BEFORE the grading commit that filed it as open.** The engineer took
+  the second remedy — `CompiledTransform` carries `k_preserve:
+  Option<KPreserve>` **outside** the grid and branches per pixel. Re-measured
+  today by `crates/iccce-cmm/tests/compiled_black_preservation_convergence.rs`:
+  near-axis **`6.234231e-7` → `3.330669e-16`** (grid 17 → 33), control
+  `3.710322e-4` → `6.289234e-8`; identical in debug and release. **`0.617121`
+  is now HISTORY — the pre-fix value, live only in doc comments.**
+  ★★ **`TOLERANCES.md` §3.10.12.7 / §3.10.12.6 and `difftest/README.md`
+  §25.13.7 / §25.13.6 asserted the live defect at tip `60c32dd`; all four were
+  CORRECTED on 2026-08-18** — see [[project-a-fixed-defect-goes-stale-in-someone-elses-doc]]
+  for the mechanism and the correction's bar. **Still owed and NOT discharged
+  by the fix: there is no difftest row for the compiled path.** What changed is
+  only that such a row would now be a *regression guard*, not a *disclosure*.
 - ★★★ **A SEPARATION RATIO OF EXACTLY `1.0` IS THE MEASURED FORM OF "THIS ROW
   CANNOT GRADE".** `E2` on a same-press pair: observation `6.1e-5`, rival
   ("copy K through") `6.1e-5`. That is a **stronger** reason to leave it

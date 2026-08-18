@@ -1,6 +1,11 @@
 # icc-conformance — memory index
 
-- [Pass K — GRADING the landed feature](project_passk_grading_the_landed_feature.md) — the repointing named the PREDICATE rows and missed the GUARD; the compiled path spreads preservation over a cell at O(1); `blind` was a typed NOUN that went false.
+- [The four-cell gate, and what each injection reds](project_the_four_cell_gate_and_its_injections.md) — two conditions = FOUR cells and the corpus held one; the four are not equally licensed; a string equality can't tell a vanished report from a cited one.
+- [`Malformation` is the wrong channel for a non-violation](project_malformation_channel_overclaims.md) — `malformations: 1` printed for a v2 file that violates nothing; the CLI separates interpretation from conformance BY ACCIDENT, the parser conflates them by design.
+- [A third fixture category: DISPUTED](project_a_third_fixture_category_disputed.md) — well-formed/malformed are both CLAIMS; the category EMPTIED the same day it was created, and what does NOT belong in it.
+- [The header renderingIntent field](project_header_rendering_intent_finding.md) — lcms2 reads it in ONE place (DeviceLink); the two engines ignore it while defaulting DIFFERENTLY; the library API has no "unspecified", so only the CLI arm could fail.
+- [Pass K — GRADING the landed feature](project_passk_grading_the_landed_feature.md) — the repointing named the PREDICATE rows and missed the GUARD; `blind` was a typed NOUN that went false; ★ the compiled-path defect I filed as OPEN was already FIXED one commit earlier.
+- [A fixed defect goes STALE in someone else's doc](project_a_fixed_defect_goes_stale_in_someone_elses_doc.md) — the fix landed 28s before the doc that called it open; a stale STATUS decays faster than a numeral; keep the defect's numbers as dated history, and the fix does NOT discharge the owed row.
 - [Pass K — black preservation, measured before the feature](project_passk_black_preservation_baseline.md) — ΔE is BLIND to it (0.705 ink at 0.136 ΔE00); the saturation shortcut works on 2 of 6 vendors; a rival CORPUS is not a rival candidate.
 - [Pass K §F — the fixture that SEPARATES](project_passk_f_separating_fixture.md) — a ZERO-SEPARATION fixture doesn't just fail to inform, it turns the red row GREEN; a symmetric misreading cancels, so it can't be a rival.
 - [ICC.1 is SILENT on black preservation](project_passk_icc1_is_silent_on_black.md) — closed negative (A51); ICC's only black tag disclaims itself; the gray→CMYK rule is ISO 32000-1 §10.3.3 and is pdfce's; "GWG 23.0" is not a GWG id.

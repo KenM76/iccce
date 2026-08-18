@@ -1,49 +1,76 @@
 ---
 name: icc-corpus-gap-vs-nonexistence-claim
-description: C9 — never write "no document states X"; a corpus can only report the boundary of its own search, and the refutation was eight rows away in the same table
+description: C9 then C10 — never write "no document states X"; a corpus reports the boundary of its own search. C10 is the sharper twin: a source is never "checked", it is checked FOR SOMETHING, and a blocker may not be filed under EXISTENCE without a positive reason
 metadata:
   type: feedback
 ---
 
 **Never write "NO document states X", "nobody publishes this", or "this is a gap
-in the literature, not in the search." Write "not found in the N sources held,
-and here is source N+1 that was not reached, and why."**
+in the literature, not in the search." Write "not found in the N sources
+searched FOR <predicate>, and here is source N+1 that was not reached, and
+why."**
 
-**Why:** corpus defect **`C9`**, 2026-08-17. `iec__s__srgb.md` carried
-*"NO document states them"* about sRGB's D50-adapted colorants, escalated over
-passes from a true statement (*"the four documents this corpus holds do not
-state them"*) to a starred claim about the world (*"this is a GAP in the
-literature, not in the search"*). **ICC had published them since 2015.** The
-claim propagated into `index.md` as a `★★★` section heading, into
-`icc__ref__ground_truth_availability.md`, `_sources/README.md` and
-`LEGAL_NOTE.md`.
+**Why:** two corpus defects, one week apart, same shape, second one despite the
+first being written down.
 
-**★ The refutation was eight rows away in the SAME status table.** One row said
-*"NO document publishes them"*; another said *"ICC registry `srgb.pdf` — NOT
-FETCHED … ★ the cheapest open item"*, and two sections below,
-*"plausibly the only published home of the D50-adapted colorants."*
-**A corpus that says "the answer is probably in the document we have not opened"
-cannot also say "no document has the answer."** No external procedure was
-needed — only reading two rows together. That makes C9 unusual in the family
-(see [[corpus-defects-are-caught-from-outside]]): most need an outside
-consumer, this one needed subtraction.
+## `C9`, 2026-08-17 — the refutation was eight rows away in the same table
 
-**How to apply:**
-1. **Mechanical check, cheap, runs inside one file:** *if a file contains both a
-   NOT-FOUND claim and a NOT-FETCHED row, the NOT-FOUND claim is provisional by
-   construction.* **Grep for the pair** whenever writing or reviewing a gap
-   statement.
-2. **C9 is a NEW defect class: every stated fact was true and the error was
-   entirely in the quantifier.** None of the corpus's existing guards look at
-   quantifiers — they check tiers, labels, derivations and staleness.
-   **When editing a summary line, check the scope word, not just the payload.**
-3. **The bar does NOT loosen the sourcing discipline.** The `color.org` agent
-   bar held throughout; the corpus never routed around it and the document
-   arrived by exactly the operator route it had specified. **A recorded gap beat
-   a confident guess. The failure was in DESCRIBING the gap, not in respecting
-   it** — so the correction is wording, never "try harder to fetch".
-4. Applied already to `icc__ref__ground_truth_availability.md` §7's EXISTENCE
-   cell, which said *"Nobody publishes these"* about four other routes and now
-   says *"Not found in any source held."*
+`iec__s__srgb.md` carried *"NO document states them"* about sRGB's D50-adapted
+colorants, escalated over passes from a true statement (*"the four documents
+this corpus holds do not state them"*) to a claim about the world. **ICC had
+published them since 2015.** The refutation sat in the same status table: one
+row said *"NO document publishes them"*, another said *"ICC registry `srgb.pdf`
+— NOT FETCHED … the cheapest open item"*. **A corpus that says "the answer is
+probably in the document we have not opened" cannot also say "no document has
+the answer."**
 
-Full write-up: `D:\Dev\Rag-Specialized\ICC_Spec\icc\icc__ref__spec_defects.md` §26.
+## ★★★ `C10`, 2026-08-18 — worse, because the document HAD been opened
+
+*"There is still no worked sRGB input→output triple, in this document or any
+other"* / *"none, anywhere"* — **carried across nine filings, and false.**
+**W3C CSS Color 4 publishes four**, and the corpus had **held, read,
+transcribed and given its own file to** that document one day earlier
+(`w3c__s__css_color_4.md`).
+
+**C9 was a search that never reached the document. C10 is a document that was
+mined for the wrong thing.** The file was searched for *constants*; the corpus
+wanted *results*; and *"five sources checked"* was carried forward pass to pass
+as though **"checked" were a property of the source rather than of a question.**
+
+**⟹ C9's rule was necessary and insufficient.**
+
+## How to apply — four checks, all mechanical
+
+1. **An inventory line names its PREDICATE.** *"n sources searched for the
+   transfer-function constants"*, never *"n sources checked"*. A source checked
+   for constants has not been checked for examples. This is
+   [[label-the-predicate-not-just-the-payload]] arriving in an **inventory**
+   rather than in a value.
+2. **★★★ A blocker may NOT be filed under EXISTENCE without a POSITIVE reason on
+   record** — a structural argument (LUT results: ICC mandates no interpolation
+   method, so no value *could* be published) or a publisher's own statement
+   (ECI's info document makes no accuracy claim). **"We looked and did not find
+   it" is an AVAILABILITY or ACCESS-TERMS finding, never an EXISTENCE one.**
+   This is the expensive step: an availability blocker invites a retry, an
+   **existence blocker forecloses it**, and `iccce` carried "no
+   published-ground-truth transform row" for nine filings partly on a sentence
+   promoted two categories beyond its evidence.
+3. **If a file contains both a NOT-FOUND claim and a NOT-FETCHED row, the
+   NOT-FOUND claim is provisional by construction.** Grep for the pair.
+4. **When a held source is re-read for a NEW question, record that in the
+   source's own file.** `w3c__s__css_color_4.md` said nothing about examples
+   either way, so nothing disclosed that the question had never been asked. A
+   banner naming *which predicates this file has been searched under* is now on
+   that file.
+
+**Both defects were caught from OUTSIDE the file** ([[corpus-defects-are-caught-from-outside]],
+n = 12). **C10 was caught by a dispatch asking a question the corpus's own
+summary said was already answered** — the strongest argument on record for
+treating an external question as a test rather than an interruption.
+
+**Neither loosens the sourcing discipline.** The `color.org` bar held
+throughout both. **The failure was in DESCRIBING the gap, not in respecting
+it** — the correction is wording, never "try harder to fetch".
+
+Full write-ups: `D:\Dev\Rag-Specialized\ICC_Spec\icc\icc__ref__spec_defects.md`
+§26 (`C9`) and §28 (`C10`).

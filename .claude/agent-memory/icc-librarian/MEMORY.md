@@ -9,12 +9,13 @@
 - [A patch is named for what it LOOKS at](project_patch_named_for_what_it_looks_at.md) — DL-059: GWG 23.0 was ours and is pdfce's; corroborated 2026-08-18 by the artwork's own numbers.
 - [An inferred environment constraint is a READING](project_inferred_environment_constraint_is_a_reading.md) — DL-060, now VERIFIED: pypdfium2 renders; and engines' silence about a FIGURE reads as absence of the fact.
 - [A number labelled with its source](project_source_labelled_number.md) — DL-061: "GWG's own patch value" printed into a report for a value the patch lacks; the label is the untested half.
+- [A stale STATUS decays faster than a number](project_stale_status_decays_faster_than_a_number.md) — DL-062, TWO instances (2nd inside the filing of the 1st) ⇒ structural; write ROWS, don't just re-check.
 
 - [Documented is not tested](project_documented_is_not_tested.md) — DL-051: five injections, the BEST-documented constant caught by NONE; the doc comment's length is what hid it. Injection, never inspection.
 - [A count from a sample is not the population](project_count_from_a_sample_is_not_the_population.md) — DL-053: "two iccMAX" was TEN; [VERIFIED] certifies the measurement happened, never what it ranged over.
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-18 first-use-of-the-raster filing: tip `1a0509b`, Pass K landed; next free NC-243/NA-012, DL-061 newest, 27 log entries.
+- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-18 **Pass K filing**: tip `60c32dd`; NC-243…NC-266 + NA-012 filed; next free NC-267/NA-013, DL-061 newest.
 - [Compatibility is not certification](project_compatibility_not_certification.md) — DL-045/046/047: a third-party corpus gives a CATEGORICAL expectation but never a number; promote a [REPORTED] claim only by re-running with a control.
 - [Ground truth: a test is not a row](project_ground_truth_cannot_exist.md) — DL-041: the LUT path's ground truth CANNOT exist; Annex D.6.3 now has a TEST but still no ledger row — NC-001 remains the only one.
 - [A negative finding removes its own auditor](project_negative_finding_removes_its_auditor.md) — DL-042: a wrong REJECTION survives forever; re-audit the REASON an item is owed, not just the item.

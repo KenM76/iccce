@@ -42,9 +42,14 @@ as W3C 1996 eq. (1.7b), nineteen years apart. **`pdftotext -layout` is
 DISQUALIFIED for matrices in this document class** — it dropped all three `chad`
 minus signs and transposed a cell. Use `pypdf` + `pdfminer.six` char coords.
 
-**Still open:** `0,04045` from IEC's own text (ICC restates it and misprints the
-restatement, so it does NOT promote); no worked sRGB triple anywhere;
-`srgb.xalter` / `registry.color.org` unfetched (expectation LOW).
+**Still open, as amended 2026-08-18:** `0,04045` from IEC's own text (ICC
+restates it and misprints the restatement, so it does NOT promote) — **and the
+purchase target is now exact: clause 5.2/5.3, pp. 21-25 of IEC publication
+`6169`, CHF 210**, because IEC's free 15-page preview is held and contains
+**zero constants**; ~~no worked sRGB triple anywhere~~ **★★★ RETRACTED (`C10`) —
+CSS Color 4 publishes FOUR**; `srgb.xalter` / `registry.color.org` unfetched
+(expectation LOW). **NEW: `COR1:2014` exists and is unobtained.**
+→ [[iec-srgb-primary-sourcing-state]]
 
 **Where the binaries are:** `D:\Dev\iccce-private-fixtures\color-org\` — the
 operator's private ICC profile fixture tree. `sRGB2014.icc` colorants are

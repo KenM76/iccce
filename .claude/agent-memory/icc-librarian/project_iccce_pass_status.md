@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to the 2026-08-18 first-use-of-the-raster filing (tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -623,7 +623,125 @@ a **figure**, so engine agreement is **vacuous, not merely correlated**
 defects, the patch content-stream read, the widened sweep).
 **DL-061 filed; 61 decision-log entries.**
 
-Related: [[iccce-source-labelled-number]],
+**★★★ UPDATED 2026-08-18, THE PASS K FILING (twenty-EIGHTH librarian
+filing; tip `60c32dd`, clean tree). LARGEST ROW BLOCK EVER TAKEN IN ONE
+FILING: NC-243 … NC-266 + NA-012; next free NC-267 / NA-013.** New
+`NUMERIC_CLAIMS.md` **§3.34**, **NA-012**, **five §6 dependency rows**,
+**§7.23**. See [[iccce-stale-status-decays-faster-than-a-number]].
+
+**★★★ 24 ROWS AND NOT ONE `published-ground-truth` — AND NONE IS
+POSSIBLE.** ICC.1 specifies **no black-preservation construct** (A51, a
+closed negative; PCS is 3 components so every device→device is 4→3→4 and
+**K has no carrier**). ★★ **A DIFFERENT impossibility from DL-041's** —
+DL-041 is a silence *inside* a specified construct; A51 is a silence
+where the construct does not exist. **Do not merge them.** The standing
+debt stands at its **ninth-plus** filing and a big section is not a
+strong one.
+
+**★★★ E8/NC-256 — RULE 7 IN ITS STRONGEST FORM YET: the ORACLE is wrong
+and the engine is right, BY ALGEBRA.** Same-profile pair ⇒ equal
+lightness *is* the identity for any strictly monotonic `L*(K)`. iccce
+**`0.000000`**; **lcms2 intent 11 is `6.1e-5` away** (its K returns
+through a 17-node CLUT), i.e. **61× its own row's tolerance**
+(`PRINT_FLOOR = 1e-6`). ★ **The only Pass K row whose expectation is not
+some implementation's output.** ★ It carries its own falsifier: a **flat
+stretch** in the ramp would make the inversion ill-posed and the identity
+would fail *for a correct implementation*.
+
+**★★★ §D IS SELF-COMPARISON OF THE ORACLE — both legs lcms2, iccce in
+the loop of NONE of it** (`passk/D/lcms2-intent-11/…`). Filed as NC-248 /
+NC-249. **`4.8899e-2` is lcms2's re-mapping magnitude, never iccce's.**
+★★ And the engine's actual behaviour is the **opposite** of D1's: iccce's
+K-only region is **zero wide by construction**; lcms2's is **1/16**.
+
+**★★★ THE COMPILED-PATH DEFECT WAS ALREADY FIXED — `a05476c`, ONE COMMIT
+BEFORE the grading commit `a1bd818` that filed it as open.** So
+`0.617121`/`0.617148` are **HISTORY (NC-265)**, and **NC-264** is what is
+true now: near-axis `6.234231e-7` → **`3.330669e-16`** (≈1.5 ULP of 1.0,
+noise not residual). ★★ Split the `O(1)` / `O(h^1.32)` pairing when
+quoting: **`O(1)` is the defect's signature and is gone**; `O(h^1.32)` is
+Pass 6's live order (DL-025/NC-149). ★★★ **`TOLERANCES.md` §3.10.12.7 was
+STALE at filing** (*"Not fixed here, deliberately"*) — corrected
+concurrently by `icc-conformance`; **I did not edit that file**, and
+NC-264/NC-265 make the ledger right regardless of its state.
+
+**★★ NC-264 is a `self-comparison` and still one of the strongest things
+here — because of its SHAPE: it asserts CONVERGENCE, not a bound, in two
+strict inequalities with NO CONSTANT.** The control assertion
+(`far33 < far17`) is a **precondition**, not decoration: without it the
+real assertion passes **vacuously**. *A wrong constant passes a threshold
+test; nothing passes a convergence test by luck.*
+
+**★★ THE ABSENCES, filed as rows' equals:** NC-251/E2's separation
+**equals its own observation, ratio 1.0** ⇒ **it can never
+discriminate**, and it prints `UNGRADED` not `BLIND` only because `BLIND`
+needs a finite tolerance ⇒ ★★★ **`blind = 0` is true of the classifier
+and false of the suite** (first demonstrated instance). NC-254/E6 is
+**`ZERO-SEPARATION` and REPORTED**. **No injection proof for E7/F8.** No
+`--bpc`+preservation row anywhere. `KMapping::Ratio` has no row because
+it has no implementation. **8 of the 10 swept destinations are graded by
+nothing.** ★★★ **The perceptual cost of preservation is UNMEASURED** —
+that is NA-012's cost field and the number a caller actually wants.
+
+**★ TWO REGROUPINGS OF THE SUGGESTED ALLOCATION.** (a) **Split** the
+package's NC-262: the sweep's rival is *pre-feature ink* (does it do
+anything?), the K re-mapping's rival is *`K_out = K_in`* (does it do the
+RIGHT thing?) — **different rivals ⇒ different rows**; downstream ids
+shift by one. (b) The suggestion's *"192 / 50 probes"* had **no source in
+its own evidence tables** — **verification UPGRADED it** rather than
+rejecting it (`passk.rs:3884` documents F8's 50 chromatic grays). ★ Also
+derived: E5's *"32×"* is `1.75e-3/5.4e-5` = **32.4× the OBSERVATION**;
+against the **tolerance** it is **8.75×** — the same two-denominator trap
+the package flags for E9 (`1577×` obs vs `448.6×` tol).
+
+**★★ THREE OWED ITEMS DISCHARGED, verified in live source, not taken
+from the dispatch:** `passk.rs`'s **§8.6.4.4** wrong clause (gone; nine
+`§10.3.3`), the dangling **`TOLERANCES.md` §3.10.8** (now exists at
+`:3163`), and **both GWG prose defects** — the *"GWG's own patch value"*
+attribution is repaired **in the emitted report string itself** (*"★ NOT
+a GWG patch value — patch 23.0's gray panel is 25 %…"*), and `ICCBased`
+no longer occurs in the file. ★ **The correction was carried, not
+deleted.**
+
+**Newly owed (§7.23):** correct `TOLERANCES.md` §3.10.12.7/§3.10.12.6;
+**prove E7/F8 by injection**; **measure the ΔE2000 cost of preservation**
+(★ do NOT substitute NC-244's `1.36e-1` — that is the same-profile pair
+where the policy is nearly a no-op); a difftest row for the compiled
+path; grade more of the ten destinations or stop quoting ten; enumerate
+`blind`/`ungraded`; ★ **`fmt` and `clippy` were NOT run and are NOT
+filed** though the handoff asserts all three gates.
+
+**Coverage:** Pass K = **44 rows**, 19 graded / 25 REPORTED,
+`unstated=0 blind=0`; **36 of 44 need the licensed corpus** ⇒ **CI is
+permanently in the skipping case for 36 of 44** and the 8 survivors are
+all §F. Suite `pass=337 fail=0 skip=9` licensed / `pass=184 skip=94`
+empty; `cargo test --workspace` **170 passed**. ★ §F's eight observed
+values were **byte-identical across both corpus conditions** — a real
+reproducibility statement, because §F reads committed bytes.
+
+**★★ UPDATED 2026-08-18, THE STALE-STATUS FILING (twenty-NINTH
+`SESSION_LOG` entry, twenty-NINTH librarian filing). NO ROW ADDED,
+CHANGED OR INVALIDATED — next free still `NC-267` / `NA-013`. Nothing
+measured, nothing run, `ROADMAP.md` untouched.** **DL-062 filed; 62
+decision-log entries.** See
+[[iccce-stale-status-decays-faster-than-a-number]].
+
+**§7.23 newly-owed item 1 is DISCHARGED** — all three *done when*
+clauses adjudicated against live `TOLERANCES.md` (`:3757`/`:3762`,
+`:3718`/`:3720`/`:3968`, `:3889`/`:3893`), plus a **second verbatim copy
+fixed in `tools/difftest/README.md` §25.13.7/§25.13.6** that **no file
+list in the evidence package mentioned**. ★★★ **The DEBT IS NOT CLOSED:
+there is still NO difftest row for the compiled path** — §7.23 item **4**
+stays open; only the row's *purpose* changed, **disclosure → regression
+guard**. **§7.23 item 2 is SUPERSEDED IN PLACE, dated, not rewritten** —
+it is DL-062's second instance.
+
+★ **The tip has not moved from `60c32dd` in `.git/refs/heads/master`
+as of this filing's reads; three documents are edited in the working
+tree and uncommitted.**
+
+Related: [[iccce-stale-status-decays-faster-than-a-number]],
+[[iccce-source-labelled-number]],
 [[iccce-inferred-environment-constraint-is-a-reading]],
 [[iccce-patch-named-for-what-it-looks-at]],
 [[iccce-artifact-existence-is-not-obligation-status]],
