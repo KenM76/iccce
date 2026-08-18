@@ -117,7 +117,7 @@
 //!   case is not, and guessing at it would be indistinguishable from
 //!   implementing it.
 //! - **It is not applied to the absolute intent.** See
-//!   [`super::ChainError::BlackPreserveNotApplicable`].
+//!   [`crate::transform::ChainError::BlackPreserveNotApplicable`].
 
 use crate::transform::SourceModel;
 
@@ -219,7 +219,7 @@ pub enum KMapping {
     /// this project exercises most has *zero* power to catch a bad
     /// approximation.
     ///
-    /// Returns [`super::ChainError::KMappingNotAvailable`].
+    /// Returns [`crate::transform::ChainError::KMappingNotAvailable`].
     Ratio,
 }
 
@@ -274,7 +274,7 @@ const K_SAMPLES: usize = 1024;
 
 /// A built K-only preservation policy, ready to apply per-pixel.
 ///
-/// Built once at [`super::Chain::with_black_preservation`] time — the
+/// Built once at [`crate::transform::Chain::with_black_preservation`] time — the
 /// sampling of both K ramps is a per-*chain* cost, never a per-pixel
 /// one, which is the same shape lcms2 uses (it precomputes a tone curve
 /// at transform-construction time).
