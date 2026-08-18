@@ -17,16 +17,18 @@ the lockfile by `cargo-about`; not a summary anyone maintains by hand.
 
 **How to read the listing.** cargo-about reports the whole graph and has
 no notion of "first party", so this file names iccce's own crates too.
-The four crates `iccce-color`, `iccce-profile`, `iccce-cmm` and
-`iccce-cli` **are this project** — they carry the project's own MIT
-licence (`LICENSE`, MIT, Copyright (c) 2026 Ken Mantle). **Any crate
-listed below whose name is not one of those four is a third-party
-dependency**, and its licence text is reproduced here because iccce
-redistributes it.
+**Every crate listed below whose name begins with `iccce-` is this
+project** — those carry the project's own MIT licence (`LICENSE`, MIT,
+Copyright (c) 2026 Ken Mantle), and the workspace's membership list in
+the root `Cargo.toml` is their authoritative enumeration. **Every crate
+whose name does not begin with `iccce-` is a third-party dependency**,
+and its licence text is reproduced here because iccce redistributes it.
+The rule is stated as a prefix rather than as a list of names so that
+adding a workspace crate cannot silently falsify this paragraph.
 
 **Scope, stated because a generated file cannot state its own limits.**
-This manifest covers Cargo dependencies of the four workspace crates and
-nothing else. In particular it does **not** cover **lcms2**, which is not
+This manifest covers Cargo dependencies of the `iccce-` workspace
+crates and nothing else. In particular it does **not** cover **lcms2**, which is not
 a dependency of any of them: lcms2 is an out-of-tree differential-test
 oracle driven as a separate process from `tools/difftest`, which is
 deliberately not a workspace member, and whose source is git-ignored so
@@ -41,10 +43,11 @@ not the whole licence story.
 
 Used by:
 
-- [iccce-cli 0.0.1](https://github.com/KenM76/iccce)
-- [iccce-cmm 0.0.1](https://github.com/KenM76/iccce)
-- [iccce-color 0.0.1](https://github.com/KenM76/iccce)
-- [iccce-profile 0.0.1](https://github.com/KenM76/iccce)
+- [iccce-cli 0.1.0](https://github.com/KenM76/iccce)
+- [iccce-cmm 0.1.0](https://github.com/KenM76/iccce)
+- [iccce-color 0.1.0](https://github.com/KenM76/iccce)
+- [iccce-measure 0.1.0](https://github.com/KenM76/iccce)
+- [iccce-profile 0.1.0](https://github.com/KenM76/iccce)
 
 ```text
 MIT License

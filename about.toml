@@ -124,3 +124,24 @@ license = "MIT"
 [[iccce-cli.clarify.files]]
 path = "../../LICENSE"
 checksum = "924b551cf24a232ecabcad4c21d0a91c24a65519dc1cdb6fb88cc395f8da74f5"
+
+# ★ ADDED 2026-08-17, and it was MISSING for five days. `iccce-measure`
+# joined the workspace on 2026-08-12; this file was written on 2026-08-12
+# with four blocks and nobody revisited it. The failure mode is the one
+# the comment above describes and is SILENT: a workspace member with no
+# `clarify` block does not error — cargo-about falls back to the generic
+# SPDX MIT template, so regenerating would have emitted an entry reading
+# "Copyright (c) <year> <copyright holders>" for a crate that is ours.
+# Per the note above, that is "worse than publishing nothing", and it
+# would have shipped in the first published tarball.
+#
+# ★ THE INVARIANT, stated so the next crate does not repeat this: THERE
+# IS ONE `clarify` BLOCK PER `members` ENTRY IN THE ROOT `Cargo.toml`.
+# Adding a workspace crate without adding a block here is a licence
+# defect, not a formatting one. Check with:
+#   diff <(grep -o 'crates/iccce-[a-z]*' Cargo.toml | sed 's|crates/||' | sort -u) #        <(grep -o '^\[iccce-[a-z]*\.clarify\]' about.toml | tr -d '[]' | sed 's|\.clarify||' | sort -u)
+[iccce-measure.clarify]
+license = "MIT"
+[[iccce-measure.clarify.files]]
+path = "../../LICENSE"
+checksum = "924b551cf24a232ecabcad4c21d0a91c24a65519dc1cdb6fb88cc395f8da74f5"

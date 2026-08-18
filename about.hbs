@@ -9,9 +9,20 @@
 
     ★ READ THIS BEFORE EDITING THE PROSE BELOW. cargo-about reports the
     WHOLE resolved graph, which includes the workspace's own crates — it
-    has no notion of "first party". So as of 2026-08-12, with no
+    has no notion of "first party". So as of 2026-08-17, with no
     third-party dependencies at all, the only entries it emits are
-    iccce's own four crates under the project's MIT licence.
+    iccce's own workspace crates under the project's MIT licence.
+
+    ★ AND DO NOT WRITE THE NUMBER OF THEM. This prose said "four" from
+    2026-08-12 until 2026-08-17, during which `iccce-measure` was added
+    as a fifth workspace member and every sentence asserting "four"
+    became false — in a GENERATED file, where the count is not the
+    generator's output but the template author's memory of the
+    workspace. Regeneration cannot fix a hardcoded count, which is
+    precisely why the banner above already forbids asserting a count of
+    dependencies; the same reasoning was simply never applied to a count
+    of OUR OWN crates. The prose below now states the `iccce-` PREFIX
+    RULE instead, which survives the sixth crate.
 
     That makes the intro prose delicate: anything it asserts must stay
     true both now (zero third-party entries) and later (some). Hence it
@@ -44,16 +55,18 @@ the lockfile by `cargo-about`; not a summary anyone maintains by hand.
 
 **How to read the listing.** cargo-about reports the whole graph and has
 no notion of "first party", so this file names iccce's own crates too.
-The four crates `iccce-color`, `iccce-profile`, `iccce-cmm` and
-`iccce-cli` **are this project** — they carry the project's own MIT
-licence (`LICENSE`, MIT, Copyright (c) 2026 Ken Mantle). **Any crate
-listed below whose name is not one of those four is a third-party
-dependency**, and its licence text is reproduced here because iccce
-redistributes it.
+**Every crate listed below whose name begins with `iccce-` is this
+project** — those carry the project's own MIT licence (`LICENSE`, MIT,
+Copyright (c) 2026 Ken Mantle), and the workspace's membership list in
+the root `Cargo.toml` is their authoritative enumeration. **Every crate
+whose name does not begin with `iccce-` is a third-party dependency**,
+and its licence text is reproduced here because iccce redistributes it.
+The rule is stated as a prefix rather than as a list of names so that
+adding a workspace crate cannot silently falsify this paragraph.
 
 **Scope, stated because a generated file cannot state its own limits.**
-This manifest covers Cargo dependencies of the four workspace crates and
-nothing else. In particular it does **not** cover **lcms2**, which is not
+This manifest covers Cargo dependencies of the `iccce-` workspace
+crates and nothing else. In particular it does **not** cover **lcms2**, which is not
 a dependency of any of them: lcms2 is an out-of-tree differential-test
 oracle driven as a separate process from `tools/difftest`, which is
 deliberately not a workspace member, and whose source is git-ignored so
