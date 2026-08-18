@@ -228,6 +228,29 @@ pub mod passh;
 // 7.4x). Same `//`-not-`///` reason as the comments above.
 pub mod passi;
 
+// ★ Pass K — BLACK PRESERVATION, and the letter names the CHANNEL, not a
+// position in the alphabet: this module's whole subject is the fourth colorant
+// of a CMYK separation, and nothing in it depends on a Pass J existing.
+//
+// It is the instrument for a feature that does NOT EXIST YET. `crates/`
+// contains no black-preservation code at the commit it was written against;
+// the point of writing it first is that its numbers were chosen before anybody
+// knew which numbers would be convenient.
+//
+// Three things about it belong at the declaration. First, it reaches lcms2's
+// **non-ICC** rendering intents 10-15 through its own `KOnlyOracle` type rather
+// than through `Intent`, so this crate's standing promise that it "cannot
+// express a non-ICC rendering intent" is kept intact and every row from that
+// oracle carries a mandatory caveat string. Second, its headline finding is
+// about THIS harness as much as about the engine: a K-only build re-separated
+// into a real CMYK destination comes back with up to 0.705 of chromatic ink
+// while sitting 0.13 dE2000 from where it started, so **dE is blind to the
+// defect black preservation exists to fix** and every preservation row here is
+// in device units. Third, one row is RED BY DESIGN until the feature lands, and
+// it SKIPs in CI for ever because its fixture is licensed. Same
+// `//`-not-`///` reason as the comments above.
+pub mod passk;
+
 // ===========================================================================
 // Locating the oracle
 // ===========================================================================

@@ -97,6 +97,16 @@ These assert that the parser **reads** correctly. Each must parse with zero malf
 | Contents | v2.4.0.0 prtr CMYK, Lab PCS, mft2 A2B0 (4->3, 3^4 grid) and B2A0 (3->4, 3^3 grid) |
 | Expected of a consumer | parses; 0 malformations; lut16 in=4 out=3 clutPoints=3 and lut16 in=3 out=4 clutPoints=3; matrixIdentity=true |
 
+### `v2-cmyk-chromatic-neutral.icc`
+
+| | |
+|---|---|
+| Invocation | `gen-profiles v2-cmyk-chromatic-neutral v2-cmyk-chromatic-neutral.icc` | 
+| Size | 10200 bytes | 
+| Covers | mft2 both directions; a B2A that separates a NEUTRAL into C M Y and K |
+| Contents | v2.4.0.0 prtr CMYK, Lab PCS, mft2 A2B0 (4->3, 5^4 grid) and B2A0 (3->4, 9^3 grid). Both models are AFFINE (no cross terms) so any conformant CLUT interpolation reproduces them exactly; B2A0 is independent of a*/b* across a three-node DEAD BAND about the neutral axis (indices 3,4,5), so the neutral column is exact for ANY interpolation scheme. On the neutral axis B2A0 lays down C = M = Y = 0.60 d and K = 0.40 d, where d is the node's ENCODED L* darkness |
+| Expected of a consumer | parses; 0 malformations; lut16 in=4 out=3 clutPoints=5 and lut16 in=3 out=4 clutPoints=9; matrixIdentity=true. ★★★ THE POINT OF THE FIXTURE: the round trip B2A0(A2B0(0,0,0,k)) returns C = M = Y = 0.60 * (1 - (65280/65535)(1 - 0.70k)), which is 0.420700 at k = 1 and 0.002335 at k = 0. A BLACK-PRESERVING consumer returns 0.000000 instead. THE TWO CANDIDATE ANSWERS ARE 0.420700 APART. On the sibling v2-cmyk-mft2-lab they are the SAME NUMBER (its B2A0 emits [0,0,0,k] at every node), which is why Pass K's black-preservation rows could not run in CI and why this recipe exists. ★ A2B0(0,0,0,k) is Lab(100(1 - 0.70k), 0, 0) EXACTLY: K carries darkness only, so the K-only ramp lies on an EDGE of the 4-D hypercube where every interpolation scheme degenerates to the same 1-D interpolation. ★ K ink alone reaches only L* 30 - that deficit is WHY the separation has to put chromatic ink into a dark neutral, exactly as a real press profile does. ★ DO NOT change CN_GRAY_SLOPE, CN_K_DARKNESS or the dead band: Pass K §F asserts the closed form above against these bytes, and TOLERANCES.md §3.10.9 justifies its bound by counting the 16-bit quanta in this exact chain. ★ The K COLUMN (0.40 d) is deliberately NOT graded anywhere: what K value a preserving path should emit is an OPEN FORK (lcms2's equal-L* construction vs Cholewo 2000's K_MIN/K_MAX ratio) and this fixture presupposes neither. |
+
 ### `v2-cmyk-mft1-lab.icc`
 
 | | |

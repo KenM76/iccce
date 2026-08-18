@@ -329,6 +329,32 @@ jobs:
       # separate `cargo run`s (which this job had) can in principle
       # disagree with each other — so the summary being gated would not
       # be the summary that was printed. Redirect, show, re-raise.
+      # ★★★ THIS STEP IS EXPECTED TO FAIL, and has been since 2026-08-17.
+      #
+      # Pass K §F grades `k-only-in-implies-k-only-out` on a COMMITTED,
+      # unlicensed fixture, at a tolerance of exactly zero, and
+      # `crates/` has no black-preservation code. The row is RED BY
+      # DESIGN — see `docs/TOLERANCES.md` §3.10.11 and
+      # `tools/difftest/README.md` §25.12 — and it is red here on
+      # purpose: its Ghent twin (`E1`) has been red since Pass K was
+      # written and NOTHING OUTSIDE ONE MACHINE COULD SEE IT.
+      #
+      # ★ THE REMEDY IS THE FEATURE, NOT THE NUMBER. Do not add an
+      # allow-list, do not `continue-on-error`, do not widen the
+      # tolerance. When black preservation lands, this job goes green on
+      # its own, and the rows that must move (and the rows that must
+      # NOT) are tabulated in README §25.11.
+      #
+      # ★ PREDICTED shape of the summary on a corpus-free runner —
+      # DERIVED, not observed, because the authoring machine is Windows
+      # and holds the licensed corpus:
+      #   pass=21 fail=1 skip=... error=0     exit 1
+      # from 15 executed rows measured at tip 68d4601 plus §F's seven,
+      # one of which is F5. Whoever first runs this job should REPLACE
+      # this paragraph with the observed line, exactly as
+      # build-lcms2.sh's header asked of its own first exercise. A
+      # SECOND failure, or a fall in `pass`, is a real regression, and
+      # the floor step below is what will say so.
       - name: Run the conformance suite
         working-directory: tools/difftest
         run: |
@@ -389,7 +415,24 @@ jobs:
       # exit-code contract should distinguish "ran what it could" from
       # "ran almost nothing". Raised with icc-conformance, who owns
       # Report::exit_code. This floor is the safety net, not the cure.
+      # ★★★ `if: always()` — added 2026-08-17 with Pass K §F, and the
+      # reason is specific.
+      #
+      # §F grades `k-only-in-implies-k-only-out` on a COMMITTED,
+      # unlicensed fixture (`v2-cmyk-chromatic-neutral.icc`), so unlike
+      # its Ghent twin it RUNS HERE — and it is RED BY DESIGN until
+      # black preservation exists in `crates/`. The suite therefore
+      # exits 1 on this runner, permanently, on purpose.
+      #
+      # Without `always()`, the step above would abort the job and this
+      # floor would never be evaluated again — trading one blind spot
+      # (a green tick over 7.5 % coverage) for another (a red tick that
+      # hides a collapse in coverage behind an expected failure). The
+      # exit code of the suite is still the job's gate; this step is an
+      # ADDITIONAL gate, and an additional gate that stops running the
+      # moment the first one trips is not a gate.
       - name: Coverage floor — a suite that mostly skipped is not a pass
+        if: always()
         run: |
           set -eu
           line=$(grep -E '^summary' "$RUNNER_TEMP/conf.txt" || true)
@@ -404,11 +447,19 @@ jobs:
           fail=$(echo "$line" | grep -oE 'fail=[0-9]+' | cut -d= -f2)
           skip=$(echo "$line" | grep -oE 'skip=[0-9]+' | cut -d= -f2)
           executed=$((ran + fail))
-          FLOOR=15
+          # RAISED 15 -> 22 on 2026-08-17: Pass K §F adds seven rows that
+          # need no licensed corpus (three read the committed fixture's
+          # bytes and need not even the iccce binary; four drive it, and
+          # one of those four drives lcms2). THE FLOOR MUST ONLY EVER
+          # RISE — see the paragraph above the job. If a change makes
+          # fewer than 22 rows runnable here, that is a regression in
+          # CI's reach and this step says so.
+          FLOOR=22
           echo "executed=$executed (pass=$ran fail=$fail) skipped=$skip floor=$FLOOR"
           if [ "$executed" -lt "$FLOOR" ]; then
             echo "::error::Only $executed rows executed; the declared floor for a corpus-free"
-            echo "Linux runner is $FLOOR (measured at tip 68d4601, 2026-08-17). Fewer rows"
+            echo "Linux runner is $FLOOR (15 measured at tip 68d4601, 2026-08-17; raised to 22"
+            echo "the same day when Pass K §F added seven corpus-free rows). Fewer rows"
             echo "runnable here is a regression in CI's reach, not a pass. Raise the floor"
             echo "deliberately if coverage genuinely improved; never lower it silently."
             exit 1

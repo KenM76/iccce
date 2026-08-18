@@ -543,6 +543,395 @@ fn v2_cmyk_mft1_lab() -> Vec<u8> {
 }
 
 // ===========================================================================
+// (c2) Well-formed: v2 CMYK whose B2A puts CHROMATIC INK INTO NEUTRALS
+// ===========================================================================
+//
+// ★★★ WHY THIS RECIPE EXISTS — READ BEFORE CHANGING ANY CONSTANT BELOW.
+//
+// Pass K (`tools/difftest/src/passk.rs`) measures **black preservation**: the
+// requirement that a device input carrying only black ink, `(0, 0, 0, k)`,
+// comes back out of a CMYK→CMYK transform still carrying only black ink. On a
+// real press profile it does not: `ISO Coated v2 300% (ECI)` returns up to
+// `0.705320` of chromatic ink on that ramp, because its `B2A` separates a
+// neutral `L*a*b*` into a composite of all four inks.
+//
+// Pass K's row `passk/E/k-only-in-implies-k-only-out` grades exactly that, and
+// it is **deliberately red** until the feature is built. But it is measured on
+// the licensed Ghent corpus, so **it skips in CI, permanently** — the red is
+// visible only on a machine that holds a corpus that cannot be committed.
+//
+// The obvious remedy is to point the row at the committed synthetic CMYK
+// fixture, and it does not work: `v2-cmyk-mft2-lab`'s `B2A0` comes from
+// [`lab_to_cmyk_clut`], which emits `[0, 0, 0, k]` at **every** node. Its K
+// ramp is K-only *already*, so a black-preserving implementation and a
+// non-preserving one return the same numbers. Pass K row
+// `passk/E/synthetic-cmyk-fixture-is-ZERO-SEPARATION-for-this-subject` emits
+// that as a measurement rather than a paragraph: the fixture's two candidate
+// answers are one number, which is the one state no tolerance can rescue.
+//
+// **This recipe is the fixture that separates them.** Its `B2A0` puts
+// chromatic ink into neutrals *by construction*, so the K-only predicate has
+// two distinct candidate answers on a profile that needs no licence and lives
+// in the repository.
+//
+// ★★ THE PROPERTY THAT MAKES IT AN INSTRUMENT RATHER THAN A SAMPLE.
+//
+// A test whose expectation came from running the code under test detects
+// change, not error (`CLAUDE.md` rule 3). So every number Pass K §F asserts
+// about this fixture must be derivable **from these bytes and the
+// specification's stated interpolation**, with no implementation's output in
+// it. Three construction choices, and each is load-bearing:
+//
+// 1. **Both models are AFFINE in their inputs — no cross terms.** Each output
+//    of [`chromatic_neutral_a2b`] is a sum of terms each linear in one input
+//    channel, and the same holds for [`chromatic_neutral_b2a`]. An affine
+//    function is reproduced **exactly** by any conformant CLUT interpolation —
+//    n-linear, tetrahedral, prism, or lcms2's 4-D hybrid — because every such
+//    scheme returns a convex combination of the cell's corners with correct
+//    barycentric weights, and a convex combination of an affine function's
+//    values at the corners *is* the affine function at the point. The residue
+//    is the 16-bit sample encoding and nothing else.
+//
+// 2. **`B2A0` is independent of `a*` and `b*` in a DEAD BAND of three node
+//    lines about the neutral axis** ([`chroma_ramp`] returns exactly `0` for
+//    node indices 3, 4 and 5 of 9). This exists because of a legacy-PCSLAB
+//    detail that would otherwise cost the derivation its exactness: `a* = 0`
+//    encodes to `8000h` = 32 768, while node 4 of a 9-node axis sits at
+//    `4 × 65 535 / 8` = 32 767,5. **`a* = 0` is not a node.** It falls
+//    `1.5 × 10⁻⁵` of a cell inside the cell `[4, 5]`, so a table with any
+//    `a*` dependence at all would hand the neutral axis a small interpolated
+//    contribution from node 5 — an error that is tiny, real, and impossible to
+//    state exactly. With nodes 3, 4 and 5 carrying **identical** values, every
+//    convex combination of them is that value, and the neutral axis is exact
+//    **for any interpolation scheme whatsoever**. The same argument covers
+//    `b*`.
+//
+// 3. **The darkness variable is the ENCODED `L*` fraction, not `L*`.**
+//    [`chromatic_neutral_b2a`] uses `d = 1 − li/(N−1)`, the node's position in
+//    the CLUT's own input coordinate, rather than `1 − L*/100`. The reason is
+//    the same legacy-encoding gap: legacy PCSLAB puts `L* = 100` at `FF00h`,
+//    not at `FFFFh`, so the top node of the axis decodes to
+//    `L* = 100.390 6` and `1 − L*/100` there is **negative**. Defining
+//    darkness in `L*` would make the model clamp at the top node, and the
+//    clamp would bite inside the very cell the K ramp's white end lands in —
+//    destroying affinity exactly where the derivation needs it. In the encoded
+//    coordinate the model is clamp-free at every node of the neutral column.
+//    The visible consequence is that the fixture's white returns a residual
+//    `0.002 3` of ink rather than exactly zero; that is the legacy encoding's
+//    own `255/65 535` gap made measurable, and it is carried through the
+//    closed form rather than hidden.
+//
+// ★ WHAT THIS FIXTURE IS NOT. It is not colorimetry. No instrument produced
+// these coefficients and no press behaves like them. Like every colorant in
+// this corpus it is an arbitrary but **exactly stated** structural relation
+// (`fixtures/synthetic/README.md`). What it must be — and is, on purpose — is a
+// profile on which "K-only in, K-only out" has two different answers, whose
+// difference is a number this file fixes and the harness can recompute from
+// the committed bytes.
+//
+// ★ WHAT IT DELIBERATELY DOES NOT DECIDE. Pass K §E2 records an **open fork**:
+// what `K` value a black-preserving path should emit. lcms2's
+// `_cmsBuildKToneCurve` maps `K` by equal `L*` on the K ramp; Cholewo (2000)
+// maps it by the `K_MIN`/`K_MAX` ratio. Two definitions, one name, and the
+// choice is with the operator. **Nothing in this recipe presupposes either.**
+// The `K` column of [`chromatic_neutral_b2a`] exists so the profile is a
+// plausible separation, and Pass K §F grades **only the chromatic channels** —
+// `C = M = Y = 0` in implies `C = M = Y = 0` out is definitionally unambiguous
+// and needs no answer to the K question.
+
+/// Nodes per axis of the `B2A0` CLUT. Nine, so that the **dead band** of
+/// clause 2 above (node indices 3, 4, 5) is a proper interior band about the
+/// centre index 4, with three further node lines on each side for the chroma
+/// ramp to develop over.
+const CN_B2A_NODES: usize = 9;
+
+/// Nodes per axis of the `A2B0` CLUT. Five, giving `5⁴ = 625` nodes — the
+/// smallest grid on which the K-only edge lands on nodes at every quarter and
+/// the encoded values are exact integers (`65 280 × (1 − 0.7 j/4)
+/// = 65 280 − 11 424 j`). The model is affine, so a larger grid would buy
+/// nothing: multilinear interpolation reproduces it exactly at any size.
+const CN_A2B_NODES: usize = 5;
+
+/// How much darkness one unit of `K` ink carries in [`chromatic_neutral_a2b`].
+///
+/// **`0.70`, and the value below `1.0` is the whole point of the fixture.**
+/// Black ink alone drives the model only to `L* = 30`; the remaining darkness
+/// has to come from the composite `C M Y` gray. That is why the `B2A`
+/// separation *must* put chromatic ink into a dark neutral, and it is the same
+/// reason a real press profile does.
+const CN_K_DARKNESS: f64 = 0.70;
+
+/// Darkness per unit of cyan in [`chromatic_neutral_a2b`].
+const CN_C_DARKNESS: f64 = 0.25;
+/// Darkness per unit of magenta in [`chromatic_neutral_a2b`].
+const CN_M_DARKNESS: f64 = 0.25;
+/// Darkness per unit of yellow in [`chromatic_neutral_a2b`].
+const CN_Y_DARKNESS: f64 = 0.20;
+
+/// **The composite-gray slope of the `B2A` separation**, and the constant the
+/// whole of Pass K §F is calibrated against: at encoded darkness `d` the
+/// neutral separation lays down `C = M = Y = 0.60 d`.
+///
+/// At the K ramp's dark end (`k = 1`, `L* = 30`, `d = 0.701 167`) that is
+/// **`0.420 700` of chromatic ink** — the fixture's separation between the two
+/// candidate answers, and four orders above any encoding argument that could
+/// be mistaken for it.
+const CN_GRAY_SLOPE: f64 = 0.60;
+
+/// The skeleton-black slope of the `B2A` separation: `K = 0.40 d` at neutral.
+///
+/// ★ **Not graded anywhere, and that is deliberate** — see the recipe header's
+/// last paragraph. It is here so the fixture is a plausible separation
+/// (`C M Y K = 0.60, 0.60, 0.60, 0.40` at `d = 1`, a total area coverage of
+/// 220 %), not so anything can assert it.
+const CN_K_SLOPE: f64 = 0.40;
+
+/// Peak chroma excursion of the `B2A` separation, at the outermost `a*`/`b*`
+/// node lines. Large enough that the table is visibly a colour separation and
+/// not a gray ramp; irrelevant to every measured point, all of which lie in
+/// the dead band where [`chroma_ramp`] is exactly zero.
+const CN_CHROMA: f64 = 0.25;
+
+/// The `B2A0` chroma weight of node index `i`, in `−1..1`.
+///
+/// ```text
+/// i        0     1     2     3   4   5     6     7     8
+/// weight  −1  −2/3  −1/3    0   0   0   +1/3  +2/3    +1
+/// ```
+///
+/// ★ **The three zeros in the middle are the dead band**, and they are the
+/// reason every number Pass K §F asserts about the neutral axis is exact for
+/// *any* interpolation scheme rather than only for the one iccce happens to
+/// use. See clause 2 of the recipe header for why `a* = 0` is not a node and
+/// why that would otherwise matter.
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "clutPoints is a uInt8 field (clause 10.10) and the index is below it, so both are               small integers f64 represents exactly — the same argument `frac` makes"
+)]
+fn chroma_ramp(i: usize, n: usize) -> f64 {
+    let centre = (n - 1) as f64 / 2.0;
+    let t = i as f64 - centre;
+    let spread = t.abs() - 1.0;
+    if spread <= 0.0 {
+        0.0
+    } else {
+        t.signum() * spread / (centre - 1.0)
+    }
+}
+
+/// The `A2B0` model: device `C M Y K` in `0..1` to `L* a* b*`.
+///
+/// ```text
+/// D  = 0.25·C + 0.25·M + 0.20·Y + 0.70·K      (total darkness)
+/// L* = 100·(1 − D)                            clamped to 0..100
+/// a* = −60·C + 70·M
+/// b* = −50·C − 45·M + 90·Y
+/// ```
+///
+/// **Affine, with no cross terms**, so any conformant CLUT interpolation
+/// returns it exactly (recipe header, clause 1).
+///
+/// ★ **`K` appears in `L*` and in nothing else** — the model's black ink is
+/// spectrally neutral, so `A2B(0, 0, 0, k)` is `L*a*b* = (100(1 − 0.7k), 0, 0)`
+/// for every `k`. That is what makes the K-only ramp land exactly on the
+/// neutral axis, which is the input the whole of Pass K §F needs.
+///
+/// ★ **The only clamp is `L* ≥ 0`, and it bites only above `D = 1`** — total
+/// ink beyond a darkness-weighted 100 %. `a*` spans `−60..70` and `b*` spans
+/// `−95..90`, both well inside the encodable `±128`, so neither clamps
+/// anywhere. Every point Pass K §F measures has `D ≤ 0.70` and is therefore
+/// clamp-free together with **every corner of the cell containing it**, which
+/// is the condition affinity actually needs.
+fn chromatic_neutral_a2b(c: f64, m: f64, y: f64, k: f64) -> (f64, f64, f64) {
+    let d = CN_C_DARKNESS * c + CN_M_DARKNESS * m + CN_Y_DARKNESS * y + CN_K_DARKNESS * k;
+    let l = (100.0 * (1.0 - d)).clamp(0.0, 100.0);
+    let a_star = -60.0 * c + 70.0 * m;
+    let b_star = -50.0 * c - 45.0 * m + 90.0 * y;
+    (l, a_star, b_star)
+}
+
+/// The `B2A0` model, **defined on CLUT node indices** rather than on `L*a*b*`.
+///
+/// ```text
+/// d  = 1 − li/(N−1)                  darkness in the CLUT's OWN input coordinate
+/// ca = chroma_ramp(ai)               0 for ai in {3,4,5}
+/// cb = chroma_ramp(bi)               0 for bi in {3,4,5}
+///
+/// C = 0.60·d − 0.25·ca − 0.125·cb
+/// M = 0.60·d + 0.25·ca − 0.125·cb
+/// Y = 0.60·d + 0.075·ca + 0.25·cb
+/// K = 0.40·d
+/// ```
+/// each clamped to `0..1`.
+///
+/// ★★ **THIS IS THE TABLE THE WHOLE PASS IS ABOUT.** On the neutral axis
+/// `ca = cb = 0`, so the separation is `C = M = Y = 0.60 d` and `K = 0.40 d`:
+/// a composite gray under a skeleton black, which is what a press profile with
+/// low gray-component replacement does and what makes "K-only in" fail to
+/// imply "K-only out".
+///
+/// ★ **Why node indices and not `L*`** — recipe header clause 3. `d` is the
+/// node's position in the CLUT's input coordinate, so the model is affine in
+/// exactly the variable the interpolator works in, and never clamps on the
+/// neutral column.
+///
+/// ★ **Where the clamps bite.** Outside the dead band the chroma terms can
+/// drive a channel negative at light `d` (at `ai = 8`, `bi = 8`, `d = 0`,
+/// `C = −0.375`), and those nodes clamp to `0`. That is a real departure from
+/// affinity and it is stated rather than hoped: **it is confined to
+/// `|ai − 4| ≥ 2` or `|bi − 4| ≥ 2`**, and every point Pass K §F measures lies
+/// in a cell all of whose corners have `ai, bi ∈ {3, 4, 5}`, where the chroma
+/// terms are identically zero and the only channel values are `0.60 d` and
+/// `0.40 d`, both inside `0..1` for every `d ∈ 0..1`.
+fn chromatic_neutral_b2a(li: usize, ai: usize, bi: usize, n: usize) -> [f64; 4] {
+    let d = 1.0 - frac(li, n);
+    let ca = chroma_ramp(ai, n);
+    let cb = chroma_ramp(bi, n);
+    let gray = CN_GRAY_SLOPE * d;
+    [
+        (gray - CN_CHROMA * ca - 0.5 * CN_CHROMA * cb).clamp(0.0, 1.0),
+        (gray + CN_CHROMA * ca - 0.5 * CN_CHROMA * cb).clamp(0.0, 1.0),
+        (gray + 0.3 * CN_CHROMA * ca + CN_CHROMA * cb).clamp(0.0, 1.0),
+        (CN_K_SLOPE * d).clamp(0.0, 1.0),
+    ]
+}
+
+/// v2.4 CMYK Output profile whose `B2A0` **contaminates neutrals by
+/// construction** — the fixture Pass K §F needs and the corpus did not have.
+///
+/// See the section header above for why it exists, what makes it an instrument
+/// rather than a sample, and which question it deliberately does not answer.
+///
+/// ## What a conformant consumer must produce
+///
+/// Writing `ρ = 65 280 / 65 535 = 0.996 108 9` for the legacy-PCSLAB
+/// full-scale ratio, and `d(k) = 1 − ρ(1 − 0.70 k)` for the encoded darkness
+/// the K-only ramp reaches:
+///
+/// * `A2B0(0, 0, 0, k) = L*a*b*(100(1 − 0.70 k), 0, 0)` exactly, for every
+///   `k ∈ 0..1` — the K axis is an **edge** of the 4-D hypercube, on which
+///   every interpolation scheme degenerates to the same 1-D interpolation, and
+///   the model is affine along it.
+/// * `B2A0(L*, 0, 0)` on that ramp is
+///   `C = M = Y = 0.60 · d(k)`, `K = 0.40 · d(k)`, to 16-bit sample precision.
+/// * The **round trip** `B2A0(A2B0(0, 0, 0, k))` therefore returns
+///   `C = M = Y = 0.60 · d(k)`, rising to **`0.420 700` at `k = 1`** and
+///   falling to `0.002 335` at `k = 0`.
+/// * A **black-preserving** consumer returns `C = M = Y = 0` on that ramp
+///   instead. The two answers are `0.420 700` apart at the dark end. That
+///   number is the fixture's whole reason for existing: on
+///   `v2-cmyk-mft2-lab` it is `0`.
+/// * `mft2`: `A2B0` is `inputChan = 4`, `outputChan = 3`, `clutPoints = 5`;
+///   `B2A0` is `inputChan = 3`, `outputChan = 4`, `clutPoints = 9`. Both
+///   matrices are the identity — clause 10.10 permits a non-identity matrix
+///   only for a PCSXYZ input, and neither tag has one.
+/// * Both CLUTs use the **legacy** 16-bit PCSLAB encoding, unconditionally:
+///   clause 10.10, "this tag uses the legacy 16-bit PCSLAB encoding … not the
+///   16-bit PCSLAB encoding defined in 6.3.4.2", with no version test. `L* =
+///   100` is `FF00h`; `a* = b* = 0` is `8000h`.
+///
+/// ## Conformance note — the same scope statement the sibling carries
+///
+/// Clause 8.5.2 requires an N-component LUT-based Output profile to carry all
+/// six `A2Bx`/`B2Ax` plus `gamt`; this fixture carries two tags, exactly as
+/// `v2-cmyk-mft2-lab` does and for the same reason (corpus finding **A34**:
+/// ICC.1:2022 states requirements for 4.4.0.0 profiles and does not restate
+/// v2's, so a validator must not declare a v2 profile non-conformant against
+/// clause 8). A consumer asked for the media-relative intent falls back to
+/// `A2B0`/`B2A0`, which is the path Pass K §F drives.
+fn v2_cmyk_chromatic_neutral() -> Vec<u8> {
+    // --- A2B0: CMYK -> Lab, legacy PCSLAB, C slowest / K fastest ------------
+    // ★ Clause 10.10's index order: "the dimension corresponding to the first
+    // input channel varies least rapidly … the last input channel varies most
+    // rapidly". C is the outer loop and K the inner one.
+    let na = CN_A2B_NODES;
+    let mut a2b_clut = Vec::with_capacity(na * na * na * na * 3);
+    for ci in 0..na {
+        for mi in 0..na {
+            for yi in 0..na {
+                for ki in 0..na {
+                    let (l, a_star, b_star) =
+                        chromatic_neutral_a2b(frac(ci, na), frac(mi, na), frac(yi, na), frac(ki, na));
+                    a2b_clut.push(legacy_lab_l(l));
+                    a2b_clut.push(legacy_lab_ab(a_star));
+                    a2b_clut.push(legacy_lab_ab(b_star));
+                }
+            }
+        }
+    }
+
+    // --- B2A0: Lab -> CMYK, L slowest / b* fastest --------------------------
+    let nb = CN_B2A_NODES;
+    let mut b2a_clut = Vec::with_capacity(nb * nb * nb * 4);
+    for li in 0..nb {
+        for ai in 0..nb {
+            for bi in 0..nb {
+                for v in chromatic_neutral_b2a(li, ai, bi, nb) {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        reason = "clamped to 0..1 by chromatic_neutral_b2a, so 0..65535 here"
+                    )]
+                    let enc = (v * 65_535.0).round() as u16;
+                    b2a_clut.push(enc);
+                }
+            }
+        }
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "both node counts are compile-time constants, 5 and 9"
+    )]
+    let (na8, nb8) = (na as u8, nb as u8);
+    let a2b0 = Mft2 {
+        input_chan: 4,
+        output_chan: 3,
+        clut_points: na8,
+        pad: 0,
+        matrix: Mft2::IDENTITY,
+        // Two entries is the minimum clause 10.10 allows and the only count
+        // that contributes NO approximation: with two entries the table is
+        // exactly the identity and there is nothing to interpolate. Every
+        // departure from the closed form in this fixture is therefore a CLUT
+        // sample's own quantisation and nothing else.
+        input_ent: 2,
+        output_ent: 2,
+        input_tables: [0x0000u16, 0xFFFF].repeat(4),
+        clut: a2b_clut,
+        output_tables: [0x0000u16, 0xFFFF].repeat(3),
+    };
+    let b2a0 = Mft2 {
+        input_chan: 3,
+        output_chan: 4,
+        clut_points: nb8,
+        pad: 0,
+        matrix: Mft2::IDENTITY,
+        input_ent: 2,
+        output_ent: 2,
+        input_tables: [0x0000u16, 0xFFFF].repeat(3),
+        clut: b2a_clut,
+        output_tables: [0x0000u16, 0xFFFF].repeat(4),
+    };
+    // 7-bit ASCII only: textDescriptionType's Mac ScriptCode block is an
+    // ASCII field and the generator asserts it, so no section sign here.
+    let mut tags_ =
+        v2_meta("iccce synthetic v2 CMYK, B2A0 separates neutrals into C M Y and K");
+    tags_.push(wtpt());
+    tags_.push(Tag::own(b"A2B0", a2b0.encode()));
+    tags_.push(Tag::own(b"B2A0", b2a0.encode()));
+    ProfileSpec {
+        version: 0x0240_0000,
+        class: *b"prtr",
+        color_space: *b"CMYK",
+        pcs: *b"Lab ",
+        rendering_intent: 1,
+        tags: tags_,
+    }
+    .assemble()
+}
+
+// ===========================================================================
 // (d) Well-formed: the D2 discriminator pair — mft2 Lab in v4 and in v2
 // ===========================================================================
 
@@ -1983,6 +2372,38 @@ pub fn all() -> Vec<Recipe> {
             what: "v2.4.0.0 prtr CMYK, Lab PCS, mft2 A2B0 (4->3, 3^4 grid) and B2A0 (3->4, 3^3 grid)",
             expect: "parses; 0 malformations; lut16 in=4 out=3 clutPoints=3 and lut16 in=3 out=4 clutPoints=3; matrixIdentity=true",
             build: v2_cmyk_mft2_lab,
+        },
+        Recipe {
+            name: "v2-cmyk-chromatic-neutral",
+            category: WellFormed,
+            covers: "mft2 both directions; a B2A that separates a NEUTRAL into C M Y and K",
+            what: "v2.4.0.0 prtr CMYK, Lab PCS, mft2 A2B0 (4->3, 5^4 grid) and B2A0 (3->4, 9^3 grid). \
+                   Both models are AFFINE (no cross terms) so any conformant CLUT interpolation \
+                   reproduces them exactly; B2A0 is independent of a*/b* across a three-node DEAD BAND \
+                   about the neutral axis (indices 3,4,5), so the neutral column is exact for ANY \
+                   interpolation scheme. On the neutral axis B2A0 lays down C = M = Y = 0.60 d and \
+                   K = 0.40 d, where d is the node's ENCODED L* darkness",
+            expect: "parses; 0 malformations; lut16 in=4 out=3 clutPoints=5 and lut16 in=3 out=4 \
+                     clutPoints=9; matrixIdentity=true. \
+                     \u{2605}\u{2605}\u{2605} THE POINT OF THE FIXTURE: the round trip \
+                     B2A0(A2B0(0,0,0,k)) returns C = M = Y = 0.60 * (1 - (65280/65535)(1 - 0.70k)), \
+                     which is 0.420700 at k = 1 and 0.002335 at k = 0. A BLACK-PRESERVING consumer \
+                     returns 0.000000 instead. THE TWO CANDIDATE ANSWERS ARE 0.420700 APART. On the \
+                     sibling v2-cmyk-mft2-lab they are the SAME NUMBER (its B2A0 emits [0,0,0,k] at \
+                     every node), which is why Pass K's black-preservation rows could not run in CI \
+                     and why this recipe exists. \
+                     \u{2605} A2B0(0,0,0,k) is Lab(100(1 - 0.70k), 0, 0) EXACTLY: K carries darkness \
+                     only, so the K-only ramp lies on an EDGE of the 4-D hypercube where every \
+                     interpolation scheme degenerates to the same 1-D interpolation. \
+                     \u{2605} K ink alone reaches only L* 30 - that deficit is WHY the separation has \
+                     to put chromatic ink into a dark neutral, exactly as a real press profile does. \
+                     \u{2605} DO NOT change CN_GRAY_SLOPE, CN_K_DARKNESS or the dead band: Pass K \u{a7}F \
+                     asserts the closed form above against these bytes, and TOLERANCES.md \u{a7}3.10.9 \
+                     justifies its bound by counting the 16-bit quanta in this exact chain. \
+                     \u{2605} The K COLUMN (0.40 d) is deliberately NOT graded anywhere: what K value a \
+                     preserving path should emit is an OPEN FORK (lcms2's equal-L* construction vs \
+                     Cholewo 2000's K_MIN/K_MAX ratio) and this fixture presupposes neither.",
+            build: v2_cmyk_chromatic_neutral,
         },
         Recipe {
             name: "v2-cmyk-mft1-lab",

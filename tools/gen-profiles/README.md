@@ -300,6 +300,90 @@ obviously wrong rather than plausibly right.
 
 ---
 
+### 4.2 ★★★ The fixture built to SEPARATE — `v2-cmyk-chromatic-neutral`, and what it costs in realism
+
+**Added 2026-08-17 by `icc-conformance`, for Pass K §F.** §4.1 (GP-002) records
+the shape of the problem: authored bytes can be *incapable of noticing* the
+thing they were authored to watch. This recipe is the same lesson applied
+before the fact rather than after it, on a different subject.
+
+#### The defect it closes
+
+`tools/difftest`'s Pass K grades **black preservation** — that a device input
+`(0, 0, 0, k)` comes back from a CMYK→CMYK transform still carrying only black
+ink. On this corpus's existing CMYK fixture `v2-cmyk-mft2-lab`, that predicate
+**cannot fail and cannot pass informatively**: its `B2A0` is
+[`lab_to_cmyk_clut`], which emits `[0, 0, 0, k]` at every node, so a
+black-preserving consumer and a non-preserving one return *the same numbers*.
+The two candidate answers are one number — `ZERO-SEPARATION` in the harness's
+own vocabulary — and no tolerance can rescue it. The consequence was that every
+graded black-preservation row had to run on the **licensed Ghent corpus** and
+skipped in CI, permanently, including the one row that is red on purpose.
+
+#### The construction, and why each choice is load-bearing
+
+The physical idea is the one that makes real press profiles behave this way:
+**black ink alone is not dark enough.** `A2B0` gives `K` a darkness of `0.70`,
+so a full K ramp reaches only `L* 30`; the rest of a dark neutral's darkness has
+to come from a composite `C M Y` gray, and `B2A0` supplies it —
+
+```
+neutral axis:   C = M = Y = 0.60·d       K = 0.40·d
+                d = the node's ENCODED L* darkness, 1 − li/(N−1)
+```
+
+so `B2A0(A2B0(0,0,0,1))` returns **`0.420 705`** in each of `C`, `M` and `Y`
+where a black-preserving path returns `0`.
+
+| choice | what it buys |
+|---|---|
+| both models **affine, no cross terms** | every conformant interpolation (n-linear, tetrahedral, prism, lcms2's 4-D hybrid) returns a convex combination of the cell's corners, and a convex combination of an affine function's corner values *is* that function — so the interpolation-method envelope is **identically zero** and an expectation taken from the table is exact to the encoding |
+| `B2A0` **`a*`/`b*`-independent across node lines 3, 4, 5** | `a* = 0` encodes to `8000h` = 32 768 while node 4 of a 9-node axis sits at 32 767,5 — **the neutral axis is not a node**, and falls `1.5e-5` of a cell inside `[4,5]`. Three identical node lines make every convex combination of them that value, for any scheme |
+| darkness is the **encoded** `L*` fraction, not `L*` | legacy PCSLAB puts `L* = 100` at `FF00h`, so the top node decodes to `L* = 100.390 6` and `1 − L*/100` is negative there. A model in `L*` would clamp **inside the cell the K ramp's white end lands in** |
+
+The visible price of the third choice is that the fixture's white returns a
+residual `0.002 335` of ink rather than exactly zero. That is the legacy
+encoding's own `255/65 535` gap, carried through the closed form rather than
+hidden, and it is a *feature*: a fixture that made that gap invisible would be
+one more place the DL-005 misreading could hide.
+
+#### ★★ What it costs, stated as prominently as what it buys
+
+**This profile is less like a press than anything in the Ghent corpus, and the
+properties that make it an instrument are exactly the properties that make it
+unrealistic.** Real ink is not affine; a real `B2A` has no dead band; a real
+separation's `K` is not a straight line in `L*`. A number measured on this
+fixture is evidence about **the predicate** — does the implementation preserve
+K-only inputs, and does it read the table correctly — and it is **never**
+evidence about ink, gamut, or what a press would print. Pass K §A–§C remain the
+only evidence of that kind, and they remain licensed.
+
+#### ★ What it deliberately does not decide
+
+What `K` value a black-preserving path *should* emit is an **open fork**:
+lcms2's `_cmsBuildKToneCurve` maps `K` by equal `L*` on the K ramp, Cholewo
+(2000) maps it by the `K_MIN`/`K_MAX` ratio, and the choice is the operator's.
+The `K = 0.40 d` column exists so the profile is a plausible separation, **not**
+so anything can assert it: Pass K §F grades the three chromatic channels only,
+because `C = M = Y = 0` in implies `C = M = Y = 0` out is definitionally
+unambiguous and needs no answer to the K question.
+
+#### ★ Do not "simplify" these constants
+
+`docs/TOLERANCES.md` §3.10.11 justifies four tolerances by **counting the
+16-bit quanta in this exact chain**, and Pass K §F's row `F2` grades the
+committed bytes against `0.60`/`0.40` so that the two copies must agree. A
+change to `CN_GRAY_SLOPE`, `CN_K_DARKNESS` or the dead band turns `F2` red
+rather than silently re-basing every number that rests on it — which is the
+intended coupling, not an inconvenience.
+
+**`v2-cmyk-mft2-lab` is NOT superseded and must not be deleted.** It is the
+`ZERO-SEPARATION` control: the fixture that says *why* this one had to exist,
+and the thing a future reader needs to find before pointing something at it
+again.
+
+---
+
 ## 5. ★ FINDING GP-001 — `mBA ` curve counts: iccce disagrees with ICC.1:2022 and with lcms2
 
 **Status: FIXED same day — commit `2e98cfd` (2026-08-11): the profile
@@ -536,10 +620,17 @@ Legal full tag aliasing.
 * **`ncl2` with `nDeviceCoords == 0`** (legal; entry stride 38), and the
   `Ncl2DeviceCoordCountMismatch` issue, which needs a caller that holds the
   header.
-* **Grids that stress interpolation.** Every CLUT here is small and every
-  documented probe point lands on a grid node, deliberately: these fixtures test
-  *parsing*, and ambiguity A16 (n-D interpolation is unspecified) is a Pass 4/5
-  question that wants its own fixtures.
+* **Grids that stress interpolation.** Every CLUT here is small and — with one
+  stated exception — every documented probe point lands on a grid node,
+  deliberately: these fixtures test *parsing*, and ambiguity A16 (n-D
+  interpolation is unspecified) is a Pass 4/5 question that wants its own
+  fixtures. ★ **The exception is `v2-cmyk-chromatic-neutral` (§4.2), and it
+  goes the OTHER way**: its probe points deliberately lie *off* the nodes, and
+  its models are affine precisely so that A16 stops mattering — every
+  conformant scheme returns the same number, so the fixture measures the
+  pipeline rather than the interpolator. That is not coverage of A16; it is the
+  deliberate *removal* of A16 from one measurement, and a fixture that stressed
+  interpolation would still be a different and still-owed fixture.
 * **v2 conformance**. Clause 8's requirements are stated for 4.4.0.0 profiles
   and ICC.1:2022 does not restate v2's (**A34**), so the v2 fixtures here are
   built to *parse*, not to be conformance exemplars. `v2-cmyk-mft2-lab` in
@@ -551,9 +642,24 @@ shipped `iccce` binary, on this machine, on 2026-08-11, reads 11 of 12
 well-formed layouts as specified and reports 26 of 26 authored defects exactly
 as intended, with one specification-backed disagreement recorded as GP-001. It
 is **not** "iccce parses ICC profiles correctly" and must never be rounded up to
-that: 38 files authored by one person from one corpus reading share whatever
-that reading got wrong, which is precisely why the lcms2 column and the clause
-citations are here.
+that: files authored by one person from one corpus reading share whatever that
+reading got wrong, which is precisely why the lcms2 column and the clause
+citations are here. **The count is deliberately not stated in this sentence** —
+`gen-profiles list` prints it, always current, and a typed count in a paragraph
+about honesty is the fifth recorded instance of a stale literal in this
+repository (DL-034).
+
+★ **Dated verification of the one fixture added since**
+(`icc-conformance`, 2026-08-17, Windows/MSVC, iccce at working tip,
+lcms2 `21c582a`): `v2-cmyk-chromatic-neutral` — **three independent readings of
+the same K-only ramp agree.** The closed form derived from the recipe gives
+`0.420 700` of chromatic ink at `k = 1`; the harness's own byte-level
+evaluation of the committed CLUTs gives `0.420 705`; `iccce transform` gives
+`0.420 705`; `transicc -t1 -c0` gives `0.420 706`. Over 50 off-neutral probes
+iccce and lcms2 agree to `1.4×10⁻⁵` and iccce matches the byte-level derivation
+to `5.0×10⁻⁷`. That is a **cross-check plus a derived expectation**, not ground
+truth: no standards body printed `0.420 7`, and the derivation and the fixture
+are both this project's reading of clause 10.10.
 
 ---
 

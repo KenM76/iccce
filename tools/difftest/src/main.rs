@@ -118,6 +118,7 @@ use std::io::Write;
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
     pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi,
+    passk,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -477,6 +478,38 @@ fn main() {
     let (pi, pi_records) = passi::run();
     report.note(format!("passi: {}", passi::note(&pi)));
     for r in pi_records {
+        report.push_record(r);
+    }
+
+    // Pass K — BLACK PRESERVATION: the instrument, built before the feature.
+    //
+    // ★ It grades a capability `crates/` does not have. That is the point: the
+    // tolerances were fixed before anyone could see which ones would be
+    // convenient, and the baseline it records — what the engine does TODAY when
+    // a K-only build is re-separated into `ISO Coated v2 300% (ECI)` — is a
+    // number the project did not previously have.
+    //
+    // ★★ Read its module header before quoting anything from it. Its central
+    // finding is that **dE2000 cannot see this subject**: the contaminated
+    // build sits 0.13 dE2000 from the K-only build it should have been, while
+    // carrying 0.705 of chromatic ink that should not exist. Every preservation
+    // row is therefore in normalised device units, and the one dE row exists to
+    // demonstrate the blindness rather than to detect anything.
+    //
+    // ★★ Its K-preserving reference is lcms2 intents 10-15, which are VENDOR
+    // EXTENSIONS outside the ICC intent numbering. `Intent` is untouched; the
+    // non-ICC intents are reached through `passk::KOnlyOracle`, whose CAVEAT
+    // string is prepended to the `source` of every record built from it.
+    //
+    // ★ One row, `passk/E/k-only-in-implies-k-only-out`, is RED BY DESIGN until
+    // black preservation exists, at a tolerance of exactly zero. The remedy is
+    // the feature, not the number. Same licensing posture as Passes G and H:
+    // licensed corpus, `$ICCCE_PRIVATE_FIXTURES`, every row SKIPs with a reason
+    // when absent — which is permanent in CI, and which the pass reports as a
+    // coverage gap rather than as a convenience.
+    let (pk, pk_records) = passk::run(&oracle);
+    report.note(format!("passk: {}", passk::note(&pk)));
+    for r in pk_records {
         report.push_record(r);
     }
 
