@@ -3707,79 +3707,163 @@ lcms2's *own* construction by design, so agreement is expected. The row is
 evidence exists, because ICC.1 states nothing. It is evidence that iccce
 implements the definition it names.
 
-##### 3.10.12.7 ★★★ A FINDING WITH NO ROW — the compiled path spreads the preservation over a whole cell
+##### 3.10.12.7 ★★★ The compiled path spread the preservation over a whole cell — FIXED in `a05476c`; a row is still owed
 
-**This is the most consequential thing the grading turned up and no row in this
-suite can see it**, which is why it is prose with numbers rather than a
-tolerance.
+> ### ★★★ CORRECTION — 2026-08-18 (later the same day), `icc-conformance`
+>
+> **This section asserted a defect that no longer existed at the moment it was
+> committed**, and it did so for the whole interval between two commits
+> twenty-eight seconds apart.
+>
+> As written it was headed *"A FINDING WITH NO ROW"*, said **"Not fixed here,
+> deliberately. The remedy is a `crates/` change and belongs to the
+> engineer"**, and asked *"what this role owes **when** it is fixed"*. **It
+> was already fixed.** The remedy — the second of the two candidates this
+> section itself named — landed in **`a05476c`** (2026-08-18 02:40:05 -0400),
+> the commit **immediately before** `a1bd818` (02:40:33 -0400), which is the
+> commit that filed this text. The analysis was correct when it was written
+> and stale when it was published, and nothing in the fixing commit's own
+> review touched the document that made the claim.
+>
+> **What is corrected:** the tense, the heading, the status, and the `O(1)`
+> half of the convergence reading. **What is deliberately NOT corrected:** the
+> numbers `0.617121` / `0.617148`. They are the measured signature of a real
+> defect and they are the evidence for why the structural remedy was the right
+> one of the two candidates — deleting them would erase the reason the
+> decision went the way it did. They are re-presented below as **dated history
+> with the fixing commit named**, never as a current measurement. **And the
+> debt is not corrected either, because it is not discharged: there is still
+> no difftest row for the compiled path.** What changed is only what such a
+> row would be *for* — see "What is still owed" at the foot of this section.
+>
+> Filed as a change row in §4. The generalisable decay mechanism — *a document
+> that records "X is broken and someone else owns the fix" goes stale the
+> moment that someone else commits* — was drafted for the decision log and
+> handed to `icc-librarian`. It is a different mechanism from §3.5.8.6's stale
+> numeral, and it decays faster.
+
+**Why the defect existed, which is still worth understanding** — the mechanism
+is what makes the fix the right *shape* rather than a patch.
 
 `iccce_cmm::compiled::CompiledTransform::new(&chain, grid)` folds a `Chain`
 into one uniform interpolable grid by sampling `chain.convert` at every node.
-`Chain::convert` applies black preservation, so the **nodes** are right. But
-the preservation is a **discontinuity at `C = M = Y = 0` exactly** — that is
-its stated design (`crates/iccce-cmm/src/black_preserve.rs`, module doc) — and
-**an interpolant cannot represent a discontinuity**. Every point within one
-cell of the K axis gets a blend of one preserved corner and its
+Before `a05476c`, `Chain::convert` applied black preservation, so the **nodes**
+were right. But the preservation is a **discontinuity at `C = M = Y = 0`
+exactly** — that is its stated design (`crates/iccce-cmm/src/black_preserve.rs`,
+module doc) — and **an interpolant cannot represent a discontinuity**. Every
+point within one cell of the K axis got a blend of one preserved corner and its
 non-preserved neighbours.
 
-Measured out of tree against `ISO Coated v2 300% (ECI)` → itself,
-media-relative, `--preserve-black k-only-equal-lightness`:
+**HISTORY — measured 2026-08-18 out of tree, BEFORE the fix in `a05476c`.**
+`ISO Coated v2 300% (ECI)` → itself, media-relative, `--preserve-black
+k-only-equal-lightness`. ★ **These are not current measurements and must never
+be quoted as such**; the current ones are two tables below.
 
-| quantity | grid 17 | grid 33 |
+| quantity (pre-`a05476c`) | grid 17 | grid 33 |
 |---|---|---|
 | max chromatic ink **on** the K axis (41 points) | `0.000000` | `0.000000` |
 | max `\|compiled − reference\|` within **one cell** of the K axis | **`0.617121`** | **`0.617148`** |
 | the same measure **far** from the axis (control) | `1.138×10⁻³` | `5.34×10⁻⁴` |
 
-★★★ **Read the two rows of the table against each other and the diagnosis is
-unambiguous. Doubling the grid halves the control and does not move the
-near-axis error at all.** That is `O(1)` beside `O(h^1.32)` — the exact
-signature §3.6's row **R6** was built to detect, and R6's own band already says
-what it means: *below order 1 the error is not grid-driven and no number from
-this instrument is evidence.* At grid 33 the near-axis error is **1156×** the
-control.
+★★★ **The diagnosis those two rows supported, in the past tense it belongs
+in.** Doubling the grid halved the control and did not move the near-axis error
+at all. That was **`O(1)`** — the exact signature §3.6's row **R6** was built to
+detect, and R6's own band already says what it means: *below order 1 the error
+is not grid-driven and no number from this instrument is evidence.* At grid 33
+the near-axis error was **1156×** the control.
 
-**The direction is over-application, not omission.** At `C = 3.906×10⁻³`,
-`K = 1.0`, grid 33: compiled returns `(0.0896, 0.0763, 0.0725, 0.9815)` — very
-nearly the preserved answer — where the reference chain returns
+**The direction was over-application, not omission.** At `C = 3.906×10⁻³`,
+`K = 1.0`, grid 33: compiled returned `(0.0896, 0.0763, 0.0725, 0.9815)` — very
+nearly the preserved answer — where the reference chain returned
 `(0.7068, 0.6115, 0.5862, 0.8498)`, the ordinary colorimetric separation. The
-compiled path is **applying black preservation to pixels that do not qualify
-for it**, across a band one cell wide around the whole K axis. That is `E7`'s
+compiled path was **applying black preservation to pixels that did not qualify
+for it**, across a band one cell wide around the whole K axis. That was `E7`'s
 and `F8`'s defect, in a layer neither of them can reach.
 
-**Exposure, stated precisely rather than alarmingly:**
+★ **Two orders, and they must not be conflated.** The `O(1)` above is the
+**defect's** signature and it is **gone**. `O(h^1.32)` is Pass 6's still-live
+**measured** convergence order for a non-preserving chain (`DL-025`, `NC-149`,
+§3.6) and nothing here touches it. The pre-fix reading was *"`O(1)` beside
+`O(h^1.32)`"*; half of that sentence was a defect and half of it is a standing
+measurement, and quoting the pair without the split reads as though both were
+retracted or both still live. Neither is true.
 
-- **Unreachable from the CLI today.** `iccce bench` is the only command that
-  builds a `CompiledTransform` and it does not accept `--preserve-black`. No
-  user of the shipped binary can produce this.
-- **Reachable from the library, which is the point.** `CompiledTransform` is
-  `pub`, and folding a chain into a grid once is exactly what a per-pixel
-  consumer does — it is the reason the type exists. A consumer that opts into
-  preservation and then compiles gets this silently.
-- **§3.6's numbers are not falsified.** Pass 6 measured a chain with no
-  preservation in it; nothing there is wrong. What is now known is that its
-  premise — a smooth envelope with order in `[1, 3]` — is **false for a
-  preserving chain**, and no row anywhere tests the combination.
+**What was done about it, and by whom.** `a05476c` took the **second** of the
+two remedies this section named: `CompiledTransform` now carries
+`k_preserve: Option<KPreserve>` **outside** the grid
+(`crates/iccce-cmm/src/compiled.rs`; the field's own doc comment cites this
+measurement by name) and branches per pixel in `convert`, exactly as
+`Chain::convert` does. The grid holds the smooth colorimetric answer only, so
+there is no discontinuity left in the thing being interpolated. The first
+remedy — `CompiledTransform::new` **refusing** a chain that carries a policy
+(rule 6, report do not repair) — was not taken. That choice was the engineer's
+and it was not a conformance decision; this role's only interest in it is that
+the chosen remedy is the one whose correctness is *checkable by refinement*,
+and it has been checked.
 
-**Not fixed here, deliberately.** The remedy is a `crates/` change and belongs
-to the engineer, and there are at least two defensible ones which are not the
-same decision: `CompiledTransform::new` **refuses** a chain carrying a
-preservation policy (rule 6 — report, do not repair, and the caller learns the
-two features do not compose), or it **applies the policy outside the grid**,
-testing the input for K-only before the interpolation exactly as
-`Chain::convert` does. The second costs one branch per pixel and reproduces the
-reference path exactly; the first is more honest about a compiled transform
-being a *different* transform. Choosing between them is not a conformance
-decision.
+**CURRENT — what the same measurement gives at tip `60c32dd`**, re-run by
+`icc-conformance` on 2026-08-18 via `cargo test -p iccce-cmm --test
+compiled_black_preservation_convergence -- --nocapture` (deterministic, and
+**identical in debug and release**):
 
-★ **What this role owes when it is fixed:** a row. The shape is available —
-`iccce bench` would have to accept `--preserve-black`, or Pass 6 would have to
-gain a section that drives the library — and the observation is already
-written: *max `|compiled − reference|` within one cell of the K axis*, graded
-against the same `pcs_quantum_tolerance` shape as `E4`, with the control that
-earns it being the same measure far from the axis. Until then this section
-contains a **known unmeasured behaviour**, which is worth more written down
-than discovered by a consumer.
+| quantity (at `60c32dd`) | grid 17 | grid 33 | verdict |
+|---|---|---|---|
+| max `\|compiled − reference\|` within **one cell** of the K axis | `6.234231×10⁻⁷` | `3.330669×10⁻¹⁶` | **converges** |
+| the same measure **far** from the axis (control) | `3.710322×10⁻⁴` | `6.289234×10⁻⁸` | **converges** |
+
+`3.330669×10⁻¹⁶` is ≈1,5 ulp of 1,0 — floating-point noise, not a residual.
+
+★ **The test asserts convergence, not a bound, and that is the point.** It is
+two strict inequalities with no constant anywhere: `near33 < near17`, and —
+first, as a **precondition rather than decoration** — `far33 < far17`, because
+if the fixture stopped exercising interpolation the near-axis assertion would
+pass vacuously. A wrong constant passes a threshold test; nothing passes a
+convergence test by luck.
+
+★ **Evidence class of that test: `self-comparison`.** Both arms are iccce — the
+compiled path against the reference chain path. It asserts nothing about
+whether either arm is colorimetrically right; it asserts that **compiling a
+transform does not change its answer**. Its own module doc says exactly this,
+correctly. Two companion tests in the same file carry the rest, both passing:
+`a_qualifying_input_is_preserved_by_the_compiled_path_too`
+(`assert_eq!(out[i], 0.0)` on C, M and Y at 11 K values through the compiled
+path at grid 17 — **bit equality, no tolerance**) and
+`without_the_policy_the_compiled_path_is_unchanged` (the unpreserved compiled
+path still matches the chain to `1×10⁻⁹`, and asserts `reference[0] > 0.0` so
+the fixture is *proven* to contaminate neutrals — a guard against the test
+proving nothing).
+
+**Exposure while the defect was live, stated for the record rather than
+alarmingly:** it was **unreachable from the CLI** (`iccce bench` is the only
+command that builds a `CompiledTransform` and it takes no `--preserve-black`),
+and **reachable from the library**, which was the point — `CompiledTransform`
+is `pub`, and folding a chain into a grid once is exactly what a per-pixel
+consumer does. **§3.6's numbers were never falsified.** Pass 6 measured a chain
+with no preservation in it; nothing there was or is wrong. What the episode
+established is that Pass 6's premise — a smooth envelope with order in
+`[1, 3]` — **was false for a preserving chain**, and is true again now that the
+policy sits outside the grid.
+
+★★★ **WHAT IS STILL OWED, and the fix does not discharge it: a difftest row.**
+No row in this suite drives the compiled path with a preservation policy in it.
+Every number in the "CURRENT" table above comes from a `crates/` test, not from
+this harness — and a `crates/` test is not in this tolerance budget, is not
+separation-graded, and does not appear in the suite summary this document
+gates on. The shape is unchanged from what this section specified before the
+fix: `iccce bench` would have to accept `--preserve-black`, or Pass 6 would
+have to gain a section that drives the library; the observation is *max
+`|compiled − reference|` within one cell of the K axis*, graded against the
+same `pcs_quantum_tolerance` shape as `E4`, with the control that earns it
+being the same measure far from the axis.
+
+**What changed is only the row's purpose.** Before `a05476c` it would have been
+a **disclosure** — a red row exposing a live defect. Now it would be a
+**regression guard** — a green row whose whole value is that it goes red if the
+policy is ever folded back inside the grid. That is a weaker reason to build it
+and a permanent one. It is **not** a reason to read this section as closed:
+until the row exists, the compiled path's composition with preservation is
+attested by one `crates/` test and by nothing at all in the instrument this
+document governs.
 
 ##### 3.10.12.6 Coverage of this grading, stated
 
@@ -3802,9 +3886,128 @@ than discovered by a consumer.
   device units by §3.10.0's finding; nobody has asked what `ΔE2000` the
   preserved answer sits from the colorimetric one on a cross-press pair, which
   is the number a caller weighing the policy would want;
-- ★★★ **the COMPILED path is unmeasured by any row and is measurably wrong**
-  — §3.10.12.7. It is listed here as well as there because a reader who skims
+- ★★★ **the COMPILED path is unmeasured by any row of this suite** —
+  §3.10.12.7. It is listed here as well as there because a reader who skims
   only this list must not come away thinking the coverage gap is small.
+  ★ **CORRECTED 2026-08-18 (later the same day), `icc-conformance`:** this
+  bullet read *"is unmeasured by any row **and is measurably wrong**"*, and
+  the second half was **stale on the day it was committed**. The defect was
+  fixed in **`a05476c`**, the commit before the one that filed this text. The
+  first half stands unchanged and is the reason the bullet stays: the compiled
+  path is still unmeasured **by any difftest row**. It is now measured by a
+  `crates/` test (`compiled_black_preservation_convergence`, converging
+  `6.234231×10⁻⁷ → 3.330669×10⁻¹⁶` near the axis) which is outside this
+  document's budget and outside the suite summary. **The coverage gap is
+  narrower than this bullet claimed and it is not closed** — what a row would
+  now buy is a regression guard rather than a disclosure. Full correction in
+  §3.10.12.7; change row in §4.
+
+---
+
+### 3.11 ★ The header `renderingIntent` field — a DISCLOSURE row, and the one number in it is a fixture-power floor
+
+**Filed 2026-08-18 by `icc-conformance`.** This subsection is short on
+purpose: the work it records deliberately establishes **no correctness
+claim**, and a budget row that pretended otherwise would be worse than no
+row at all.
+
+#### What was measured
+
+An ICC header carries a `renderingIntent` field (clause 7.2.15, `uInt32Number`
+at header offset 64). A caller of a CMM also names an intent. Measured on a
+synthetic fixture pair differing in **exactly one byte** — file offset 67, the
+low byte of that field, `00h` against `01h`:
+
+* iccce **parses** the field and **validates** it (`>3` is a reported
+  malformation; the fixture `rendering-intent-high-bits` covers that arm), and
+* the CMM **never consumes it**. `Chain::new` takes `intent: Intent` as a
+  required parameter, so no code path can reach the header value, and
+  `iccce transform`'s no-flag default is a constant in the CLI.
+
+Fixtures: `fixtures/synthetic/v2-rgb-header-intent-perceptual.icc` and
+`…-relative.icc` (recipes in `tools/gen-profiles/src/recipes.rs`). Test:
+`crates/iccce-cli/tests/header_rendering_intent_not_consumed.rs`, which
+carries the full account.
+
+#### ★ The open question, restated here because a budget row is where someone will look for it
+
+**Whether ICC.1 requires, permits or forbids consuming that field when no
+intent is otherwise specified is UNSOURCED as of 2026-08-18.** No clause has
+been read on it; nothing was written from memory (rule 2); an
+`icc-spec-librarian` dispatch is **outstanding**. If the standard turns out to
+require honouring the field, **iccce is wrong**, the bit-identity assertion is
+the one that flips, and the fixture that would prove the fix is already
+committed. **This row records a behaviour, not a conformance.**
+
+#### The rows
+
+| # | Row | Kind | Tolerance | Observed | Why this number |
+|---|---|---|---|---|---|
+| I1 | Two members, intent unspecified, same output | self-comparison | **none — bit-identical** | identical, both surfaces | ★ The deliberate absence. The claim is that one byte of input reached nothing; **any** non-zero difference falsifies it. A tolerance here would only create room for the claim to become partly false without failing, so there is none to justify. |
+| I2 | Parser reads 0 and 1 respectively; 0 malformations on both | self-comparison | exact | 0 / 1, no malformations | Separates *ignored* from *unparsed*. Both intents are defined values, so a malformation appearing here would mean the pair had stopped being a single-variable experiment. |
+| I3 | Pair differs in exactly one byte, at offset 67 | property of the fixture | exact, `diffs == [67]` | `[67]`, values `00h`/`01h` | Re-derived from the files on disk, not from the generator (the generator asserts it too, in `the_header_intent_pair_differs_only_at_offset_67`). A pair differing in two places would make I1 prove something strictly weaker without changing colour. |
+| I4 | **CONTROL** — explicit perceptual vs explicit media-relative do differ | fixture-power floor | **> 0,02 device units** | **0,203 330** device units, max per channel | See below. This is the only row here with discriminating power. |
+
+#### Why I4's floor is 0,02, and why it is not a tolerance
+
+**It bounds the fixture's power, not the agreement of two answers.** It
+answers one question — *is this pair capable of showing a difference at all?*
+— and it exists because I1 is **vacuous** on a fixture whose `A2B0` and `A2B1`
+happen to coincide: the mechanism could be fully live and invisible.
+
+Derivation: the two tables are 12 units apart in both `a` and `b` at **every**
+CLUT node by construction (~17 in chroma), far outside any perceptibility
+threshold and orders of magnitude outside `f64` rounding. The observed
+separation at the probe is **0,203 330** device units. The floor is set an
+order of magnitude below **the observed value**, not merely below the design
+intent, so it fails loudly if the separation collapses toward zero — while not
+pinning a number that a legitimate change to the destination model would have
+to chase.
+
+**Proved capable of failing, by injection (2026-08-18).** Two defects were
+introduced locally, run, and reverted:
+
+1. **The rival hypothesis** — the CLI patched to honour the source header's
+   intent when the caller named none. I1 and the no-flag-default row **FAILED**;
+   the rest passed. ★ Only the **CLI** arm could catch it: at the library
+   surface there is no "unspecified" state to change, which is why the test
+   lives in `iccce-cli`'s tests and shells out to the binary.
+2. **Zero separation** — the generator patched to emit the same table for both
+   intents, fixtures regenerated. **I1 still PASSED**, vacuously, while I4
+   failed with *"the two intents are only 0.000000 apart"*. That is §1.1's
+   lesson reproduced on a new fixture: a zero-separation corpus does not merely
+   fail to inform, it turns a red result green.
+
+#### Cross-check against lcms2 — recorded, and it does NOT close the question
+
+Run out of band against the pinned oracle (transicc 5.1 / LittleCMS 2.19,
+`tools/difftest/vendor`), same pair, same destination. **lcms2 does not consume
+the field either**: the two members gave identical output at every setting
+tried (no flag, `-t0`, `-t1`, `-t2`, `-t3`). Its no-flag default is a program
+constant, `INTENT_PERCEPTUAL`, so for the member whose header says **1**,
+lcms2's default chose **0** — the header value was present, disagreed, and
+lost. The two engines ignore the same field while defaulting to *different*
+intents.
+
+**★ The one place lcms2 reads it is DeviceLink profiles** — `src/cmsio1.c`,
+`cmsIsCLUT`, verbatim: *"For devicelinks, the supported intent is that one
+stated in the header"* — the only read of `cmsGetHeaderRenderingIntent` in its
+transform path. **Neither fixture here is a DeviceLink.** That is the lead the
+outstanding librarian dispatch should start from: the answer may be
+device-class-dependent. Per rule 7 this is an implementation's reading and
+cannot settle the question either way.
+
+Not asserted in code: `transicc` is out-of-tree and absent from CI, so a test
+depending on it would silently skip.
+
+#### Coverage — the scope, stated (§6's rule)
+
+**Verified on two synthetic profiles, one destination, one probe point, and
+two of the four intents, in the source→destination direction only.** Not
+covered, and not claimed: DeviceLink (`link`) profiles, where lcms2's own
+behaviour differs; saturation and absolute as *header* values; any real vendor
+profile; and the B2A direction. Nothing here is a colorimetric claim — the
+fixtures' numbers are an arbitrary hand-checkable split and describe no device.
 
 ---
 
@@ -3869,6 +4072,8 @@ drifting one justification at a time.
 | 2026-08-17 (Pass K) | **§3.10, all 33 rows (first filling, not a change)** | did not exist | as recorded in §3.10 | `icc-conformance` | **★★★ AN INSTRUMENT BUILT BEFORE THE THING IT MEASURES.** Pass K grades **black preservation**, a capability `crates/` does not have at tip `506fcd3`; the numbers were fixed before anyone could see which would be convenient. Five things about *how* they were arrived at. **(1) The section's whole tolerance policy follows from one measurement: a K-only build re-separated into `ISO Coated v2 300% (ECI)` comes back carrying `7.053 20×10⁻¹` of chromatic ink while sitting `1.360 90×10⁻¹ ΔE2000` from where it started — so ΔE is BLIND to this subject** and every preservation row is in device units. Row `A4` grades that ΔE against §2's `1.0` anchor and **passes on purpose**; a suite that graded this subject perceptually would report nothing. **(2) Two bounds are two orders tighter than §3.7's `SWEEP_DEVICE` and the reason is structural, not observational** — the K-only ramp lies on an *edge* of the 4-D `A2B` hypercube where every interpolation scheme coincides, §E's off-neutral points are `A2B` **nodes**, and the `B2A` leg is trilinear on both sides, so NA-006's envelope is **identically zero** on both probe sets. What remains is the 16-bit PCS quantum, and both rows **measure the destination's response to it at run time**, making the bound a function of the fixture (§3.7.2 lesson 1). **★ `E5` is the control that earns it**: the same comparison off the nodes is `1.750×10⁻³`, **32×** larger. **(3) One row is RED BY DESIGN at a tolerance of exactly zero** — `passk/E/k-only-in-implies-k-only-out`, observed `7.053 20×10⁻¹`. *K-only means K-only*, and D3 shows lcms2's own K-only intent returns the encoded zero at every point, so any bound above zero would be an allowance for ink the requirement forbids. **The remedy is the feature, not the number.** **(4) A new row shape, the REFUTATION row** (§3.10.3): `observed = the number of corpus members for which a shortcut holds`, bounded one below the population size, so the row fails exactly when the shortcut would be defensible. It kills two shortcuts with numbers — *"use the saturation intent"* (true of **2 of 6** real CMYK destinations, both the same vendor's) and *"the ICC leg and ISO 32000-1 §10.3.3's device rule are interchangeable"* (true of the press's own black-ink gray at `0.7516 ΔE2000`, false of an ordinary gamma-2.2 gray at `12.5958`). ★ **Both were corrected on the first run**: each had been given a candidate separation naming a rival *corpus*, which made them report `BLIND` for a property they do not have. **A rival CORPUS is not a rival candidate, just as a rival TOLERANCE is not** (§3.5.8). **(5) `Intent` was NOT extended to reach lcms2's black-preserving intents 10–15.** They are vendor extensions outside the ICC intent numbering; they are reached through a separate `passk::KOnlyOracle` that builds its own argument vector and carries a mandatory `CAVEAT` string prepended to the `source` of every record built from it. **Pass K contributes `unstated = 0` and `blind = 0`.** Suite: `pass=325 fail=1 skip=9 error=0`. |
 | 2026-08-17 (Pass K §F, later the same day) | **§3.10, seven NEW rows F1–F7 (§3.10.11); §3.10.1's table and separation tally; §3.10.7's owed-work note; §3.10.9's injection bullet** | did not exist | as recorded in §3.10.11 | `icc-conformance` | **★★★ CLOSING §3.10.7's OWED ITEM — A FIXTURE, NOT A TOLERANCE.** §3.10.7 recorded that the committed synthetic CMYK fixture is `ZERO-SEPARATION` for black preservation, so every graded row had to run on the **licensed** corpus and skip in CI — including the one that is red on purpose. A new `gen-profiles` recipe, **`v2-cmyk-chromatic-neutral`**, has a `B2A0` that separates a neutral into all four inks by construction: **the two candidate answers are `4.207 049×10⁻¹` apart** and all seven new rows run in CI. **Five things about how the numbers were arrived at.** **(1) SIX OF SEVEN ROWS ARE `derived-expectation`, and the harness reads the bytes ITSELF** — `Mft2Bytes` walks the tag table and decodes `mft2` in `tools/difftest`, deliberately not through `iccce-profile`, because a parser that read the CLUT wrongly would otherwise produce an expectation wrong in the same way as the observation. `F7` is the paired **third reading** (lcms2) that `Kind::DerivedExpectation`'s own documentation asks for. **(2) THREE CONSTRUCTION CHOICES REMOVE TERMS FROM THE BOUNDS RATHER THAN ALLOWING FOR THEM** — both models affine with no cross terms (so `NA-006`'s interpolation envelope, the term that forced §3.7's `SWEEP_DEVICE` to `4×10⁻³`, is **identically zero**); `B2A0` `a*`/`b*`-independent across three node lines, because `a* = 0` (`8000h` = 32 768) is **not a node** — node 4 of a 9-node axis sits at 32 767,5; and darkness defined on the **encoded** `L*` fraction, because legacy PCSLAB's top node decodes to `L* = 100.390 6` and an `L*`-based model would clamp inside the cell the K ramp's white end lands in. `F1` **grades** the dead band against the file rather than asserting it. **(3) `F3` GRADES THE SEPARATION ITSELF, against a floor of `4×10⁻²` = 10× §3.7's `SWEEP_DEVICE`, declared in advance and derived from the tolerance budget rather than the observation.** The classifier already *flags* `ZERO-SEPARATION`, and a flag is never a failure — but §F exists **because** a fixture collapsed, and a replacement that collapsed again would be the same defect under a fresh filename. **(4) PROVEN BY INJECTION, AND THE INJECTION BEAT THE DESIGN ARGUMENT.** Zeroing the `B2A0` chromatic samples — the sibling's construction — turns `F5`, the headline row, **GREEN**, and gives `F6` a transition width that looks like a working feature; `F2` and `F3` fail and are the only things that say so. A collapsed fixture does not merely fail to inform, it **manufactures a false pass**. **(5) ONE OF THE AUTHOR'S OWN SEPARATION CLAIMS WAS FALSE AND EVALUATING IT IS WHAT CAUGHT IT.** `F4`/`F7` first named DL-005's legacy-vs-general PCSLAB misreading as their rival; that misreading is **invisible** to these rows, because the derivation works in encoded fractions end to end and a **symmetric** misreading cancels exactly. The rival is now clause 10.10's **CLUT index order read backwards**, and it is **evaluated from the same committed bytes** rather than asserted: `4.843 550×10⁻¹`, `31 742×` `F4`'s bound. **★ `E1` is NOT repointed and `E6` is NOT deleted** — §F adds reach, it does not launder the red into green, and `E6`'s `ZERO-SEPARATION` verdict is the measurement that says why a second fixture had to exist. **★ §F closes the *gradeability* gap, NOT the *population* gap:** its models are affine precisely so that no interpolation envelope enters the arithmetic, which is exactly what a real profile does not give you. **★ No tolerance was widened; four were newly derived, all by counting 16-bit quanta.** Pass K still contributes `unstated = 0`, `blind = 0`. Suite: `pass=331 fail=2 skip=9 error=0`, both failures deliberate. |
 | 2026-08-18 (Pass K, grading the LANDED feature) | **§3.10.12 (new); §3.10's opening; §3.10.1's table (four new rows, E7–E9 and F8, and revised observations); §3.10.5; §3.10.6; §3.10.11's tail; CI floor 22 → 23** | `E1` `7.053 20×10⁻¹` (FAIL), `F5` `4.207 050×10⁻¹` (FAIL) | `E1` `0`, `F5` `0` — **at the same tolerances, both still exactly `0`** | `icc-conformance` | **★★★ NO TOLERANCE WAS WIDENED, SOFTENED OR RE-DERIVED; FOUR ROWS WERE ADDED.** `crates/iccce-cmm/src/black_preserve.rs` landed `KMapping::EqualLightness` behind `iccce transform --preserve-black <policy>` (the policy name mandatory, no default, because two published definitions disagree by up to `4.9×10⁻²`). §E and §F were repointed at that surface. Suite `pass=331 fail=2` → **`pass=337 fail=0 skip=9 error=0`**, 44 Pass K rows; corpus-free (CI-shaped) run `pass=184 fail=0 skip=94`, of which §F contributes eight. **Five things about how this was arrived at.** **(1) ★★★ THE REPOINTING INSTRUCTION WAS RIGHT AND INCOMPLETE, AND THE GAP WAS IN THE GUARD.** Pass K's own pre-feature text named `E1` and `E3` — the rows about the *predicate* — and `E4`, the row about the *regression*, claimed of itself that a leaking preservation path *“shows up here and nowhere else”*. **That was false of `E4` as written**: black preservation is opt-in and applied never by default, so a row driving the plain surface has no preservation code in its chain to leak, and `E4` would have stayed green through any leak whatever while its own sentence vouched for the silence. `E4`, `E5`, `F4` and `F7` are now driven WITH the flag, and **`E7`/`F8` grade `max |on − off|` at exactly zero** over probes that cannot qualify. Generalisation, one level above §3.5.8's: *ask which layer is in the loop of the FIX.* **(2) ★★ `E2` STAYS REPORTED AND THE REASON IS NOW MEASURED RATHER THAN ARGUED.** On the same-press pair §E uses, the observation (`6.1×10⁻⁵`) EQUALS the named rival's distance (`6.1×10⁻⁵`) — ratio `1.0`, **`BLIND`**. A bound iccce passed, “copy K through” would pass too. Grading it would have produced a green row discriminating nothing. `E9` was added on a cross-press pair (`GWG_GenericCMYK`), where the rival sits `4.890×10⁻²` away and the observation is `3.1×10⁻⁵` — **`1577×`**. It is the only row anywhere that can say WHICH of the two definitions iccce implements, which is exactly what the mandatory policy argument promises a caller. **(3) ★★ LCMS2 IS AN INTERPOLATION OF ITS OWN CONSTRUCTION, AND THAT CHANGED WHAT AN AGREEMENT NUMBER MEANS.** Split by whether the `K` value lands on a node of lcms2's 17-node black-preserving CLUT, the residual is `1.4–3.1×10⁻⁵` at the nodes and up to `1.089 5×10⁻²` off them — `120×` to `351×`. A whole-ramp figure measures lcms2's grid density, not either party's mapping, so `E9` grades **only at the nodes**. Same shape as `E5`'s `32×` control, in a different channel. **(4) ★★★ `E8` IS A ROW WHERE THE ORACLE IS WRONG AND THE ENGINE IS RIGHT (rule 7).** On a same-profile pair the equal-lightness construction is provably the identity — algebra, with no implementation in the expectation, so the kind is `derived-expectation`. iccce observes `0.000000` against a bound of one printed unit; **lcms2 intent 11 is `6.1×10⁻⁵` away from the algebraic answer** because its `K` returns through a 17-node CLUT. Its rival is named as the oracle's own answer, because “copy K through” IS correct on this pair and would have given `ZERO-SEPARATION`. **(5) ★★ `E3`/`F6`'s GAP TO LCMS2 IS NOW A REAL BEHAVIOURAL DIFFERENCE AND IS STATED, NOT TUNED TOWARD.** iccce's K-only region is zero wide by construction (exact-zero qualifying test); lcms2's is one CLUT cell, `1/16`. **ICC.1 contains no black-preservation construct at all** (register entry A51, a closed negative), so there is no text to settle it from and rule 7's remedy does not apply. Both rows stay REPORTED permanently — tuning toward `1/16` would be adopting a vendor's CLUT resolution as a colour requirement. ★ The rows also gained a **second number**, the chromatic ink at the `C = 0` endpoint, because `0.000000` meant “there is no K-only output at all” before the feature and means “the region exists and is one point wide” after it — an observation that does not move across the change it was written to detect is a blinded row. **★ Separation coverage `44 of 44`, `unstated = 0`, `blind = 0`** — and the tally is insufficient rather than wrong: `E2`'s separation distance EQUALS its observation (ratio `1.0`), which is what a blind row is, but the classifier only reaches `BLIND` for a row with a finite tolerance and `E2`'s is infinite, so it prints `UNGRADED`. **This paragraph first claimed `blind = 1`; the emitted report falsified it the same hour** — §3.5.8.6's rule about typed numerals, arriving as a typed NOUN. |
+| 2026-08-18 (later the same day, Pass K currency check) | **§3.10.12.7 (rewritten in place, heading and status); §3.10.12.6's last bullet** | §3.10.12.7 as filed: *"**Not fixed here, deliberately** … ★ **What this role owes when it is fixed:** a row"*, with `0.617121` / `0.617148` tabled as a current measurement. §3.10.12.6: *"the COMPILED path is unmeasured by any row **and is measurably wrong**"* | the same section, restated as **a FIXED defect** — fixing commit **`a05476c`** named, `0.617121` / `0.617148` retained as **dated pre-fix history**, current values `6.234231×10⁻⁷ → 3.330669×10⁻¹⁶` (near axis) and `3.710322×10⁻⁴ → 6.289234×10⁻⁸` (control) tabled separately, and the outstanding difftest row restated as **still owed** | `icc-conformance` | **★★★ NO TOLERANCE MOVED; NO NUMBER WAS DELETED. THIS IS A FALSE STATUS CLAIM RETRACTED, AND IT IS FALSE IN THE UNUSUAL DIRECTION — THE DOCUMENT UNDERSTATED THE CODE.** §3.10.12.7 was written while the compiled-path defect was live, and committed in `a1bd818` at 02:40:33 -0400 — **twenty-eight seconds after `a05476c` (02:40:05) fixed it**. For the whole of the interval since, this document has asserted a defect that does not exist, in a section explicitly headed as the grading's most consequential finding, and has done so in a form built to be quoted onward. **Re-verified before correcting, per §0**: `git show a05476c -- crates/iccce-cmm/src/compiled.rs` carries `k_preserve: Option<KPreserve>` outside the grid with a per-pixel branch in `convert` — the **second** of the two remedies §3.10.12.7 itself named — and `cargo test -p iccce-cmm --test compiled_black_preservation_convergence -- --nocapture` emits `grid 17: near-axis 6.234231e-7 control 3.710322e-4` / `grid 33: near-axis 3.330669e-16 control 6.289234e-8`, converging in both arms. **Three things about how the correction was bounded.** **(1) THE OLD NUMBERS STAY.** `0.617121` / `0.617148` are the measured signature of a real defect and are the evidence for why the *structural* remedy was the right one of two candidates; deleting them would erase the reason the decision went that way. They are re-presented as dated history with the fixing commit attached, never as a current measurement — the same posture §4's earlier rows take toward superseded envelopes, which are preserved so a reader who suspects tuning can audit the change. **(2) THE TWO ORDERS ARE SPLIT.** The retracted reading was *"`O(1)` beside `O(h^1.32)`"*. The `O(1)` half is the **defect's** signature and is gone; **`O(h^1.32)` is Pass 6's still-live measured order (`DL-025`, `NC-149`, §3.6) and is untouched**. Quoting the pair without the split would read as though both were retracted or both still live, and neither is true. **(3) ★★★ THE DEBT IS NOT DISCHARGED AND THE CORRECTION MUST NOT READ AS "CLOSED".** There is **still no difftest row for the compiled path**; every current number above comes from a `crates/` test, which is not in this budget, is not separation-graded, and does not appear in the suite summary this document gates on. What changed is the row's **purpose**: before `a05476c` it would have been a **disclosure**, now it would be a **regression guard** — a weaker reason to build it and a permanent one. **★ The generalisable mechanism, which is NOT §3.5.8.6's.** A stale numeral decays when someone re-measures. **A document that records *"X is broken and someone else owns the fix"* goes stale the moment that someone else commits — and nothing in the fixing commit's own review touches the document that made the claim.** It decays faster than a numeral and it decays silently, because the fixing commit is, from the document's point of view, an unrelated change in another directory. Drafted for the decision log and handed to `icc-librarian` rather than filed here. |
+| 2026-08-18 (later still) | **§3.11, rows I1–I4 (new section; first filling, not a change)** | did not exist | as recorded in §3.11 | `icc-conformance` | **★ A DISCLOSURE ROW — it records a BEHAVIOUR and deliberately establishes no conformance claim.** iccce parses and validates the header `renderingIntent` field and the CMM never consumes it; whether ICC.1 requires, permits or forbids consuming it when no intent is otherwise specified is **UNSOURCED as of 2026-08-18** and an `icc-spec-librarian` dispatch is outstanding. **Three of the four rows carry no tolerance at all** — I1 is bit-identity, because the claim is that one byte reached nothing and any difference at all falsifies it. **The only number is I4’s 0,02 device-unit floor, and it is a fixture-power bound, not an agreement tolerance**: it exists because I1 is vacuous on a pair whose `A2B0` and `A2B1` coincide. Set an order of magnitude below the **observed** 0,203 330, and **proved capable of failing by two injections** — with a zero-separation fixture I1 still passed while I4 failed at 0,000 000, which is §1.1’s lesson reproduced. No tolerance was widened; there was nothing to widen. |
 
 ---
 

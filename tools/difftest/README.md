@@ -5364,35 +5364,68 @@ observation that does not move across the change it was written to detect is a
 blinded row, and it took `cell_zero_chromatic` — the chromatic ink at the
 `C = 0` endpoint itself — to tell the two states apart.
 
-#### 25.13.7 ★★★ The finding no row in this crate can see — the compiled path
+#### 25.13.7 ★★★ The compiled path — a defect this harness could not see, FIXED in `a05476c`, and a row still owed
 
-`CompiledTransform::new` samples `chain.convert` on a uniform grid, and
-`chain.convert` applies black preservation, so the **nodes** are right. The
-preservation is a **discontinuity at `C = M = Y = 0` exactly**, and an
-interpolant cannot represent one. Measured out of tree, `ISO Coated v2 300%
-(ECI)` → itself, media-relative, `k-only-equal-lightness`:
+> ★★★ **CORRECTION, 2026-08-18 (later the same day), `icc-conformance`.** This
+> subsection was headed *"the finding no row in this crate can see"* and read
+> in the present tense throughout. **The defect it describes was fixed in
+> `a05476c` (02:40:05 -0400), the commit immediately before `a1bd818`
+> (02:40:33) which filed this text.** The numbers below are kept as **dated
+> pre-fix history** — they are the evidence for why the structural remedy was
+> chosen — and the current measurements are given beneath them. The **debt is
+> unchanged**: this harness still has no row for the compiled path. Full
+> correction, including why the two convergence orders must be kept apart, in
+> `docs/TOLERANCES.md` §3.10.12.7 and its §4 change row.
 
-| | grid 17 | grid 33 |
+**Why it happened.** `CompiledTransform::new` samples `chain.convert` on a
+uniform grid. Before `a05476c`, `chain.convert` applied black preservation, so
+the **nodes** were right — but the preservation is a **discontinuity at
+`C = M = Y = 0` exactly**, and an interpolant cannot represent one.
+
+**HISTORY — pre-`a05476c`, measured out of tree.** `ISO Coated v2 300% (ECI)` →
+itself, media-relative, `k-only-equal-lightness`. ★ **Not current values.**
+
+| (pre-fix) | grid 17 | grid 33 |
 |---|---|---|
 | max chromatic ink **on** the K axis | `0.000000` | `0.000000` |
 | max `|compiled − reference|` within **one cell** of the axis | **`0.617121`** | **`0.617148`** |
 | the same, far from the axis (control) | `1.138e-3` | `5.34e-4` |
 
-**Doubling the grid halves the control and does not move the near-axis error.**
-That is `O(1)` beside `O(h^1.32)` — the signature §21's row `R6` exists to
-detect, and R6's own band already says what it means. At grid 33 the near-axis
-error is `1156x` the control.
+**Doubling the grid halved the control and did not move the near-axis error.**
+That was `O(1)` — the signature §21's row `R6` exists to detect. At grid 33 the
+near-axis error was `1156x` the control. ★ **`O(h^1.32)` is a different number
+and is still live**: it is Pass 6's measured order for a *non-preserving*
+chain (`DL-025`, `NC-149`) and nothing here retracts it. The pre-fix reading
+paired the two; only the `O(1)` half is gone.
 
-**The direction is over-application.** At `C = 3.906e-3`, `K = 1.0`, grid 33,
-compiled returns `(0.0896, 0.0763, 0.0725, 0.9815)` where the reference chain
-returns `(0.7068, 0.6115, 0.5862, 0.8498)`. The compiled path applies
-preservation to pixels that do not qualify — `E7`/`F8`'s defect in a layer
+**The direction was over-application.** At `C = 3.906e-3`, `K = 1.0`, grid 33,
+compiled returned `(0.0896, 0.0763, 0.0725, 0.9815)` where the reference chain
+returned `(0.7068, 0.6115, 0.5862, 0.8498)`. The compiled path applied
+preservation to pixels that did not qualify — `E7`/`F8`'s defect in a layer
 neither can reach.
 
-**Unreachable from the CLI** (`iccce bench` takes no `--preserve-black`), and
-**reachable from the library**, which is where a per-pixel consumer lives.
-Filed in full at `docs/TOLERANCES.md` §3.10.12.7, including the two candidate
-remedies and why choosing between them is not a conformance decision.
+**CURRENT — at tip `60c32dd`**, `cargo test -p iccce-cmm --test
+compiled_black_preservation_convergence -- --nocapture` (deterministic;
+identical in debug and release):
+
+```
+grid 17: near-axis 6.234231e-7  control 3.710322e-4
+grid 33: near-axis 3.330669e-16 control 6.289234e-8
+```
+
+Both arms converge; `3.330669e-16` is ~1.5 ulp of 1.0. `a05476c` carries the
+policy **outside** the grid (`CompiledTransform.k_preserve`, branched per pixel
+in `convert`), which is the second of the two remedies the pre-fix text named.
+The test asserts **convergence, not a bound**, and its control assertion is a
+**precondition** — without it the near-axis assertion could pass vacuously.
+
+★★★ **Still owed: a row in THIS harness.** Every current number above comes
+from a `crates/` test, which is not separation-graded, carries no tolerance
+from `docs/TOLERANCES.md`, and never appears in a `summary` line. `iccce bench`
+would have to accept `--preserve-black`, or §21 would have to gain a section
+driving the library. **What changed is the row's purpose, not its absence:**
+before `a05476c` it would have been a **disclosure**; now it would be a
+**regression guard** against the policy being folded back inside the grid.
 
 #### 25.13.6 Coverage of this grading, stated
 
@@ -5410,4 +5443,12 @@ remedies and why choosing between them is not a conformance decision.
 - **the perceptual cost of preservation is unmeasured** — nobody has asked what
   `ΔE2000` the preserved answer sits from the colorimetric one on a cross-press
   pair, which is the number a caller weighing the policy would want;
-- ★★★ **the compiled path is unmeasured and measurably wrong** — §25.13.7.
+- ★★★ **the compiled path is unmeasured by any row of this harness** —
+  §25.13.7. ★ **CORRECTED 2026-08-18 (later the same day):** this bullet read
+  *"unmeasured **and measurably wrong**"* and the second half was stale when
+  committed — the defect was fixed in `a05476c`, the commit before the one
+  that filed this list. It is now measured by a `crates/` test
+  (`compiled_black_preservation_convergence`, `6.234231e-7 -> 3.330669e-16`
+  near the axis) and **not wrong**. The first half stands: **no row here
+  drives it**, and a `crates/` test carries no tolerance from
+  `docs/TOLERANCES.md` and never reaches a `summary` line.
