@@ -50,7 +50,7 @@ pub mod tag_types;
 pub use colour_space::{
     ChannelAgreement, ComponentCount, channel_agreement, components, is_valid_pcs,
 };
-pub use diag::{Malformation, ParseError};
+pub use diag::{IntentRule, Malformation, ParseError};
 pub use header::{Header, ProfileVersion};
 pub use num::Signature;
 pub use tag_table::TagEntry;

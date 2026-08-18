@@ -82,6 +82,27 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+/// Which edition's rule a [`Malformation::UnknownRenderingIntent`]
+/// report is made under.
+///
+/// This exists because **the two editions license different claims about
+/// the same bytes**, and a report that does not say which one it is
+/// speaking under is making the stronger claim by default. iccce reports
+/// and does not repair (project rule 6) — but a report is itself an
+/// assertion, and an over-strong one impugns a conforming file with no
+/// layer above the parser to catch it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IntentRule {
+    /// ICC.1:2022 (v4.x). High 16 bits **shall** be zero (quoted);
+    /// low half outside 0..=3 is prohibited **by inference** (`A56`).
+    V4Prohibited,
+    /// ICC.1:2001-04 (v2.x). Table 18 defines four values and the clause
+    /// forbids nothing; the high 16 bits are vendor-available by the
+    /// same parallel construction 6.1.8 uses for the profile flags.
+    /// **A high-half value is not reported at all under this rule.**
+    V2Undefined,
+}
+
 /// A rule violation the file carries but the representation survives.
 /// Reported verbatim; **never corrected**.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,12 +114,60 @@ pub enum Malformation {
     /// in PDF/TIFF (containers pad to 4-byte boundaries), so this is a
     /// report, not an error (`icc__s__header.md` field notes).
     TrailingBytes { declared: u32, actual: usize },
-    /// Rendering intent (offset 64) outside 0–3
-    /// (`icc__s__header.md`: 0=perceptual, 1=media-relative,
-    /// 2=saturation, 3=ICC-absolute). Read as all 32 bits and reported
-    /// rather than masked, per ambiguity A7 (whether only the low 16
-    /// bits carry the intent is NOT SOURCED).
-    UnknownRenderingIntent { value: u32 },
+    /// The `renderingIntent` field (header offset 64..67) carries a
+    /// value the applicable edition does not define.
+    ///
+    /// ## Why this variant carries an edition, and why the two readings
+    /// are not the same claim
+    ///
+    /// **The two editions differ, and reporting them in identical words
+    /// was a defect** (fixed 2026-08-18; the v2 half of the report was
+    /// false). What each edition actually says:
+    ///
+    /// * **ICC.1:2022 (v4) 7.2.15** — *"The field is a uInt32Number in
+    ///   which the least-significant 16 bits shall be used to encode the
+    ///   rendering intent"*, *"the most significant 16 bits shall be set
+    ///   to zero"*, and *"These shall be identified using the values
+    ///   shown in Table 23"*. The high half is **prohibited** from being
+    ///   non-zero — that is quoted, not inferred.
+    ///
+    /// * **ICC.1:2001-04 (v2) 6.1.11** — the clause body in full is
+    ///   *"Perceptual, media-relative colorimetric, saturation and
+    ///   ICC-absolute colorimetric are the four intents required to be
+    ///   supported. The least-significant 16 bits are reserved for the
+    ///   ICC."* plus Table 18's four rows. It contains **no `shall`, no
+    ///   "must", no "only"**, and no "other values are reserved"
+    ///   sentence — which the same document *does* use elsewhere when it
+    ///   means to close a set (6.5.4 / Table 38, `dataType`: *"other
+    ///   values are reserved for future use"*). So in v2 a value outside
+    ///   0–3 is **undefined, not forbidden**, and v2's *"least-significant
+    ///   16 bits are reserved for the ICC"* is the identical boilerplate
+    ///   6.1.8 uses for the profile flags, where the high half is
+    ///   demonstrably vendor space. **A v2 profile with high bits set is
+    ///   using the field as its own edition invites.**
+    ///
+    /// ★ Consequence for the emitted string, which is the part a
+    /// consumer reads: *"outside the defined 0..=3"* is a true statement
+    /// about v4 and a **false statement about v2**. The wording is
+    /// therefore selected by [`IntentRule`], not shared.
+    ///
+    /// ## The v4 claim is inferred, and says so
+    ///
+    /// No sentence in ICC.1:2022 forbids a *low-half* value outside 0–3
+    /// in as many words. The prohibition is reached by chaining
+    /// *"shall specify the rendering intent"* to *"These shall be
+    /// identified using the values shown in Table 23"* — a value naming
+    /// none of the four specifies no intent. That is a **two-step
+    /// inference and the citation is the chain, not a quotation**
+    /// (register entry `A56`).
+    ///
+    /// ## Unheld edition
+    ///
+    /// **ICC.1:2010-12 (v4.3) is not held** (same blocker as `A31`,
+    /// `A47`, `A51`, `A55`). v4.x is exactly where the high-half `shall`
+    /// appeared, so it is the plausible place for a low-half wording
+    /// change too, and this corpus cannot exclude one.
+    UnknownRenderingIntent { value: u32, rule: IntentRule },
     /// Tag data extends past `header.size` (`icc__s__tag_table.md`
     /// validation table: overrun).
     TagOverrun { index: usize, sig: Signature },
@@ -135,12 +204,26 @@ impl std::fmt::Display for Malformation {
                  (normal for container-embedded profiles)",
                 actual - *declared as usize
             ),
-            Self::UnknownRenderingIntent { value } => {
-                write!(
+            Self::UnknownRenderingIntent { value, rule } => match rule {
+                // v4 states the prohibition (high half) and supports the
+                // low-half one by inference; "outside the defined range"
+                // is defensible. The doc comment carries the chain.
+                IntentRule::V4Prohibited => write!(
                     f,
-                    "rendering intent 0x{value:08X} is outside the defined 0..=3"
-                )
-            }
+                    "rendering intent 0x{value:08X} is outside the defined 0..=3 \
+                     (ICC.1:2022 7.2.15 + Table 23)"
+                ),
+                // ★ v2 defines four values and forbids nothing. Saying
+                // "outside the defined range" here would assert a rule
+                // ICC.1:2001-04 does not contain — the report would be
+                // as wrong as the file it accuses.
+                IntentRule::V2Undefined => write!(
+                    f,
+                    "unrecognised rendering intent value 0x{value:08X} \
+                     (ICC.1:2001-04 6.1.11 / Table 18 define only 0..=3 \
+                     and do not forbid others)"
+                ),
+            },
             Self::TagOverrun { index, sig } => {
                 write!(
                     f,

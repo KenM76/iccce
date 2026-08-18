@@ -2,17 +2,29 @@
 //!
 //! Layout per `ICC_Spec/icc/icc__s__header.md` (evidence tier
 //! `cross_verified_2src`: ICC's `icProfileHeader.h` and `lcms2.h` agree
-//! field-for-field, and the field sizes sum to exactly 128). Clause
-//! numbers are deliberately absent: the corpus does not yet have the
-//! ICC.1 PDF (`docs/LEGAL.md` §2), and citing a clause number nobody
-//! read would be the paraphrase-as-spec-text failure the project rules
-//! prohibit.
+//! field-for-field, and the field sizes sum to exactly 128).
+//!
+//! ## ★ CORRECTED 2026-08-18 — clause numbers are no longer absent
+//!
+//! This header previously read *"Clause numbers are deliberately absent:
+//! the corpus does not yet have the ICC.1 PDF"*. **That ceased to be
+//! true and the note outlived it.** `ICC.1-2022-05.pdf` (v4.4.0.0) and
+//! `ICC.1-2001-04.pdf` (v2.4) are both held in `ICC_Spec/_sources/`, and
+//! the `renderingIntent` validation below now cites 7.2.15, 6.1.11 and
+//! Table 18 from text read directly and cross-verified in three
+//! independent extraction channels.
+//!
+//! **The retracted principle was right and is retained:** a clause
+//! number nobody read must never appear here. What changed is only that
+//! some clauses have now been read. Fields whose notes still say
+//! `NOT SOURCED` mean exactly that — the gap is per-field, and the
+//! absence of a citation on a field is information, not an oversight.
 //!
 //! Fields are read individually, big-endian — never by overlaying a
 //! packed struct (`icc__s__header.md` traps: `attributes` is an 8-byte
 //! value at the non-8-aligned offset 56).
 
-use crate::diag::Malformation;
+use crate::diag::{IntentRule, Malformation};
 use crate::num::{DateTimeNumber, Signature, XyzNumber, u32_be, u64_be};
 
 /// The profile version, kept raw alongside its BCD decoding.
@@ -86,7 +98,20 @@ pub struct Header {
     /// are NOT SOURCED (ambiguity A8) — parsing named booleans out of
     /// unverified bit positions would be guessing with confidence.
     pub attributes: u64,
-    /// Offset 64: rendering intent, all 32 bits as read (A7).
+    /// Offset 64: rendering intent, **all 32 bits exactly as read** —
+    /// never masked, in either edition.
+    ///
+    /// ★ The note here formerly read *"(A7)"*, deferring to an ambiguity
+    /// **resolved from the primary text on 2026-08-11**. Corrected
+    /// 2026-08-18. What is now sourced: ICC.1:2022 7.2.15 puts the
+    /// intent in the least-significant 16 bits and requires the most
+    /// significant 16 to be zero; ICC.1:2001-04 6.1.11 states the field
+    /// type nowhere at all (Table 9's cell reads *"see below"*), so in
+    /// v2 the low-half reading is an inference resting on *"the
+    /// least-significant 16 bits are reserved for the ICC"*.
+    ///
+    /// Storing the raw 32 bits is what lets the two editions be reported
+    /// differently without the parser having to choose one to believe.
     pub rendering_intent: u32,
     /// Offset 68: the PCS illuminant — architecturally always D50; not
     /// the measurement illuminant (`icc__s__header.md` field notes).
@@ -135,9 +160,44 @@ impl Header {
         if header.reserved.iter().any(|&b| b != 0) {
             malformations.push(Malformation::HeaderReservedNonZero);
         }
-        if header.rendering_intent > 3 {
+        // ★ VERSION-GATED, and the gate is two conditions rather than
+        // one. Before 2026-08-18 this read `if rendering_intent > 3`
+        // unconditionally, which reported a v2 profile in the same words
+        // as a v4 one — for a requirement v2 does not impose on either
+        // half of the field. See `Malformation::UnknownRenderingIntent`
+        // for the clause-by-clause sourcing; the short form is:
+        //
+        //   v4 (ICC.1:2022 7.2.15) — high 16 bits SHALL be zero
+        //     (quoted); the whole field must therefore be 0..=3.
+        //   v2 (ICC.1:2001-04 6.1.11 / Table 18) — the high half is
+        //     vendor-available by the same construction 6.1.8 uses for
+        //     the flags field, and the low half's four defined values
+        //     are not a closed set. Only an unrecognised LOW half is
+        //     reportable, and only as "unrecognised".
+        //
+        // ★ Note what this deliberately does NOT do: it does not mask,
+        // normalise, or otherwise repair the stored value. `Header`
+        // keeps all 32 bits exactly as read in every case (rule 6). The
+        // edition changes what iccce is entitled to SAY, never what the
+        // file is recorded as containing.
+        //
+        // v2 does not state the field's type at all — Table 9's cell
+        // reads "see below" and 6.1.11 names none — so reading the low
+        // half as the intent is itself an inference in v2, resting on
+        // "the least-significant 16 bits are reserved for the ICC".
+        // Recorded here because it is the assumption a future reader is
+        // most likely to mistake for quoted text.
+        if header.version.major() >= 4 {
+            if header.rendering_intent > 3 {
+                malformations.push(Malformation::UnknownRenderingIntent {
+                    value: header.rendering_intent,
+                    rule: IntentRule::V4Prohibited,
+                });
+            }
+        } else if header.rendering_intent & 0xFFFF > 3 {
             malformations.push(Malformation::UnknownRenderingIntent {
                 value: header.rendering_intent,
+                rule: IntentRule::V2Undefined,
             });
         }
         header
