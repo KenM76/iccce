@@ -4782,6 +4782,31 @@ engineer changes the code.**
 >   is a CONFORMANCE-RUNNER record count and is not comparable to
 >   either** — DL-031.
 
+#### ★★ Dated update, 2026-08-17 — **tail debt #7 ONLY. The three blocks above are not edited, and all three now carry stale wording**
+
+**Scope: this note corrects ONE row and touches nothing else in the three
+tail-debt roundups above.** Debts 1–6 are unaffected by it and are not
+re-scored here.
+
+**Every occurrence above of *"crates.io … name availability is still
+unchecked"* / *"nobody has looked"* is superseded** — at all three sites
+(the seven-item list, the seven-row table, and the re-scored list). **The
+full correction is in *Publication — crates.io* below**; decision record
+`ARCHITECTURE.md` **DL-058**. In one line each:
+
+- **Name availability: LOOKED AT, 2026-08-17.** Five names each returned
+  *"does not exist"* from the crates.io API. ★ **A dated observation with
+  an expiry, not a reservation, and it authorises no publish** — and
+  ★★ **it covered five of six candidate names.** `iccce-measure` was not
+  queried, because the query used the name list written **before that
+  crate existed**.
+- **`THIRD_PARTY_LICENSES.md`: no longer *"still owed"*, and NOT
+  discharged.** The file and its `cargo-about` apparatus exist
+  *(verified — read)*; **the output names four crates at `0.0.1` against
+  a five-crate, `0.1.0` workspace**, and `about.toml` has no `clarify`
+  block for the fifth. ★ **Discharging this half on the filename alone
+  would have shipped exactly that.**
+
 ### ★★★ Pass 8 — RETROSPECTIVE entries for two capabilities that shipped with NO ROADMAP ENTRY. Filed 2026-08-17 by `icc-librarian`
 
 **Why this subsection exists, stated plainly:** the two items below were
@@ -5207,6 +5232,153 @@ Practical consequences, cheapest if done early:
   on the record in `NUMERIC_CLAIMS.md` — the ledger is what lets a
   stranger trust the crate.
 
+### ★★ Dated update, 2026-08-17 — **somebody finally looked. Five names were free at 2026-08-17, and that sentence has an EXPIRY DATE built into it. The `cargo-about` half is NOT discharged, and the check missed a crate**
+
+**The bullet list above is not edited.** ★ **The first bullet's wording —
+*"Crate-name availability on crates.io is unchecked … nobody has looked"*
+— is superseded by this subsection and by nothing else.** The same
+wording is carried, unedited and now stale, at three further sites in
+this document (the three tail-debt roundups of 2026-08-12) and at four
+sites in `ARCHITECTURE.md` (**DL-009**, **DL-024**, **DL-029**, and
+DL-030's *"does NOT decide"* list). All are dated blocks in append-only
+registers; **this subsection and `ARCHITECTURE.md` DL-058 are their
+correction.** Decision record: **`ARCHITECTURE.md` DL-058**.
+
+#### What was measured, and by whom
+
+**`icc-engineer` queried the crates.io API from a shell on 2026-08-17**,
+one `GET https://crates.io/api/v1/crates/<name>` per name. **All five
+returned exactly `{"errors":[{"detail":"crate `<name>` does not exist"}]}`.**
+
+| Name | crates.io, 2026-08-17 |
+|---|---|
+| `iccce` | does not exist |
+| `iccce-color` | does not exist |
+| `iccce-profile` | does not exist |
+| `iccce-cmm` | does not exist |
+| `iccce-cli` | does not exist |
+
+★ **Evidence class: `[REPORTED]`, with the command and the five verbatim
+response bodies carried in the dispatch.** This librarian **has no shell,
+did not run the query and did not re-run it**; what is verified here is
+that the dispatch carried the request and the responses, not that the
+network exchange happened as described. **It is corroborated by nothing
+else** — there is no second observer, and one HTTP round trip per name is
+the entire apparatus.
+
+#### ★★★ What this is NOT, stated first because it is the part that will be misread
+
+1. **It is NOT a reservation.** crates.io has **no reservation
+   mechanism**; a name is claimed by the first successful publish. Any of
+   the five could be taken by a stranger tomorrow.
+2. **It therefore has an EXPIRY DATE.** It is a **dated observation about
+   one instant**, 2026-08-17. **It must be re-run immediately before a
+   first publish** and **must never be quoted later as a standing
+   guarantee** — *"the names were checked"* is exactly the sentence that
+   will be true, stale and load-bearing at the same time. DL-009's own
+   note stands: crates.io names are effectively permanent and are not
+   released by a yank.
+3. **It authorises nothing.** **Rule 9 is untouched, DL-009 is untouched,
+   and no crates.io publish has been authorised.** A name being free is a
+   fact about crates.io, not a decision by the operator.
+4. **It discharges ONE HALF of tail debt #7** — the *"has anyone looked?"*
+   half. The `cargo-about` half is separately assessed below and is **not
+   discharged**.
+
+#### ★★ The check covered FIVE names, and there are SIX candidates — `iccce-measure` was NOT checked
+
+**The five names queried are exactly the list DL-009 and the bullet above
+wrote on 2026-08-11 — and that list predates the crate.** `Cargo.toml`'s
+`[workspace] members` now names **five** crates and `Cargo.lock` lists
+**five packages** *(both verified — read)*: the four above plus
+**`iccce-measure`**, added 2026-08-12 (commit `2a2d616`, recorded in the
+2026-08-12 tail-debt block above and in `NUMERIC_CLAIMS.md` §2.12).
+
+> ★★★ **So the coverage is five of six candidate names, not "the crate
+> names".** A stale enumeration was copied forward into the query, and
+> the query returning five clean results is what makes it look complete.
+> **DL-031 and DL-053: the count is right and the population is wrong.**
+> ★ Note also that `iccce` — which *was* checked — is a **facade name
+> that is not a workspace member**, so the queried set is neither a
+> subset nor a superset of the publishable set.
+
+**Owed:** query `iccce-measure`, in the same shape, before the same
+publish. Owed to `icc-engineer`.
+
+#### ★★★ The `cargo-about` half: CARRIED, not discharged — the apparatus is built and its OUTPUT IS STALE
+
+**`THIRD_PARTY_LICENSES.md` exists at the repository root, and this
+librarian read it rather than taking its existence as its status.** All
+of the following are **verified — read**:
+
+- **It is genuinely generated.** Its intro prose is **byte-identical to
+  the prose in `about.hbs`**, and the `## MIT License` / *"Used by:"* /
+  fenced-licence-text shape is cargo-about's template output. `about.toml`
+  and `about.hbs` both exist and carry the full regeneration procedure.
+  **So the apparatus `docs/LEGAL.md` §1 asks for — *"generated by
+  `cargo-about`, never hand-written"* — is real and executable.**
+- **★★ Its data is stale in two independent ways.**
+  1. **Version.** It lists all four crates at **`0.0.1`**.
+     `[workspace.package] version` is **`0.1.0`** and every package in
+     `Cargo.lock` is **`0.1.0`**. *(The session-opening `git status`
+     snapshot shows a commit `a3fac00` **"release: the lockfile the 0.1.0
+     bump left behind"** — corroborating, and **reported**, not verified
+     by this librarian.)*
+  2. **Membership.** **`iccce-measure` does not appear in it at all**, and
+     its prose asserts *"The **four** crates … **are this project**"* and
+     *"this manifest covers Cargo dependencies of the **four** workspace
+     crates"*. There are five.
+- **★★★ And regenerating it today would emit a DEFECTIVE entry, not
+  merely a missing one.** `about.toml` carries **four**
+  `[<crate>.clarify]` blocks — `iccce-color`, `iccce-profile`,
+  `iccce-cmm`, `iccce-cli` — and **none for `iccce-measure`**. By
+  **`about.toml`'s own written rationale**, a crate with no `clarify`
+  block falls back to the **generic SPDX MIT template**, *"the one whose
+  copyright line literally reads `Copyright (c) <year> <copyright
+  holders>`"*, which the same comment calls **"worse than publishing
+  nothing"**. ★ **This is an inference from `about.toml`'s stated
+  reasoning, not a measurement** — no agent has run `cargo about` at this
+  tree state, and this librarian has no shell.
+- **`about.hbs`'s prose also hardcodes "four"**, and the template opens
+  with *"★ READ THIS BEFORE EDITING THE PROSE BELOW"*. **Regeneration
+  alone will not fix the prose**; the template is the thing to edit.
+
+**Verdict: CARRIED with a caveat, and the caveat is the actionable part.**
+*"`THIRD_PARTY_LICENSES.md` still owed"* is **no longer the right
+wording** — the file and its generator exist — but *"discharged"* is
+wrong too, and **discharging it on the filename would have shipped a
+licence manifest that omits a crate and names the wrong version.**
+
+**The three things owed, in the order they must happen** (owed to
+`icc-engineer`; each needs a shell):
+
+1. **Add `[iccce-measure.clarify]` to `about.toml`**, pointing at
+   `../../LICENSE` with the same sha256 as its four siblings — *before*
+   regenerating, or step 2 emits the placeholder licence.
+2. **Update `about.hbs`'s "four crates" prose to five** (and prefer
+   wording that does not restate a count, per the template's own warning
+   about assertions the next change falsifies).
+3. **Regenerate**, and confirm the output names five crates at `0.1.0`:
+   `cargo about generate --workspace about.hbs -o THIRD_PARTY_LICENSES.md`
+
+★ **A fourth, separate:** `LICENSE`'s sha256 is pinned in all four
+`clarify` blocks and is dated **2026-08-12** in `about.toml`'s comment.
+It is pinned so an edit **hard-fails** the generator — which means step 3
+failing on a checksum is the pin working, not a bug to route around.
+
+#### Not filed in `NUMERIC_CLAIMS.md`, deliberately
+
+**No NC row was added and no `§7.20` status pass was opened.** The
+ledger's subject is **tolerances and measured errors** — every row states
+a colour-or-numeric evidence class, and *"an HTTP endpoint returned a
+404-shaped body for five strings"* has none of them. ★ **Opening a §7
+status pass would also have moved an integer the ledger itself tracks**
+(*"twenty-third status pass … twenty-fourth librarian filing"*, §7.19) for
+an item that section has never carried — **§7 has no crates.io item to
+re-check.** The durable home is this subsection plus `ARCHITECTURE.md`
+**DL-058**. *(Recorded as a librarian judgement, so it can be overturned
+by naming it rather than by being noticed as an absence.)*
+
 ---
 
 ## Ghent compatibility — **a standing workstream, NOT a Pass** (opened 2026-08-17)
@@ -5310,6 +5482,63 @@ subsection is what changed.
 - **★★★ Nothing here changes the operator block below.** More numbers do
   **not** make *"passes the Ghent suite"* available; that is a permission
   question, not an evidence one.
+
+### ★★★ Updated 2026-08-17 (later still) — **a BOUNDARY RECLASSIFICATION: one of the six patches called "genuinely ours" is not ours, and the error ran in the CLAIMING direction**
+
+**Nothing measured changed. No Pass moved. No ledger row was added,
+altered or invalidated** — the next free identifiers are still **NC-243**
+and **NA-012**.
+
+- **★★★ GWG 23.0 "Four different Grays" leaves Tier A.** It was filed as
+  *"K-only preservation … CMM policy, engine plumbing"*. **It is
+  device-space channel routing — the same boundary class as overprint —
+  and it is `pdfce`'s.** All four of its gray definitions resolve to the
+  same single-channel device answer **inside PDF**, by **ISO 32000-1
+  §10.3.3 = ISO 32000-2 §10.4.2.3** (`c = m = y = 0`, `k = 1.0 − gray`, a
+  **`shall`**), **§10.3.2** (which routes gray→CMYK to that same rule
+  **inside the ICC-enabled branch**), **§8.6.6.4/§8.6.6.5** and
+  **§10.3.1** — **with no ICC transform anywhere in the path.**
+  Reasoning: **`ARCHITECTURE.md` §5, DL-059**. Evidence:
+  **`GHENT_COMPATIBILITY.md` §3.5**. Owed items:
+  **`NUMERIC_CLAIMS.md` §7.20**.
+- **★★ *"Six are genuinely ours"* becomes FIVE**, and the patch totals
+  are corrected: **51 patches** (`1-CMYK` **27**, `2-SPOT` **8**,
+  `3-ICC-CMS` **16**), not *"~48"*; `1-CMYK` + `2-SPOT` is **35**, not
+  32. ★ The *"sixteen touch colour conversion"* figure **was exactly
+  right** and is unchanged. Counts verified by enumerating
+  `…\Categories\*\Patches\*.pdf` on disk; the same sweep returns **98
+  PDFs**, which **independently agrees with the extractor-derived 98**
+  recorded above.
+- **★★★ Why this direction of error matters more than the instance.** An
+  **under**-claimed boundary is caught by the consumer — `pdfce` hits the
+  gap and files in the channel. An **over**-claimed one is caught by
+  nothing: it produces a *"not attempted"* line that **looks like
+  diligence** and can be carried indefinitely, because **nothing fails
+  when you do not do work that is not yours.** Worse, building it would
+  ship a feature that is *wrong* — an ICC path for a leg the standard
+  routes around ICC — and it would look correct, because its output is a
+  gray that matches.
+- **★ There is no GWG requirement "23.0".** GWG 2022 (the current
+  edition; **there is no 2023**) numbers requirements `Dxxx`/`Rxxx`;
+  `n.m` is **Output Suite *patch*** numbering. The equivalence claim is
+  real but its authority is **patch documentation, not the GWG
+  specification** — and GWG's own nearest construct, `D0013 "Black
+  Colour"`, is a **definition consumed by the overprint requirements
+  R0009–R0015**. ★★ **GWG files this under overprint too.**
+- **★ This document carried none of the defective phrasing.** A sweep for
+  *"GWG 23.0 demands…"* found it **nowhere in the repository**
+  *(verified — grepped)*; `ROADMAP.md` had never mentioned patch 23.0 at
+  all. **Recorded because a correction aimed at text that does not exist
+  is itself the DL-048 failure**, and the check was cheap.
+- **★★★ What is NOT changed, stated so it cannot be read as a scope
+  cut.** **CMYK→CMYK black preservation remains genuinely this
+  project's**, is unimplemented, and is still being built. **ICC.1
+  contains no black-preservation construct in either edition checked**
+  (`ICC_Spec` **A51**, **A52**) — the PCS is three components, so every
+  device→device transform is 4→3→4 and **K has no carrier**. GWG 23.0
+  simply is not what tests it.
+- **★★ Nothing here changes the operator block below.** A clearer
+  boundary is not a permission.
 
 ### ★★★ Blocked on the operator — three decisions, and no agent may take any of them
 

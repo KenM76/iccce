@@ -5747,3 +5747,390 @@ applied to a pair of tests.
 effect and dropping part of its result. The audit question is not *"is
 this correct?"* but *"whose error message does the caller see if the
 discarded half fails?"*
+
+---
+
+### DL-058 — ★★ **an "unchecked" that was carried for six days gets checked, and the check is a DATED OBSERVATION WITH AN EXPIRY, not a reservation. The half of the same debt that LOOKED discharged — a file with the right name — was the one that was wrong**
+
+**Date:** 2026-08-17 · **Checked by:** `icc-engineer` (crates.io API, from
+a shell) · **Filed by:** `icc-librarian`, **from the tree for the second
+half** · **Relates to** **DL-009** (crates.io intent), **DL-024** (a
+public git repository is not a published crate), **DL-029** (the API
+sealing split authorises no publish), **DL-031** / **DL-053** (a count
+from the wrong population), and **rule 9**, which this entry does not
+move.
+
+#### What was checked
+
+`GET https://crates.io/api/v1/crates/<name>` for **`iccce`,
+`iccce-color`, `iccce-profile`, `iccce-cmm`, `iccce-cli`**. All five
+returned exactly ``{"errors":[{"detail":"crate `<name>` does not
+exist"}]}``. **Full table, provenance and the wording it supersedes:
+`ROADMAP.md`, *Publication — crates.io*, dated update 2026-08-17.**
+
+★ **`[REPORTED]`.** The dispatch carried the command and the five verbatim
+response bodies; **this librarian has no shell and re-ran nothing.** One
+HTTP round trip per name, one observer, no corroboration.
+
+#### The decision — what this fact IS, and its three limits
+
+> **Recorded as a DATED OBSERVATION that on 2026-08-17 no crate of those
+> names existed. It is not a reservation, it does not expire quietly, and
+> it authorises nothing.**
+
+1. **Not a reservation.** crates.io has **no reservation mechanism**;
+   names are claimed on first publish. Any of the five may be taken by a
+   stranger tomorrow. **DL-009's revisit clause — *"a name collision on
+   crates.io forces a rename"* — is not retired by this entry**; it is
+   exactly as live as it was, only now with a known-good starting state.
+2. **It must be RE-RUN immediately before a first publish**, and **must
+   never be cited later as a standing guarantee.** ★★ *"The names were
+   checked"* is the shape of sentence this project has been bitten by
+   before: true when written, load-bearing afterwards, and with nothing in
+   its wording to say when it stopped being true. **This entry's date is
+   part of its content.**
+3. **It authorises nothing.** **Rule 9 stands, DL-009 remains intent and
+   not approval, no publish has been authorised, and none is implied.**
+   A name being free is a fact about crates.io, not a decision by the
+   operator. It discharges **the *"has anyone looked?"* half of tail debt
+   #7** and no more.
+
+#### ★★★ Why this is worth a decision-log entry, when "a name is free" is not a decision
+
+**Because both halves of the debt failed in the same direction, and the
+direction is the reusable part: an item's STATUS was inferred from its
+most visible surface rather than from its content.**
+
+- The first half sat *"unchecked by anyone"* across **six documents'
+  worth of dated blocks** — not because checking was hard (five HTTP
+  requests) but because *"unchecked"* is a **stable, safe-sounding
+  status** that costs nothing to carry forward. It survived by being
+  copied, not by being reasoned about.
+- The second half then failed the opposite way. **A file named
+  `THIRD_PARTY_LICENSES.md` now exists at the repository root — and the
+  dispatch explicitly warned against discharging the debt on that
+  basis.** Reading it was decisive:
+  - it **is** genuine `cargo-about` output — its prose is byte-identical
+    to `about.hbs`'s *(verified — both read)*;
+  - it names **four** crates at **`0.0.1`**, against a workspace that is
+    **five** crates at **`0.1.0`** *(verified — `Cargo.toml` and
+    `Cargo.lock` read)*; **`iccce-measure` is absent entirely**;
+  - and `about.toml` has **no `clarify` block for `iccce-measure`**, so
+    by **its own written rationale** a regeneration would emit the
+    **generic SPDX MIT placeholder** — *"Copyright (c) `<year>`
+    `<copyright holders>`"* — which that same comment calls **"worse
+    than publishing nothing"**. ★ *(An inference from `about.toml`'s
+    stated reasoning; **no agent has run `cargo about` at this tree
+    state**.)*
+
+> ★★★ **The rule:** **the existence of an artifact is not the status of
+> the obligation that asked for it.** A generated file is a claim about
+> a tree **at the moment it was generated**, and the failure mode is
+> silent — the file does not become malformed when the tree moves on, it
+> becomes **quietly wrong while remaining well-formed and confident**.
+> ★★ **This is DL-048's mechanism in a fourth register**: the right name
+> at the right path invites the reader to accept the destination.
+
+★ **And a note on the instrument.** `docs/LEGAL.md` §1's *"generated by
+`cargo-about`, never hand-written"* is a rule about **how**, with no
+clause about **when**. It was fully honoured and still produced a stale
+manifest. **A generation rule needs a regeneration trigger to be
+complete**; `about.toml` states one (*"after ANY dependency change"*),
+and **adding a workspace member is not a dependency change**, which is
+precisely the gap `iccce-measure` fell through.
+
+#### ★★ The check's own coverage defect — five names, six candidates
+
+The queried list is **verbatim DL-009's list of 2026-08-11**, written
+**before `iccce-measure` existed** (added 2026-08-12, commit `2a2d616`).
+`Cargo.toml`'s `members` and `Cargo.lock` both name five crates
+*(verified — read)*.
+
+> ★★ **A stale enumeration copied into a query returns clean results and
+> looks complete.** The five answers are each correct; the **denominator**
+> is wrong. **DL-053 exactly** — `[VERIFIED]` certifies that a
+> measurement happened, never what it ranged over. ★ Note too that
+> `iccce`, which *was* queried, is a **facade name that is not a
+> workspace member**, so the queried set is neither a subset nor a
+> superset of the publishable set.
+
+#### What this entry does NOT decide
+
+- **It does not authorise a publish, a push, a tag or a release.** Rule 9
+  and DL-009's own limit are untouched, and nothing here is a go-ahead.
+- **It does not discharge tail debt #7.** One half discharged, one half
+  **carried with a caveat and three named actions** (`ROADMAP.md`).
+- **It does not claim the names are available now.** Only that they were
+  at one instant on 2026-08-17.
+- **It does not add a row to `NUMERIC_CLAIMS.md`,** and that is a
+  librarian judgement recorded so it can be overturned by argument rather
+  than discovered as an absence: the ledger's subject is **tolerances and
+  measured errors**, every row carries a colour-or-numeric evidence
+  class, and an HTTP response body has none. §7 has never carried a
+  crates.io item, and opening a status pass for one would have moved an
+  integer that section itself tracks.
+- **It says nothing about the GitHub remote.** DL-009's separate note —
+  that whether `https://github.com/KenM76/iccce` exists has never been
+  checked *by that route* — is **not** touched by a crates.io query.
+
+**Revisit if:** any of the five names is found taken (the rename that
+DL-009 anticipated, now with a known-good baseline to date it against);
+**`iccce-measure` is queried** and the six-name result becomes the
+citable one; a publish is authorised, at which point **re-running the
+query is a precondition and this entry is not**; or a **sixth** workspace
+member is added, which recreates both defects at once — an unqueried name
+**and** an uncleared `about.toml`.
+
+---
+
+### DL-059 — ★★★ **a test patch whose OUTPUT is a colour is not therefore a COLOUR-CONVERSION test. Ask which LAYER the standard assigns the behaviour to, before claiming it — because a boundary error in the CLAIMING direction is caught by nothing**
+
+**Date:** 2026-08-17 · **Sourced by:** `icc-spec-librarian` (ISO 32000-1
+and ISO 32000-2 clause retrieval, cross-verified with two extraction
+engines) and `icc-engineer` (the patch's own readme, `pdftotext -layout`)
+· **Filed by:** `icc-librarian`, **with every clause number re-settled
+from `D:\Dev\Rag-Specialized\PDF_Spec\` rather than from the dispatch** ·
+**Relates to** **DL-045/046/047** (the Ghent posture, the promotion rule,
+and the no-numeric-expectation bound), **DL-057** (a refusal that names
+the *wrong* clause is worse than a vague one), **DL-053** (a count from
+the wrong population), and **`CLAUDE.md` rule 10 point 3**, which named
+this exact row of the boundary table as the one most likely to be
+mis-filed and was right.
+
+#### What was wrong
+
+`docs/GHENT_COMPATIBILITY.md` §3.1 listed **GWG 23.0 "Four different
+Grays"** in **Tier A — "genuinely a CMM's problem"**, glossed as *"K-only
+preservation … the classic black-preservation trap, and the one where a
+CMM that routes everything through the PCS fails visibly. CMM policy,
+engine plumbing."*
+
+> **It is device-space channel routing. It is the same boundary class as
+> overprint, and it is `pdfce`'s.**
+
+#### The evidence, and it arrives in two independent parts
+
+**Part 1 — the standard assigns all four legs to the consumer.** Every
+clause number below was **re-derived by this librarian from the PDF spec
+corpus**, not taken from the dispatch:
+
+| clause | what it says | corroborated at |
+|---|---|---|
+| **ISO 32000-1:2008 §10.3.3** (= **ISO 32000-2:2020 §10.4.2.3**) | the CMYK equivalent of a gray level **shall** be `c = m = y = 0`, `k = 1.0 − gray` | `PDF_Spec\color\color__cie_based.md:549` — *"§10.3.3  cyan = magenta = yellow = 0.0 ; black = 1.0 − gray"* |
+| **ISO 32000-2:2020 §10.3.2** | *"If the native device colour space is CMYK, then converting colours in the DeviceGray colour space to that CMYK should follow the method described in 10.4.2.3"* — **and the sentence sits inside the ICC-enabled branch** | `[REPORTED]` — `icc-spec-librarian`, not re-derived here |
+| **ISO 32000-1 §8.6.6.4** (`Separation`) | where the named colourant is one the device has, the reader **shall ignore** `alternateSpace` and `tintTransform` | clause identity corroborated at `PDF_Spec\color\color__separation.md:4,13`; the ignore-rule itself is `[REPORTED]` |
+| **ISO 32000-1 §10.3.1** | `DeviceCMYK` is passed through unconverted | `[REPORTED]` |
+
+★ **The middle row is the decisive one and it is the one that would be
+missed.** It is easy to accept that gray→CMYK is a device rule *in a
+non-managed workflow* and to assume ICC takes over once a profile is
+present. **ISO 32000-2 says otherwise inside its own colour-managed
+branch.** So the four grays agree **inside PDF, with no ICC transform
+anywhere in the path** — the equivalence is not something a CMM achieves,
+it is something the consumer's colour-space resolution produces before a
+CMM is reached.
+
+**Part 2 — the patch's own readme, and it does not claim what §3.1 said
+it claimed.** Extracted by `icc-engineer` from
+`…\3-ICC-CMS\ReadMes\GWG230_Four_different Grays_README.pdf`:
+
+- *"PDF offers 4 color spaces for black or gray objects **that only
+  render in the Black color channel**."*
+- *"No matter in which color space a black or gray object is defined, the
+  final rendiering shall show the same visual result."* (sic)
+- *"This PDF was created with InDesign using the export to PDF/X-1a
+  **without performing color conversion**."*
+- *"Usually, the object defined in DeviceCMYK should render as expected.
+  If an X appears, the color definition… is handeld differently than the
+  DeviceCMYK the object."* (sic)
+
+★ **Read the last two together.** The file was authored *without colour
+conversion*, and **`DeviceCMYK` is the reference against which the other
+three are judged**. A patch that names an unconverted channel as its own
+reference is testing that the other three routes also stayed unconverted.
+**It is a non-conversion test**, which is precisely what §3.3 had already
+correctly identified GWG 8.2 as being — and then failed to recognise one
+table above.
+
+#### The decision
+
+> **GWG 23.0 leaves Tier A. It is not Tier B either — Tier B is *"a
+> conversion is in the path, the failure is the engine's"*, and here
+> there is no conversion in the path at all. It joins the class §3.3
+> already describes: not this project's, while living in `3-ICC-CMS`.**
+
+**§3.1 is NOT rewritten.** The wrong classification is left on the page
+under a dated supersession, because *the wrong call is the interesting
+record* — it is the only evidence of how the error looked from inside,
+and a silently corrected table teaches nobody. Same practice as §4.3's
+withdrawn *"does not move measurably"* and §4.5's downgrade to a negative
+result.
+
+#### ★★★ Why this direction of boundary error is the dangerous one
+
+**iccce claimed work that is not iccce's.** That asymmetry is the whole
+reason this entry exists:
+
+- **An under-claim is caught by a consumer.** If this project disowns
+  something that is actually its job, `pdfce` hits the gap, files in the
+  request channel, and the boundary corrects itself. The channel exists
+  for exactly that.
+- **An over-claim is caught by nothing.** There is no failing test for
+  work you do not own. A Tier-A row generates a *"not attempted"* line in
+  §5 and §6, that line sits in the roadmap as permanent unfinished
+  business, and **the debt looks like diligence**. It can be carried for
+  ever without a single number moving — DL-055's shape, in the scope
+  register rather than the guard register.
+- ★ And it is **worse than idle**. A CMM that "solves" GWG 23.0 would be
+  building an ICC path for a leg the standard routes around ICC entirely.
+  That is not a missing feature; it is a **feature that would be wrong to
+  ship**, and it would look correct, because its output is a gray that
+  matches.
+
+> ★★★ **The rule, and it generalises past Ghent:** **a test patch is
+> named for what it LOOKS at, not for the layer that PRODUCES it.** *Four
+> different Grays* has "gray" in the title, four colour spaces on the
+> page, and a colour as its pass criterion — and contains no colour
+> conversion. **Before claiming a conformance item, name the clause that
+> assigns the behaviour to a layer.** If the clause is in ISO 32000 it is
+> `pdfce`'s; if it is in ICC.1 it is ours; if it is in neither, nobody
+> owns it and that is a finding in itself.
+
+★ **This is the overprint boundary a second time** (`CLAUDE.md` rule 10
+point 3). Overprint decides *which colorant channels a paint operation
+writes to, in a device space, before any conversion*. So does this. The
+project already had the correct instinct written down for overprint and
+still mis-filed the next instance of it — which is the argument for a
+**test**, not a reminder: the question *"which clause, in which
+standard?"* is cheap, mechanical, and was never asked of §3.1's rows.
+
+#### ★★ The second finding, which is separate and about ATTRIBUTION STRENGTH
+
+`icc-spec-librarian` retrieved the **GWG 2022 specification** — the
+current one; **there is no GWG 2023** — and reports:
+
+- its requirement identifiers are **`Dxxx` / `Rxxx`**, and **there is no
+  "23.0"**;
+- the nearest construct is **`D0013 "Black Colour"`**, which *is* the
+  four-way equivalence — but it is a **definition consumed by the
+  overprint requirements R0009–R0015**, not a requirement that a CMM
+  render the four identically. ★ **Even GWG's own document files this
+  under overprint.**
+- GWG's actual handling of `DeviceGray` is **`R0011`: ban it** for small
+  black text, *because overprint will not always be honoured for it*.
+
+⇒ **`n.m` is Output Suite *patch* numbering, not GWG requirement
+numbering.** The equivalence claim is real — Part 2 confirms the patch
+says *"shall show the same visual result"* — but its authority is **patch
+documentation, not the GWG specification**, and those are two different
+strengths exactly as ground truth, cross-check and self-comparison are.
+
+> **A `shall` in a test patch's readme is the patch author's `shall`. It
+> binds the patch, not the industry.**
+
+#### ★★ A premise check on the DISPATCH itself, which failed — and the correction it prevented
+
+The dispatch asked for a sweep of the phrasing ***"GWG 23.0 demands…"***,
+described as something *"this project has written repeatedly"*.
+
+> **It appears nowhere in this repository** *(verified — grepped the
+> whole tree for `GWG ?23`, `GWG230`, `Four.different.Gray` and for
+> `demands`; every hit is enumerated in `GHENT_COMPATIBILITY.md` §3.5)*.
+
+What exists is §3.1's **column heading** — *"the capability it demands of
+a CMM"* — which applies to all six rows and is almost certainly what was
+remembered. **No filing was made against a phrase the document does not
+contain**, which is DL-048's failure mode arriving from the opposite
+direction: there, a citation pointed at a destination that did not hold
+the claim; here, a *correction* was aimed at a string that did not exist.
+Both are settled the same way — **read the destination**.
+
+★ **And the document was already better-provenanced than the dispatch
+assumed.** §9's provenance table records §3.1 as **`[REPORTED]` — readme
+sweep + patch-byte scan**, with *"ownership calls are `icc-engineer`'s"*.
+The readme-authority limitation was therefore recorded; what was missing
+is that it was recorded **in §9 and not where the reader meets the
+claim**, three hundred lines earlier. **A provenance table at the back of
+a document does not travel with a row that gets quoted out of §3.1.**
+
+#### ★★★ The third finding — a WRONG CLAUSE, live, in in-flight code
+
+While verifying the above, this librarian read
+`tools/difftest/src/passk.rs`. It reaches **the same conclusion as this
+entry** and deserves the credit: its header states that the
+`DeviceGray → DeviceCMYK` leg *"is defined by PDF 32000-1 §8.6.4.4 as a
+device-space rule … **If that is the operative rule, the leg belongs to
+`pdfce` and not to this project at all**"*, and it deliberately measures
+**both legs** rather than assuming. **DL-059 is the answer to the
+question that module declined to answer for itself.**
+
+**But the clause number is wrong.**
+
+- `passk.rs:227` cites **PDF 32000-1 §8.6.4.4**.
+- **§8.6.4.4 is *DeviceCMYK Colour Space***, not a conversion rule
+  *(verified — `PDF_Spec\iso32000\iso32000__s__8.6.md:52,150`)*.
+- The rule it means is **§10.3.3** *(verified —
+  `PDF_Spec\color\color__cie_based.md:549`)*.
+
+★ **The PDF corpus has made this exact substitution before and left a
+note about it**: `PDF_Spec\color\color__iccbased.md:15` carries a
+standing *"Clause-number correction: this material is §8.6.5.5, not
+§8.6.4.4."* **§8.6.4.4 is an attractor** — it is where a reader reaches
+for when the subject is "device colour spaces" and the actual rule lives
+in §10. **DL-057 exactly:** the citation is what makes the boundary
+argument persuasive, so a wrong one is worse than none.
+
+★★ **A distinction that must not be lost, and it is why this is filed as
+`owed` and not as a correction to a shipped document.** At the moment of
+this filing **`passk.rs` is in no commit**: the branch tip is
+**`506fcd3`** *(verified — read `.git/refs/heads/master` and
+`.git/logs/HEAD`; no Pass K commit exists)*, and `docs/` contains **no
+mention of Pass K, black preservation, `TOLERANCES.md` §3.10.8, or any of
+its numbers** *(verified — grepped; `TOLERANCES.md` §3 runs 3.1 … 3.9.8
+and has no §3.10)*, although the module is fully wired into
+`tools/difftest/src/main.rs:121,510-511` and `lib.rs:252`. **Pass K is in
+flight in a concurrent session. Nothing from it is recorded as a claim
+here, and its numbers are quoted nowhere in this filing.** The clause
+correction is registered as an item owed to whoever lands it.
+
+★ **One adjacent trap, flagged so the correction is not over-applied.**
+The corpus also records that **ISO 32000-1 contradicts *itself*** between
+§11.5.3 NOTE 3 and §10.3.3 — but on the **CMYK → gray** direction, for
+soft-mask luminosity *(`PDF_Spec\iso32000\iso32000__s__11.5.md:292-298`)*.
+**That is the other direction and a different problem.** The
+**gray → CMYK** rule cited here is not disputed by it, and the two must
+not be merged into "§10.3.3 is contested".
+
+#### What this entry does NOT touch, stated so the correction cannot over-reach
+
+1. **The ICC-side finding is untouched and independent.** **ICC.1
+   contains no black-preservation construct in either edition checked**,
+   verified exhaustively, the structural reason being that the PCS is
+   three components — every device→device transform is 4→3→4 and **K has
+   no carrier**. Sources: `ICC_Spec` register entries **A51** and **A52**,
+   and `icc__ref__black_preservation.md`.
+2. **CMYK→CMYK black preservation remains genuinely this project's**, is
+   still unimplemented, and is still being built. **It is simply not what
+   GWG 23.0 tests.** Losing that distinction would convert a boundary
+   correction into a scope cut, and this entry makes no scope cut.
+3. **No numeric claim moves.** No ΔE, no tolerance, no measured error.
+   **`NUMERIC_CLAIMS.md` gains no row** — a librarian judgement, recorded
+   here so it can be overturned by argument rather than discovered as an
+   absence, on the same reasoning as DL-058's: the ledger's subject is
+   tolerances and measured errors, and an ownership call has no evidence
+   class in §1. **It does gain an owed item** (**§7.20**), because the
+   *counts* it corrects are the kind §7 tracks.
+4. **The other five Tier-A rows are NOT re-adjudicated.** They were not
+   examined against the *"name the clause and the layer"* test, and this
+   entry does not silently bless them. **That sweep is owed**
+   (**§7.20**).
+
+**Revisit if:** a consumer establishes that a real workflow *does* route
+one of the four gray definitions through a CMM (which would mean a
+producer or reader is departing from §10.3.3, itself worth recording);
+the GWG 2022 specification is superseded by an edition that promotes
+`D0013` from a definition to a CMM requirement; **the wrong-clause
+correction in `passk.rs` lands**, at which point this entry's third
+finding is discharged rather than owed; or ICC.1 acquires a
+black-preservation construct in a future edition, which would move
+finding 1 and nothing else.

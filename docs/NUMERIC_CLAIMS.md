@@ -8898,6 +8898,134 @@ this, and this one is a document rather than a corpus of files.**
 
 ---
 
+### 7.20 Status of §7 … §7.19, re-checked 2026-08-17 at the **Ghent boundary reclassification** filing
+
+**★★★ NO ROW IS ADDED, CHANGED OR INVALIDATED BY THIS FILING.** The next
+free identifiers are **NC-243** and **NA-012**, exactly as they were.
+Nothing measured moved: no ΔE, no tolerance, no observed error, no
+coverage figure, no evidence class. This subsection exists for two
+reasons only — a **count** was corrected, and **owed items** were opened.
+
+★ **The previous filing (tail debt #7, DL-058) deliberately opened no §7
+subsection**, on the reasoning recorded in DL-058 itself: *"§7 has never
+carried a crates.io item, and opening a status pass for one would have
+moved an integer that section itself tracks."* **§7.19 is therefore the
+immediately preceding block, and this is §7.20.** Recorded so the gap in
+the numbering is not read as a lost filing.
+
+#### What changed, and why it is a count rather than a claim
+
+**`docs/GHENT_COMPATIBILITY.md` §3.1 classified GWG 23.0 "Four different
+Grays" as Tier A — "genuinely a CMM's problem". It is not.** It is
+device-space channel routing, the same boundary class as overprint, and
+it is `pdfce`'s. **`ARCHITECTURE.md` §5 — DL-059** holds the decision;
+**`GHENT_COMPATIBILITY.md` §3.5** holds the clause evidence. Consequences
+that land in §7's register:
+
+| figure | was | is | class |
+|---|---|---|---|
+| Ghent patches, total | *"~48"* | **51** (`1-CMYK` **27**, `2-SPOT` **8**, `3-ICC-CMS` **16**) | a **count**, verified by enumeration on disk |
+| `1-CMYK` + `2-SPOT` | *"32 patches"* | **35** | same |
+| patches touching colour conversion | 16 | **16 — unchanged and correct** | same |
+| **patches genuinely ours** | **six** | ★ **five** | an **ownership call**, not a measurement |
+
+★★ **None of these is a numeric claim in this document's sense**, which
+is why none takes an NC number: §1 requires every row to carry an
+evidence class, and *"how many patches are in a directory"* and *"which
+layer owns a behaviour"* have none. **The judgement is recorded here so
+it can be overturned by argument rather than discovered as an absence**
+— the same disposal, for the same reason, as DL-058's.
+
+★ **One corroboration is worth keeping.** The same enumeration returns
+**98 PDFs** across the whole tree, and **§3.30's independently obtained
+*"98 PDFs scanned"*** — produced by `tools/ghent/extract_icc.py` walking
+the tree, not by counting files — **agrees exactly**. Two instruments,
+one number. That figure is **not** re-opened by this filing.
+
+★★ **The *"~"* is the transferable lesson.** *"Sixteen of the ~48"* pairs
+an exact numerator with an estimated denominator and reads as a measured
+ratio. **DL-053's mechanism in miniature**: the 16 was counted, the 48
+was not, and the sentence gave no way to tell them apart.
+
+#### Newly owed as of this filing
+
+1. **★★★ A WRONG CLAUSE, live, in in-flight code.**
+   `tools/difftest/src/passk.rs:227` cites **PDF 32000-1 §8.6.4.4** for
+   the `DeviceGray → DeviceCMYK` device rule. **§8.6.4.4 is *DeviceCMYK
+   Colour Space*** *(verified — `PDF_Spec\iso32000\iso32000__s__8.6.md:52,150`)*;
+   the rule is **§10.3.3** *(verified — `PDF_Spec\color\color__cie_based.md:549`)*.
+   **Owed to `icc-conformance`.** ★ DL-057 exactly — the citation is what
+   makes the module's boundary argument persuasive, so a wrong one is
+   worse than none. ★★ **`passk.rs` is in no commit** at the time of
+   filing: the branch tip is **`506fcd3`** *(verified — this librarian
+   read `.git/refs/heads/master` and `.git/logs/HEAD`; it has **no
+   shell** and this is a statement about two files' contents, not about
+   `git status`)*. **No number, row or claim from Pass K appears in this
+   filing or in `GHENT_COMPATIBILITY.md`.**
+2. **★★ `passk.rs` cites `TOLERANCES.md` §3.10.8, which does not exist.**
+   `TOLERANCES.md` §3 runs **3.1 … 3.9.8**; there is no §3.10 *(verified
+   — grepped)*. A forward reference from in-flight code into a document
+   that has not been written yet is legitimate **only until it lands**;
+   it must not be committed pointing at nothing. **Owed to whoever files
+   Pass K**, together with item 1.
+3. **★★ Re-derive ISO 32000-2:2020 §10.3.2's ICC-branch sentence.** It is
+   **the load-bearing clause of the whole reclassification** — *"if the
+   native device colour space is CMYK, then converting colours in the
+   DeviceGray colour space to that CMYK should follow the method
+   described in 10.4.2.3"*, sitting **inside the ICC-enabled branch** —
+   and it is the one clause in §3.5's table this librarian could **not**
+   corroborate from `PDF_Spec`; it stands `[REPORTED]` on a single
+   dispatch. **Owed to `icc-spec-librarian`.** ★ DL-046's rule applied to
+   ourselves: a `[REPORTED]` claim is promoted by re-derivation, and this
+   one is carrying more weight than any other in the section.
+4. **★★★ Apply the *"name the clause and the layer"* test to the other
+   five Tier-A rows.** It was never applied when §3.1 was built — the
+   ownership calls were made from patch readmes and category folders —
+   and one of six was wrong. **The remaining five are "not yet checked",
+   not "checked and confirmed"**, and §3.1 now says so. **Owed to
+   `icc-engineer`.**
+5. **★ Register the GWG-2022 finding in `ICC_Spec`.** *"There is no GWG
+   requirement 23.0; `n.m` is Output Suite **patch** numbering; the
+   nearest construct is `D0013 "Black Colour"`, a definition consumed by
+   the overprint requirements R0009–R0015"* currently lives only in
+   `icc-spec-librarian`'s agent memory and in §3.5. **A finding that
+   distinguishes patch-documentation authority from specification
+   authority belongs in the standards corpus**, not only in a
+   compatibility document. **Owed to `icc-spec-librarian`.**
+6. **★★ A sweep was requested for the phrasing *"GWG 23.0 demands…"*, and
+   THE PHRASE DOES NOT EXIST** in this repository *(verified — the whole
+   tree grepped for `GWG ?23`, `GWG230`, `Four.different.Gray`)*. What
+   exists is §3.1's **column heading** — *"the capability it demands of a
+   CMM"* — applied to all six rows. **No filing was made against it**,
+   and the non-existence is recorded rather than the absence being
+   silent. ★★ **This is DL-048 arriving from the other end**: there, a
+   citation pointed at a destination that did not hold the claim; here, a
+   *correction* was aimed at a string that was never written. **Both are
+   settled by reading the destination**, and this item is closed by being
+   recorded — **nothing is owed to anyone by it.**
+
+#### What is explicitly NOT affected
+
+- **`ICC.1` contains no black-preservation construct in either edition
+  checked**, verified exhaustively, the structural reason being that the
+  PCS is three components so every device→device transform is 4→3→4 and
+  **K has no carrier**. Sources: `ICC_Spec` register entries **A51** and
+  **A52**, `icc__ref__black_preservation.md`. ★ **Untouched, and
+  independent of everything above.**
+- ★★ **CMYK→CMYK black preservation remains genuinely this project's**,
+  is unimplemented, and is still being built. **It is simply not what
+  GWG 23.0 tests.** **No scope is cut by this filing**, and reading one
+  into it would be the over-reach DL-059 §"What this entry does NOT
+  touch" exists to prevent.
+- **§3.30's and §3.31's rows, populations and coverage statements** — 20
+  profiles and 11 profiles respectively — are **entirely unmoved**.
+- **The three operator decisions of §7.16 and the fourth standing item**
+  are **not re-opened**. More clarity about *whose* a patch is does not
+  make *"passes the Ghent suite"* available; that is a permission
+  question, not an evidence one.
+
+---
+
 ## 8. Related
 
 - `docs/TOLERANCES.md` — the tolerance budget (`icc-conformance`).

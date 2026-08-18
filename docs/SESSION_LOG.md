@@ -5258,3 +5258,410 @@ request channel**.
   from a document rather than a file.
 - **That the tree is clean or the tip is pushed.** ★ Nothing here went
   near a remote. **Rule 9 and DL-024 unchanged.**
+
+---
+
+## 2026-08-17 — the **tail-debt #7** filing (twenty-fourth `SESSION_LOG` entry). **A six-day-old "nobody has looked" is looked at — and the half of the same debt that LOOKED discharged, because a file with the right name exists, is the half that was wrong**
+
+**Filed by `icc-librarian` from an `icc-engineer` dispatch.** ★
+**Twenty-fourth entry here; twenty-fifth librarian filing** — the two
+populations still differ by one and **neither integer may be quoted
+without its population** (DL-031). **By entry count this is the seventh
+filing of 2026-08-17.**
+
+★ **Smallest filing in this log by substance, and deliberately so: one
+tail-debt row, no Pass, no code, no ledger row.** It is here because the
+fact it records has an expiry date, and a fact with an expiry date that
+lives nowhere is worse than one nobody checked.
+
+### ★★★ Four things that bound everything below
+
+1. **No colour was measured, no code changed, no `NUMERIC_CLAIMS.md` row
+   was added or edited.** See *"Not filed in the ledger"* below — that is
+   a judgement, recorded as one.
+2. **This librarian has no shell.** The crates.io result is
+   **`[REPORTED]`**, carried with its command and its five verbatim
+   response bodies. **Nothing was re-run, and no network request was made
+   from this session.**
+3. **Nothing here authorises anything.** **Rule 9 and DL-009 stand
+   exactly as they did.** No publish, push, tag or release is authorised,
+   and a free crate name is not an approval to take it.
+4. **★★ No claim is made about git.** `THIRD_PARTY_LICENSES.md`,
+   `about.toml` and `about.hbs` were **read in the working tree**;
+   **whether any of them is tracked, committed or pushed was not
+   checked** and is not asserted anywhere in this filing.
+
+### The half that was checked — and it is a dated observation, not a reservation
+
+`icc-engineer` queried `https://crates.io/api/v1/crates/<name>` for
+**`iccce`, `iccce-color`, `iccce-profile`, `iccce-cmm`, `iccce-cli`**.
+All five returned exactly ``{"errors":[{"detail":"crate `<name>` does not
+exist"}]}``.
+
+> ★★★ **crates.io has no reservation mechanism.** A name is claimed by
+> the first successful publish, so this is a statement about **one
+> instant on 2026-08-17** and about nothing after it. **It must be re-run
+> immediately before a first publish, and must never be quoted later as a
+> standing guarantee.** *"The names were checked"* is precisely the
+> sentence that stays true, goes stale, and stays load-bearing — which is
+> why the date is part of the claim rather than a footnote to it.
+
+**★★ And it covered five of six candidate names.** The queried list is
+**verbatim DL-009's list of 2026-08-11**, written **before
+`iccce-measure` existed** (added 2026-08-12). `Cargo.toml`'s `members`
+and `Cargo.lock` both name **five** crates *(verified — read)*.
+**`iccce-measure` was not queried.** ★ A stale enumeration copied into a
+query returns five clean results and **looks complete** — DL-053, where
+the measurement is real and the denominator is missing. ★ `iccce`, which
+*was* queried, is a **facade name that is not a workspace member**, so
+the queried set is neither a subset nor a superset of the publishable
+set.
+
+### ★★★ What this librarian found by reading, not carried by the dispatch
+
+**The dispatch said a file named `THIRD_PARTY_LICENSES.md` now exists,
+said it had not read it, and said explicitly not to discharge the debt on
+the filename. That instruction paid for itself.** All of the following
+are *(verified — read)*:
+
+1. **It IS genuine `cargo-about` output.** Its intro prose is
+   **byte-identical to the prose in `about.hbs`**, and `about.toml` +
+   `about.hbs` both exist with the full regeneration procedure. **The
+   apparatus `LEGAL.md` §1 asks for is real and executable** — that half
+   of the debt is genuinely built.
+2. **★★ Its DATA is stale in two independent ways.** It lists **four**
+   crates at **`0.0.1`**; the workspace is **five** crates at **`0.1.0`**
+   (`[workspace.package] version`, and every package in `Cargo.lock`).
+   **`iccce-measure` is absent entirely**, while the file's own prose
+   asserts *"The **four** crates … **are this project**."*
+3. **★★★ Regenerating it today would emit a DEFECTIVE entry, not merely a
+   missing one.** `about.toml` carries four `[<crate>.clarify]` blocks and
+   **none for `iccce-measure`** — and by **`about.toml`'s own written
+   rationale**, a crate without one falls back to the **generic SPDX MIT
+   placeholder** (*"Copyright (c) `<year>` `<copyright holders>`"*), which
+   that same comment calls **"worse than publishing nothing."** ★ **An
+   inference from the config's stated reasoning, not a measurement** — no
+   agent has run `cargo about` at this tree state.
+4. **`about.hbs`'s prose also hardcodes "four"**, under its own banner
+   *"★ READ THIS BEFORE EDITING THE PROSE BELOW"*. **Regeneration alone
+   will not fix it.**
+
+> ★★★ **The rule, filed as DL-058: the existence of an artifact is not
+> the status of the obligation that asked for it.** A generated file is a
+> claim about a tree **at the moment of generation**, and it does not
+> become malformed when the tree moves on — **it becomes quietly wrong
+> while staying well-formed and confident.** ★★ **DL-048's mechanism in a
+> fourth register**: the right name at the right path invites the reader
+> to accept the destination.
+
+★ **A note on the instrument.** `LEGAL.md` §1's *"generated by
+`cargo-about`, never hand-written"* is a rule about **how**, with no
+clause about **when**. It was fully honoured and still produced a stale
+manifest. **A generation rule needs a regeneration trigger to be
+complete** — and `about.toml`'s stated trigger is *"after ANY dependency
+change"*, which **adding a workspace member is not**. That is the exact
+gap `iccce-measure` fell through.
+
+### Verdict on tail debt #7, and it is a split
+
+| Half | Status |
+|---|---|
+| *"name availability is still unchecked by anyone"* | **DISCHARGED as to *has anyone looked*, 2026-08-17** — with an **expiry**, a **five-of-six coverage gap**, and **no authorisation of any kind** |
+| *"`THIRD_PARTY_LICENSES.md` via `cargo-about` still owed"* | **★★ CARRIED WITH A CAVEAT — neither *"still owed"* nor *"discharged"* is now the right word.** The apparatus exists; the output is stale in version and in membership; **the config would regenerate a placeholder licence for the fifth crate** |
+
+### Newly owed (all to `icc-engineer`; each needs a shell)
+
+1. **Query `iccce-measure`** on crates.io, in the same shape, before the
+   same publish.
+2. **Add `[iccce-measure.clarify]` to `about.toml`** — pointing at
+   `../../LICENSE` with the same sha256 as its four siblings. ★ **Before**
+   item 4, or item 4 emits the placeholder.
+3. **Update `about.hbs`'s "four crates" prose**, preferring wording that
+   does not restate a count (its own warning).
+4. **Regenerate** and confirm five crates at `0.1.0`:
+   `cargo about generate --workspace about.hbs -o THIRD_PARTY_LICENSES.md`.
+   ★ `LICENSE`'s sha256 is **pinned** in all four `clarify` blocks and
+   dated 2026-08-12 in the comment — **a checksum hard-fail here is the
+   pin working, not a bug to route around.**
+5. **★ Re-run the name query immediately before any first publish**, and
+   record *that* run's date. This entry is not that run.
+
+### Not filed in the ledger — a judgement, recorded so it can be overturned
+
+**No `NUMERIC_CLAIMS.md` row was added and no `§7.20` status pass was
+opened.** The ledger's subject is **tolerances and measured errors**;
+every row states a colour-or-numeric evidence class and an HTTP response
+body has none. ★ **§7 has never carried a crates.io item**, and opening a
+status pass for one would have moved an integer that section itself
+tracks (*"twenty-third status pass … twenty-fourth librarian filing"*,
+§7.19) — **inflating a tracked count to hold a non-numeric fact.** The
+durable home is `ROADMAP.md`'s *Publication — crates.io* plus **DL-058**.
+*(Overturn by argument, not by noticing the absence.)*
+
+### Filed this session
+
+| Where | What |
+|---|---|
+| `ROADMAP.md` | A dated **2026-08-17** subsection in *Publication — crates.io* (the full correction), and a **scoped** dated note after the three 2026-08-12 tail-debt roundups pointing at it. ★ **Nothing edited in place**; the stale *"nobody has looked"* wording is left standing at all four sites, superseded rather than rewritten. **No Pass status changed.** |
+| `ARCHITECTURE.md` | **§5 — DL-058.** **DL-001 … DL-057 untouched**, including the four that carry the stale *"still unchecked"* line (**DL-009**, **DL-024**, **DL-029**, **DL-030**) — an append-only register is corrected by a new entry, not by editing the old ones. |
+| `SESSION_LOG.md` | This entry. **No earlier entry rewritten or annotated.** |
+| `NUMERIC_CLAIMS.md` | **Nothing.** Deliberate; reasoned above. |
+
+**Not touched, by ownership:** `THIRD_PARTY_LICENSES.md`, `about.toml`,
+`about.hbs`, `Cargo.toml`, `Cargo.lock` (**read as evidence, and the
+three repairs recorded as owed rather than made** — they are
+`icc-engineer`'s and two of them need a shell anyway), `docs/LEGAL.md`
+(**read, §1 quoted, not edited**), `docs/TOLERANCES.md`, `tools/`,
+`crates/`, `README.md`, `CLAUDE.md`, `.github/`, `fixtures/`, and **every
+file in the request channel**.
+
+### Left for the next session to not assume
+
+- **That the names are available.** ★★★ **They were, at one instant on
+  2026-08-17, and five of six were asked.** Nothing since has been
+  checked by anyone.
+- **That anything may now be published.** ★★★ **No.** Rule 9, DL-009 and
+  DL-024 are untouched; a free name is not a go-ahead.
+- **That tail debt #7 is closed.** ★★ **One half discharged, one half
+  carried with three named repairs.**
+- **That `THIRD_PARTY_LICENSES.md` is publish-ready.** ★★★ **It is not.**
+  Four crates at `0.0.1`, against five at `0.1.0`.
+- **That regenerating it is safe today.** ★★★ **It is not** — do item 2
+  above first, or the fifth crate gets the placeholder licence.
+- **That the six-name list is now settled.** ★ **A sixth workspace member
+  would recreate both defects at once** — an unqueried name and an
+  uncleared `about.toml`.
+- **That this filing checked the GitHub remote.** ★ **It did not.**
+  DL-009's separate *"whether that remote exists has never been checked"*
+  is untouched; a crates.io query says nothing about it.
+- **That the tree is clean, committed or pushed.** ★★ **Nothing here ran
+  `git` or went near a remote**, and the tracked status of every file
+  read this filing is unknown to it.
+
+---
+
+## 2026-08-17 — the **Ghent boundary reclassification** filing (twenty-fifth `SESSION_LOG` entry). **A patch this project called "genuinely ours" is not ours — and the error ran in the CLAIMING direction, which nothing catches**
+
+**Filed by `icc-librarian` from an `icc-engineer` dispatch**, which in
+turn carried an `icc-spec-librarian` sourcing result. ★ **Twenty-fifth
+entry here; twenty-sixth librarian filing** — the two populations still
+differ by one and **neither integer may be quoted without its
+population** (DL-031). **By entry count this is the eighth filing of
+2026-08-17.**
+
+### ★★★ Five things that bound everything below
+
+1. **No colour was measured. No code changed. `NUMERIC_CLAIMS.md` gained
+   NO ROW** — next free identifiers are still **NC-243** and **NA-012**.
+   It gained an **owed block, §7.20**, and that disposal is a librarian
+   judgement recorded as one.
+2. **This librarian has no shell.** Every `[VERIFIED]` mark below means a
+   file was **read** with the Read/Grep/Glob tools. No command was run,
+   no build, no test, no `git`.
+3. **★★ The clause numbers were re-settled from a corpus, not taken from
+   the dispatch.** `D:\Dev\Rag-Specialized\PDF_Spec\` was the arbiter,
+   cited to file and line. **This caught a wrong clause** — see finding 3.
+4. **★★★ Nothing here cuts scope.** **CMYK→CMYK black preservation
+   remains genuinely this project's**, unimplemented and being built.
+   Reading a scope cut into this filing is the one misreading it is
+   written to prevent.
+5. **★★ No claim is made about git state beyond two files' contents.**
+   `.git/refs/heads/master` and `.git/logs/HEAD` were **read as text**.
+   That is a statement about those bytes, **not** about `git status`, not
+   about the index, and not about a remote.
+
+### The reclassification
+
+`docs/GHENT_COMPATIBILITY.md` §3.1 listed **GWG 23.0 "Four different
+Grays"** in **Tier A — "genuinely a CMM's problem"**, glossed as *"K-only
+preservation … the classic black-preservation trap … CMM policy, engine
+plumbing."*
+
+> **It is device-space channel routing — the same boundary class as
+> overprint — and it is `pdfce`'s.** All four gray definitions resolve to
+> the same single-channel device answer **inside PDF**, before a CMM is
+> reached.
+
+| leg | clause | status here |
+|---|---|---|
+| `DeviceGray` → CMYK | **ISO 32000-1 §10.3.3** = **ISO 32000-2 §10.4.2.3**, a **`shall`** | **[VERIFIED]** — `PDF_Spec\color\color__cie_based.md:549` |
+| the same, **colour-managed** | **ISO 32000-2 §10.3.2**, and the sentence sits **inside the ICC-enabled branch** | **[REPORTED]** — ★ **the load-bearing clause, and the one still owed a re-derivation** (§7.20 item 3) |
+| `Separation /Black` | **ISO 32000-1 §8.6.6.4** | clause identity **[VERIFIED]**; the ignore-rule **[REPORTED]** |
+| `DeviceN [/Black]` | **§8.6.6.5** | **[REPORTED]** |
+| `DeviceCMYK 0/0/0/K` | **§10.3.1** | **[REPORTED]** |
+
+★ **The patch's own readme settles it independently**, and names
+`DeviceCMYK` as the reference: *"created … **without performing color
+conversion**"*, *"Usually, the object defined in DeviceCMYK should render
+as expected"* **[QUOTED]**. A patch whose reference is an unconverted
+channel is a **non-conversion test** — structurally identical to GWG 8.2,
+which §3.3 had **already classified correctly one table earlier**.
+
+### ★★★ Finding 1 — the direction of the error is the reusable part
+
+**This project claimed work that is not its own**, and that asymmetry is
+why DL-059 exists rather than a footnote:
+
+- **An under-claim is caught by a consumer.** `pdfce` hits the gap and
+  files in the request channel. The channel exists for that.
+- **An over-claim is caught by nothing.** There is no failing test for
+  work you do not own. It produced *"not attempted"* lines in §5 and §6
+  that **looked like diligence** and could be carried for ever, with **no
+  number moving** — DL-055's shape, in the scope register.
+- ★★ **And it was not merely idle.** Building it would ship an ICC path
+  for a leg the standard routes *around* ICC. **A feature that would be
+  wrong to ship, and would look right, because its output is a gray that
+  matches.** Rule 1, one level up from the pixel.
+
+### ★★ Finding 2 — attribution strength: there is no GWG requirement "23.0"
+
+`icc-spec-librarian` retrieved **GWG 2022** (the current edition; **there
+is no 2023**) **[REPORTED]**: requirements are `Dxxx`/`Rxxx`, **no
+"23.0"**; the nearest construct is **`D0013 "Black Colour"`** — a
+**definition consumed by the overprint requirements R0009–R0015**; and
+GWG's real `DeviceGray` rule is **`R0011`: ban it** for small black text
+*because overprint is not always honoured for it*.
+
+> ★★ **GWG's own specification files this under overprint.** Two
+> independent routes, one boundary.
+
+⇒ `n.m` is **Output Suite *patch*** numbering. The *"shall show the same
+visual result"* quotation is genuine — but its authority is **patch
+documentation, not the GWG specification**. **A `shall` in a test patch's
+readme is the patch author's `shall`.**
+
+★ **The document was better provenanced than the dispatch assumed.** §9
+already recorded §3.1 as `[REPORTED]` from a readme sweep, *"ownership
+calls are `icc-engineer`'s"*. **What was missing is that it was recorded
+in §9 and not where the reader meets the claim, three hundred lines
+earlier** — a provenance table at the back does not travel with a row
+quoted out of the middle.
+
+### ★★★ Finding 3 — a wrong clause, live, in in-flight code (and the module that got the boundary RIGHT)
+
+`tools/difftest/src/passk.rs` **reaches the same conclusion
+independently and deserves the credit**: it refuses to assume the
+boundary, measures **both legs**, and states *"if that is the operative
+rule, the leg belongs to `pdfce` and not to this project at all."*
+**DL-059 is the answer to the question that module declined to answer for
+itself.**
+
+**Its clause is wrong**, and it is the citation the argument rests on:
+
+- `passk.rs:227` cites **PDF 32000-1 §8.6.4.4**;
+- **§8.6.4.4 is *DeviceCMYK Colour Space*** **[VERIFIED]**
+  (`PDF_Spec\iso32000\iso32000__s__8.6.md:52,150`);
+- the rule is **§10.3.3** **[VERIFIED]**.
+
+★ **§8.6.4.4 is a known attractor** — the PDF corpus already carries a
+standing correction of the identical substitution for a *different*
+subject: *"this material is §8.6.5.5, not §8.6.4.4"*
+(`color__iccbased.md:15`). It is where a reader reaches when the topic is
+"device colour spaces" and the rule lives in §10. **DL-057 exactly: a
+wrong clause is worse than a vague one, because the citation is what
+makes it persuasive.**
+
+★★★ **Why it is OWED and not corrected.** **`passk.rs` is in no commit.**
+The branch tip is **`506fcd3`** ("conformance: Pass I") **[VERIFIED —
+`.git/refs/heads/master` and `.git/logs/HEAD` read directly]**, and
+`docs/` contains **no mention of Pass K, of black preservation, or of the
+`TOLERANCES.md` §3.10.8 the module cites** — **`TOLERANCES.md` §3 runs
+3.1 … 3.9.8 and has no §3.10** **[VERIFIED — grepped]** — although the
+module **is** wired into `main.rs:121,510-511` and `lib.rs:252`.
+
+> **Pass K is in flight in a concurrent session. Not one of its numbers
+> is quoted, claimed or filed anywhere in this filing.** A librarian who
+> found a passing measurement on disk and recorded it would be filing a
+> claim from a tree state nobody has committed.
+
+### ★★ Finding 4 — a premise check on the DISPATCH, which failed
+
+The dispatch asked for a sweep of the phrasing ***"GWG 23.0 demands…"***,
+described as *"written repeatedly"* by this project.
+
+> **It appears nowhere in the repository** **[VERIFIED — whole tree
+> grepped for `GWG ?23`, `GWG230`, `Four.different.Gray`]**. `ROADMAP.md`
+> had never mentioned patch 23.0 at all.
+
+What exists is §3.1's **column heading**, *"the capability it demands of
+a CMM"*, applied to all six rows — almost certainly what was remembered.
+★★ **No filing was made against a string the document does not contain.**
+That is **DL-048 arriving from the other end**: there a *citation*
+pointed at a destination that did not hold the claim; here a *correction*
+was aimed at text that was never written. **Both are settled the same
+way — read the destination.**
+
+### ★ Finding 5 — the counts, and the `~` that was doing real work
+
+| | was | is |
+|---|---|---|
+| patches in the suite | *"~48"* | **51** — `1-CMYK` **27**, `2-SPOT` **8**, `3-ICC-CMS` **16** |
+| `1-CMYK` + `2-SPOT` | *"32"* | **35** |
+| touching colour conversion | 16 | **16 — unchanged and exactly right** |
+| **genuinely ours** | six | ★ **five** |
+
+**[VERIFIED — this librarian enumerated `…\Categories\*\Patches\*.pdf` on
+disk.]** ★★ *"Sixteen of the ~48"* pairs an **exact numerator with an
+estimated denominator** and reads as a measured ratio. **DL-053 in
+miniature**: the 16 was counted, the 48 was not, and nothing in the
+sentence distinguished them.
+
+★ **A corroboration that cost nothing.** The same sweep returns **98
+PDFs** across the tree, and §4.1's *"98 PDFs scanned"* — obtained by
+`extract_icc.py` walking the tree, **not** by counting files —
+**agrees exactly.** Two instruments, one number.
+
+### What was written
+
+| document | what changed |
+|---|---|
+| **`ARCHITECTURE.md` §5** | **DL-059** — the reclassification, the *"name the clause and the layer"* rule, the claiming-direction asymmetry, the attribution-strength finding, the wrong-clause finding, and four explicit non-effects |
+| **`GHENT_COMPATIBILITY.md`** | **new §3.5** (evidence, clauses, readme quotations, the GWG-2022 premise check, the `passk.rs` clause defect); **§3.1 marked SUPERSEDED IN PART and NOT rewritten**; §3 and §3.3 counts corrected in dated blocks; §4.6, §5.6 and §6's row annotated or struck; **six new provenance rows in §9** |
+| **`NUMERIC_CLAIMS.md`** | **new §7.20** — no row, six owed items, and the explicit non-effects |
+| **`ROADMAP.md`** | dated update inside the Ghent standing workstream |
+
+★ **§3.1 was deliberately NOT rewritten.** The wrong classification is
+the only record of how the error looked from inside, and this project's
+practice is dated supersession — the same treatment §4.3's withdrawn
+*"does not move measurably"* and §4.5's downgrade to a negative result
+received.
+
+### What is owed (`NUMERIC_CLAIMS.md` §7.20)
+
+1. **★★★ The `passk.rs:227` clause correction** — `icc-conformance`.
+2. **★★ `passk.rs`'s dangling `TOLERANCES.md` §3.10.8** — must not be
+   committed pointing at nothing.
+3. **★★ Re-derive ISO 32000-2 §10.3.2's ICC-branch sentence** —
+   `icc-spec-librarian`. **The load-bearing clause of the whole
+   reclassification, standing on one dispatch.**
+4. **★★★ Apply the *"name the clause and the layer"* test to the other
+   five Tier-A rows** — `icc-engineer`. They are **"not yet checked"**,
+   not "checked and confirmed".
+5. **★ Register the GWG-2022 finding in `ICC_Spec`** — it currently lives
+   only in agent memory and in §3.5.
+6. **★★ The *"GWG 23.0 demands"* sweep** — closed by being recorded; the
+   phrase does not exist and nothing is owed by it.
+
+### What a reader must NOT take from this filing
+
+- **That black preservation is no longer this project's.** ★★★ **False.**
+  **CMYK→CMYK black preservation is genuinely ours**, unimplemented, and
+  being built. GWG 23.0 is simply not what tests it.
+- **That ICC.1 was re-checked here.** ★ **It was not.** *"ICC.1 contains
+  no black-preservation construct in either edition checked"* stands on
+  `ICC_Spec` **A51**/**A52** and `icc__ref__black_preservation.md`, and
+  is **untouched and independent** of everything above.
+- **That the other five Tier-A patches are confirmed ours.** ★★ **They
+  are unexamined**, and §3.1 now says so.
+- **That any number moved.** ★★★ **None did.** §3.30's 20 profiles,
+  §3.31's 11, every ΔE, every tolerance: unchanged.
+- **That Pass K exists, landed, or measured anything citable.** ★★★
+  **Nothing from it is filed.** The branch tip is `506fcd3` and contains
+  no Pass K.
+- **That the tree is clean, committed or pushed.** ★★ **Two `.git` files
+  were read as text and nothing else.** No `git` was run; the tracked
+  status of `passk.rs` beyond *"not in the commit `506fcd3` points at"*
+  is unknown to this filing.
+- **That anything about Ghent may now be said in public.** ★★★ **No.**
+  §7.16's three operator decisions are untouched. **A clearer boundary is
+  not a permission.**

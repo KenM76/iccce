@@ -180,7 +180,56 @@ genuinely ours.** That count, and the two tables below, come from a
 readme-by-readme sweep dispatched 2026-08-17; the ownership calls are
 mine.
 
+> ### ★★ Dated correction, 2026-08-17 (later the same day) — **the sentence above is superseded on BOTH of its numbers. It is left standing because a corrected count with no visible predecessor cannot be audited**
+>
+> | | as first written | corrected | how |
+> |---|---|---|---|
+> | patches in the suite | *"~48"* | **51** | `1-CMYK` **27**, `2-SPOT` **8**, `3-ICC-CMS` **16** *(verified — `icc-librarian` enumerated `…\Categories\*\Patches\*.pdf` on disk, 2026-08-17)* |
+> | touching colour conversion | 16 | **16 — unchanged, and it was exactly right** | it is the whole of `3-ICC-CMS` |
+> | **genuinely ours** | **six** | ★ **five** | **GWG 23.0 is not ours** — §3.5, and **DL-059** |
+>
+> ★ **The `~` was doing real work and should not have been there.** An
+> approximate denominator under an exact numerator (*"sixteen of the
+> ~48"*) reads as a measured ratio and is not one. The 16 was counted;
+> the 48 was estimated. **DL-053's mechanism in miniature** — the
+> verification was real, the denominator was not.
+>
+> ★ **A corroboration worth recording, because it costs nothing and
+> closes a loop.** The same enumeration returns **98 PDFs** across the
+> whole tree — 51 patches, 2 font-report PDFs, 3 assembled test pages,
+> 38 readmes and 4 top-level documents. **§4.1's independently obtained
+> *"98 PDFs scanned"* — which came from `tools/ghent/extract_icc.py`
+> walking the tree, not from a file count — agrees exactly.** Two
+> different instruments, one number.
+>
+> **Neither the 51 nor the 5 is a numeric *claim* in this project's
+> sense** (no tolerance, no measured error, no oracle), which is why
+> `NUMERIC_CLAIMS.md` gains no row. It gains an **owed item**, **§7.20**.
+
 ### 3.1 Tier A — genuinely a CMM's problem
+
+> ### ★★★ SUPERSEDED IN PART, 2026-08-17 — **the GWG 23.0 row below is WRONG and is left in place deliberately. See §3.5.**
+>
+> **This table has five rows, not six.** GWG 23.0 is device-space channel
+> routing — the same boundary class as overprint — and it is `pdfce`'s.
+> The row is **not edited**, because the wrong classification is the only
+> record of how the error looked from inside, and because this project's
+> practice is dated supersession rather than silent rewriting (§4.3,
+> §4.5). **Do not quote the 23.0 row.** Full reasoning and the clause
+> evidence: **§3.5** and **`ARCHITECTURE.md` §5, DL-059**.
+>
+> ★ **The other five rows are NOT re-adjudicated by that correction**,
+> and their surviving Tier-A status should be read as *"not yet checked
+> against the same test"*, not as *"checked and confirmed"*. The test —
+> **name the clause and the standard that assigns the behaviour to a
+> layer** — was never applied to this table when it was built. Applying
+> it to the remaining five is owed (`NUMERIC_CLAIMS.md` **§7.20**).
+>
+> ★ **Read the second column's heading with its provenance attached.**
+> *"the capability it demands of a CMM"* is **this document's** phrasing
+> over **patch-readme** source material (§9 records §3.1 as
+> `[REPORTED]`). It is not GWG requirement text, and §3.5 explains why
+> that distinction is load-bearing rather than pedantic.
 
 | patch | what GWG says it tests | the capability it demands of a CMM |
 |---|---|---|
@@ -221,6 +270,20 @@ but every sub-test is worded as *"the overprints have not been honored"*;
 and GWG 8.2's checkmarks appear **because** DeviceN can overprint CMYK
 and vanish if DeviceN is converted — it tests *non*-conversion.
 
+> **Dated correction, 2026-08-17: 32 → 35.** `1-CMYK` holds **27**
+> patches and `2-SPOT` holds **8** *(verified — enumerated on disk;
+> §3's correction block)*. The ownership call is unchanged; only the
+> count was wrong.
+>
+> ★★ **And this section had the right instinct one table too late.**
+> *"GWG 8.2 tests **non**-conversion"* is the correct reading, and it is
+> the identical argument that disposes of **GWG 23.0** — a patch whose
+> pass condition is that a route was **left alone**. §3.5 is this
+> paragraph's reasoning applied to a patch that happened to sit in
+> `3-ICC-CMS`, and the fact that it was not applied there is what
+> **DL-059** is about: the category folder, not the mechanism, decided
+> the classification.
+
 ### 3.4 ★ The intents the patches actually declare
 
 Not stated in any readme; read out of the patch files. Recorded because
@@ -257,6 +320,170 @@ of iccce's evaluation surface is `f64` (`docs/NEXT_SESSION.md` §0), so a
 consumer feeding it 16-bit samples widens every one of them. That is an
 API finding, it was already known from the channel, and Ghent
 independently corroborates that it is not hypothetical.
+
+### 3.5 ★★★ GWG 23.0 "Four different Grays" — **reclassified out of Tier A. It is device-space channel routing, and it is `pdfce`'s**
+
+**Opened 2026-08-17 by `icc-librarian`. Full decision and the
+generalisable rule: `ARCHITECTURE.md` §5, DL-059.** This section holds
+the evidence; the decision log holds the reasoning about *why the error
+was possible*.
+
+#### What the row said, and what is actually true
+
+§3.1 filed 23.0 as **Tier A**, calling it *"K-only preservation … the
+classic black-preservation trap, and the one where a CMM that routes
+everything through the PCS fails visibly. CMM policy, engine plumbing."*
+
+> **There is no colour conversion in this patch's path at all.** All four
+> gray definitions resolve to the same single-channel device answer
+> **inside PDF**, by clauses of ISO 32000, before any CMM is reached.
+
+#### The clause evidence — four legs, four clauses, none of them ICC's
+
+Every clause number below was **re-settled by this librarian against
+`D:\Dev\Rag-Specialized\PDF_Spec\`**, independently of the dispatch that
+requested this filing:
+
+| the patch's leg | governing clause | what it requires |
+|---|---|---|
+| `DeviceGray` → CMYK | **ISO 32000-1:2008 §10.3.3** = **ISO 32000-2:2020 §10.4.2.3** | `c = m = y = 0`, `k = 1.0 − gray`. A **`shall`** *(verified — `PDF_Spec\color\color__cie_based.md:549`)* |
+| the same, **in a colour-managed workflow** | **ISO 32000-2:2020 §10.3.2** | *"If the native device colour space is CMYK, then converting colours in the DeviceGray colour space to that CMYK **should follow the method described in 10.4.2.3**"* — **and this sentence sits inside the ICC-enabled branch** `[REPORTED]` — `icc-spec-librarian`, not re-derived here |
+| `Separation /Black` | **ISO 32000-1 §8.6.6.4** | where the device *has* the named colourant, the reader **shall ignore** `alternateSpace` and `tintTransform` (clause identity verified — `PDF_Spec\color\color__separation.md:4,13`; the ignore-rule `[REPORTED]`) |
+| `DeviceN [/Black]` | **ISO 32000-1 §8.6.6.5** | the same disposal, for the `DeviceN` form `[REPORTED]` |
+| `DeviceCMYK 0/0/0/K` | **ISO 32000-1 §10.3.1** | passed through unconverted `[REPORTED]` |
+
+★★ **The second row is the one that would have been missed, and it is
+the whole reclassification.** It is easy to accept the device rule for an
+unmanaged workflow and assume ICC takes over once a profile is present.
+**ISO 32000-2 routes gray→CMYK to the device rule inside its own
+ICC-enabled branch.** The equivalence is therefore not an achievement of
+a CMM; it is a property of the consumer's colour-space resolution.
+
+#### The patch's own readme agrees, and names `DeviceCMYK` as the reference
+
+`[QUOTED]` — extracted by `icc-engineer` with `pdftotext -layout` from
+`…\3-ICC-CMS\ReadMes\GWG230_Four_different Grays_README.pdf`:
+
+- *"PDF offers 4 color spaces for black or gray objects **that only
+  render in the Black color channel**."*
+- *"No matter in which color space a black or gray object is defined, the
+  final rendiering shall show the same visual result."* (sic —
+  *"rendiering"*)
+- *"This PDF was created with InDesign using the export to PDF/X-1a
+  **without performing color conversion**."*
+- *"Usually, the object defined in DeviceCMYK should render as expected.
+  If an X appears, the color definition… is handeld differently than the
+  DeviceCMYK the object."* (sic)
+
+★ **Read the last two together.** The file was authored *without colour
+conversion*, and the **unconverted `DeviceCMYK` object is the reference**
+the other three are compared against. That makes 23.0 a **non-conversion
+test** — structurally the same as GWG 8.2, which §3.3 had already
+classified correctly one table earlier.
+
+#### ★★ The premise that failed: there is no GWG requirement "23.0"
+
+`icc-spec-librarian` retrieved the **GWG 2022 specification** — the
+current edition; **there is no GWG 2023** — and reports `[REPORTED]`:
+
+- requirement identifiers are **`Dxxx` / `Rxxx`**; **no "23.0" exists**;
+- the nearest construct is **`D0013 "Black Colour"`**, which *is* the
+  four-way equivalence — but it is a **definition consumed by the
+  overprint requirements R0009–R0015**. ★ **GWG's own specification files
+  this under overprint**, which is the same boundary call this section
+  reaches by a different route;
+- GWG's actual `DeviceGray` handling is **`R0011`: ban it** for small
+  black text, *because overprint will not always be honoured for it*.
+
+⇒ **`n.m` is Output Suite *patch* numbering, not GWG requirement
+numbering.** The *"shall show the same visual result"* quotation is
+genuine and correctly transcribed — but its authority is **patch
+documentation, not the GWG specification**. Those are different strengths
+of claim, exactly as ground truth, cross-check and self-comparison are
+(§9, and `NUMERIC_CLAIMS.md` §1).
+
+> **A `shall` in a test patch's readme is the patch author's `shall`.**
+
+#### ★ The sweep for *"GWG 23.0 demands…"* — the phrase does not exist
+
+A sweep was requested for that phrasing, believed to have been *"written
+repeatedly"* in this project. **It appears nowhere in this repository**
+*(verified — the whole tree grepped for `GWG ?23`, `GWG230` and
+`Four.different.Gray`)*. Every occurrence of `23.0` in the repository is:
+
+| where | what it is | disposition |
+|---|---|---|
+| `GHENT_COMPATIBILITY.md` §3.1 | the Tier-A row | **superseded by this section** |
+| `GHENT_COMPATIBILITY.md` §4.6, §5.6, §6 | *"not attempted"* statements | annotated in place, below |
+| `NUMERIC_CLAIMS.md` §7.16 ×2 | a **de-duplication** audit item about §6's table, already discharged | **not affected** — it is about a repeated table row, not about ownership |
+| `tools/difftest/src/passk.rs`, `passk_probe.rs` | in-flight code — see below | owed to whoever lands it |
+
+**No attribution of a `shall` to GWG was found in any document.** What
+exists is §3.1's **column heading**, *"the capability it demands of a
+CMM"*, applied to all six rows — almost certainly what was remembered.
+★ **Recording this is the point, not a formality:** a correction aimed at
+a string a document does not contain is DL-048's failure arriving from
+the other end, and the cure is the same — **read the destination before
+filing against it.**
+
+#### ★★★ What is NOT affected — the correction must not over-reach
+
+1. **The ICC-side finding stands, untouched and independent.** **ICC.1
+   contains no black-preservation construct in either edition checked**,
+   verified exhaustively; the structural reason is that the PCS is three
+   components, so every device→device transform is 4→3→4 and **K has no
+   carrier**. Sources: `ICC_Spec` register entries **A51** and **A52**,
+   and `icc__ref__black_preservation.md`.
+2. ★★ **CMYK→CMYK black preservation remains genuinely this project's.**
+   It is unimplemented and being built. **It is simply not what GWG 23.0
+   tests.** Conflating the two would turn a boundary correction into a
+   scope cut, and **no scope is cut here.**
+3. **No number in §4 moves**, no tolerance changes, no ledger row is
+   invalidated. §4.6's gray-source measurement is unaffected — see the
+   note appended there.
+
+#### ★★ A live wrong clause in in-flight code, owed rather than fixed
+
+`tools/difftest/src/passk.rs` **reaches this same conclusion
+independently and deserves the credit**: it refuses to assume the
+boundary, measures *both* legs, and states that *"if that is the
+operative rule, the leg belongs to `pdfce` and not to this project at
+all."* **§3.5 is the answer to the question that module declined to
+answer for itself.**
+
+**Its clause citation is wrong**, and it is the citation the boundary
+argument rests on:
+
+- `passk.rs:227` cites **PDF 32000-1 §8.6.4.4**.
+- **§8.6.4.4 is *DeviceCMYK Colour Space***, not a conversion rule
+  *(verified — `PDF_Spec\iso32000\iso32000__s__8.6.md:52,150`)*.
+- The correct clause is **§10.3.3** *(verified —
+  `PDF_Spec\color\color__cie_based.md:549`)*.
+
+★ **§8.6.4.4 is a known attractor.** The PDF corpus carries a standing
+correction of the identical substitution for a different subject —
+*"this material is §8.6.5.5, not §8.6.4.4"*
+(`PDF_Spec\color\color__iccbased.md:15`). It is where a reader reaches
+when the topic is "device colour spaces" and the rule actually lives in
+§10.
+
+★★ **Why this is owed and not corrected here.** At the time of filing
+**`passk.rs` is in no commit** — the branch tip is **`506fcd3`**
+*(verified — `.git/refs/heads/master` and `.git/logs/HEAD` read
+directly)* — and `docs/` contains **no mention of Pass K, of black
+preservation, or of the `TOLERANCES.md` §3.10.8 that the module cites**
+*(verified — grepped; `TOLERANCES.md` §3 runs 3.1 … 3.9.8 and has no
+§3.10)*, though the module is wired into `tools/difftest/src/main.rs` and
+`lib.rs`. **Pass K is in flight in a concurrent session; nothing from it
+is quoted or claimed anywhere in this document.** Registered as owed at
+`NUMERIC_CLAIMS.md` **§7.20**.
+
+★ **One adjacent trap, so the correction is not over-applied.** ISO
+32000-1 **contradicts itself** between §11.5.3 NOTE 3 and §10.3.3 — but
+on the **CMYK → gray** direction, for soft-mask luminosity
+*(`PDF_Spec\iso32000\iso32000__s__11.5.md:292-298`)*. **That is the other
+direction and a separate problem.** The **gray → CMYK** rule relied on
+here is not disputed by it.
 
 ---
 
@@ -657,6 +884,13 @@ same caveat as §4.4. The GWG 23.0 "four different grays" question —
 whether K-only content survives every route identically — is **not**
 answered by this and is not claimed to be.
 
+> **Note added 2026-08-17 (§3.5, DL-059).** That last sentence is still
+> true and its *reason* has changed: GWG 23.0's question is **not this
+> project's to answer**, because all four of its routes are resolved by
+> ISO 32000 clauses inside the consumer. **The measurement above is
+> unaffected** — it is a gray *profile* driven through the PCS, which is
+> a real iccce capability; it is simply not the patch's mechanism.
+
 ---
 
 ## 5. What is NOT claimed
@@ -692,6 +926,14 @@ kind of artifact whose claims inflate on re-reading.
    attempted at all. "The colour transform each patch depends on can be
    built and evaluated" is what §4 supports. It is less than "the patch
    renders correctly", and much less than "the patch passes".
+   > **Amended 2026-08-17 (§3.5, DL-059): read "the six" as *five*.**
+   > GWG 23.0 is not a Tier-A patch and never was; *"has not been
+   > attempted at all"* was true and was **describing a debt this project
+   > does not owe**. ★ That is the precise hazard DL-059 names: an
+   > over-claimed boundary produces a *"not attempted"* line that looks
+   > like diligence and can be carried for ever, because **nothing fails
+   > when you do not do work that is not yours.** The clause *"much less
+   > than the patch passes"* is unchanged and still governs the five.
 7. **No claim derived from §3.4's declared intents.** That table records
    what the patches *ask for*; nothing here checks that iccce selects the
    corresponding `A2Bx`/`B2Ax` table when asked. §2.3 explains why Ghent
@@ -711,7 +953,7 @@ kind of artifact whose claims inflate on re-reading.
 | parsing (§4.2) | acceptance, no malformations | a v4 profile with a *known* defect, to show the sweep can report one on this corpus and not only on synthetic input |
 | intent selection (§3.4) | not checked | grade it against **ICC.1's** clause on which table an intent selects — not against Ghent, which §2.3 shows cannot supply the criterion |
 | the `FOGRA27` identifier mismatch (§3.4) | **[REPORTED]**, not re-derived | re-read the two patches' `/OutputIntents` here before it is passed to `pdfce` as fact |
-| K-only preservation (GWG 23.0) | not attempted | needs the four routes modelled, which is mostly `pdfce`'s; the iccce half is Gray→CMYK behaviour and could be graded here |
+| ~~K-only preservation (GWG 23.0)~~ **WITHDRAWN 2026-08-17** | **not this project's claim to raise** | ★ **Nothing.** §3.5 / DL-059: all four routes are resolved by ISO 32000 clauses inside the consumer, so there is no iccce claim here to raise. The row is struck rather than deleted so the withdrawal is auditable. **CMYK→CMYK black preservation is a different subject and remains ours** |
 | the whole suite | not rendered | a `pdfce` render of the assembled test pages, compared patch-by-patch against `Ghent_PDF-Output-Test-V50_ALL_REFERENCE.pdf`. **This is the real prize and it is a joint exercise**, which is what the request channel is for |
 
 ★ §6's last row is the one to put to `pdfce`, and §4.3 shows it is
@@ -853,7 +1095,12 @@ bearing.
 | 2.1 | the 0.5 m rule, the faint-X rule | *ibid.* **[QUOTED]** |
 | 2.2 | licence, incl. the affirmative notice condition | *ibid.* and every per-patch readme **[QUOTED]** |
 | 2.3 | the intent/faint-X contradiction; the three pre-excusing readmes | `GWG130_ICC_Source_Profile_README.pdf`, `GWG161-164_…`, `GWG172_…`, `GWG060-061_Shading_ReadMe.pdf` **[QUOTED]** |
-| 3.1 | the six Tier-A patches and their tag-level demands | readme sweep + patch-byte scan, dispatched 2026-08-17 **[REPORTED]**; ownership calls are `icc-engineer`'s |
+| 3.1 | the six Tier-A patches and their tag-level demands | readme sweep + patch-byte scan, dispatched 2026-08-17 **[REPORTED]**; ownership calls are `icc-engineer`'s. ★ **One of the six ownership calls was wrong — §3.5** |
+| 3 / 3.3 | the patch counts **51 / 27 / 8 / 16**, and **98 PDFs** | `icc-librarian` enumerated `…\Categories\*\Patches\*.pdf` and the whole tree on disk, 2026-08-17 **[VERIFIED]**. The 98 independently agrees with §4.1's extractor-derived figure |
+| 3.5 | **§10.3.3 / §10.4.2.3** (gray→CMYK), **§8.6.6.4** (`Separation` clause identity), and **§8.6.4.4 = *DeviceCMYK Colour Space*** | re-derived by `icc-librarian` from `D:\Dev\Rag-Specialized\PDF_Spec\`, cited to file and line **[VERIFIED]** — deliberately **not** taken from the dispatch that requested the filing |
+| 3.5 | **§10.3.2**'s ICC-branch sentence, **§10.3.1**, **§8.6.6.5**, the `Separation` ignore-rule, and the **GWG 2022** `D0013`/`R0011` findings | `icc-spec-librarian` dispatch, 2026-08-17 **[REPORTED]** — **not re-derived here**. ★ §10.3.2 is the load-bearing one and is the one still owed a re-derivation (`NUMERIC_CLAIMS.md` **§7.20**) |
+| 3.5 | the GWG 23.0 readme quotations | `GWG230_Four_different Grays_README.pdf` via `pdftotext -layout`, `icc-engineer` **[QUOTED]** |
+| 3.5 | *"`passk.rs` is in no commit; tip is `506fcd3`"* | `.git/refs/heads/master` and `.git/logs/HEAD` read directly by `icc-librarian` **[VERIFIED]**. ★ This librarian has **no shell**; it is a statement about two files' contents, not about `git status`, and it does not survive the next commit |
 | 3.2 | GWG 22.0's *"does not necessarily mean the workflow is wrong"* | `GWG220_ColorConversionIndicator_README.pdf` **[QUOTED]** |
 | 3.2 | the `/Lab` D50 parameters in GWG 22.1 | patch bytes **[REPORTED]** — not re-derived here |
 | 3.4 | declared intents, `DestOutputProfile`s, the FOGRA27 mismatches | patch bytes **[REPORTED]** — not re-derived here. ★ The mismatch claim is the one most worth re-deriving before it is passed to `pdfce` as fact |
