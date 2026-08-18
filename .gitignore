@@ -24,3 +24,27 @@ target/
 # See LEGAL.md §4.
 # ------------------------------------------------------------------------
 tools/difftest/vendor/
+
+# ------------------------------------------------------------------------
+# docs/GHENT_COMPATIBILITY.md — LOCAL ONLY, never committed.
+#
+# Operator decision, 2026-08-18. The file is the Ghent PDF Output Suite
+# workstream in full: which patches are this project's, what the suite's
+# readmes say (quoted), where its profiles were extracted to, and what was
+# measured against them. That is detailed analysis of, and quotation from, a
+# licensed third-party suite whose licence carries an affirmative notice
+# requirement and a "commercial context" restriction — see LEGAL.md and the
+# file's own §2.2. Keeping it out of an MIT repository avoids creating that
+# entanglement at all, rather than relying on a fair-quotation argument.
+#
+# ★ It is still the reference and it still exists — on this machine, at
+# docs/GHENT_COMPATIBILITY.md. Tracked documents cite it by section and
+# those citations remain correct for anyone working locally. A reader who
+# has only the public repository cannot follow them, and that is the
+# accepted cost of the decision, not an oversight.
+#
+# ★★ This file was tracked and PUBLIC until 533844f. Untracking removes it
+# from future commits; it does NOT remove it from history. See
+# docs/NEXT_SESSION.md for the outstanding decision on that.
+# ------------------------------------------------------------------------
+docs/GHENT_COMPATIBILITY.md
