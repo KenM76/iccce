@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-19 LEAK-GUARD INJECTION filing (31st SESSION_LOG entry; DL-064 filed, 64 decision-log entries; NC-267 + NC-268 filed in the new §3.35 + §7.24, next free NC-269/NA-013 — NA-013 deliberately NOT consumed; reflog tip abdf445, two commits past the measured 400179b; the injection DISCHARGED the Pass K debt and found that below 5.0e-2 the WHOLE SUITE is green with a defect compiled in) (earlier: the DISCLOSURE-CHANNEL filing, 30th entry, DL-063, no row moved, tip 400179b) (earlier: the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274)) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -740,7 +740,113 @@ it is DL-062's second instance.
 as of this filing's reads; three documents are edited in the working
 tree and uncommitted.**
 
-Related: [[iccce-stale-status-decays-faster-than-a-number]],
+**★★ UPDATED 2026-08-19, THE DISCLOSURE-CHANNEL FILING (THIRTIETH
+`SESSION_LOG` entry, thirtieth librarian filing). NO ROW ADDED, CHANGED
+OR INVALIDATED — next free still `NC-267` / `NA-013`; nothing measured
+by this role. `TOLERANCES.md` untouched (a NAMED CHOICE with no number
+belongs in neither ledger). DL-063 filed; 63 decision-log entries.**
+See [[iccce-words-humans-count-code]].
+
+**`malformations: N` counts DISCLOSURES, not violations** — the
+`Malformation` doc comment's *"a rule violation the file carries"* was
+falsified by **two of its own variants** (`TrailingBytes`;
+`UnknownRenderingIntent{V2Undefined}`), both of whose **emitted strings
+were already careful**, which is why it survived. ★★★ **DL-063 exists to
+discharge a FORWARD REFERENCE already in the code** —
+`diag.rs:147`–`:150` cited the decision log for an alternative the log
+did not contain (DL-048's shape, inside our own tree).
+
+★ **Tip at this filing: `400179b`** (epoch `1787088410 -0400`, *"fix(docs):
+three intra-doc links pointed at the crate root, not transform"*) —
+**last line of `.git/logs/HEAD`; no later commit appears**, so the
+corrected doc comment is present in the tree and, as far as this role can
+observe, **uncommitted**. Later than the `60c32dd` in the block above.
+`ARCHITECTURE.md`, `ROADMAP.md` and `SESSION_LOG.md` edited; nothing
+committed or pushed.
+
+★★ **Two stale copies of the retracted sentence REPORTED, NOT FIXED**
+(`icc-engineer`'s files): `diag.rs:14` and `iccce-cli/src/main.rs:237`.
+★ **Both VERIFIED FIXED the same day** at the leak-guard filing below.
+
+**★★★ UPDATED 2026-08-19, THE LEAK-GUARD INJECTION FILING (THIRTY-FIRST
+`SESSION_LOG` entry, thirty-first librarian filing). `NC-267` + `NC-268`
+filed in a new `NUMERIC_CLAIMS.md` **§3.35** plus **§7.24**; next free
+**`NC-269`** / **`NA-013`**. DL-064 filed; 64 decision-log entries.**
+See [[iccce-injection-measures-one-magnitude]].
+
+**★★★ THE PASS K INJECTION DEBT IS DISCHARGED — AND THE SWEEP FOUND A
+DEFECT NOBODY ASKED ABOUT.** `black_preserve.rs:404`'s qualifying test
+widened from `C=M=Y=0` to `max(C,M,Y) <= t`, full difftest suite re-run
+at `t ∈ {0.12, 0.10, 0.04}` + baseline, detached worktree at the tree
+`400179b` (`[REPORTED]`). At `0.12` **E7 `2.620510e-1` and F8
+`3.458210e-1` both RED** against tolerance `0` exactly, siblings green —
+the *done-when* verbatim, and **NC-255 goes from ASSUMED to PROVEN
+discriminating** (DL-051's condition). ★★★ **At `t = 0.04` the ENTIRE
+suite is GREEN with the defect compiled in.** Floors: **E7
+`1.106780e-1`**, **F8 `5.0e-2`** — and **the floor had never been stated
+anywhere.** **NEVER quote NC-255/NC-267 without NC-268.**
+
+**★★ F8's floor is STRUCTURAL and VERIFIED BY ME** from
+`passk.rs:3679`–`:3690` (`c = i × 0.05`, both chromatic ratios `< 1` ⇒
+`max(C,M,Y) = c` ⇒ min `0.05` by construction). **E7's is INCIDENTAL and
+`[REPORTED]`** — a fixed-seed LCG on `[0, 0.8)` bounded by construction
+only at `≈3.8e-7`; **re-seeding moves E7's sensitivity with no line of
+intent changing**, and the `probe_floor` bin that measured it was deleted
+with the worktree. ★ **Corrected the dispatch:** the node-aligned set's
+`4/15` is **not** *"by construction"* — the grid `j/15` is construction,
+**which grid point a seed reached is an observation**; construction gives
+only `>= 1/15`. ★ The three runs **BRACKET** the floors
+(`E7 ∈ (0.10, 0.12]`, `F8 ∈ (0.04, 0.10]`) and do not locate them; the
+values come from the generators. **Two apparatus agreeing = corroboration,
+not a second measurement.**
+
+**★★★ A FALSIFIED CLAUSE IN `TOLERANCES.md` §3.10.12.2** — it names its
+rival **with** a magnitude (*"`10⁻⁹` of cyan"*) then claims ***"these
+rows are what would catch it"*** **without** one. **Both numbers were on
+the page; nobody subtracted them.** ★ **Scoped to that clause only** —
+the section's derivation of the tolerance `0`, its repointing of
+`E4`/`E5`/`F4`/`F7` (**vindicated**: two are the injection's collateral),
+and `black_preserve.rs`'s module doc are all **correct**. **Owed to
+`icc-conformance`, not edited by me**; durable copy at §3.35.5.
+
+**★ `NA-013` DELIBERATELY NOT CONSUMED.** §4 registers departures from
+exact colorimetry or spec text. **This is a coverage gap in a TEST SUITE,
+not a departure in a TRANSFORM** — no colour value moves. Filed as
+§3.34.5 absence 11 and §7.24 owed 1 instead. **`TOLERANCES.md` gets no
+row either**: a detection floor is an instrument property, not a bound —
+a number that looks gate-like and gates nothing is DL-037/DL-049's
+failure.
+
+**Newly owed:** a **probe set below `5.0e-2` chromatic ink** (owed to
+`icc-conformance`; *done when a probe set's minimum `max(C,M,Y)` reaches
+the named rival's magnitude and an injection there turns a row red*) —
+★ **not the discharged debt renamed**: that asked *can these rows fail?*,
+this asks *at what magnitude do they stop?* Plus the §3.10.12.2
+retraction.
+
+**★★ THE REFLOG MOVED UNDER THIS FILING and it was caught AT the filing.**
+The dispatch said *"at `HEAD` = `400179b`"* — true when measured, **false
+by filing time**: `.git/logs/HEAD` ends **`abdf445`** (epoch
+`1787136911`), preceded by **`19d36e9`** (`1787136901`). **A reflog line
+never evidences a commit's CONTENTS**, so nothing is asserted about what
+they changed. `400179b` is recorded as **the tree measured, never the
+tip** — DL-062's mechanism, third instance. ★ **VERIFIED by reading (not
+by the reflog): DL-063's two stale copies are FIXED** — `diag.rs:14` and
+`main.rs:237`–`:243` both now carry their own retractions.
+
+★ **NOT claimed:** any suite census for today (**the dispatch carried
+`passk` FAILURE counts only — `0`,`4`,`3`,`0`; a failure count is not a
+census**, and NC-266's `pass=337` stays dated to `60c32dd`); a clean
+working tree or a diff of `black_preserve.rs` against `HEAD` (**a diff is
+a shell operation**; what is verified is that `:404` **reads `!= 0.0`
+right now**); **NA-012's perceptual cost**, which `icc-conformance` is
+reported to be measuring concurrently — **no number for it guessed or
+implied.** Four documents edited in the working tree; nothing committed
+or pushed.
+
+Related: [[iccce-injection-measures-one-magnitude]],
+[[iccce-words-humans-count-code]],
+[[iccce-stale-status-decays-faster-than-a-number]],
 [[iccce-source-labelled-number]],
 [[iccce-inferred-environment-constraint-is-a-reading]],
 [[iccce-patch-named-for-what-it-looks-at]],

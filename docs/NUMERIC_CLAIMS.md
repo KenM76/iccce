@@ -6612,7 +6612,7 @@ harness's `kind` string; where the two differ it is said so.
 | **NC-252** | §E3 + §F6 — the **near-neutral transition width**: iccce's K-only region is **zero wide by construction**, lcms2's is `1/16`. A real behavioural divergence inside an ICC.1 silence (A51) | `0.000000e0` (both), and chromatic ink at the `C = 0` endpoint `0.000000e0` (both) | `inf` | cross-check / derived-expectation | UNGRADED, **REPORTED permanently**; sep `6.250000e-2` (E3), `2.500000e-1` (F6) |
 | **NC-253** | §E4 + §E5 — the node-aligned off-neutral **regression guard**, and the **off-node control that earns its tightness** | `5.400000e-5`; control `1.750000e-3` | `2.000000e-4` (run time); control `inf` | cross-check | E4 **GRADED**, `DISCRIMINATING`; E5 UNGRADED |
 | **NC-254** | §E6 — the **sibling** synthetic fixture (`v2-cmyk-mft2-lab.icc`) is **`ZERO-SEPARATION`** for this subject | `0.000000e0`, **separation `0.000000e0`** | `inf` | cross-check | UNGRADED, verdict **`ZERO-SEPARATION`** — ★ **REPORTED, so nothing gates it** |
-| **NC-255** | §E7 + §F8 — the **leak guards**: `max\|on − off\|` over inputs that do **not** qualify, both surfaces driven by `iccce transform` with the flag on and off | **`0.000000e0`** both | **`0` exactly** both | ★ **self-comparison** — nothing outside this project is in the loop *(verified — `passk.rs:2092-2094`)* | **GRADED**, `DISCRIMINATING`; sep `1.750000e-3` (E7), `4.207049e-1` (F8) |
+| **NC-255** | §E7 + §F8 — the **leak guards**: `max\|on − off\|` over inputs that do **not** qualify, both surfaces driven by `iccce transform` with the flag on and off | **`0.000000e0`** both | **`0` exactly** both | ★ **self-comparison** — nothing outside this project is in the loop *(verified — `passk.rs:2092-2094`)* | **GRADED**, `DISCRIMINATING`; sep `1.750000e-3` (E7), `4.207049e-1` (F8). ★★★ **PROVEN discriminating by injection 2026-08-19 — and BOUNDED: see NC-267 / NC-268 (§3.35). Never quote this row without NC-268's floor** |
 | **NC-256** | **★★★ §E8 — the ORACLE IS WRONG AND THE ENGINE IS RIGHT, by algebra.** On a same-profile pair the equal-lightness construction **is the identity**; iccce returns it exactly, **lcms2 intent 11 sits `6.100000e-5` from it** | iccce **`0.000000e0`**; **lcms2 `6.100000e-5` away** | `1e-6` — one printed unit *(verified — `PRINT_FLOOR`, `passk.rs:875-878`)* | **derived-expectation** — ★ **the only Pass K row whose expectation is not some implementation's output** | **GRADED**, `DISCRIMINATING`, sep `6.100000e-5` |
 | **NC-257** | **§E9 — which of the two published definitions iccce implements**, cross-press, evaluated at **the oracle's own 17 CLUT nodes** | `3.100000e-5` | `1.090000e-4` (run time) | **cross-check-against-another-implementation** | **GRADED**, `DISCRIMINATING`; rival `4.889900e-2` |
 | **NC-258** | §F1 + §F2 — the committed fixture's **authored model, read from its own bytes**: `B2A` is `a`/`b`-independent across the dead band, and its neutral column matches the authored model | `0.000000e0`; `7.629511e-6` | `0` exactly; `7.629510948348211e-6` (`0.5 × 2⁻¹⁶`) | derived-expectation | **GRADED**; F1 `NO-NAMED-ALTERNATIVE`, F2 `DISCRIMINATING`. ★ **F2's worst case is ATTAINED, not approached** — the `<=` is deliberate |
@@ -6848,6 +6848,20 @@ passing test is not evidence until an injection turns it red**, and the
 best-documented constant in the project was caught by none of five
 injections. This needs a `crates/` edit in a detached worktree. **Owed.**
 
+> ★★★ **DISCHARGED 2026-08-19 — see §3.35, NC-267.** An injected widening
+> of the qualifying test turned **E7 and F8 red** while their siblings
+> stayed green, which is exactly the stated *done-when*. **The absence
+> above is closed.**
+>
+> ★★★ **And it is REPLACED by a larger one, which is absence 11 below.**
+> The same sweep found that at **`t = 0.04` the entire difftest suite is
+> green with the widened predicate compiled in** — the guards fire only
+> above a floor (**E7 `1.106780e-1`, F8 `5.0e-2`**, NC-268) and **the
+> floor had never been stated.** ★ Reading this discharge as *"the leak
+> guards are now proven"* full stop is the rounding-up this document
+> exists to prevent: they are proven **above `5.0e-2`** and are
+> **decorative below it**.
+
 **6. ★ No `--bpc` + preservation row at any layer.** A chain carrying both
 flags is untested everywhere — no difftest row, no `crates` test.
 
@@ -6872,6 +6886,29 @@ changed is that it would now be a **regression guard** rather than a
 made about them: `cargo fmt --all --check` and
 `clippy --workspace -D warnings`. `cargo test --workspace` **was** run
 (NC-266). **The handoff asserts all three; only one is filed.**
+
+**11. ★★★ *(appended 2026-08-19, created by §3.35 and by nothing before
+it)* No probe anywhere in Pass K exercises the qualifying test below
+`5.0e-2` of chromatic ink, so a SMALL widening of it is undetectable by
+the whole suite.** Measured, not suspected: at `t = 0.04` the difftest
+suite is **green with the widened predicate compiled in** (NC-267), and
+the two guards' floors are **`1.106780e-1`** (E7) and **`5.0e-2`** (F8,
+derived from its generator — NC-268). ★★ **The rival `TOLERANCES.md`
+§3.10.12.2 names carries the magnitude `10⁻⁹`**, which is more than seven
+orders below anything the suite can see. Closing this means **adding
+low-ink probes** — a probe set whose `max(C, M, Y)` reaches down to the
+region a contributor would actually argue about. **Owed to
+`icc-conformance`.** *Done when: a probe set exists whose minimum
+`max(C, M, Y)` is at or below the magnitude the named rival uses, and an
+injection at that magnitude turns a row red.*
+
+**12. ★★ *(appended 2026-08-19)* `TOLERANCES.md` §3.10.12.2 carries a
+FALSIFIED clause** — *"these rows are what would catch it"*, of a rival
+stated at `10⁻⁹`. **Owed to `icc-conformance`**, whose file it is; the
+durable statement of the falsification is §3.35.5 here, so nothing lives
+only in a dispatch. ★ **Only that clause is wrong**; the section's
+justification of the **tolerance** `0` is correct and must not be
+collaterally retracted.
 
 #### 3.34.6 Coverage of §3.34, stated because a number without it is not a claim
 
@@ -6905,6 +6942,307 @@ made about them: `cargo fmt --all --check` and
   `a_qualifying_input_is_preserved_by_the_compiled_path_too`.
 - ★★ **`icc-conformance` measured everything here; this librarian ran
   nothing** and re-read the named sources at the tip.
+
+---
+
+### 3.35 ★★★ The INJECTION PROOF of Pass K's leak guards — **the two rows are proven discriminating, and the same experiment proves they are DECORATIVE below a floor that had never been stated.** The debt was discharged by the runs that went red; the finding is in the run that stayed green
+
+**Date:** 2026-08-19 · **Measured by:** `icc-engineer`, in a **detached
+git worktree** at `HEAD` = **`400179b`**, against the pinned oracle
+`tools/difftest/vendor/build-msvc/transicc.exe` · **Filed by**
+`icc-librarian`, with every derivable statement re-derived from committed
+source and every statement requiring a shell labelled **`[REPORTED]`**.
+
+**This section discharges §3.34.5's absence 5 and §7's owed item 2**
+(*"★★★ Prove the leak guards by INJECTION"*), whose stated *done-when*
+was: *an injected widening of the qualifying test turns E7 and F8 red
+while their siblings stay green.* **That is met.** It is filed as a new
+section rather than as an edit to §3.34 because §3.34.1's table is headed
+`NC-243 … NC-266` and is a **dated record of the Pass K filing**; a later
+measurement gets later rows (the NC-264 / NC-265 discipline).
+
+#### 3.35.0 ★★★ Read this before the numbers
+
+The dispatch asked for a proof that two guards **can** fail. It returned
+that proof **and** a defect. Both halves are below, and **the second half
+is the one a future session needs**:
+
+> ★★★ **At `t = 0.04` the entire difftest suite is GREEN with a widened
+> qualifying test compiled in.** Zero failures, baseline-identical output,
+> and a defect in the shipped predicate. **The guards fire, but only above
+> a floor, and the floor had never been stated anywhere.**
+
+**Do not restate NC-267 without NC-268.** "E7 and F8 are proven
+discriminating" is true and is **half** of what was measured; on its own
+it is a rounding-up of coverage, which is this document's standing
+prohibition.
+
+#### 3.35.1 The injection
+
+**One line**, `crates/iccce-cmm/src/black_preserve.rs:404` — the
+qualifying test inside `KPreserve::apply`:
+
+```diff
+-        if device[0] != 0.0 || device[1] != 0.0 || device[2] != 0.0 {
++        if device[0] > t || device[1] > t || device[2] > t {
+```
+
+*(★ **VERIFIED** — the pre-injection form is the live text at
+`black_preserve.rs:404`, read by this librarian at the working tree at
+the moment of filing. What is verified is **that the line reads
+`!= 0.0`**; "the main tree is unmodified relative to `HEAD`" is a
+**diff**, which this role cannot run, and is therefore **`[REPORTED]`**.)*
+
+This is **exactly the rival TOLERANCES.md §3.10.12.2 names** — *"widening
+the qualifying test from exact zero to a tolerance"* — so the injection is
+not an invented perturbation; it is the named alternative, made real.
+
+★ **The direction of the widening, which governs every number below.**
+Under the injected predicate a probe takes the **preservation** branch
+when **all** of `C`, `M`, `Y` are `<= t`, i.e. when
+`max(C, M, Y) <= t`. So a guard can detect the widening **iff at least
+one probe it drives satisfies `max(C, M, Y) <= t`.** Every floor in
+§3.35.3 is that inequality applied to a probe generator.
+
+#### 3.35.2 NC-267 — the sweep
+
+**Apparatus** (DL-031: every count with its runner): `cargo build
+--release -p iccce-cli`, then a **full** `cargo run --release` in
+`tools/difftest`, **once per value of `t`**, plus one unmodified baseline
+run. Four runs, one machine, one day, no repetition.
+
+The two rows are
+`E7` = `passk/E/regression/preservation-does-not-touch-a-non-qualifying-input`
+and
+`F8` = `passk/F/synthetic-chromatic-neutral/regression/preservation-does-not-touch-a-non-qualifying-input`.
+**Both carry tolerance `0` exactly**, so any non-zero observation is red
+*(★ VERIFIED — `passk.rs:2307`–`:2312` gives E7 `(SELF, DEV, EXACT_ZERO)`;
+`TOLERANCES.md` §3.10.12's row table gives E7 and F8 both as
+`self-consistency`, `device-abs-max`, `0` exactly)*.
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-267** | **★★★ The INJECTION SWEEP.** `max\|on − off\|` on E7 (192 probes) and F8 (50 probes) with the qualifying test widened from `!= 0.0` to `> t`, at **`t ∈ {0.12, 0.10, 0.04}`**, each against an **unmodified baseline run** | **baseline** E7 `0.000000e0` · F8 `0.000000e0`, `passk` FAIL **0**; **`t = 0.12`** E7 **`2.620510e-1`** · F8 **`3.458210e-1`**, `passk` FAIL **4**; **`t = 0.10`** E7 `0.000000e0` · F8 **`3.458210e-1`**, `passk` FAIL **3**; **`t = 0.04`** E7 `0.000000e0` · F8 `0.000000e0`, `passk` FAIL **0** | **`0` exactly** for both rows, unchanged in every run — ★ **the bound never moved; only the code did** | ★ **self-comparison** for E7/F8 (iccce against iccce, flag on vs off, injected vs baseline — nothing outside this project is in the loop). ★ One **collateral** row is a `cross-check-against-another-implementation`; see below. **`[REPORTED]`** — this librarian has no shell and ran none of the four runs | **NC-255's rows are now PROVEN DISCRIMINATING** — DL-051's condition met. ★★ **Bounded by NC-268 and must be quoted with it** |
+
+**★★ The collateral, and it is not noise.** At **both** `t = 0.12` and
+`t = 0.10` two further rows went red, the same two each time:
+`passk/F/synthetic-chromatic-neutral/chromatic-gray-round-trip-matches-the-derived-table`
+(derived-expectation) and
+`passk/F/synthetic-chromatic-neutral/regression/chromatic-gray-round-trip-agrees-with-lcms2`
+(**cross-check against lcms2**). Both are driven **with**
+`--preserve-black` — the repointing recorded in `TOLERANCES.md`
+§3.10.12.2 — and that repointing is **why** they can see this at all. So
+the widening is caught by **four** rows above `5.0e-2`, one of which has
+an **external** implementation in its loop.
+
+**★ The siblings that stayed green throughout, which are the control:**
+`passk/E/k-only-in-implies-k-only-out` (`0.000000e0`),
+`passk/E/regression/node-aligned-off-neutral-agrees-with-lcms2`
+(`5.400000e-5`),
+`passk/F/synthetic-chromatic-neutral/separation-is-above-the-declared-floor`,
+`passk/F/synthetic-chromatic-neutral/k-only-in-implies-k-only-out`, and
+**every §A, §B and §D row**. **`[REPORTED]`.** ★ A red row is evidence
+only if its neighbours could have gone red and did not; that is what this
+list is for, and it is why the *done-when* named siblings explicitly.
+
+**★★ An internal consistency check this librarian can make without a
+shell.** F8's observation is **identical** at `t = 0.12` and `t = 0.10`
+(`3.458210e-1` both). That is what the generator predicts: `t = 0.10`
+admits the `c = 0.05` probe family and `t = 0.12` admits `c = 0.05` **and**
+`c = 0.10`, so if the leak magnitude is dominated by the smallest-`c`
+family the maximum does not move between the two. **The two numbers
+agreeing is a corroboration, not a duplication.** E7's number has no such
+check available.
+
+#### 3.35.3 NC-268 — the floors, and which of them is DURABLE
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-268** | **★★★ The DETECTION FLOOR of each leak guard** — the smallest widening `t` each row can see, computed as `min over probes of max(C, M, Y)` on the row's own probe set | **E7 = `1.106780e-1`** (`min` over 192 probes: node-aligned `2.666670e-1`, arbitrary `1.106780e-1`); **F8 = `5.0e-2` exactly** (`min` over 50 probes) | ★ **none — this is not a tolerance, it is an instrument's floor.** See §3.35.6 | **derived-expectation** — arithmetic on the harness's **committed probe generators**, not on any implementation's output. ★ **F8's is VERIFIED by this librarian** from `passk.rs:3679`–`:3690`; **E7's is `[REPORTED]`**, from a temporary `probe_floor` bin in the removed worktree | **Not gradable and not graded.** ★★★ **It is the bound on NC-267 and the reason NC-255 must never again be quoted bare** |
+
+**★★★ The detectable band.**
+
+| widening | E7 | F8 | the suite |
+|---|---|---|---|
+| `t >= 1.106780e-1` | **fires** | **fires** | red (4 rows at `t = 0.12`) |
+| `5.0e-2 <= t < 1.106780e-1` | **silent** | **fires** | red (3 rows at `t = 0.10`) |
+| `t < 5.0e-2` | **silent** | **silent** | ★★★ **GREEN** (measured at `t = 0.04`) |
+
+★ **The band's endpoints are inclusive-at-the-floor because the injected
+predicate is `>`**: a probe whose `max(C, M, Y)` equals `t` is **not**
+excluded and therefore leaks. That is this librarian's reading of the
+injected line, **derived, not measured** — **no run sat at either
+endpoint.**
+
+★★ **What the runs actually pin down, stated separately from the
+derivation.** The three measured points **bracket** the floors and do not
+locate them: E7 passed at `0.10` and failed at `0.12`, so its floor lies
+in **`(0.10, 0.12]`**; F8 passed at `0.04` and failed at `0.10`, so its
+floor lies in **`(0.04, 0.10]`**. The exact values `1.106780e-1` and
+`5.0e-2` come from the **generators**, and both lie inside their measured
+bracket. ★ **This is corroboration between two independent apparatus —
+enumeration and execution — and it is the strongest thing this section
+has.**
+
+##### ★★★ The two floors are NOT the same kind of fact, and the dispatch's own summary understated this
+
+**F8's floor is STRUCTURAL. E7's floor is INCIDENTAL.** This distinction
+was found by reading the generators and is the durable half of NC-268:
+
+- **F8 — `5.0e-2`, a property of the DESIGN.** `chromatic_gray_probes`
+  emits `[c, (6/7)·c, ((50 + 45·(6/7))/90)·c, j·0.125]` for
+  `c = i × 0.05`, `i = 1..=10`, `j = 0..4` — 50 probes. Both ratios are
+  **strictly less than 1** (`6/7 = 0.857142…` and
+  `(50 + 45·6/7)/90 = 0.984126…`), therefore `max(C, M, Y) = c` for every
+  probe, therefore the minimum is the smallest `c`, which is **`0.05`
+  exactly, by construction.** *(★ **VERIFIED** — `passk.rs:3679`–`:3690`,
+  read at the working tree at this filing, i.e. at a tree **later** than
+  the one measured. **The floor holds at the current tree.**)* It will not
+  move unless someone edits that loop.
+- **E7 — `1.106780e-1`, a property of a SEED.** `arbitrary_off_neutral`
+  draws coordinates `((state >> 43) as f64 / 2_097_152.0) × 0.8` from a
+  hand-written fixed-seed LCG (`passk.rs:768`–`:789`), accepting a probe
+  when `max(C, M, Y) > 0` and `ΣCMYK <= 3.0`. **By construction that
+  bounds the floor only at `0.8 / 2²¹ ≈ 3.814697e-7`** — i.e. at
+  essentially nothing. **The observed `1.106780e-1` is an accident of the
+  seed `0xE5`, and re-seeding the generator would move E7's floor without
+  changing one line of intent.**
+
+★★ **A correction to the dispatch, and it matters for exactly this
+reason.** The dispatch stated that `node_aligned_off_neutral`'s floor
+`4/15 = 0.266667` is its floor *"by construction"*. **It is not.** That
+generator quantises to `j/15` *(★ VERIFIED — `passk.rs:749`,
+`f64::from(… % 16) / 15.0`)* and filters on `max(C, M, Y) > 0`, so **what
+construction gives is `>= 1/15 = 6.666667e-2`, whatever the seed**; that
+the fixed seed `0x0B` happens to produce `4/15` is an **observation**,
+`[REPORTED]` like E7's. The grid is a construction fact; **which grid
+point the draw reached is not.** ★ It changes no conclusion — E7's floor
+is `min(0.266667, 0.110678)` and is dominated by the arbitrary set either
+way — but a floor labelled *"by construction"* is a floor a future session
+will not re-check, and this one must be re-checked whenever a seed moves.
+
+#### 3.35.4 ★★★ What NC-255's status now is — stated precisely, because both halves are load-bearing
+
+> **E7 and F8 detect a widening of the qualifying test if and only if it
+> exceeds `1.106780e-1` and `5.0e-2` respectively. Below `5.0e-2` the
+> suite has no detector at all.**
+
+- **The upgrade is real.** NC-255 was `GRADED, DISCRIMINATING` on the
+  strength of two rows that had **only ever been observed to pass**.
+  DL-051's whole finding is that such a row is not evidence until an
+  injection turns it red. **It has now been turned red**, and NC-255's
+  grade is earned rather than assumed.
+- **The bound is equally real.** The rows are discriminating **above a
+  stated floor** and **decorative below it**. ★★ NC-255's own row in
+  §3.34.1 is **unchanged and remains true** — observed `0`, tolerance `0`,
+  `DISCRIMINATING` — which is why it is not edited here; it is
+  **annotated** with a pointer to this section. A row that was correct
+  when written stays written (the NC-264 / NC-265 discipline).
+
+★ **Scope of the suite-wide clause, which is weaker than the row-wide
+one.** *"Below `5.0e-2` the suite has no detector"* is **derived** for E7
+and F8 and **measured at exactly one point** (`t = 0.04`) for everything
+else. A widening at, say, `t = 0.045` is **predicted** green and **has not
+been run**. Do not upgrade the single point to an interval — that is
+DL-053's error (*a count from a sample is not the population*) in the
+shape of a sweep.
+
+#### 3.35.5 ★★★ A FALSIFIED CLAIM in `TOLERANCES.md`, found while filing this — owed, not fixed
+
+`TOLERANCES.md` **§3.10.12.2** closes with, verbatim at the tree read for
+this filing:
+
+> *"★ The named rival for both is the change a future contributor is most
+> likely to make: **widening the qualifying test from exact zero to a
+> tolerance**, on the grounds that `10⁻⁹` of cyan "is really K-only".
+> `crates/iccce-cmm`'s module doc names and rejects it; **these rows are
+> what would catch it.**"*
+
+**The final clause is false, and the sentence contains the number that
+falsifies it.** The rival is named **with its magnitude — `10⁻⁹`** — and
+NC-268 measures the instrument's floor at **`5.0e-2`**. A widening to
+`t = 10⁻⁹` would be caught by **neither row**, and by **no row in the
+suite**: it is **more than seven orders of magnitude below** the smallest
+widening anything here can see.
+
+★★ **What is NOT wrong with that section, stated so the correction lands
+in the right place** (DL-057: a correction scoped to the wrong clause
+authenticates the rest):
+
+- §3.10.12.2's justification of the **tolerance** — *"Why exactly zero is
+  derived and not merely strict … none of them qualifies, the
+  preservation branch returns `None` for all of them, and the two
+  invocations execute the identical arithmetic"* — is **correct and
+  survives intact.** It justifies `0` as the bound and says nothing about
+  detection power.
+- The **repointing** decision (`E4`, `E5`, `F4`, `F7` driven with the
+  flag) is **vindicated** by this experiment: two of those rows are
+  NC-267's collateral.
+- The **module doc** at `black_preserve.rs:82`–`:101` is **also correct**
+  — *"An input at `C = 1e-9` is not K-only under this rule"* is a claim
+  about **behaviour**, which is true, and makes no claim about detection.
+
+**So the defect is one clause in one paragraph: `these rows are what would
+catch it`.** ★ **`TOLERANCES.md` is `icc-conformance`'s file and is NOT
+edited by this librarian** (ROADMAP names it so, and DL-062 is the entry
+about what happens when one role edits or mis-tracks another's document).
+The correction is **registered as owed** in §7.24 and returned to the
+dispatching agent.
+
+★★★ **The shape of this defect is the point, and it is DL-064:** the
+rival was named **with a magnitude**, the guard was claimed to catch it
+**without one**, and **nobody subtracted the two**. A guard that names its
+rival must state the magnitude at which it catches it, or the
+justification is a hope with a citation.
+
+#### 3.35.6 Why no tolerance is stated for NC-268, and why `TOLERANCES.md` is not the home of these numbers
+
+A detection floor is **a property of an instrument, not a bound on a
+measurement.** Nothing passes or fails against `5.0e-2`; no run is graded
+by it; it does not appear in any row's verdict. Putting it in the
+tolerance budget would create a number that looks gate-like and gates
+nothing — which is precisely the failure DL-037 and DL-049 record
+(`BLIND` gates nothing, and a defect once sat in a *tolerance's
+justification* rather than in a candidate). **The floors therefore live
+here, as measured/derived values with their apparatus**, and the single
+statement owed to `TOLERANCES.md` is the **retraction** in §3.35.5 —
+prose, not a bound.
+
+#### 3.35.7 Coverage of §3.35, stated because a number without it is not a claim
+
+- **One machine, one day (2026-08-19), one run per condition, four runs
+  total, no repetition and no variance.** **`[REPORTED]`.**
+- **Three values of `t`.** The floors are **not** measured — they are
+  **bracketed** (§3.35.3) and **derived**. `t` was never set to `0.05`,
+  to `1.106780e-1`, or to anything in `(0, 0.04)`.
+- **The measured tree is `400179b`; the tree this librarian READ is
+  later.** ★★ At the moment of this filing `.git/logs/HEAD`'s last line is
+  **`abdf445`** (epoch `1787136911`, `-0400`), preceded by **`19d36e9`**
+  (epoch `1787136901`) — **two commits landed after `400179b`.** *(★
+  VERIFIED from `.git/logs/HEAD`, which is plain text.)* **A reflog line
+  evidences a commit's existence, time and subject, NEVER its contents**,
+  so **whether either commit touches `black_preserve.rs`, `passk.rs` or
+  the guards is NOT observable by this role** and is not asserted. What
+  **is** verified is that the probe generators and the qualifying test
+  read as described **at the working tree now**, which is the later tree —
+  so **the derivations hold there; the executions are dated to
+  `400179b`.**
+- ★ **The dispatch's phrase *"at `HEAD` = `400179b`"* was true when
+  measured and is false now.** It is recorded above as *the measured
+  tree*, never as *the tip*. This is DL-062's mechanism arriving a third
+  time, and this time it was caught **at the filing** rather than after
+  it.
+- **One profile family for E7** (`ISO Coated v2 300% (ECI)` → itself,
+  licensed corpus) and **one committed synthetic fixture for F8**. ★ E7's
+  runs **cannot happen in CI**; F8's can. **A CI run cannot reproduce more
+  than half of this section.**
+- **One policy** (`k-only-equal-lightness`) and **one intent**
+  (media-relative).
+- ★★ **`icc-engineer` measured everything here; this librarian ran
+  nothing.** What this role contributed is the re-derivation of F8's
+  floor, the construction-vs-seed distinction, the correction to the
+  node-aligned *"by construction"* claim, the bracket analysis, and the
+  falsified clause in §3.10.12.2.
 
 ---
 
@@ -9899,6 +10237,18 @@ set in a figure**"*). **NC-230's condition (b)** — §7.21's owed item 1 —
    **Owed to `icc-engineer` or `icc-conformance`.** *Done when: an
    injected widening of the qualifying test turns E7 and F8 red while
    their siblings stay green.*
+
+   > ★★★ **DISCHARGED 2026-08-19 by `icc-engineer` — §3.35, NC-267.**
+   > The *done-when* is met **verbatim**: at `t = 0.12` both rows are red
+   > (`2.620510e-1` and `3.458210e-1`) and the named siblings are green.
+   > **DL-051's condition on NC-255 is satisfied.**
+   >
+   > ★★★ **The discharge is NOT the finding, and item 8 below is what the
+   > finding created.** The same sweep, at `t = 0.04`, left the **entire
+   > suite green with a widened predicate compiled in**. The guards have a
+   > **detection floor** — `1.106780e-1` (E7) and `5.0e-2` (F8) — that had
+   > **never been stated**, and below `5.0e-2` **nothing in this project
+   > can see the defect**. **NC-267 must always be quoted with NC-268.**
 3. **★★★ Measure the perceptual cost of preservation, and retire
    NA-012's `UNMEASURED`.** The **ΔE2000 between the preserved and the
    colorimetric answer on a cross-press pair** is the number a caller
@@ -9964,6 +10314,101 @@ set in a figure**"*). **NC-230's condition (b)** — §7.21's owed item 1 —
 - **Sourcing permissions, and rule 9.** This filing fetched nothing and
   authorises nothing. ★ The tree carries **unpushed commits**; that is a
   state, and this document makes no claim about how many.
+
+---
+
+### 7.24 Status of §7 … §7.23, re-checked 2026-08-19 at the **leak-guard injection** filing
+
+**★★ TWO ROWS ARE ADDED: `NC-267` and `NC-268`, in the new §3.35.** The
+next free identifiers are now **`NC-269`** and **`NA-013`**.
+
+**★★★ `NA-013` was NOT consumed, deliberately.** The dispatch offered it.
+**§4 is the register of departures from exact colorimetry or from
+specification text** — NA-010 (a deviation from printed spec decimals),
+NA-011 (a ULP difference against published values), NA-012 (a deliberate
+departure inside a specification silence). **What §3.35 found is a
+coverage gap in a TEST SUITE, not a departure in a TRANSFORM.** No colour
+value moves; no approximation is being made; nothing about the shipped
+arithmetic changed. Filing it as an NA would put an apparatus fact in the
+colorimetry register and make the register's own count untrue. **It is
+filed as an absence (§3.34.5 item 11) and as owed item 1 below.**
+
+#### 1. ★★★ NEWLY OWED — a probe set below `5.0e-2`, and it is the whole point of the filing
+
+**There is no probe anywhere in Pass K whose `max(C, M, Y)` reaches below
+`5.0e-2`**, so a small widening of the qualifying test is **undetectable
+by the entire suite** — measured at `t = 0.04`, where the suite is green
+with the defect compiled in (NC-267). The named rival in `TOLERANCES.md`
+§3.10.12.2 is stated at **`10⁻⁹`**, seven-plus orders below the floor.
+
+**Owed to `icc-conformance`.** *Done when: a probe set exists whose
+minimum `max(C, M, Y)` is at or below the magnitude the named rival uses,
+and an injection at that magnitude turns a row red.*
+
+★ **This is not the old debt renamed.** §7's item 2 asked *can these rows
+fail?* — answered, yes. This asks *at what magnitude do they stop?* —
+answered, `5.0e-2`, and **nothing covers what lies beneath it.**
+
+#### 2. ★★ NEWLY OWED — one clause of `TOLERANCES.md` §3.10.12.2 is falsified
+
+*"these rows are what would catch it"*, said of a `10⁻⁹` rival. **Owed to
+`icc-conformance`**; the durable statement is **§3.35.5** in this
+document, so the finding does not live only in a dispatch or a channel
+file. ★ **Scope it to that clause.** The same section's justification of
+the tolerance `0`, its repointing decision, and `black_preserve.rs`'s
+module doc are all **correct** — and DL-057 is the entry about what a
+correction aimed at the wrong clause does to the clauses around it.
+
+#### 3. ★★★ Owed item 2 of §7.23 is DISCHARGED; items 1, 3, 4, 5, 6, 7 are UNMOVED
+
+- **Item 2 (the injection proof) — DISCHARGED.** See §7.23's item 2, which
+  now carries the dated discharge, and §3.35.
+- **Item 3 (NA-012's perceptual cost) — STILL OPEN.** ★ `icc-conformance`
+  is **reported to be measuring it concurrently**; **no number for it is
+  recorded here, guessed here, or implied here.** It will be filed when it
+  is routed to this role and not before.
+- **Items 1, 4, 5, 6, 7 — untouched by this filing**, which measured
+  nothing about the compiled path, the eight ungraded destinations,
+  NC-266's `blind = 0`, or the two lint gates.
+
+#### 4. ★★ The standing debt is UNMOVED, at its tenth-plus consecutive filing
+
+**No `published-ground-truth` row exists for any transform**, and §3.35
+could not have supplied one: an injection is **self-comparison by
+construction** — it compares a tree to itself with one line changed.
+`IEC 61966-2-1` remains **paywalled and unobtained**. ★ For Pass K's
+subject specifically the impossibility is **structural** (A51), which
+§7.23 §1 states and this filing does not weaken.
+
+#### 5. ★★★ What this filing does NOT claim about the repository
+
+- **That `400179b` is the tip.** It is **the tree the injection was run
+  against**. At this filing `.git/logs/HEAD` ends **`abdf445`**, preceded
+  by **`19d36e9`** — **two commits later** *(VERIFIED from the reflog,
+  which is plain text)*. **A reflog line evidences a commit's existence,
+  time and subject, never its contents**, so nothing is asserted about
+  what those two commits changed.
+- **That the working tree is clean, or that `black_preserve.rs` is
+  unmodified relative to `HEAD`.** ★ The dispatch reports both; **a diff
+  is a shell operation and this role has none.** What is **verified** is
+  that `black_preserve.rs:404` **reads `!= 0.0` right now** — which is the
+  fact the filing actually needs — and that the dispatching operator
+  states there are **uncommitted edits under `crates/`**, which is why
+  **no `crates/` file was edited by this filing.**
+- **That the injection worktree still exists.** It is **reported
+  removed**, along with the temporary `probe_floor` bin that produced
+  E7's floor. ★★ **Consequence, and it is the reason E7's floor is
+  `[REPORTED]` and F8's is `VERIFIED`:** F8's floor is re-derivable from
+  committed source by anyone, forever; **E7's is not re-derivable by
+  reading anything in this repository**, because it is a property of a
+  fixed seed that only execution reveals.
+- **Any suite-wide census.** ★ NC-266's `pass=337 fail=0` is dated to tip
+  `60c32dd` and is **not** restated here. The dispatch carried **`passk`
+  failure counts only** — `0`, `4`, `3`, `0` — and **a failure count is
+  not a suite census** (a count is not an inventory). No pass total for
+  2026-08-19 is claimed.
+- **That anything was committed, pushed or published.** This filing edited
+  documents in the working tree and authorised nothing.
 
 ---
 

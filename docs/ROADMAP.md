@@ -1029,6 +1029,77 @@ skip=9 error=0`, their measurement, corroborated in `TOLERANCES.md`
 §3.8.1** — and **`274` may not be compared with `229`**, because Pass H
 added rows.
 
+**★★ Updated 2026-08-19 — a DOCS-ONLY decision, no Pass moved and no
+number changed: `ARCHITECTURE.md` gains DL-063.** `malformations: N`
+**counts DISCLOSURES, not violations**, and the `Malformation` type's own
+doc comment (*"a rule violation the file carries"*) was **falsified by
+two of its own variants** — `TrailingBytes`, whose emitted text already
+said *"normal for container-embedded profiles"*, and
+`UnknownRenderingIntent{V2Undefined}`, whose emitted text already said
+ICC.1:2001-04 *"do not forbid others"*. ★★★ **The emitted WORDS were
+careful; the CHANNEL was not** — both arrive through a type named
+`Malformation` and are added into a count that `iccce inspect` prints
+and a consumer's code reads as a conformance verdict. The four
+rendering-intent fixtures make the point in one table (`[REPORTED]` by
+`icc-engineer`; the branch logic verified at `header.rs:190`–`:202`):
+`v2-…-low-half` and `v4-…-low-half` carry **the same four header bytes
+`0x00000004`** and both print **`malformations: 1`**, and **only one of
+the two files is non-conforming.** ★ **The decision:** `N == 0` means
+iccce found nothing to say and is **not** a conformance certificate;
+`N > 0` means there is something worth reading and does **not** imply
+non-conformance; **a verdict requires matching on variants, not counting
+them.** The alternative — splitting into `Violation` and `Observation` —
+is **recorded as rejected** in DL-063 so it is not re-litigated: a public
+API break with no numeric benefit that **moves** the ambiguity rather
+than removing it. **No Pass status changes. No `NUMERIC_CLAIMS.md` row,
+no `TOLERANCES.md` row; next free identifiers remain `NC-267` and
+`NA-013`.**
+
+**★★★ Updated 2026-08-19 (later the same day) — the leak-guard injection:
+`ARCHITECTURE.md` gains DL-064, `NUMERIC_CLAIMS.md` gains §3.35 with
+`NC-267` and `NC-268`, and §7.24.** ★ The line above — *"next free
+identifiers remain `NC-267` and `NA-013`"* — **was true when written and
+is now superseded: the next free are `NC-269` and `NA-013`.** It is
+corrected here rather than rewritten above, because a dated statement that
+was accurate on its date is a record, not an error (DL-062).
+
+**What was measured** *(`[REPORTED]` — by `icc-engineer`, in a detached
+worktree at the tree `400179b`, against the pinned `transicc.exe`; this
+role has no shell)*: the qualifying test in `KPreserve::apply` was widened
+from `C = M = Y = 0` to `max(C, M, Y) <= t` and the full difftest suite
+re-run at **`t ∈ {0.12, 0.10, 0.04}`** plus an unmodified baseline.
+
+**The debt is DISCHARGED.** At `t = 0.12` both leak guards go red —
+`E7` `2.620510e-1`, `F8` `3.458210e-1`, against a tolerance of `0`
+exactly — while the named siblings stay green. That is the *done-when*
+`NUMERIC_CLAIMS.md` §7.23 item 2 stated, met verbatim, and it upgrades
+`NC-255` from **assumed** discriminating to **proven** (DL-051's
+condition).
+
+★★★ **And the finding is in the run that stayed green.** At **`t = 0.04`
+the entire suite is green with the widened predicate compiled in** — a
+defect in the shipped qualifying test that **every gate this project owns
+reports as fine**. The guards have a **detection floor** that had never
+been stated: **`1.106780e-1`** for `E7` and **`5.0e-2`** for `F8`. ★★ The
+two floors are **different kinds of fact** — F8's is **structural**
+(derivable in four lines from `chromatic_gray_probes`, and **verified by
+this librarian** from committed source), while E7's is **incidental**, an
+accident of a fixed LCG seed that construction bounds only at `≈3.8e-7`.
+**Re-seeding a probe generator would move E7's sensitivity without
+changing one line of intent.**
+
+★ **One clause of `TOLERANCES.md` §3.10.12.2 is falsified by this** — it
+names the rival *with* its magnitude (`10⁻⁹` of cyan) and then claims
+*"these rows are what would catch it"* **without one**. Both numbers were
+on the page; nobody subtracted them. **Owed to `icc-conformance`**, whose
+file it is, and **not edited here**; the durable statement is
+`NUMERIC_CLAIMS.md` §3.35.5. ★ Only that clause — the section's
+justification of the tolerance `0`, its repointing decision, and
+`black_preserve.rs`'s module doc are all **correct**.
+
+**No Pass status changes, no code was edited, and no colour value moves.**
+The defect is in the **test suite's reach**, not in the transform.
+
 ---
 
 ## Pass 0 — scaffold and the oracle
@@ -5005,7 +5076,7 @@ Pass number at all.
 | **The CLI** | `iccce transform --preserve-black <policy>`, ★ **with NO default** — the two published definitions disagree by up to `4.889900e-2`, so a default would be iccce choosing one and reporting it under a name that means both |
 | **The qualifying test** | `C = M = Y = 0` **exactly**. A discontinuity, deliberately — which is why the compiled path had to carry the policy outside the interpolation |
 | **The grading** | Pass K, **44 rows**, §A–§F; **§F's 8 rows run in CI** on a committed synthetic fixture, the other 36 need the licensed corpus |
-| **The ledger** | `NUMERIC_CLAIMS.md` **§3.34** (`NC-243 … NC-266`), **NA-012**, five new §6 dependency rows, **§7.23** |
+| **The ledger** | `NUMERIC_CLAIMS.md` **§3.34** (`NC-243 … NC-266`), **NA-012**, five new §6 dependency rows, **§7.23** — and, from 2026-08-19, **§3.35** (`NC-267`, `NC-268`) and **§7.24**, the injection proof of the leak guards **and its floor** |
 | **The budget** | `TOLERANCES.md` §3.10 (`icc-conformance`'s file) |
 
 ### Done-when, judged on these terms
@@ -5013,14 +5084,14 @@ Pass number at all.
 | Clause | Status |
 |---|---|
 | A K-only input produces a K-only output | **MET, at tolerance exactly `0`** — NC-250 (licensed corpus) and NC-261 (committed fixture, in CI). Pre-feature the same measure was `7.053200e-1` |
-| The policy does not touch inputs that do not qualify | **MET, at exactly `0`** over 192 + 50 probes — NC-255. ★ **But NOT proven by injection**, which is owed |
+| The policy does not touch inputs that do not qualify | **MET, at exactly `0`** over 192 + 50 probes — NC-255, and **PROVEN BY INJECTION 2026-08-19** (NC-267): a widened qualifying test turns both rows red while the named siblings stay green. ★★★ **But BOUNDED — read NC-268 with it.** The guards see a widening only above **`1.106780e-1`** (E7) and **`5.0e-2`** (F8); **at `t = 0.04` the whole suite is green with the defect compiled in.** Below `5.0e-2` this clause is defended by nothing |
 | K is genuinely re-mapped, not copied through | **MET** — NC-263 (`0.366689` at `K_in = 0.5` on the furthest cross-press pair) and, in graded form, **NC-257** |
 | The construction is the identity where algebra says it must be | **MET, and it is the Pass's headline** — NC-256; ★★★ **the oracle is `6.100000e-5` away from an answer that is not in dispute** |
 | It composes with the compiled path | **MET as of `a05476c`, and it did NOT at first** — NC-264 (converges) and NC-265 (the pre-fix defect). See the warning below |
 | Named as a rule-4 departure from colorimetry | **MET** — **NA-012**, registered on the day, with its cost stated as **UNMEASURED** |
 | A published expectation anywhere in the Pass | ★★★ **NOT MET AND NOT MEETABLE.** ICC.1 specifies no black-preservation construct (`ICC_Spec` **A51**, a closed negative). **Zero `published-ground-truth` rows, and none can exist for this subject** |
 
-### ★★★ Two things about this work that must not be lost
+### ★★★ Three things about this work that must not be lost *(the third added 2026-08-19)*
 
 **1. The compiled path nearly shipped wrong, and the fix is structural.**
 An interpolator **cannot represent a step**. Sampling the *preserving*
@@ -5044,6 +5115,24 @@ and derived from the tolerance budget, not from the fixture**. A
 classifier verdict prints in a column beside a green row, and nobody
 reads columns.
 
+**3. ★★★ THE LEAK GUARDS HAVE A FLOOR, AND IT WAS NEVER STATED.**
+*(added 2026-08-19 — `NC-267` / `NC-268`, `ARCHITECTURE.md` **DL-064**.)*
+The injection owed since the Pass K filing was run, and it **discharged
+the debt**: widening `KPreserve::apply`'s qualifying test turns `E7` and
+`F8` red while their siblings stay green. **But the sweep went further
+than the debt required, and the finding is in the run that stayed
+green** — at a widening of `t = 0.04` the **entire difftest suite is
+green with the defect compiled in.** The guards see a widening only above
+**`1.106780e-1`** (`E7`) and **`5.0e-2`** (`F8`), and **no probe anywhere
+in Pass K reaches below `5.0e-2` of chromatic ink.** ★★ The rival
+`TOLERANCES.md` §3.10.12.2 names is stated at **`10⁻⁹`** — seven-plus
+orders below anything this project can detect — and that section's
+closing clause *"these rows are what would catch it"* is **falsified** and
+owed to `icc-conformance`. ★ **Read this against item 2 above: there,
+injection showed a fixture manufacturing a pass; here, injection showed a
+whole suite manufacturing one.** A red injection proves a guard is not
+inert; **only a sweep measures what it can see.**
+
 ### What this does NOT close
 
 - **The perceptual cost of the policy is UNMEASURED.** Nobody has
@@ -5056,6 +5145,13 @@ reads columns.
   other**.
 - **No `--bpc` + preservation coverage** at any layer.
 - **Eight of the ten CMYK destinations swept are graded by nothing.**
+- ★★★ **No probe below `5.0e-2` chromatic ink** *(added 2026-08-19)*, so
+  a **small** widening of the qualifying test is invisible to the whole
+  suite — measured, not suspected (`NC-267` / `NC-268`). Closing it means
+  a **low-ink probe set** reaching down to the magnitude the named rival
+  uses; **owed to `icc-conformance`.** ★ The injection debt is closed and
+  **this is not that debt renamed**: that one asked *can these rows
+  fail?*, this one asks *at what magnitude do they stop?*
 - ★ **Pass 8's remaining gap 2 is PARTLY discharged as a side effect**:
   `ISO Coated v2 300% (ECI)` — named there as unexercised, and the
   `DestOutputProfile` of every ICC-CMS Ghent patch — is now the **source

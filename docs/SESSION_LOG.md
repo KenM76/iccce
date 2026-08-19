@@ -6208,3 +6208,256 @@ the correction lives in DL-062, not above.**
 - **That another role's file was edited by this librarian.** ★ It was
   not — here or at the Pass K filing. `TOLERANCES.md` and
   `tools/difftest/README.md` were **read only**.
+
+---
+
+## 2026-08-19 — the **disclosure-channel** filing (thirtieth `SESSION_LOG` entry). **A type whose doc comment was falsified by two of its own variants — and the reason nobody caught it is that the EMITTED WORDS were already careful, while the COUNT, which is the only part a program reads, was not**
+
+**Filed by `icc-librarian`.** One job: file **DL-063**, drafted by
+`icc-engineer`, recording that `malformations: N` **counts disclosures,
+not violations**, that the mixed channel is **deliberate**, that the name
+`Malformation` is **retained**, and that the `Violation`/`Observation`
+split was **considered and rejected**. **No row added, changed or
+invalidated. Next free identifiers remain `NC-267` and `NA-013`.**
+`ARCHITECTURE.md` §5 and `ROADMAP.md`'s dated history are the only
+documents edited; **no Pass moved and nothing was measured by this
+role.**
+
+### ★★★ The forward reference this filing exists to discharge
+
+`crates/iccce-profile/src/diag.rs:147`–`:150` already says *"see
+`docs/ARCHITECTURE.md`'s decision log. The alternative … is recorded
+there with the reason it was not taken."* **Until DL-063 landed, the
+decision log did not contain it** — a citation whose destination lacked
+the thing cited, which is **DL-048's mechanism inside our own working
+tree.** ★ The entry was written to contain *exactly* what the comment
+promises: the design choice **and** the rejected alternative **with its
+reason**.
+
+### What was verified, and how
+
+★★ **Nothing was accepted from the dispatch.** Every claim was re-read
+at the tip:
+
+- **Both falsifying strings, verbatim at the `Display` impl** —
+  `diag.rs:254`–`:259` (*"normal for container-embedded profiles"*) and
+  `:273`–`:278` (*"…and do not forbid others"*). **The prose was never
+  the defect.**
+- **The count's print site** — `crates/iccce-cli/src/main.rs:238`,
+  `println!("malformations: {}", profile.malformations.len())`.
+- **The branch logic behind all four fixture rows** —
+  `header.rs:190`–`:202`: v4 tests `rendering_intent > 3`, v2 tests
+  `rendering_intent & 0xFFFF > 3`, so **a v2 high-half value is not
+  reported at all**, which `IntentRule`'s own doc states at `diag.rs:102`.
+- **All four fixtures exist** and their intent values are as described
+  (`fixtures/synthetic/MANIFEST.md:284`, `:294`, `:304`, and `:200` for
+  the v2 high-bits file).
+- ★ **The four CLI counts themselves stay `[REPORTED]`** — this role has
+  no shell and did not run `iccce inspect`. What is verified is the
+  mechanism that produces them and the corpus's independently written
+  expectations.
+
+### ★★ Three things found by reading that the dispatch did not carry
+
+1. **The retraction did not travel.** `diag.rs:14` — the **module**
+   header, one screen above the corrected type — still reads
+   *"[`Malformation`] — the file violates a rule…"*, the exact sentence
+   DL-063 retracts.
+2. **The print site's comment still carries it too.**
+   `iccce-cli/src/main.rs:237`: *"Disclosure surface: everything the file
+   got wrong, verbatim."* ★ The corrected doc comment claims the
+   mixedness is documented *"here and at the print site"*; at the tip,
+   **the print site is the second copy of the falsified reading**.
+   Both are **`icc-engineer`'s files and were not edited here**; they are
+   recorded in DL-063 and returned to the dispatching agent.
+3. **★★★ The fact had already been written down, correctly, in another
+   document.** `fixtures/synthetic/MANIFEST.md:312` says of the v2
+   low-half fixture: ***"THIS FILE VIOLATES NOTHING"***, and names the
+   cost exactly — ***"`Malformation` is the only disclosure channel
+   `Profile` has, so `iccce inspect` prints 'malformations: 1' for a
+   conformant profile."*** So this filing **did not discover the
+   finding; it filed it.** The corpus stated it while the type one layer
+   away asserted its negation, and **nothing in this project's workflow
+   reads a fixture manifest against a type's doc comment** — DL-051's
+   gap on a new axis.
+
+### The durable half
+
+> ★★★ **`N == 0` means iccce found nothing to say — NOT that the file
+> conforms, because iccce checks the constraints it has implemented, not
+> every clause. `N > 0` means there is something worth reading — NOT
+> that the file is non-conforming. A verdict requires matching on
+> VARIANTS.**
+
+★★ **The sharpest demonstration is two fixtures with identical bytes:**
+`v2-rendering-intent-low-half` and `v4-rendering-intent-low-half` both
+carry intent `0x00000004`, both print `malformations: 1`, and **one of
+them is conformant.** The count cannot separate them; only the variant's
+`IntentRule` can.
+
+### What is explicitly NOT claimed
+
+- **That any number moved.** ★ **No measurement was taken or re-run.**
+  This is a **named choice with no number attached**, which is why it is
+  in `ARCHITECTURE.md` §5 and **not** in `TOLERANCES.md` or
+  `NUMERIC_CLAIMS.md`. `NC-267` / `NA-013` remain free.
+- **That any behaviour changed.** ★ No variant added, removed, renamed
+  or reclassified; no file parses differently.
+- **That the corrected doc comment is COMMITTED.** ★ At the moment of
+  this filing, `.git/logs/HEAD`'s last line is **`400179b`** (epoch
+  `1787088410`, `-0400`) and **no later commit appears**. A reflog line
+  evidences commits, **never the index or the working tree** — so the
+  corrected comment is *present in the tree and, so far as this role can
+  observe, uncommitted*. The dispatch's phrase *"already committed to the
+  working tree"* is **not** repeated as a claim about git.
+- **That the two stale copies at `diag.rs:14` and `main.rs:237` were
+  fixed.** ★ They were **reported, not fixed.**
+- **That anything was committed or pushed.** ★ This filing edited three
+  documents in the working tree and authorised nothing.
+
+---
+
+## 2026-08-19 — the **leak-guard injection** filing (thirty-first `SESSION_LOG` entry). **The injection owed since Pass K was run and it DISCHARGED the debt — and the finding is in the run that stayed GREEN: at a widening of `t = 0.04` the entire suite passes with a defect compiled into the shipped predicate, because the guards have a detection floor nobody had ever stated**
+
+**Filed by `icc-librarian`** from `icc-engineer`'s measurements. **Two
+rows added — `NC-267` and `NC-268`, in the new `NUMERIC_CLAIMS.md`
+§3.35 — plus §7.24, and `ARCHITECTURE.md` gains DL-064.** Next free are
+now **`NC-269`** and **`NA-013`**. **No code was edited** (the operator
+holds uncommitted edits under `crates/`), **no colour value moves**, and
+**no Pass status changes.**
+
+### What was owed, and it is met verbatim
+
+`NUMERIC_CLAIMS.md` §7.23 item 2 / §3.34.5 absence 5: *"★★★ Prove the
+leak guards by INJECTION … Done when: an injected widening of the
+qualifying test turns E7 and F8 red while their siblings stay green."*
+
+One line of `crates/iccce-cmm/src/black_preserve.rs:404` was changed from
+`device[i] != 0.0` to `device[i] > t` in a **detached worktree** at the
+tree `400179b`, and the full difftest suite re-run at three magnitudes
+plus a baseline. **At `t = 0.12` both rows are red** — `E7`
+`2.620510e-1`, `F8` `3.458210e-1`, against a tolerance of **`0` exactly**
+— **and the named siblings are green.** DL-051's condition on `NC-255` is
+satisfied: those rows are now **proven** discriminating rather than
+**assumed** to be.
+
+### ★★★ The half that was not asked for, and it is the entry
+
+| `t` | E7 | F8 | `passk` failures |
+|---|---|---|---|
+| baseline | PASS `0.000000e0` | PASS `0.000000e0` | **0** |
+| `0.12` | **FAIL `2.620510e-1`** | **FAIL `3.458210e-1`** | 4 |
+| `0.10` | PASS | **FAIL `3.458210e-1`** | 3 |
+| `0.04` | PASS | PASS | ★★★ **0** |
+
+> **At `t = 0.04` the entire difftest suite is GREEN with a widened
+> qualifying test compiled in.** The guards fire, but only above a floor —
+> **`1.106780e-1`** (E7) and **`5.0e-2`** (F8) — **and the floor had never
+> been stated anywhere.**
+
+★ **The generalisation is DL-064:** an injection that turns a test red
+measures it **at one magnitude and no other**. The red runs discharge the
+debt; **the green run is the measurement of the floor**, and it is the
+most informative run in the sweep.
+
+### ★★ Four things found by reading, that the dispatch did not carry
+
+1. **★★★ A FALSIFIED CLAUSE in `TOLERANCES.md` §3.10.12.2.** It names the
+   rival **with its magnitude** — *"widening the qualifying test … on the
+   grounds that `10⁻⁹` of cyan 'is really K-only'"* — and then asserts
+   ***"these rows are what would catch it"*** with **no magnitude at
+   all**. The guard's floor is `5.0e-2`, **seven-plus orders above the
+   rival**. ★★ **Both numbers were on the page and nobody subtracted
+   them.** `TOLERANCES.md` is `icc-conformance`'s file: **recorded and
+   returned, not edited**; the durable statement is §3.35.5. ★ Scoped to
+   that clause — the section's derivation of the tolerance `0`, its
+   repointing of `E4`/`E5`/`F4`/`F7`, and `black_preserve.rs`'s module doc
+   are all **correct** (DL-057).
+2. **★★ The two floors are different KINDS of fact.** `F8`'s `5.0e-2` is
+   **structural** — `chromatic_gray_probes` emits `c = i × 0.05` with both
+   chromatic ratios below `1`, so `max(C, M, Y) = c` and the minimum is
+   `0.05` **by construction** *(**VERIFIED** by this role from
+   `passk.rs:3679`–`:3690`)*. `E7`'s `1.106780e-1` is **incidental** — its
+   generator draws from a fixed-seed LCG on `[0, 0.8)`, which bounds the
+   floor only at `≈3.8e-7`. **Re-seeding would move E7's sensitivity
+   without changing one line of intent.** So `F8`'s floor is re-derivable
+   by anyone forever and **`E7`'s is not re-derivable by reading anything
+   in this repository.**
+3. **★ A correction to the dispatch.** It called the node-aligned set's
+   floor `4/15` *"by construction"*. **The grid `j/15` is construction;
+   which grid point a fixed seed reached is an observation.** What
+   construction gives is `>= 1/15`. It changes no conclusion and it
+   changes what a future session may skip re-checking.
+4. **★★ The three runs BRACKET the floors; they do not locate them.** No
+   run sat at either endpoint. Execution gives `E7 ∈ (0.10, 0.12]` and
+   `F8 ∈ (0.04, 0.10]`; the exact values come from the **generators** and
+   both lie inside their bracket. ★ **Two independent apparatus agreeing
+   is the strongest thing in the section** — and it is corroboration, not
+   a second measurement.
+
+### ★★ The reflog moved under this filing, and it was caught at the filing
+
+The dispatch says the injection ran *"at `HEAD` = `400179b`"*. **True when
+measured, false now.** `.git/logs/HEAD` ends **`abdf445`** (epoch
+`1787136911`), preceded by **`19d36e9`** (`1787136901`) — **two commits
+after `400179b`** *(VERIFIED; the reflog is plain text)*. **A reflog line
+evidences a commit's existence, time and subject, never its contents**, so
+nothing is asserted about what they changed. ★ `400179b` is recorded
+throughout as **the tree measured**, never as the tip. **This is DL-062's
+mechanism arriving a third time**, and the first time it was caught before
+the document went out rather than after.
+
+★ **Incidentally VERIFIED, by reading and not by the reflog: DL-063's two
+reported stale copies are FIXED.** `diag.rs:14` now reads *"something
+about the file worth telling the caller"* and carries its own retraction;
+`iccce-cli/src/main.rs:237`–`:243` now reads *"NOT 'everything the file
+got wrong' — that is what this comment said until 2026-08-19, and it is
+false."* **Those were owed to `icc-engineer` at yesterday's filing and are
+discharged.**
+
+### What was assigned
+
+| id | what |
+|---|---|
+| **`NC-267`** | the injection sweep — three magnitudes plus baseline, E7/F8 observations, `passk` failure counts, the collateral and the green siblings |
+| **`NC-268`** | the detection floors and the detectable band, with F8's **verified** and E7's **`[REPORTED]`** |
+| **DL-064** | *an injection measures a test at one magnitude; a guard that names its rival must name the magnitude at which it catches it* |
+| **`NA-013`** | ★ **NOT consumed.** §4 registers departures from exact colorimetry or from spec text. **This is a coverage gap in a TEST SUITE, not a departure in a TRANSFORM** — no colour value moves. Filing it as an NA would put an apparatus fact in the colorimetry register |
+| **`TOLERANCES.md`** | ★ **no row and no edit.** A detection floor is a property of an **instrument**, not a bound on a **measurement** — nothing passes or fails against it, and a number that looks gate-like and gates nothing is DL-037/DL-049's failure. The only thing owed to that file is the **retraction** in §3.35.5, which is prose |
+
+### Newly owed, and it is created by this finding
+
+**★★★ A probe set below `5.0e-2` chromatic ink.** Nothing in Pass K
+exercises the qualifying test there, so a **small** widening is
+undetectable by the whole suite. **Owed to `icc-conformance`.** *Done
+when: a probe set exists whose minimum `max(C, M, Y)` is at or below the
+magnitude the named rival uses, and an injection at that magnitude turns a
+row red.* ★ **This is not the discharged debt renamed** — that one asked
+*can these rows fail?*; this asks *at what magnitude do they stop?*
+
+### What is explicitly NOT claimed
+
+- **That `NC-255` is retracted.** It is **upgraded and bounded.** Its row
+  is unchanged and still true; it is **annotated** with a pointer to
+  §3.35, not edited to track it (the NC-264/NC-265 discipline).
+- **That the exact-zero predicate is wrong.** It matches lcms2 and the
+  module doc's account of its cost is correct. **The defect is in the test
+  suite's reach.**
+- **That the floors were measured.** They are **derived** (F8, verified
+  here; E7, reported) and **bracketed** by three runs.
+- **That the suite is green across `(0, 0.05)`.** That is **one measured
+  point** at `t = 0.04` plus a derivation covering **E7 and F8 only**. A
+  widening at `t = 0.045` is *predicted* green and **has not been run**
+  (DL-053).
+- **Any suite census for today.** `NC-266`'s `pass=337 fail=0` is dated to
+  tip `60c32dd` and is **not** restated. The dispatch carried **`passk`
+  failure counts only**; **a failure count is not a suite census.**
+- **That the working tree is clean or that `black_preserve.rs` is
+  unmodified relative to `HEAD`.** ★ **A diff is a shell operation and
+  this role has none.** What is verified is that `black_preserve.rs:404`
+  **reads `!= 0.0` right now.**
+- **`NA-012`'s perceptual cost.** ★ `icc-conformance` is reported to be
+  measuring it concurrently. **No number for it is recorded, guessed or
+  implied here.**
+- **That anything was committed or pushed.** This filing edited four
+  documents in the working tree and authorised nothing.

@@ -6827,3 +6827,365 @@ that cross-role status claims carry the other role's tip hash so that
 staleness is *detectable* rather than merely *possible*; or a role
 gains the ability to observe another's uncommitted work, which would
 change the interval the mechanism lives in rather than removing it.
+
+---
+
+### DL-063 — ★★★ **`malformations: N` counts DISCLOSURES, not VIOLATIONS. The type's own doc comment asserted otherwise and was falsified by two of its own variants — and the reason it survived is that the EMITTED WORDS were already careful while the CHANNEL was not. Words are read by humans; the count is read by code, and only the count crosses into a caller's control flow**
+
+**Date:** 2026-08-19 · **Occasioned by:** `icc-engineer`, who measured
+the four rendering-intent fixtures at the CLI and noticed that one
+conformant file prints `malformations: 1` · **Drafted by:**
+`icc-engineer`; **filed by** `icc-librarian`, with every statement
+below re-verified against live source and every statement that needs a
+shell labelled `[REPORTED]` · **This entry is the REFERENT of a forward
+reference in the code**: `crates/iccce-profile/src/diag.rs:147`–`:150`
+says *"This is a deliberate design choice and not an accident of
+naming — see `docs/ARCHITECTURE.md`'s decision log. The alternative,
+splitting the type into `Violation` and `Observation`, was considered
+and is recorded there with the reason it was not taken."* Until this
+entry, that was a dangling claim of exactly the **DL-048** kind — a
+citation whose destination did not contain the thing cited ·
+**Relates to** project **rule 6** (*the parser reports; it does not
+repair* — a report is itself an assertion), **DL-057** (a refusal that
+named the wrong clause), and **DL-062** (a doc comment's factual claims
+are caught by nothing).
+
+#### The decision, in one sentence
+
+> **`Malformation` is a mixed channel — some variants report a breach of
+> ICC.1 and some report a condition ICC.1 permits — this is deliberate,
+> the name is RETAINED, and the mixedness is documented at the type
+> rather than removed by a rename.**
+
+#### What was falsified, and by what
+
+The type's doc comment read, until this session, *"A rule violation the
+file carries but the representation survives."* **Two of its own
+variants carry no violation at all**, and in both cases the variant's
+own emitted string says so:
+
+| variant | emitted text (verified verbatim at the `Display` impl) | why it is not a violation |
+|---|---|---|
+| `Malformation::TrailingBytes` (`diag.rs:169`, printed at `:254`–`:259`) | *"`{n}` trailing byte(s): header declares `{declared}`, data has `{actual}` **(normal for container-embedded profiles)**"* | A profile embedded in a PDF stream or an ICC-tagged image routinely has bytes past its declared size. **Nothing in ICC.1 is breached by a caller handing the parser a longer buffer than the profile claims.** |
+| `Malformation::UnknownRenderingIntent` with `IntentRule::V2Undefined` (`diag.rs:223` / `:103`, printed at `:273`–`:278`) | *"unrecognised rendering intent value `0x00000004` (ICC.1:2001-04 6.1.11 / Table 18 define only 0..=3 **and do not forbid others**)"* | **The sentence states in its own words that nothing is forbidden.** ICC.1:2001-04 6.1.11 contains no `shall`, no *"only"*, and no *"other values are reserved"* — the closing formula the same document *does* use elsewhere (6.5.4 / Table 38). |
+
+★ Both strings were **already** written that carefully, before this
+entry existed. **The defect was never in the prose.**
+
+#### ★★★ The asymmetry, which is the whole entry
+
+- A **human** reading `malformation: 8 trailing byte(s) … (normal for
+  container-embedded profiles)` is **not misled**. The disclaimer is in
+  the same sentence as the accusation.
+- A **consumer's code** never sees that sentence. It sees
+  `malformations: N` — `crates/iccce-cli/src/main.rs:238`,
+  `println!("malformations: {}", profile.malformations.len())` — or, in
+  a library caller, `profile.malformations.len()`. **A count has no
+  room for a disclaimer.** It reads as a machine-readable conformance
+  verdict, and a caller that branches on `N != 0` **condemns conforming
+  files**.
+
+★★ **The careful wording is what allowed the mis-designed channel to
+survive**: every human review of the feature read the emitted string,
+found it scrupulous, and never looked at the type it arrived through.
+**Care applied at the layer a reviewer reads does not transfer to the
+layer a program reads.**
+
+#### The measurement
+
+`icc-engineer` ran `iccce inspect` over the four rendering-intent
+fixtures this session. **Evidence class: `[REPORTED]` — this librarian
+has no shell and did not re-run the CLI.** What *is* verified here is
+the **mechanism that produces every row**, read at `header.rs:190`–`:202`,
+and the **corpus's independently written expectations** in
+`fixtures/synthetic/MANIFEST.md`:
+
+| fixture | `malformations:` | is the file non-conforming? |
+|---|---|---|
+| `v2-rendering-intent-high-bits` (intent `0x00010001`) | **0** | **n/a — not reported at all.** The v2 branch tests `rendering_intent & 0xFFFF > 3`; the low half is `1`. `IntentRule`'s own doc (`diag.rs:102`) states *"A high-half value is not reported at all under this rule."* |
+| `v2-rendering-intent-low-half` (intent `0x00000004`) | **1** | **NO.** Unrecognised, not forbidden. |
+| `v4-rendering-intent-low-half` (intent `0x00000004`) | **1** | **yes** — by the two-step inference registered as `A56`, labelled as an inference wherever it is quoted. |
+| `rendering-intent-high-bits` (v4, intent `0x00010001`) | **1** | **yes** — and this is iccce's strongest such claim: ICC.1:2022 7.2.15's *"the most significant 16 bits shall be set to zero"* is **quoted, not inferred**. |
+
+★★★ **Read the second and third rows together.** *The same four header
+bytes, `0x00000004`, produce the same count `1` in files of two
+different editions, where one file is conformant and the other is
+not.* **The count cannot distinguish them. Only the variant — and its
+`IntentRule` — can.**
+
+#### ★★★ What a caller may and may not conclude, and this is the durable part
+
+- **`N == 0` means iccce found nothing to say.** It is **NOT a
+  certificate of conformance**: iccce checks the constraints it has
+  implemented, not every clause of ICC.1. A file can be flagrantly
+  non-conformant in a way this engine does not yet examine and still
+  print `malformations: 0`.
+- **`N > 0` means there is at least one thing worth reading.** **It does
+  NOT follow that the file is non-conforming.**
+- **A conformance verdict requires matching on VARIANTS, not counting
+  them** — and, for `UnknownRenderingIntent`, on the `IntentRule` inside
+  the variant as well.
+
+> ★ **The count is a prompt to look. It is not an answer, in either
+> direction.**
+
+#### The alternative considered and NOT taken — recorded so it is not re-litigated
+
+**Proposal:** split `Malformation` into `Violation` and `Observation`.
+
+**Rejected, for two reasons, and the second is the one that matters:**
+
+1. **It is a public API break with no numeric benefit.** No measurement
+   changes; no file is parsed differently; every emitted string is
+   already correct.
+2. **★★★ It MOVES the ambiguity rather than removing it.** An
+   `Observation::TrailingBytes` sitting next to an
+   `Observation::ReservedNonZero` **under-states the second exactly as
+   much as the present name over-states the first** — header bytes
+   100–127 *shall* be zero, and calling that an "observation" is the
+   identical error with the sign flipped. Any two-bucket scheme forces
+   every future variant into a binary that the standard's own language
+   does not supply: ICC.1 says `shall`, says nothing, and says
+   *"reserved"*, and those are three states, not two.
+
+**Therefore: the mixed channel is REAL, so it is documented rather than
+renamed.** The documentation lives at the type
+(`diag.rs:106`–`:160`, including the per-variant table and the
+`N == 0` / `N > 0` reading) — which is the layer a library consumer
+actually reads.
+
+#### ★★ Two live-source discrepancies found while filing this, both in `icc-engineer`'s tree and NOT edited here
+
+The corrected doc comment says the mixedness is documented *"here and
+at the print site"*. **At the tip read for this filing, the print site
+still carries the falsified reading**, and so does the module header:
+
+1. **`crates/iccce-profile/src/diag.rs:14`** — the module-level doc
+   still lists *"[`Malformation`] — **the file violates a rule** but a
+   faithful representation is still constructible."* That is the exact
+   sentence this entry retracts, surviving one screen above its own
+   retraction.
+2. **`crates/iccce-cli/src/main.rs:237`** — the comment above the print
+   site reads *"Disclosure surface: **everything the file got wrong**,
+   verbatim."* The first two words are right and the rest is the
+   falsified reading.
+
+★ **Neither is edited by this librarian** (no role edits another's
+file). **They are owed to `icc-engineer`**, are recorded here as the
+durable copy, and were returned to the dispatching agent at this
+filing. ★★ Note the shape: **the correction landed on the type and did not
+travel to the two other places the same sentence had been written.**
+A retraction is not complete when the retracted sentence still has
+copies.
+
+#### ★★ And the fact was ALREADY WRITTEN DOWN — in a different document, correctly, without ever reaching the type
+
+`fixtures/synthetic/MANIFEST.md:312` — the expectations row for
+`v2-rendering-intent-low-half`, authored by `icc-conformance` — says,
+in the corpus's own words: ***"THIS FILE VIOLATES NOTHING … the report
+is a DISCLOSURE that iccce cannot interpret the value, not an
+accusation against the file"***, and then names the cost exactly:
+***"Known cost, filed against `iccce-profile` and not against these
+bytes: `Malformation` is the only disclosure channel `Profile` has, so
+`iccce inspect` prints 'malformations: 1' for a conformant
+profile."***
+
+★★★ **So this entry does not discover the fact; it FILES it.** The
+finding existed in the fixture corpus, correctly stated, while the type
+one layer away asserted its negation — and the two documents were never
+read side by side, because **nothing in this project's workflow reads a
+fixture manifest against a type's doc comment.** That is the same class
+of gap as **DL-051** (documented is not tested): the manifest row is
+*documentation of an expectation*, and no test asserts that the type's
+own description agrees with it.
+
+#### What this entry does NOT touch
+
+1. **No numeric claim moves and no ledger row is added.** This is a
+   **named choice with no number attached**, which is why it is here and
+   **not** in `TOLERANCES.md` or `NUMERIC_CLAIMS.md`. Next free
+   identifiers remain **NC-267** and **NA-013**.
+2. **No behaviour changes.** No variant is added, removed, renamed or
+   reclassified; no file parses differently; every emitted string is
+   unchanged.
+3. **The `A56` register row and the edition-specific wording are
+   untouched** — they are DL-057's neighbourhood and were settled at
+   `7f89829` (2026-08-18).
+4. **Commit state is NOT asserted.** At the moment of this filing,
+   `.git/logs/HEAD`'s last line is **`400179b`** (epoch `1787088410`,
+   `-0400`), *"fix(docs): three intra-doc links pointed at the crate
+   root, not transform"*; **no later commit appears.** The corrected
+   doc comment is therefore **present in the working tree and, so far as
+   this role can observe, uncommitted** — a reflog line evidences
+   commits, never the index or the tree. The dispatch's phrase
+   *"already committed to the working tree"* is **not** repeated here as
+   a claim about git.
+5. **No file belonging to another role was edited.** The two
+   discrepancies above are reported, not fixed.
+
+**Revisit if:** a third variant is added whose classification is
+genuinely disputed *by the standard's own language* rather than by its
+name, which would make the two-bucket split cost something real and put
+the rejected alternative back in play; a consumer is observed branching
+on `malformations.len()` in the wild, which would turn this from a
+documentation decision into an API-shape decision with a named victim;
+or a mechanism appears that can **test a doc comment against a fixture
+manifest**, which would move both this entry and DL-051 out of "caught
+by nothing".
+
+---
+
+### DL-064 — ★★★ **an injection that turns a test RED measures that test at ONE MAGNITUDE and at no other. A guard that names its rival must state the magnitude at which it catches it — this one named the rival WITH a magnitude (`10⁻⁹`), claimed to catch it WITHOUT one, and nobody subtracted the two. The debt was discharged by the runs that went red; the DEFECT was in the run that stayed green**
+
+**Date:** 2026-08-19 · **Occasioned by:** `icc-engineer`, who was asked
+only to prove that Pass K's two leak guards *can* fail, and swept the
+injection over three magnitudes instead of one · **Drafted by**
+`icc-librarian` from `icc-engineer`'s measurements, with every derivable
+statement re-derived from committed source and every statement requiring
+a shell labelled `[REPORTED]` · **The numbers are `NC-267` and `NC-268`,
+`NUMERIC_CLAIMS.md` §3.35** · **Relates to DL-051** (*documented is not
+tested* — the entry that made the injection owed in the first place),
+**DL-016** (*a bound cannot catch its own magnitude*, of which this is the
+one-level-up sibling), **DL-049** (a defect inside a **tolerance's
+justification** rather than inside a candidate), **DL-037** (a guard that
+gates nothing), and **DL-018/DL-055** (*ask which layer is in the loop*).
+
+#### The finding, in one sentence
+
+> **Pass K's leak guards `E7` and `F8` detect a widening of the qualifying
+> test if and only if it exceeds `1.106780e-1` and `5.0e-2` respectively;
+> below `5.0e-2` the entire difftest suite is GREEN with the widened
+> predicate compiled in.**
+
+#### What was asked for, and what came back
+
+`NUMERIC_CLAIMS.md` owed an item whose *done-when* was: *an injected
+widening of the qualifying test turns E7 and F8 red while their siblings
+stay green.* That is a **single-magnitude** condition, and it was met at
+the first magnitude tried (`t = 0.12`).
+
+**The sweep is what found the defect.** Three magnitudes were run:
+
+| widening `t` of `KPreserve::apply`'s qualifying test | E7 | F8 | `passk` failures |
+|---|---|---|---|
+| — (baseline, `!= 0.0`) | PASS `0.000000e0` | PASS `0.000000e0` | **0** |
+| `0.12` | **FAIL `2.620510e-1`** | **FAIL `3.458210e-1`** | 4 |
+| `0.10` | PASS `0.000000e0` | **FAIL `3.458210e-1`** | 3 |
+| `0.04` | PASS `0.000000e0` | PASS `0.000000e0` | ★★★ **0** |
+
+**`[REPORTED]`** — measured by `icc-engineer` in a detached worktree at
+the tree `400179b`; this librarian has no shell and ran none of it.
+
+★★★ **The last row is the entry.** A defect is compiled into the shipped
+predicate, and **every gate this project owns says the code is fine.**
+
+#### ★★★ The generalisation, which is why this is a decision-log entry and not just a row
+
+**DL-051 established that a passing test is not evidence until an
+injection turns it red. DL-064 is the other half of the same instrument:**
+
+> **An injection that turns a test red is evidence at THE MAGNITUDE
+> INJECTED and at no other. A single red run measures that the guard is
+> not inert; only a sweep measures what the guard can SEE.**
+
+And the corollary that bites hardest, because it inverts the intuition an
+engineer brings to injection work:
+
+> **The red runs discharge the debt. The GREEN run is where the finding
+> is.** A passing injection is not a null result — **it is the measurement
+> of the floor**, and the smallest injection that still passes is the most
+> informative run in the sweep.
+
+#### ★★★ The mechanism that let it survive — a rival named with a magnitude, a guard claimed without one
+
+`TOLERANCES.md` §3.10.12.2 closes, verbatim:
+
+> *"★ The named rival for both is the change a future contributor is most
+> likely to make: **widening the qualifying test from exact zero to a
+> tolerance**, on the grounds that `10⁻⁹` of cyan "is really K-only".
+> `crates/iccce-cmm`'s module doc names and rejects it; **these rows are
+> what would catch it.**"*
+
+**Everything in that paragraph is exemplary except the last seven
+words.** The rival is identified, motivated, and **quantified at
+`10⁻⁹`** — better practice than most justifications in this project. Then
+the guard's answer is asserted **with no quantity at all**.
+
+★★★ **Both numbers were on the page; nobody subtracted them.** The rival's
+magnitude was written down. The guard's floor — `5.0e-2` — was never
+written down anywhere, and is **derivable in four lines from a committed
+probe generator**. The gap is **seven-plus orders of magnitude**, and it
+was invisible because only one side of the comparison was ever a number.
+
+> **A justification that names a rival must name the magnitude at which
+> the guard catches it. "These rows would catch it" is a hope with a
+> citation attached.**
+
+★ This is `DL-016` one level up. There, a *tolerance derived from grid
+spacing* was blind to an off-by-one-sample error because the tolerance's
+own magnitude was the thing it could not test. Here, a *probe set* is
+blind to a small widening because the probe set's own reach was never
+compared with the rival's magnitude. **DL-016 was about a bound; DL-064 is
+about a corpus. Both fail by never quantifying the instrument itself.**
+
+#### ★★ STRUCTURAL versus INCIDENTAL floors — the distinction the raw numbers hide
+
+The two floors are **not the same kind of fact**, and only one of them is
+durable *(verified by this librarian from committed source, at the tree
+read for this filing)*:
+
+- **`F8`'s floor `5.0e-2` is STRUCTURAL.** `chromatic_gray_probes`
+  (`tools/difftest/src/passk.rs:3679`–`:3690`) emits
+  `[c, (6/7)·c, ((50 + 45·(6/7))/90)·c, j·0.125]` for `c = i × 0.05`,
+  `i = 1..=10`. **Both ratios are strictly below 1**, so
+  `max(C, M, Y) = c` on every probe and the minimum is `0.05` **by
+  construction**. It moves only if someone edits that loop.
+- **`E7`'s floor `1.106780e-1` is INCIDENTAL.** `arbitrary_off_neutral`
+  (`:768`–`:789`) draws from a hand-written fixed-seed LCG on
+  `[0, 0.8)`; **construction bounds its floor only at `0.8/2²¹ ≈
+  3.8e-7`**, i.e. at nothing. The observed floor is an **accident of the
+  seed**, and re-seeding would move E7's detection power **without
+  changing one line of intent, one comment, or one tolerance.**
+
+★★ **A regression guard whose sensitivity is a property of a seed is a
+guard nobody can reason about.** Note which way the accident fell: the
+seed gave E7 a floor **twice as coarse** as F8's structural one. It could
+as easily have gone the other way and hidden the whole finding.
+
+★ **A correction to the account this entry was drafted from**, recorded
+because it is the same error in miniature: the node-aligned probe set's
+floor `4/15` was described as holding *"by construction"*. **The grid
+`j/15` is a construction fact; which grid point a fixed seed reached is
+an observation.** What construction gives is `>= 1/15`. It changes no
+conclusion and it changes what a future session may skip re-checking.
+
+#### What this entry does NOT say
+
+1. **It does not retract `NC-255`.** E7 and F8 observed `0` at a tolerance
+   of `0`, and they are now **proven** to discriminate rather than assumed
+   to — a genuine **upgrade**, and DL-051's condition on them is met. The
+   entry **bounds** that upgrade; it does not reverse it.
+2. **It does not fault the exact-zero predicate.** `C = M = Y = 0` remains
+   the right qualifying test (it matches lcms2's
+   `In[0]==0 && In[1]==0 && In[2]==0`), and the module doc's account of
+   its cost is **correct**. **The defect is in the test suite's reach, not
+   in the transform.** No colour value changes.
+3. **It does not fault §3.10.12.2's tolerance.** The derivation of `0`
+   *"a branch is taken or it is not"* is sound and untouched; the
+   repointing of `E4`/`E5`/`F4`/`F7` onto the preserving surface is
+   **vindicated**, since two of those rows are the injection's collateral.
+   **One clause is retracted, not a section** — DL-057.
+4. **It asserts nothing about git state.** `400179b` is *the tree measured*,
+   not the tip; at this filing the reflog ends `abdf445`, two commits
+   later, and **a reflog line never evidences a commit's contents.**
+5. **It edits no file belonging to another role.** `TOLERANCES.md` is
+   `icc-conformance`'s; the falsified clause is **recorded and returned**,
+   not fixed.
+
+**Revisit if:** a low-ink probe set lands and an injection at or below the
+named rival's `10⁻⁹` turns a row red, which would close the gap this entry
+opens; **or** any probe generator's seed or accept-filter changes, which
+silently moves `E7`'s floor and invalidates NC-268's E7 half while leaving
+F8's intact; **or** a sweep-based injection harness appears, which would
+turn "inject once and see red" into "measure the floor" as a matter of
+course and retire the manual discipline this entry installs.

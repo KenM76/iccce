@@ -58,17 +58,30 @@ in-loop assertion compares `components(sig).count()` with **its own
 result**, so it cannot fail. Found by this librarian reading the file at
 the tip; **the dispatch did not carry it.**
 
+### ★★★ The sequel, 2026-08-19 — DL-064 supplies the other half
+
+DL-051 says *a passing test is not evidence until an injection turns it
+red.* **DL-064 says a red injection is evidence at ONE magnitude and no
+other.** Pass K's leak guards were turned red as this entry demands — and
+the same sweep found that **below `5.0e-2` the whole suite is green with
+the defect compiled in.** See
+[[iccce-injection-measures-one-magnitude]]. ★ **Asking for "the injection
+result" is now insufficient; ask for the smallest magnitude that still
+PASSED.**
+
 ### How to apply
 
 - When a dispatch reports a **well-documented** constant, treat the
   documentation as **zero evidence of test coverage** and ask for the
-  injection result specifically.
+  injection result specifically — ★ **and for the sweep, not the single
+  point** (DL-064).
 - ★ Watch for the shape: **a long `why` in the doc comment + a short
   assertion**. That combination is where this hides.
 - A ledger row for a constant should record **which injection turns it
   red**, not that it is well sourced.
 
-Related: [[iccce-count-from-a-sample-is-not-the-population]],
+Related: [[iccce-injection-measures-one-magnitude]],
+[[iccce-count-from-a-sample-is-not-the-population]],
 [[iccce-stale-citation-worse-than-stale-number]],
 [[iccce-agreement-can-be-the-symptom]],
 [[iccce-disclosure-caught-a-bad-justification]], [[iccce-pass-status]].

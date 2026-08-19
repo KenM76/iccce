@@ -6,3 +6,4 @@
 - [Ghent PDF Output Suite 5.0 target](project_ghent_compatibility.md) — the compatibility target, where it lives, and why none of it may enter the MIT repo
 - [Check _sources before accepting a corpus gap](feedback_check_sources_before_accepting_corpus_gap.md) — RAG digests report gaps the primary PDFs in `_sources/` do not have
 - [Fixture separation and cancelling rivals](feedback_fixture_separation_and_cancelling_rivals.md) — a zero-separation fixture manufactures a false PASS; a rival that enters twice can cancel
+- [Dispatched agents arm duplicate channel monitors](feedback_dispatched_agents_arm_duplicate_channel_monitors.md) — tell subagents not to poll the channel; the lead already does, and they cannot be stopped mid-session
