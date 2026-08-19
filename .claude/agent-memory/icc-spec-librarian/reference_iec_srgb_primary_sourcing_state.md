@@ -1,95 +1,92 @@
 ---
 name: iec-srgb-primary-sourcing-state
-description: IEC 61966-2-1 primary text is PARTLY FREE — IEC's own 15-page preview is held and gives the clause map (5.2/5.3 normative, Annexes A-E informative) but ZERO constants; plus COR1:2014 newly discovered, the BT.709-3-vs-6 edition trap CLOSED, and where the four published sRGB worked examples are
+description: sRGB sourcing state — ★ the IEC purchase is DECIDED AGAINST (2026-08-19), replaced by a reconstruction under the new `reconstructed_consensus` class; ITU-T H.273 DEFINES "IEC 61966-2-1 sRGB" WITH DIFFERENT CONSTANTS; Khronos KDF is a third clean source; plus the still-valid preview/BT.709-3/CSS-examples state
 metadata:
   type: reference
 ---
 
-**Do not re-run this. Done 2026-08-18 (18th pass).** Files:
-`ICC_Spec\iec\iec__s__srgb_iec_primary_preview.md` and
-`ICC_Spec\w3c\w3c__data__css_color4_worked_examples.md`.
+**Do not re-run the sourcing search. Two passes done: 2026-08-18 (preview) and
+2026-08-19 (reconstruction).**
 
-## ★★★ IEC publishes a FREE preview and nobody had looked
+## ★★★ THE PURCHASE IS A CLOSED QUESTION — do not re-file it
 
-**`webstore.iec.ch` — `robots.txt` is HTTP 200 with a ZERO-BYTE body.** No
-directives. **Not the `color.org` case.** Publication `6169` offers a **15-page
-free preview of the 51-page standard**, agent-retrieved, held at
-`_sources\srgb_bt709\iec_61966-2-1_1999_IEC_free_preview_15pp.pdf`
-(`sha256 81da17ec…f06377a`).
+**2026-08-19: Ken decided NOT to buy IEC 61966-2-1** (CHF 210, pp. 16–51).
+Verbatim: *"you can just do your best guess using what is available online, make
+a rag of the best guess of the standard and use it, refine it if more
+information becomes available."* **Recorded in `_sources\README.md` and on
+`A54c`. Never recommend the purchase as a next step again** — every affected row
+now carries a **`would_be_upgraded_by:`** field instead, so the question answers
+itself if the document ever arrives another way.
 
-**★ The URL is CONSTRUCTED, not guessable.** The product page's JS holds
-`previewFile: '/pub/pdf/preview/info_iec61966-2-1{ed1.0}b.pdf'` and the fetch is
-`https://webstore.iec.ch/en/iec_catalog/product/preview/?id=<base64 of that path
-INCLUDING the leading /pub/pdf/>`. **Omit the prefix and you get the store front
-page at HTTP 200** — a silent failure that looks like success. **The old
-`webstore.iec.ch/preview/info_…{ed1.0}en.pdf` scheme is DEAD (301).**
+## ★★★ NEW EVIDENCE CLASS — `reconstructed_consensus`, defined ONCE
 
-**What it gives:** clause map — **clause 5 is NORMATIVE, 5.2 = RGB→XYZ,
-5.3 = XYZ→RGB, pp. 21-25**; **"Annexes A, B, C, D and E are for information
-only"** (verbatim); the normative-reference list; clause 1 Scope verbatim
-(**rendering is out of scope** — a BY-DESIGN delegation, like ICC's
-"perceptual"); the introduction's **"the simple exponent value of 2,2"** against
-clause 5's `2.4` (Annex A exists *because* of that ambiguity).
+**`ICC_Spec\EVIDENCE_CLASSES.md`** (new root file) is now the **canonical**
+definition of every `evidence:` value; `_TEMPLATE.md` and `LEGAL_NOTE.md` §3
+both point at it and it **wins** over them.
 
-**★★ What it does NOT give: any constant.** `12.92`, `1.055`, `0.055`, `2.4`,
-`0.04045`, `0.0031308` — **0 grep hits each, both engines.** The preview stops
-at the end of clause 2; clause 3 starts on p. 17. **Every paywall gap stands;
-it is now LOCATED, not closed.** Only **CHF 210** answers whether 5.2 prints a
-matrix and whether `0.04045` is fixed or derived (`A54c`).
+> *"the value is NOT read from the normative document; it is the value that N
+> freely-available sources, which do not derive from one another, all print."*
 
-**★★ NEW DOCUMENT: `IEC 61966-2-1:1999/COR1:2014`** (pub. `6170`, 2014-01-24).
-The corpus did not know it existed. Foreword, verbatim: *"The contents of the
-corrigendum of January 2014 have been included in this copy."* ⟹ **every
-pre-2014 restatement may restate an uncorrected text** (`A54`). **AMD1:2003
-(`6168`) and COR1:2014 have NO preview and NO published abstract** — six
-candidate preview paths → HTTP 302. **The corpus records NO claim about AMD1's
-content; "AMD1 adds sYCC" is not sourced and is not written down.**
+★★ **Weaker than `published_ground_truth`; NOT weaker than `impl_crosscheck`,
+and STRONGER in one respect — independent of any implementation, so it catches
+an error lcms2 and iccce make TOGETHER.** That is the whole return.
+★ **An implementation is never a countable source.** Several old sRGB "3 sources
+/ 4 sources" counts were counting lcms2 and are one too high; corrected counts
+live in `iec\iec__ref__srgb_reconstruction.md` §2.2.
 
-## ★★★ BT.709 edition trap — raised and CLOSED the same day
+## ★★★ THE FINDING: ITU-T H.273 gives "sRGB" DIFFERENT CONSTANTS
 
-IEC's clause 2 imports **ITU-R BT.709-*3*:1998, a DATED reference**, with the
-rule verbatim: *"For dated references, subsequent amendments … do not apply."*
-The corpus held only **BT.709-6**. **Fetched -3 in one `curl`** —
-**★ the URL suffix is `-S`, not the `-I` that works for -6, which 404s**:
-`https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-3-199802-S!!PDF-E.pdf`
-(230 146 B, `sha256 c52a7541…6ff738`, now held). **Items 1.3/1.4 are identical
-to -6 digit for digit, stated TWICE (Part I and Part II), two engines. The OETF
-too.** `A54b` RESOLVED. **The values never moved; the CITATION FORM did** — cite
-BT.709-**3**:1998 as sRGB's normative source, -6 as corroboration.
+**Rec. ITU-T H.273 (V4) (07/2024) | ISO/IEC 23091-2** — free from itu.int, in
+force, the CICP doc AVIF/HEIF/AV1/`colr` point at. `TransferCharacteristics = 13`
+is labelled *"IEC 61966-2-1 sRGB"*, and clause 8.2 **defines** `α`/`β` as *"the
+positive constants necessary for the curve segments … to have continuity of both
+value and slope"* ⟹ **`0.0550107…` / `0.0392934…` / `0.0030413…`**, not
+`0.055` / `0.04045` / `0.0031308`.
 
-## ★★★ Four published sRGB WORKED EXAMPLES exist, in CSS Color 4 — and half are wrong
+**Proved from inside H.273:** its own `TC=1` example prints
+`1.099296826809442…`/`0.018053968510807…` where **BT.709 itself prints
+`1.099`/`0.018`**. **Khronos KDF §13.2.3 derives BT.709's pair the same way and
+pointedly does NOT apply it to sRGB.**
+★★ **MEASURED: encoded max `9.76e-6`, ZERO of 256 8-bit codes change — no
+experiment can decide it.** Register **`A57`**.
+⚠ **`pdftotext` silently drops every `α`/`β`/`γ`** — use a `pypdfium2` raster.
+⚠ **ITU-T download path is `rec/dologin_pub.asp?...&type=items`; the ITU-R
+`dms_pub/itu-t/rec/t/...` path 404s.**
 
-**Retracts nine filings of "no worked sRGB triple anywhere" (`C10`).**
-Verified component-by-component against each printed value's **rounding
-interval** (`C5`), two computation routes agreeing to `<1e-30`:
+## Sources — what counts, what does not (all held in `_sources\srgb_bt709\`)
 
-| Example | Verdict |
+| Source | Counts? |
 |---|---|
-| `#7654CD` ↔ `lab(44.36% 36.05 -58.99)` | ✔ **3/3** ← **the project's first published input→output expectation for an sRGB transform** |
-| `#FFFFFF` ↔ `xyz-d50 0.9643 1 0.8251` / `xyz-d65 0.9505 1 1.089` | ✔ **6/6** |
-| `color(srgb 0.691 0.139 0.259)` ↔ `srgb-linear 0.435 0.017 0.055` | ✔ **3/3** — but 2-3 s.f., **ZERO power over the breakpoint** |
-| `#7654CD` ↔ `xyz-d65 0.21661 0.14602 0.59452` | ✗ **0/3** |
-| `#7654CD` ↔ `xyz-d50 0.2005 0.14089 0.4472` | ✗ **1/3** |
-| `lab(51.2345% -13.6271 16.2401)` → `color(srgb 0.41587 0.503670 0.36664)` (**PCS→device**) | ✗ **1/3** |
+| **Khronos Data Format Spec 1.4.0** ★ NEW | ✔ whole constant set **clean**, exact matrix at 6 dp (§14.1), `255`-not-`256`, `80 cd/m²`, **scRGB named** as the negative-extension source. ⚠ cites `IEC/4WD` (a working draft) |
+| ICC `srgb.pdf` (2015) | ✔ but ⚠ for `0.04045` (inside its six defective §B.1 lines) |
+| W3C CSS Color 4 | ✔ |
+| ITU-T H.273 | ✔ **and DISSENTS** |
+| BT.709-**3**:1998 | ★ **primary_spec** — the DATED reference IEC clause 2 imports. **Primaries are BETTER than reconstruction**: BT.709-3 + a 2-source bridge (ICC §A.1 Note; Süsstrunk 1999) |
+| **Süsstrunk/Buckley/Swen CIC7 1999** ★ NEW | ✔ **for STRUCTURE only, zero constants** — *"The encoding transformations do not take into account the veiling glare…"*, flare is in an **informative annex** |
+| lcms2 | ✗ **excluded** |
+| **Exif 2.32 (CIPA)**, **W3C PNG 3rd ed.** ★ NEW negatives | ✗ **checked FOR the constants and empty** — greps recorded, staged so nobody re-fetches |
 
-**Residuals `1.3e-5`…`1.6e-4`; `ΔE76 = 0.0123` — QUIET.** Five candidate
-provenances tested, **none** reproduces the printed values; implied per-channel
-exponents `2.40047/2.39966/2.39872` = noise, **not a rival definition.**
-**Tier is `published_literature`, NOT `published_ground_truth`** — W3C restates
-IEC, the examples are illustrative prose, 4-6 s.f., half are wrong.
+## Consensus, honestly
 
-**★ Use CSS's D50 (`0.9642957/1/0.8251046`, from the 4-dp chromaticity), NOT
-ICC's `0.9642/1.0/0.8249`, when evaluating these** — otherwise the test fails
-for a reason unrelated to the code.
-**★ CSS's Bradford uses `0.8951`; ICC's own sRGB `chad` used `0.8950`.** The
-`0.8951` reconstruction reproduces CSS's published `D65_to_D50` to all 17
-printed digits.
+**Only `12.92` and `2.4` have a FOUR-body consensus.** `1.055`/`0.055`/
+`0.04045`/`0.0031308` have **three, with a named dissenter**.
+**Viewing conditions: six of nine rows rest on ONE document** (the obsolete 1996
+proposal). **Rounding rule (`A58`) and reference observer (`A60`): ZERO sources.**
 
-**Cheapest untried lead:** the **web-platform tests** CSS Color 4 names beside
-each example (`xyz-001.html`, `predefined-016.html`, `srgb-linear-001.html`, …).
-Not held, not run. **If they carry higher precision they settle the three
-failures for free.**
+## Still true from 2026-08-18, unchanged
+
+IEC's **free 15-page preview** is held (clause map: **5.2 RGB→XYZ, 5.3 XYZ→RGB,
+normative, pp. 21-25; Annexes A-E informative**; **zero constants**). ★ URL is
+**base64-constructed and includes the `/pub/pdf/` prefix** — omit it and you get
+the store front page at HTTP 200. **`COR1:2014` and `AMD1:2003` exist, no
+preview, no abstract** ⟹ every pre-2014 restatement may be stale (`A54`).
+**CSS Color 4 publishes FOUR worked sRGB examples and half are wrong.**
+
+★ **W3C 1996 equations exist ONLY as PNGs, and `srgb14`–`srgb17` (eq 1.3–1.6,
+the 8-bit encoding) were unread until 2026-08-19** — the corpus's own
+equation→image map skipped all four. Read them by rendering at ×6 Lanczos.
 
 Related: [[published-ground-truth-state]], [[icc-corpus-gap-vs-nonexistence-claim]],
 [[srgb-colorant-gap-routes-tried]], [[icc-tos-blocks-automated-access]],
-[[derived-values-need-a-second-pass]], [[corpus-defects-are-caught-from-outside]]
+[[derived-values-need-a-second-pass]], [[corpus-defects-are-caught-from-outside]],
+[[icc-pdf-symbol-font-sign-loss]], [[recovering-construction-from-published-matrices]]

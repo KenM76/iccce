@@ -207,6 +207,171 @@ pub const SRGB_TRC_PARAMS: [f64; 5] = [
     0.04045,       // d — the C⁰ breakpoint; see above
 ];
 
+/// Which reading of sRGB's transfer function to build.
+///
+/// ## ★★★ Why this is an option at all, and not a settled constant
+///
+/// **Two currently-in-force standards define "sRGB" with different
+/// constants, and neither is a typo.** The discovery that forced this
+/// enum into existence (2026-08-19, `ICC_Spec` register row `A57`) is
+/// that the disagreement is not merely the historical 1996 rounding
+/// error documented above — that one *is* settled, by W3C's own erratum.
+/// It is live, in a standard shipping today:
+///
+/// **`Rec. ITU-T H.273 (V4) (07/2024) | ISO/IEC 23091-2`** — the CICP
+/// document that **AVIF, HEIF, AV1 and the ISOBMFF `colr`/`nclx` box all
+/// point at** — labels `TransferCharacteristics = 13` as *"IEC 61966-2-1
+/// sRGB"*, never prints its constants, and instead **defines** them in
+/// clause 8.2:
+///
+/// > *"the values of α and β are defined to be the positive constants
+/// > necessary for the curve segments that meet at the value β to have
+/// > continuity of both value and slope at the value β."*
+///
+/// That is a **C¹** requirement. Applied to H.273's own printed `12.92`
+/// and `1/2.4` it yields `α = 1.055 010 718 9…`, **not** `1.055` — a
+/// different curve from the one ICC, CSS Color 4 and Khronos print.
+///
+/// ★ **The reading is proved from inside H.273 itself.** Its worked
+/// example for `TransferCharacteristics = 1` prints
+/// `α = 1.099 296 826 809 442…` and `β = 0.018 053 968 510 807…` while
+/// **BT.709 itself prints `1.099` and `0.018`**. H.273 systematically
+/// substitutes exact continuity constants for a referenced standard's
+/// rounded ones. It is doing the same thing to sRGB deliberately.
+///
+/// ## ★★ What the choice costs — MEASURED, and this is the number that
+/// ## decides whether you should care
+///
+/// | quantity | separation |
+/// |---|---|
+/// | max, encoded domain, over a 200 001-point sweep | **`9.76×10⁻⁶`** |
+/// | max, linear-light domain | **`4.78×10⁻⁶`** |
+/// | ★ **8-bit codes that change, of 256** | ★ **`0` — none** |
+///
+/// So at 8-bit this is **exactly a curiosity**: no image changes, ever.
+/// It is potentially reachable at 16-bit (the PCS quantum is
+/// `1/65535 = 1.5×10⁻⁵`, so `9.76×10⁻⁶` sits just *below* one quantum)
+/// and in long float chains. **State which variant produced any number
+/// you quote.**
+///
+/// ★ A trap worth recording, because the first estimate of this cost was
+/// wrong by an order of magnitude: the naive bound `|α − 1.055| ≈
+/// 1.1×10⁻⁴` **is not a bound on the curves' separation**. On the power
+/// branch the difference is exactly `(α − 1.055)·(1 − L^(1/2.4))`, and
+/// the offset cancels. **A parameter difference is not a function
+/// difference** — evaluate the curves.
+///
+/// ## Why [`SrgbTrc::ValueContinuous`] is the default
+///
+/// A reasoned choice, not a coin flip:
+///
+/// 1. **This is an ICC colour management module**, and *ICC's own*
+///    published sRGB document prints the `0.055` family.
+/// 2. **Three independent free sources print it** — ICC, W3C CSS Color 4
+///    and Khronos KDF — against H.273's one.
+/// 3. **Khronos performs H.273's exact derivation for BT.709 and
+///    pointedly does not apply it to sRGB**, which is a deliberate
+///    choice by a body that clearly knew about the technique.
+/// 4. **Changing the default would silently invalidate every ΔE claim in
+///    `docs/NUMERIC_CLAIMS.md`**, all of which were measured under this
+///    reading. The default is load-bearing for the ledger's coherence.
+///
+/// ★ **None of the four is proof.** Nobody in this project has read
+/// IEC 61966-2-1's normative text (the operator declined to buy it,
+/// 2026-08-19); the evidence class is `reconstructed-consensus`, which
+/// is explicitly **weaker than ground truth**. `A57` is filed **OPEN**.
+/// If IEC's text ever becomes available and says otherwise, the default
+/// moves and this doc comment is the record of why it was ever here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SrgbTrc {
+    /// **The default.** Value-continuity (C⁰) with the offset pinned at
+    /// exactly `0.055`, giving the breakpoint `0.04045`.
+    ///
+    /// Printed by ICC's own sRGB document, W3C CSS Color 4 and Khronos
+    /// KDF. This is what essentially every ICC-ecosystem implementation
+    /// means by sRGB, and what every measured number in this project's
+    /// ledger was produced under.
+    #[default]
+    ValueContinuous,
+    /// Value **and slope** continuity (C¹), as **required** by
+    /// `Rec. ITU-T H.273 | ISO/IEC 23091-2` clause 8.2 for
+    /// `TransferCharacteristics = 13`.
+    ///
+    /// Select this when matching the **CICP/video ecosystem** — AVIF,
+    /// HEIF, AV1, ISOBMFF `nclx` — rather than the ICC one. The
+    /// constants are *derived* here, never transcribed, so this variant
+    /// carries no typo risk that the derivation itself does not have.
+    SlopeContinuous,
+}
+
+/// The five `parametricCurveType` function-type-3 parameters
+/// `[g, a, b, c, d]` for a given reading of sRGB.
+///
+/// ## Why the C¹ constants are DERIVED here rather than written down
+///
+/// H.273 clause 8.2 does not print `α` and `β`; it states the *property*
+/// that determines them. Transcribing digits from a secondary source
+/// would therefore be recording someone else's arithmetic — and this
+/// project's rule 2 (never write colour maths from memory, cite the
+/// clause) is better served by encoding the clause's actual requirement.
+/// The closed form below is that requirement solved.
+///
+/// **The solution.** With the linear slope `s = 12.92` and exponent
+/// `1/g`, writing the curve as `V = s·L` below `β` and
+/// `V = α·L^(1/g) − (α−1)` above it, slope continuity gives
+/// `α = s·g·β^(1−1/g)` and value continuity then reduces to a single
+/// equation in `β`, solved by bisection to `f64` exhaustion. Bisection
+/// rather than Newton deliberately: it cannot diverge, the bracket is
+/// known, and this runs once per profile construction, so its cost is
+/// irrelevant next to its robustness.
+///
+/// The result is asserted against the continuity conditions themselves
+/// in [`tests::slope_continuous_variant_is_c1_to_machine_precision`] —
+/// an expectation from the *clause*, not from this function.
+#[must_use]
+pub fn srgb_trc_params(variant: SrgbTrc) -> [f64; 5] {
+    match variant {
+        SrgbTrc::ValueContinuous => SRGB_TRC_PARAMS,
+        SrgbTrc::SlopeContinuous => {
+            const G: f64 = 2.4;
+            const S: f64 = 12.92;
+            let inv_g = 1.0 / G;
+            // alpha as a function of beta, from SLOPE continuity.
+            let alpha_of = |b: f64| S * G * b.powf(1.0 - inv_g);
+            // VALUE continuity residual; the root is the C1 breakpoint.
+            let resid = |b: f64| {
+                let a = alpha_of(b);
+                a * b.powf(inv_g) - (a - 1.0) - S * b
+            };
+            // The root lies well inside this bracket for sRGB's
+            // exponents; bisecting to f64 exhaustion costs ~60 halvings.
+            let (mut lo, mut hi) = (1.0e-6_f64, 1.0e-2_f64);
+            for _ in 0..200 {
+                let mid = 0.5 * (lo + hi);
+                if mid <= lo || mid >= hi {
+                    break;
+                }
+                if resid(lo) * resid(mid) <= 0.0 {
+                    hi = mid;
+                } else {
+                    lo = mid;
+                }
+            }
+            let beta = 0.5 * (lo + hi);
+            let alpha = alpha_of(beta);
+            [
+                G,
+                1.0 / alpha,
+                (alpha - 1.0) / alpha,
+                1.0 / S,
+                // d is the breakpoint in the ENCODED domain, which is
+                // where parametric type 3 applies it: s * beta.
+                S * beta,
+            ]
+        }
+    }
+}
+
 /// Build the sRGB→XYZ matrix for a set of primary chromaticities and a
 /// white point, by Grassmann's laws.
 ///
@@ -446,6 +611,39 @@ pub fn srgb_white_d65() -> Option<Xyz> {
 /// end — which is precisely why a retraction has to hunt the *claim*
 /// through every clause that carries part of it, not just the paragraph
 /// that states it.
+/// sRGB built under a **named** reading of its transfer function.
+///
+/// [`srgb`] is this with [`SrgbTrc::ValueContinuous`], and is what
+/// callers should use unless they specifically need the CICP/video
+/// reading — see [`SrgbTrc`] for the full argument, the measured cost
+/// (`9.76×10⁻⁶` encoded max, **zero** of 256 8-bit codes) and why the
+/// default is where it is.
+///
+/// ★ **A non-default selection invalidates every ΔE figure in
+/// `docs/NUMERIC_CLAIMS.md`**, all of which were measured under the
+/// default. It does not make them wrong by much — the separation is
+/// below one 16-bit PCS quantum — but it makes them *unmeasured* rather
+/// than merely imprecise, which is a different and worse thing. Anything
+/// quoting a number produced under [`SrgbTrc::SlopeContinuous`] must say
+/// so.
+#[must_use]
+pub fn srgb_with(variant: SrgbTrc) -> MatrixTrc {
+    let white_d65 = srgb_white_d65().expect("D65_XY is a valid chromaticity (BT.709-6 item 1.4)");
+    let m_d65 = rgb_to_xyz(&SRGB_PRIMARIES_XY, white_d65)
+        .expect("BT.709-6 primaries are non-degenerate (item 1.3)");
+    let adapt = adaptation_matrix(&BRADFORD, white_d65, D50)
+        .expect("Bradford is invertible and neither white is degenerate");
+    let matrix = adapt.mul(&m_d65);
+
+    let trc = Trc::Parametric {
+        func_type: 3,
+        params: srgb_trc_params(variant).to_vec(),
+    };
+
+    MatrixTrc::from_constructed(matrix, [trc.clone(), trc.clone(), trc], Some(D50))
+        .expect("the sRGB colorant matrix is non-singular")
+}
+
 #[must_use]
 pub fn srgb() -> MatrixTrc {
     // These unwraps are on sourced, non-degenerate constants. If either
@@ -477,6 +675,136 @@ pub fn srgb() -> MatrixTrc {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The C1 variant satisfies the CLAUSE that defines it, to machine
+    /// precision — value AND slope continuity at the breakpoint.
+    ///
+    /// ## Why this is the right assertion, and a hardcoded constant is not
+    ///
+    /// H.273 clause 8.2 does not print alpha and beta. It states the
+    /// PROPERTY they must have. So the faithful test is the property,
+    /// evaluated on whatever the solver returned — not a decimal
+    /// transcribed from a secondary source, which would only ever be
+    /// checking that two copies of someone else's arithmetic agree.
+    ///
+    /// **Expectation source:** `Rec. ITU-T H.273 (V4) (07/2024) |
+    /// ISO/IEC 23091-2` clause 8.2, quoted in [`SrgbTrc`]'s doc comment.
+    /// ★ **Evidence class: the clause itself** — this is the one place in
+    /// the sRGB reconstruction where a NORMATIVE text was read rather
+    /// than reconstructed, because H.273 is freely published.
+    #[test]
+    fn slope_continuous_variant_is_c1_to_machine_precision() {
+        let [g, a, b, c, d] = srgb_trc_params(SrgbTrc::SlopeContinuous);
+        let power_branch = (a * d + b).powf(g);
+        let linear_branch = c * d;
+        assert!(
+            (power_branch - linear_branch).abs() < 1e-15,
+            "VALUE continuity at the breakpoint is what clause 8.2 requires:              power {power_branch:.17e} vs linear {linear_branch:.17e}"
+        );
+        let power_slope = g * a * (a * d + b).powf(g - 1.0);
+        assert!(
+            (power_slope - c).abs() < 1e-12,
+            "SLOPE continuity is the half that distinguishes this variant              from the default: {power_slope:.17e} vs {c:.17e}"
+        );
+    }
+
+    /// ★ The DEFAULT is deliberately NOT C1, and this asserts the two
+    /// readings are genuinely different.
+    ///
+    /// Without this, the test above would pass just as well if
+    /// `srgb_trc_params` ignored its argument and returned one curve for
+    /// both variants — the classic way an option becomes decorative.
+    #[test]
+    fn the_default_variant_is_c0_and_the_two_are_genuinely_different() {
+        let [g, a, b, c, d] = srgb_trc_params(SrgbTrc::ValueContinuous);
+        let power_branch = (a * d + b).powf(g);
+        let linear_branch = c * d;
+        // 5e-9, not 0: `0.04045` is the C0 root CORRECTLY ROUNDED to
+        // five decimals (exact root 0.040 448 236 277...), so the two
+        // branches miss each other by the rounding, measured 2.330e-9.
+        // Tightening this to 1e-9 fails — and that failure is the
+        // rounding being real, not a defect.
+        assert!(
+            (power_branch - linear_branch).abs() < 5e-9,
+            "value continuity holds only to the breakpoint's own 5-decimal              rounding: {:.3e}",
+            (power_branch - linear_branch).abs()
+        );
+        let power_slope = g * a * (a * d + b).powf(g - 1.0);
+        assert!(
+            (power_slope - c).abs() > 1e-3,
+            "the default must NOT be C1; if this fires the two variants have              collapsed into one and the option is decorative"
+        );
+        assert_ne!(
+            srgb_trc_params(SrgbTrc::ValueContinuous),
+            srgb_trc_params(SrgbTrc::SlopeContinuous)
+        );
+        assert_eq!(
+            srgb_trc_params(SrgbTrc::default()),
+            SRGB_TRC_PARAMS,
+            "the default must remain the reading every ledger number was              measured under"
+        );
+    }
+
+    /// ★★ The COST of the choice, MEASURED rather than asserted: no
+    /// 8-bit code changes, and the separation stays below one 16-bit PCS
+    /// quantum.
+    ///
+    /// This is the number that tells a caller whether the option matters
+    /// to them, so it lives in the suite rather than in a doc comment
+    /// where it would decay. **Evidence class: self-comparison** — and
+    /// that is the correct class, because the question is what the
+    /// CHOICE costs, not which curve is right. No oracle can answer the
+    /// latter; only IEC's text could.
+    #[test]
+    fn the_two_variants_cost_nothing_at_8_bit_and_under_a_quantum_in_float() {
+        let p0 = srgb_trc_params(SrgbTrc::ValueContinuous);
+        let p1 = srgb_trc_params(SrgbTrc::SlopeContinuous);
+        let eval = |p: &[f64; 5], v: f64| {
+            if v >= p[4] {
+                (p[1] * v + p[2]).powf(p[0])
+            } else {
+                p[3] * v
+            }
+        };
+        // ★ THE CLAIM IS ABOUT OUTPUT CODES, NOT ABOUT f64 BITS, and an
+        // earlier draft of this test asserted bit-identity and FAILED at
+        // code 11. That failure was correct and the assertion was the
+        // overclaim: the two variants have different `a` and `b`, so
+        // every value on the POWER branch differs a little. What is true
+        // — and what "no image changes" actually means — is that the
+        // difference never survives re-quantisation to 8 bits.
+        let mut changed = 0u32;
+        let mut worst_8bit = 0.0_f64;
+        for code in 0..=255u32 {
+            let v = f64::from(code) / 255.0;
+            let (a, b) = (eval(&p0, v), eval(&p1, v));
+            worst_8bit = worst_8bit.max((a - b).abs());
+            if (a * 255.0).round() != (b * 255.0).round() {
+                changed += 1;
+            }
+        }
+        assert_eq!(
+            changed, 0,
+            "{changed} of 256 8-bit codes change between variants; the claim              that no image changes is falsified"
+        );
+        assert!(
+            worst_8bit < 1.0e-5,
+            "worst separation over the 8-bit codes {worst_8bit:.3e}"
+        );
+        let mut worst = 0.0_f64;
+        for i in 0..=200_000u32 {
+            let v = f64::from(i) / 200_000.0;
+            worst = worst.max((eval(&p0, v) - eval(&p1, v)).abs());
+        }
+        assert!(
+            worst < 1.5e-5,
+            "separation {worst:.6e} must stay below the 16-bit PCS quantum              1/65535; above it the option is visible in the PCS and every              ledger number needs its variant stated"
+        );
+        assert!(
+            worst > 1.0e-6,
+            "separation {worst:.6e} is implausibly small — the variants have              probably collapsed"
+        );
+    }
 
     /// The construction's arithmetic, checked against a PUBLISHED
     /// matrix rather than against itself.

@@ -1,6 +1,7 @@
 # Agent memory — icc-spec-librarian
 
-- [IEC 61966-2-1 primary text — PARTLY FREE](reference_iec_srgb_primary_sourcing_state.md) — **IEC's own 15-page preview is HELD**: clause map yes (5.2/5.3 normative), constants **zero**; **COR1:2014 discovered**; BT.709-**3** is the dated normative edition (fetched, agrees); **CSS Color 4 publishes FOUR worked sRGB examples, half of them wrong**
+- [★ No IEC purchase — sRGB is RECONSTRUCTED](project_srgb_reconstruction_decision.md) — Ken decided 2026-08-19; `reconstructed_consensus` class, never re-file the purchase, never cite it as the standard
+- [sRGB sourcing state — and ITU-T H.273 DISSENTS](reference_iec_srgb_primary_sourcing_state.md) — ★★ **H.273 (2024) defines "IEC 61966-2-1 sRGB" by value+slope continuity ⟹ `0.0392934`, not `0.04045`; ZERO 8-bit codes change, so no test can decide it (`A57`)**; Khronos KDF is a third clean source; only `12.92`/`2.4` reach a 4-body consensus
 - [Published ground truth — the survey, done](reference_published_ground_truth_state.md) — **ICC.1:2022 Annex D.6.3 IS transform ground truth** (start at Table D.3); the LUT path is **structurally** unclosable; what was checked and found empty
 - [ICC ToS blocks automated access — and five other site postures](project_icc_tos_automated_access_blocker.md) — never agent-fetch color.org; **the bar does NOT generalise**; ★ **webstore.iec.ch is paywalled BUT gives a free preview at a base64-built URL**; itu.int `-I`/`-S` suffix gotcha
 - [Pass 10 / measurement sourcing state](reference_measurement_profiling_sourcing_state.md) — **FOGRA51 is EMBEDDED in `PSOcoated_v3.icc`'s `targ` tag**; CIE tables held+checksum-verified; **Argyll is AGPL — BARRED**; industry D50 Z is `0,82521`, not ICC's `0,8249`
