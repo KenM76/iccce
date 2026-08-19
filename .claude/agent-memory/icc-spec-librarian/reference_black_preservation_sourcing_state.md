@@ -1,11 +1,51 @@
 ---
 name: black-preservation-sourcing-state
-description: Cholewo’s K_MIN/K_MAX ARE defined (per-colour, in Cholewo’s own words) and that is exactly what makes his method un-implementable as a policy — plus: black/K-only preservation is NOT in ICC.1 (both held editions, exhaustively searched) — the gray→CMYK rule is normative in ISO 32000 §10.3.3/§10.4.2.3 and belongs to pdfce; lcms2's intents 10–15 are self-labelled non-ICC; no published ΔE exists; and "GWG 23.0" could not be verified as a requirement
+description: ★ A52 IS ISO 32000-2-ONLY (PDF 1.7 §10.2 answers it the OTHER way with a `shall … only`, so BOTH editions put the gray leg on pdfce's side) and the reserved-colourant-name delta is SCOPE not existence; §2's PDF duplication exception is RETIRED — PDF_Spec now holds clause 10. Cholewo’s K_MIN/K_MAX ARE defined (per-colour, in Cholewo’s own words) and that is exactly what makes his method un-implementable as a policy — plus: black/K-only preservation is NOT in ICC.1 (both held editions, exhaustively searched) — the gray→CMYK rule is normative in ISO 32000 §10.3.3/§10.4.2.3 and belongs to pdfce; lcms2's intents 10–15 are self-labelled non-ICC; no published ΔE exists; and "GWG 23.0" could not be verified as a requirement
 metadata:
   type: reference
 ---
 
 **Corpus file: `D:\Dev\Rag-Specialized\ICC_Spec\icc\icc__ref__black_preservation.md`.**
+
+## ★★ 2026-08-19 — THREE CORRECTIONS FROM THE `pdfce` SESSION, all accepted, all verified here first
+
+**`A52` is scoped to ISO 32000-**2** only.** The row said PDF 1.7
+*"carries no such steer"*. **It carries a `shall`, pointing the other
+way** — ISO 32000-1:2008 **§10.2**: *"The CIE-based gamut and colour
+mapping functions **shall be applied only to** colour values presented in
+a CIE-based colour space. Colour values in device colour spaces
+**directly control the device colour components**…"* (verified here at
+`pdftotext -layout` dump line 18984 of `PDF32000_2008.pdf`; the only
+escape is a `Default*` resource, which substitutes the *source space*).
+⇒ colour-managing a bare `DeviceGray` is **non-conforming in 1.7**,
+merely unusual in 2.0. **★ This STRENGTHENS the conclusion: both
+editions route the gray leg to the device rule, so in NEITHER is it
+iccce's leg.**
+
+**The reserved-colourant-name delta is SCOPE, not existence.**
+`reserved to name` = 0 hits in 1.7 / 2 in 2.0 ✔, **but `reserved name` =
+1 hit in EACH**: 1.7 reserves the four CMYK names in **§8.6.6.5's
+`NChannel` `/Process` bullet list** (*"The reserved names Cyan, Magenta,
+Yellow, and Black **shall always be considered to be process colours**"*,
+verified at dump line 10449); **2.0 hoists** it to every `Separation`
+name and every `DeviceN` component name. **Carry with it: NEITHER edition
+has a reader `shall` binding `/Black` to K** — it rests on §8.6.6.4's
+device-colourant test.
+
+**★ The PDF-duplication exception is RETIRED.** §2 carried PDF clause
+text as *"a deliberate and dated exception to the no-duplication rule"*
+because `PDF_Spec` then held no clause 10. It now holds
+`iso32000__s__10.md`, `iso32000__s__10.8.md`, `iso32000__s__8.6.5.6.md`,
+`iso32000__s__8.6.5.7.md` — both editions — so **§2 is now pointers**.
+**Both corrections above were errors in the DUPLICATE, found by the other
+session reading the primary: the copy drifted within two days.** If a
+future pass needs a PDF clause this corpus does not hold, **the move is a
+dispatch to `pdfce-librarian`, not a second copy.**
+
+**★ Procedure worth keeping: a report from another session is a CLAIM,
+not a source.** Both quotations were re-verified here against
+`PDF_Spec/_sources/PDF32000_2008.pdf` before anything was edited — which
+is also how the *scope* refinement on the second one was found.
 Register rows **A51** (ICC.1 silent) and **A52** (ISO 32000-2 clause 10
 self-contradiction); divergence row **D12** (both v2-only K sentences).
 

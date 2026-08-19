@@ -394,7 +394,7 @@ mod tests {
         assert!(
             p.malformations
                 .iter()
-                .any(|m| matches!(m, Malformation::HeaderReservedNonZero))
+                .any(|m| matches!(m, Malformation::HeaderReservedNonZero { .. }))
         );
         assert_eq!(p.header.reserved[0], 0xAB); // kept, not zeroed
     }

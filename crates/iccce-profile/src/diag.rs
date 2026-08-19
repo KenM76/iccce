@@ -93,6 +93,63 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+/// Whether a reported [`Malformation`] is a breach of ICC.1, is not, or
+/// has never been established.
+///
+/// ## ★★ Why this is THREE states and not a `bool`
+///
+/// `pdfce` asked for a `Malformation::is_violation()` predicate
+/// (2026-08-19) so that a report can say *"3 observations, 1 of which
+/// breaches ICC.1"* while still showing all three — their rule forbids
+/// hiding diagnostics, so a filtered accessor was explicitly declined.
+///
+/// **A `bool` turned out to be unimplementable honestly.** Two of the
+/// nine variants have **no requirement behind them in either edition**
+/// ([`Malformation::TagTooSmall`], `ICC_Spec` **`A61`**), and one has
+/// none in v2 ([`Malformation::TagOverrun`], **`A62`**). A boolean would
+/// have forced an invented answer for those, and — this is the part that
+/// matters — **the invention would have looked exactly as authoritative
+/// as the seven that are sourced.**
+///
+/// ★ [`ViolationStatus::Unsourced`] means **iccce has not established
+/// the modality**. It does **not** mean the file is fine, and it must
+/// never be rendered as though it did. It is a statement about this
+/// project's knowledge, not about the profile.
+///
+/// ## ★ Why the edition must be supplied
+///
+/// [`Malformation::violation_status`] takes the profile's version
+/// because **the same condition is a breach in one edition and not in
+/// the other**, for three of the nine variants. That is not a quirk of
+/// two badly-drafted clauses; it is what happens when a field is *added*
+/// between editions. Asking "is this a violation?" of a malformation
+/// alone is not a well-formed question.
+///
+/// ★★ **A `shall`-grep gets v2 backwards.** ICC.1:2001-04 requires with
+/// **"must"** (76 occurrences) rather than `shall` (27, three of them in
+/// the copyright notice and none on a header, tag-table or tag-type
+/// rule); its own change list concedes it *"does not meet all of the
+/// ISO/IEC drafting rules"*. Symmetrically, v2's **unmodalised**
+/// sentences really are silent, because the drafters used "must" in the
+/// adjacent sentence. Anyone re-deriving this table must know that
+/// first.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ViolationStatus {
+    /// The file breaches a stated requirement of the applicable edition.
+    Violation,
+    /// The condition is reported, but the file breaches nothing. A
+    /// conforming profile can carry this.
+    NotAViolation,
+    /// ★ **iccce has not established the modality.** Not a verdict of
+    /// innocence — an admission of ignorance, and it must be rendered as
+    /// one. Carries the `ICC_Spec` ambiguity-register id so a caller can
+    /// find out what is actually unknown.
+    Unsourced {
+        /// The `ICC_Spec` ambiguity-register row, e.g. `"A61"`.
+        register_id: &'static str,
+    },
+}
+
 /// Which edition's rule a [`Malformation::UnknownRenderingIntent`]
 /// report is made under.
 ///
@@ -173,7 +230,7 @@ pub enum IntentRule {
 pub enum Malformation {
     /// Header bytes 100–127 shall be zero in ICC.1 (`icc__s__header.md`
     /// — for v2/v4 these are reserved; only iccMAX reclaims them).
-    HeaderReservedNonZero,
+    HeaderReservedNonZero { first_byte: usize },
     /// `header.size` < actual byte count. Normal for profiles embedded
     /// in PDF/TIFF (containers pad to 4-byte boundaries), so this is a
     /// report, not an error (`icc__s__header.md` field notes).
@@ -256,11 +313,108 @@ pub enum Malformation {
     },
 }
 
+impl Malformation {
+    /// Whether this report is a breach of ICC.1 **under the given
+    /// edition**, is not, or has never been established.
+    ///
+    /// ## The table, and every verdict's source
+    ///
+    /// Sourced 2026-08-19 from both editions' primary text, quotations in
+    /// `ICC_Spec/icc/icc__s__tag_table.md` §7. ★ The verdicts are **not**
+    /// derived from `icc__s__tag_table.md`'s validation table — that was
+    /// written as *"checks iccce should perform and REPORT"* and **no row
+    /// of it was ever a quotation of a requirement**. It is a derived
+    /// convenience and is now bannered as one.
+    ///
+    /// | variant | v4 (ICC.1:2022) | v2 (ICC.1:2001-04) |
+    /// |---|---|---|
+    /// | `HeaderReservedNonZero` | **Violation** (7.2.19 *"shall be set to zero"*) | **NotAViolation** — Table 9's cell is the unmodalised *"44 bytes reserved for future expansion"*, and it is the **only** mention in the document |
+    /// | `TrailingBytes` | NotAViolation | NotAViolation — 7.2.2's `shall` sizes the **profile**, not the file, and both editions contemplate embedding in the same sentence |
+    /// | `UnknownRenderingIntent` | **Violation** via `IntentRule` | NotAViolation via `IntentRule` |
+    /// | `TagOverrun` | **Violation** (7.2.2 *"shall be the exact size"*) | **Unsourced `A62`** — v2 6.1.1 is one unmodalised sentence and v2 has no contiguity or padding clause |
+    /// | `TagOverlapsTable` | **Violation** (7.1.2 b) *"shall immediately follow"*) | **Violation** — clause 6's ordering `shall` |
+    /// | `TagMisaligned` | **Violation** (7.3.4) | **Violation** (6.2.2 *"is required to"* / *"must be zero"*) |
+    /// | `TagTooSmall` | **Unsourced `A61`** | **Unsourced `A61`** |
+    /// | `TagBaseReservedNonZero` | **Violation** (10.1 *"shall be set to 0"*) | **Violation** (6.5, *"must"*) |
+    /// | `DuplicateTagSignature` | **Violation** (7.3.1 *"Duplicate tag signatures shall not be included"*) | **Violation** (6.2 *"must be unique"*) |
+    ///
+    /// ## ★★ Two entries that were WRONG in this project until today
+    ///
+    /// 1. **`DuplicateTagSignature` was labelled *"Legality NOT
+    ///    SOURCED"*** and graded SILENT in the ambiguity register.
+    ///    **Both editions prohibit duplicates outright**, v2 twice — the
+    ///    rule plus a change-list item, *"A tag can now only appear once
+    ///    in a profile. Per: Resolution voted 1998-03-15"*. The stale
+    ///    label survived because a batch resolution leaves a batch of
+    ///    stale prose. ★ The *decision* built on it (keep both, first
+    ///    wins) is unaffected — **which** duplicate wins is still
+    ///    genuinely unsourced — but its stated rationale was false.
+    /// 2. **`TagTooSmall` is not sourced at all.** Nothing states a
+    ///    minimum tag size, and each edition has a sentence pointing the
+    ///    other way — v4 7.4 *"shall only be restricted by the limits
+    ///    imposed by the 32-bit … values"*, v2 6.2.3 ***"An element may
+    ///    have any size"***. *"A byte that does not exist has not been
+    ///    set to 0"* is an **inference, not a quotation**.
+    ///
+    /// ## ★ Where iccce is deliberately WEAKER than the specification
+    ///
+    /// `TagOverlapsTable` fires only when tag data begins *inside* the
+    /// tag table. v4 7.1.2 b) also forbids a **gap** between the table
+    /// and the first tag. iccce does not detect the gap, so a `Violation`
+    /// here is sound but the **absence** of one is not a clean bill.
+    #[must_use]
+    pub fn violation_status(&self, version: crate::header::ProfileVersion) -> ViolationStatus {
+        let v4 = version.major() >= 4;
+        match self {
+            // v4 7.2.19 states a `shall`; v2 Table 9 states nothing.
+            Self::HeaderReservedNonZero { .. } => {
+                if v4 {
+                    ViolationStatus::Violation
+                } else {
+                    ViolationStatus::NotAViolation
+                }
+            }
+            // Both editions: the size field sizes the PROFILE, and both
+            // contemplate embedded profiles explicitly.
+            Self::TrailingBytes { .. } => ViolationStatus::NotAViolation,
+            // The edition is already carried, so it is used rather than
+            // re-derived from `version` — if the two ever disagreed, the
+            // rule the REPORT was made under is the honest one.
+            Self::UnknownRenderingIntent { rule, .. } => match rule {
+                IntentRule::V4Prohibited => ViolationStatus::Violation,
+                IntentRule::V2Undefined => ViolationStatus::NotAViolation,
+            },
+            Self::TagOverrun { .. } => {
+                if v4 {
+                    ViolationStatus::Violation
+                } else {
+                    ViolationStatus::Unsourced { register_id: "A62" }
+                }
+            }
+            Self::TagOverlapsTable { .. } | Self::TagMisaligned { .. } => {
+                ViolationStatus::Violation
+            }
+            Self::TagTooSmall { .. } => ViolationStatus::Unsourced { register_id: "A61" },
+            Self::TagBaseReservedNonZero { .. } | Self::DuplicateTagSignature { .. } => {
+                ViolationStatus::Violation
+            }
+        }
+    }
+}
+
 impl std::fmt::Display for Malformation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::HeaderReservedNonZero => {
-                write!(f, "header reserved bytes 100..128 are not all zero")
+            Self::HeaderReservedNonZero { first_byte } => {
+                // The range is carried rather than fixed because it
+                // DIFFERS BY EDITION: v4 reserves 100..128 (84..100 is
+                // `profileID`), v2 reserves 84..128 and has no
+                // `profileID` at all. Printing a fixed "100..128" on a
+                // v2 profile understated the block by 16 bytes.
+                write!(
+                    f,
+                    "header reserved bytes {first_byte}..128 are not all zero"
+                )
             }
             Self::TrailingBytes { declared, actual } => write!(
                 f,

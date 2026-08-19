@@ -162,12 +162,40 @@ fn cmd_inspect(path: &str) -> ExitCode {
         h.illuminant.z.to_f64()
     );
     println!("header.creator: {}", h.creator);
-    let id_hex: String = h.profile_id.iter().map(|b| format!("{b:02x}")).collect();
-    if h.profile_id.iter().all(|&b| b == 0) {
-        // All-zero = not computed, which is NOT an error (corpus D4).
-        println!("header.id: not computed");
+    // ★★ THE FIELD ONLY EXISTS IN v4, and printing it for a v2 profile
+    // FABRICATED A VALUE — this is the harm, and it was measured before
+    // the fix on 2026-08-19.
+    //
+    // `profileID` was added in v4. In ICC.1:2001-04 bytes 84..127 are a
+    // single 44-byte reserved block (Table 9, "44 bytes reserved for
+    // future expansion"); there is no identifier there. iccce read
+    // 84..100 as a `profileID` regardless of edition, so a v2 profile
+    // carrying 0xDEADBEEF... in its reserved space printed
+    // `header.id: deadbeefdeadbeefdeadbeefdeadbeef` and
+    // `malformations: 0`.
+    //
+    // ★ That is worse than a false accusation. A reader would reasonably
+    // conclude the profile carries an MD5 profile ID — a checkable
+    // identity claim — when the file carries no such field at all. A
+    // plausible-looking value invented from bytes that mean something
+    // else is exactly the defect class this project exists to catch, and
+    // it is the THIRD instance of a v4-only concept being applied to a
+    // v2 profile (after the rendering-intent report and the
+    // `Malformation` doc comment).
+    //
+    // The bytes are still disclosed — via the edition-correct
+    // `HeaderReservedNonZero` report, which now names 84..128 on v2 —
+    // so nothing is hidden. What stops is the MISLABELLING.
+    if h.version.major() >= 4 {
+        let id_hex: String = h.profile_id.iter().map(|b| format!("{b:02x}")).collect();
+        if h.profile_id.iter().all(|&b| b == 0) {
+            // All-zero = not computed, which is NOT an error (corpus D4).
+            println!("header.id: not computed");
+        } else {
+            println!("header.id: {id_hex}");
+        }
     } else {
-        println!("header.id: {id_hex}");
+        println!("header.id: n/a (no profileID field before v4; bytes 84..128 are reserved)");
     }
 
     // The declared component count of the data colour space, and the

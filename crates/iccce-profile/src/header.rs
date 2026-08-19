@@ -156,9 +156,56 @@ impl Header {
             reserved: bytes[100..128].try_into().expect(g),
         };
 
-        // Report — never zero out — violations the header carries.
-        if header.reserved.iter().any(|&b| b != 0) {
-            malformations.push(Malformation::HeaderReservedNonZero);
+        // Report — never zero out — what the header carries.
+        //
+        // ★★ EDITION-GATED RANGE, and this is the THIRD instance of the
+        // same mechanism (after the rendering-intent report fixed
+        // 2026-08-18 and the `Malformation` doc comment fixed
+        // 2026-08-19): a v4-only concept applied to a v2 profile.
+        //
+        // The reserved block is 44 bytes in BOTH editions, but it does
+        // not START in the same place, because `profileID` is a v4
+        // addition:
+        //
+        //   v4 (ICC.1:2022 7.2.18/7.2.19) — 84..99 profileID,
+        //                                   100..127 reserved
+        //   v2 (ICC.1:2001-04 Table 9)    — 84..127 ALL reserved,
+        //                                   "44 bytes reserved for
+        //                                   future expansion"
+        //
+        // ★ Checking only 100..128 on a v2 profile therefore MISSES 16
+        // bytes of that edition's reserved block entirely — and iccce
+        // was simultaneously presenting those same 16 bytes as a
+        // `profileID`, a field v2 does not have. Measured before the
+        // fix: a v2 profile with 0xDEADBEEF... at 84..100 printed
+        // `header.id: deadbeef...` and `malformations: 0`. That is
+        // worse than a false accusation; it is a FABRICATED VALUE, and
+        // a consumer would reasonably believe the profile carried an
+        // MD5 profile ID. It carries no such field.
+        //
+        // ★ Modality differs too, and is NOT symmetric — see
+        // `Malformation::HeaderReservedNonZero` and
+        // `ViolationStatus`: v4 says these bytes "shall be set to
+        // zero" (a requirement a file can breach); v2's Table 9 cell is
+        // the unmodalised "44 bytes reserved for future expansion" and
+        // is the only mention in that document. So on v2 this is a
+        // DISCLOSURE and not a violation. It is still reported, because
+        // the parser reports (rule 6) — what changes is the claim, not
+        // the visibility.
+        let (first_byte, reserved_dirty) = if header.version.major() >= 4 {
+            (100, header.reserved.iter().any(|&b| b != 0))
+        } else {
+            (
+                84,
+                header
+                    .profile_id
+                    .iter()
+                    .chain(header.reserved.iter())
+                    .any(|&b| b != 0),
+            )
+        };
+        if reserved_dirty {
+            malformations.push(Malformation::HeaderReservedNonZero { first_byte });
         }
         // ★ VERSION-GATED, and the gate is two conditions rather than
         // one. Before 2026-08-18 this read `if rendering_intent > 3`
