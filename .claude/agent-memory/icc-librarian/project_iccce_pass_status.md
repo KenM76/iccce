@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to the 2026-08-19 LEAK-GUARD INJECTION filing (31st SESSION_LOG entry; DL-064 filed, 64 decision-log entries; NC-267 + NC-268 filed in the new §3.35 + §7.24, next free NC-269/NA-013 — NA-013 deliberately NOT consumed; reflog tip abdf445, two commits past the measured 400179b; the injection DISCHARGED the Pass K debt and found that below 5.0e-2 the WHOLE SUITE is green with a defect compiled in) (earlier: the DISCLOSURE-CHANNEL filing, 30th entry, DL-063, no row moved, tip 400179b) (earlier: the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274)) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-19 PERCEPTUAL-COST filing (32nd SESSION_LOG entry; tip 3c93b62; NA-012's cost is MEASURED at 3.681203 dE2000 and its UNMEASURED retired; NC-269…NC-280 in the new §3.36 + §7.25, next free NC-281/NA-013 — NA-013 again NOT consumed; DL-065 + DL-066 filed, 66 decision-log entries; suite pass=353 fail=0 skip=9) (earlier: the LEAK-GUARD INJECTION filing, 31st SESSION_LOG entry; DL-064 filed, 64 decision-log entries; NC-267 + NC-268 filed in the new §3.35 + §7.24, next free NC-269/NA-013 — NA-013 deliberately NOT consumed; reflog tip abdf445, two commits past the measured 400179b; the injection DISCHARGED the Pass K debt and found that below 5.0e-2 the WHOLE SUITE is green with a defect compiled in) (earlier: the DISCLOSURE-CHANNEL filing, 30th entry, DL-063, no row moved, tip 400179b) (earlier: the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274)) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -844,7 +844,88 @@ reported to be measuring concurrently — **no number for it guessed or
 implied.** Four documents edited in the working tree; nothing committed
 or pushed.
 
-Related: [[iccce-injection-measures-one-magnitude]],
+**★★★ UPDATED 2026-08-19, THE PERCEPTUAL-COST FILING (THIRTY-SECOND
+`SESSION_LOG` entry, thirty-second librarian filing). `NC-269` …
+`NC-280` filed in a new `NUMERIC_CLAIMS.md` **§3.36** plus five §6
+dependency rows and **§7.25**; next free **`NC-281`** / **`NA-013`**.
+DL-065 + DL-066 filed; 66 decision-log entries.** See
+[[iccce-gate-in-input-units-cannot-certify-output]] and
+[[iccce-unfailable-row-protected-only-by-siblings]].
+
+**★★★ `NA-012`'s `UNMEASURED` IS RETIRED — the cost field now carries
+`3.681203` ΔE2000 max / `1.580674` mean**, 101 qualifying points, on
+`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK` (Ghent v5.0, licensed),
+**media-relative, no `--bpc`**. **Evidence class `self-comparison` — the
+CEILING the subject admits** (A51 closed negative ⇒ no published value
+can exist); **lcms2 is a RULER only**. ★ **The entry stayed and only the
+field changed**, exactly as its own *"Revisit if (a)"* said — **one day
+from registration to discharge**, which is what registering an
+`UNMEASURED` cost on the day is FOR. The original wording is **preserved
+beside it** (DL-062).
+
+**★★ FOUR things that must travel with the number.** (a) **Reversed the
+same pair costs `2.432964`** ⇒ **the price is the DESTINATION's black,
+not the pair's** — never write *"these two are 3.68 apart"*.
+(b) **Population**: 30 ordered pairs, **11 ENTITLED, `0` imperceptible**,
+`2.023698` … `3.686985`; ★★★ **without the entitlement gates 9 of 30
+would have read "nearly free"** — that number is the whole argument for
+the filter. (c) **A consumer sees the BOUNDARY STEP `3.712251` — larger
+than the cost** (one 8-bit code of cyan outside the qualifying set).
+(d) **The same-press regime is `23.1×` cheaper** (`0.159500`, `G8`, on
+two files with **byte-identical `A2B1`**) — ★ **`NC-244` was NOT
+substituted**: it is a *same-profile* pair, `NC-272` a *two-file*
+same-press pair, `2.3e-2` apart, both in the cheap regime.
+
+**★★★ THE COMMITTED PAIR carries §G's only non-implementation
+expectation.** `chromatic-neutral → warm-black` in CI: `5.825550` max /
+`3.066464` mean, matching a **CLOSED FORM from the two recipes'
+constants** to `6.281370e-3` against a **COUNTED** `1e-2` (`NC-277`).
+★★ **That bound's first draft was `6e-3` — below what the run observed —
+and was corrected by COUNTING the missing `B2A0` output-quantisation term
+(`7.6e-3`), not by widening.** Recorded in `DERIVED_COST`'s own doc
+comment: **rule 5 working, and the counter-example to "tolerances get
+tuned until green"**. ★ Its `5.825550` is a property of **two authored
+models** and is **NOT** a substitute for the headline.
+
+**★★ MY OWN FINDINGS, not carried by the dispatch.** (a) **A green suite
+bounds only the GRADED rows** — §G is **ten graded / six `REPORTED`**
+(counted from `passk.rs`'s four `G_*` arrays), so `pass=353 fail=0`
+corroborates every §3.36 number **except the one NA-012 carries**.
+(b) **`337 + 16 = 353` with `skip` unchanged at `9`** ⇒ corpus present,
+all sixteen §G rows ran — **a corroboration, not a proof** (assumes no
+other row count moved since `60c32dd`). (c) **`difftest/README.md` §26.7
+says "nine graded rows"; the inventory gives TEN** — `9` is the
+**licensed** count, and the same file's §26.8 lists exactly the six
+`REPORTED`. **Owed, not edited.** (d) **`docs/FEATURES.md` carried
+*"the number a caller actually wants is UNMEASURED"* — FALSIFIED**, in
+the consumer-facing document `pdfce` reads; **corrected in place**, with
+`pass=337 → 353` and `46 → 47` fixtures. ★★★ **The `185 workspace tests`
+figure was deliberately NOT corrected** — the dispatch reported no
+failures and **no count**.
+
+**★ Why `FEATURES.md` was edited when `TOLERANCES.md` was not:** a
+tolerance justification is `icc-conformance`'s technical judgement; **a
+stale measured number in a consumer-facing document is this role's own
+subject matter**, and DL-062 says a stale *status* must be **repaired**,
+not merely noticed.
+
+**★ NOT closed by §G, item by item:** the compiled-path difftest row
+(every §G row drives the **CLI**, and `iccce bench` still cannot reach
+`--preserve-black`); the eight ungraded destinations (`NC-273` grades a
+**count**, over six files with **five behaviours**); `NC-266`'s
+`blind = 0`; and **the sub-`5.0e-2` probe debt — §G adds NO low-ink probe
+at all**, every probe sits at `C = M = Y = 0` exactly. **The two lint
+gates move from *not filed* to `[REPORTED]` run, NOT to closed.**
+
+**Gates at `3c93b62`** *(`[REPORTED]`, two runners, one machine)*:
+difftest **`pass=353 fail=0 skip=9 error=0`**, `fmt`/`clippy`/`test`
+clean, `gen-profiles verify` **47 identical**. ★ Tip **`3c93b62`**
+*(VERIFIED from `.git/logs/HEAD`)*; **`crates/` untouched by the work**;
+nothing committed, pushed or published by the filing.
+
+Related: [[iccce-gate-in-input-units-cannot-certify-output]],
+[[iccce-unfailable-row-protected-only-by-siblings]],
+[[iccce-injection-measures-one-magnitude]],
 [[iccce-words-humans-count-code]],
 [[iccce-stale-status-decays-faster-than-a-number]],
 [[iccce-source-labelled-number]],

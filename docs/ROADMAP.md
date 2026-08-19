@@ -1100,6 +1100,111 @@ justification of the tolerance `0`, its repointing decision, and
 **No Pass status changes, no code was edited, and no colour value moves.**
 The defect is in the **test suite's reach**, not in the transform.
 
+**★★★ Updated 2026-08-19 (third filing of the day) — the PERCEPTUAL COST
+is measured and `NA-012`'s `UNMEASURED` is RETIRED: `NUMERIC_CLAIMS.md`
+gains **§3.36** with `NC-269 … NC-280`, five §6 dependency rows and
+**§7.25**; `ARCHITECTURE.md` gains **DL-065** and **DL-066**.** ★ The
+line above — *"the next free are `NC-269` and `NA-013`"* — **was true
+when written and is now superseded: the next free are `NC-281` and
+`NA-013`.** Corrected here rather than rewritten above (DL-062).
+
+**Committed at `3c93b62`**, *"feat(difftest): Pass K §G — the perceptual
+cost of black preservation"* *(★ VERIFIED from `.git/logs/HEAD`, whose
+last line this is at the moment of filing; **a reflog line never
+evidences a commit's contents**)*. **`crates/` is untouched by the work
+— it is all `tools/` and `fixtures/`**, and no colour value moves.
+
+**The number, with everything that must travel with it:**
+
+> **`3.681203` ΔE2000 max · `1.580674` mean**, over the **101-point**
+> qualifying set, on **`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`**
+> (Ghent v5.0, licensed, out of tree), **media-relative, no `--bpc`**,
+> policy `k-only-equal-lightness`. **Evidence class `self-comparison`** —
+> ★ **the ceiling the subject admits, not a shortcoming**: `ICC_Spec`
+> **A51** is a closed negative, so no published value for what
+> preservation *should* return can exist, and lcms2 appears **only as a
+> ruler**.
+
+**★★★ Four things about it that are not the headline and matter as much:**
+
+1. **★ It is a property of the DESTINATION's black, not of the pair.**
+   The same pair **reversed** costs **`2.432964`** — `1.51×` smaller
+   (`NC-270`). *"These two profiles are 3.68 apart"* is a wrong sentence;
+   the number belongs to an **ordered** pair.
+2. **★★ The population is the stronger claim.** Over **all 30 ordered
+   pairs** of the six real CMYK members, **11 are ENTITLED** to price the
+   policy and **`0` of them find it imperceptible**, cost `2.023698` …
+   `3.686985` (`NC-273`). ★★★ **Without the entitlement gates, 9 of 30
+   would have read as *"the policy is nearly free"*** — thirty per cent
+   of the population, and that number is the whole argument for the
+   filter.
+3. **★★★ A consumer sees the BOUNDARY STEP, not the cost.** Leaving the
+   qualifying set by **one 8-bit code of cyan** steps the answer by
+   **`3.712251`** (`NC-275`) — **larger than the cost itself**. The
+   policy fires at `C = M = Y = 0` **exactly**; that discontinuity is
+   deliberate and is now priced.
+4. **★★ The trap is real and it is in the corpus.** `ISO Coated v2
+   (ECI)` → `ISO Coated v2 300% (ECI)` — **byte-identical `A2B1` tags** —
+   costs **`0.159500`**, `23.1×` smaller and imperceptible (`NC-272`).
+   ★ **`NC-244` was NOT substituted**, as instructed: it is a
+   *same-profile* pair, `NC-272` a *two-file same-press* pair, and the
+   finding is that **both belong to the cheap regime**.
+
+**★★★ THE FINDING THAT IS NOT THE HEADLINE, and it may outlast it —
+`ARCHITECTURE.md` DL-065.** The committed `v2-cmyk-chromatic-neutral`
+fixture **could not carry a ΔE row**, and one of its two disqualifications
+is catchable by no tolerance that could be written. Its `B2A0` is not the
+inverse of its `A2B0` (round trip **`21.218992`**, larger than the
+`19.394947` it would have reported) — **that** a bound catches. But its
+**black ink is spectrally neutral**, so the preserved answer at matched
+lightness is a **metamer** of the four-ink separation: **colorimetrically
+identical however much ink separates them.** The fixture lays `0.420705`
+of ink — `21×` the declared floor — and would still report a cost of
+**zero**. ★★ **Read it against item 2 of the three below**: there, a
+*zero*-separation fixture manufactured a false pass and a device-unit
+floor was the remedy; here the floor is **green** and the measurement is
+**annihilated anyway**. **A gate stated in the units of the INPUT cannot
+certify a property of the OUTPUT.** The remedy was a **fixture**, not a
+number: `fixtures/synthetic/v2-cmyk-warm-black.icc`, varying **exactly
+one variable** (the black carries chroma, `a* += 2K`, `b* += 6K`).
+
+**★★ The committed pair runs in CI and carries §G's only non-implementation
+expectation.** `chromatic-neutral → warm-black` costs **`5.825550`** max /
+`3.066464` mean (`NC-276`) and **matches a CLOSED FORM derived from the
+two recipes' constants to `6.281370e-3` against a COUNTED bound of `1e-2`**
+(`NC-277`). ★★★ **That bound's first draft was `6e-3` — below what the run
+observed — and it was corrected by COUNTING the missing term (`7.6e-3`,
+the `B2A0` device-output quantisation), not by widening it to fit.** The
+draft error is recorded in `DERIVED_COST`'s own doc comment. **This is
+project rule 5 working, and it is the counter-example to "tolerances get
+tuned until green".** ★ The committed pair's number is a property of **two
+authored models** and **is not a substitute for the headline.**
+
+**★★★ Injection proof, and the uncomfortable half — `ARCHITECTURE.md`
+DL-066.** A 5 % error in `KPreserve::map_k` turns **`G12` red at 62× its
+bound** and **`G8` at 4.0×**; the three fixture-pair controls correctly do
+not move. But **`G16`, the population row, stays GREEN** — a universal of
+the form *"no entitled pair finds it imperceptible"* is **one-sided** and
+cannot see a defect that makes the policy cost **more**, which is every
+natural defect here. ★★★ **And `G1`, the headline, is `REPORTED` and can
+NEVER go red** — correctly, since no requirement bounds an opt-in policy's
+cost. **Its entire protection is `G12` and `G8` failing beside it**, which
+is now a `NUMERIC_CLAIMS.md` §6 dependency row so that deleting a sibling
+is visible as an act with a consequence.
+
+**Gates at `3c93b62`, re-run independently by `icc-engineer`** *(★ two
+runners, one machine, one tree — `[REPORTED]`; this role has no shell)*:
+difftest **`pass=353 fail=0 skip=9 error=0`** (`NC-280`), `cargo fmt
+--all --check` exit 0 (plus `tools/gen-profiles` separately, not a
+workspace member), `clippy --workspace --all-targets -D warnings` clean,
+`cargo test --workspace` no failures, `gen-profiles verify` **47 fixtures
+identical**. ★★ **`337 + 16 = 353` exactly with `skip` unchanged at `9`**
+— §G adds sixteen rows and the corpus was present, so all sixteen ran;
+**a corroboration, not a proof**, since it assumes no other row count
+moved since `60c32dd`. ★★★ **And a green suite bounds only the GRADED
+rows: ten of §G's sixteen. The headline is one of the six it cannot
+speak for.**
+
 ---
 
 ## Pass 0 — scaffold and the oracle
@@ -5075,8 +5180,8 @@ Pass number at all.
 | **The policy** | `crates/iccce-cmm/src/black_preserve.rs` — `KPreserve`, `KMapping`, `Side`. Opt-in, **five named refusals**, applied at `Chain::convert` and, since `a05476c`, **outside the grid** in `CompiledTransform::convert` |
 | **The CLI** | `iccce transform --preserve-black <policy>`, ★ **with NO default** — the two published definitions disagree by up to `4.889900e-2`, so a default would be iccce choosing one and reporting it under a name that means both |
 | **The qualifying test** | `C = M = Y = 0` **exactly**. A discontinuity, deliberately — which is why the compiled path had to carry the policy outside the interpolation |
-| **The grading** | Pass K, **44 rows**, §A–§F; **§F's 8 rows run in CI** on a committed synthetic fixture, the other 36 need the licensed corpus |
-| **The ledger** | `NUMERIC_CLAIMS.md` **§3.34** (`NC-243 … NC-266`), **NA-012**, five new §6 dependency rows, **§7.23** — and, from 2026-08-19, **§3.35** (`NC-267`, `NC-268`) and **§7.24**, the injection proof of the leak guards **and its floor** |
+| **The grading** | Pass K, **44 rows**, §A–§F; **§F's 8 rows run in CI** on a committed synthetic fixture, the other 36 need the licensed corpus. ★ *(2026-08-19: **§G adds 16 more** — 60 in total — of which **7 run in CI** and 9 need the licence; **ten of the sixteen are graded**, six carry `REPORTED`.)* |
+| **The ledger** | `NUMERIC_CLAIMS.md` **§3.34** (`NC-243 … NC-266`), **NA-012**, five new §6 dependency rows, **§7.23** — and, from 2026-08-19, **§3.35** (`NC-267`, `NC-268`) and **§7.24**, the injection proof of the leak guards **and its floor**; and, later the same day, **§3.36** (`NC-269 … NC-280`), five further §6 rows and **§7.25**, **the perceptual cost** |
 | **The budget** | `TOLERANCES.md` §3.10 (`icc-conformance`'s file) |
 
 ### Done-when, judged on these terms
@@ -5088,10 +5193,10 @@ Pass number at all.
 | K is genuinely re-mapped, not copied through | **MET** — NC-263 (`0.366689` at `K_in = 0.5` on the furthest cross-press pair) and, in graded form, **NC-257** |
 | The construction is the identity where algebra says it must be | **MET, and it is the Pass's headline** — NC-256; ★★★ **the oracle is `6.100000e-5` away from an answer that is not in dispute** |
 | It composes with the compiled path | **MET as of `a05476c`, and it did NOT at first** — NC-264 (converges) and NC-265 (the pre-fix defect). See the warning below |
-| Named as a rule-4 departure from colorimetry | **MET** — **NA-012**, registered on the day, with its cost stated as **UNMEASURED** |
+| Named as a rule-4 departure from colorimetry | **MET** — **NA-012**, registered on the day, with its cost stated as **UNMEASURED**. ★★★ *(2026-08-19: **the cost field is now MEASURED** — `3.681203` ΔE2000 max / `1.580674` mean on `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, media-relative, no `--bpc`, **NC-269**, §3.36. The entry stayed and only the field changed, exactly as its own "Revisit if (a)" said it would. **One day from registration to discharge** — which is what registering an `UNMEASURED` cost on the day is FOR.)* |
 | A published expectation anywhere in the Pass | ★★★ **NOT MET AND NOT MEETABLE.** ICC.1 specifies no black-preservation construct (`ICC_Spec` **A51**, a closed negative). **Zero `published-ground-truth` rows, and none can exist for this subject** |
 
-### ★★★ Three things about this work that must not be lost *(the third added 2026-08-19)*
+### ★★★ Four things about this work that must not be lost *(the third and fourth added 2026-08-19)*
 
 **1. The compiled path nearly shipped wrong, and the fix is structural.**
 An interpolator **cannot represent a step**. Sampling the *preserving*
@@ -5133,18 +5238,55 @@ injection showed a fixture manufacturing a pass; here, injection showed a
 whole suite manufacturing one.** A red injection proves a guard is not
 inert; **only a sweep measures what it can see.**
 
+**4. ★★★ A SEPARATION GATE IN DEVICE UNITS CANNOT CERTIFY A SEPARATION IN
+COLOUR.** *(added 2026-08-19 — `NC-278`, `ARCHITECTURE.md` **DL-065**.)*
+Item 2 above is the trap where a fixture lays **no** chromatic ink and a
+declared floor is the remedy. **This is its sibling, and the floor is
+green while it happens.** `v2-cmyk-chromatic-neutral`'s **black ink is
+spectrally neutral** — `K` appears in `L*` and nothing else — so the
+preserved answer at matched lightness is a **metamer** of the four-ink
+separation it replaced: **colorimetrically identical however much ink
+stands between them.** The fixture separates by **`0.420705`** of ink,
+`21×` the declared floor, and would have reported a cost of **zero**.
+★★★ **No tolerance can express this.** The gate is stated in the units of
+the transform's **input**; the claim is in the units of its **output**;
+and the model between them annihilates exactly the quantity being
+measured. **The remedy was a fixture that varies one variable
+(`v2-cmyk-warm-black`), not a number** — DL-020's shape again: a doubt the
+corpus cannot discharge, discharged by bytes this project authors. ★ **It
+was found BEFORE a number was published**, by measuring the fixture's
+fitness rather than its output, so **no ledger row was ever wrong because
+of it** — which is precisely why it needed writing down: nothing failed,
+and nothing would have.
+
 ### What this does NOT close
 
-- **The perceptual cost of the policy is UNMEASURED.** Nobody has
+- ~~**The perceptual cost of the policy is UNMEASURED.** Nobody has
   measured the **ΔE2000** between the preserved and the colorimetric
   answer on a cross-press pair — **the number a caller weighing the
-  policy actually wants.** NA-012 carries it as owed.
+  policy actually wants.** NA-012 carries it as owed.~~
+  ★★★ **CLOSED 2026-08-19 by §G** — `3.681203` max / `1.580674` mean,
+  `NC-269`, §3.36; NA-012's cost field carries it with its pair, its
+  direction and its intent. ★ **What replaces it as an open item:** the
+  cost is measured at **one intent, no `--bpc`, and only on the
+  `C = M = Y = 0` axis**, so today's number is a **sub-case** the moment
+  any of those three changes — and **no weighting by how often a real
+  document contains K-only content** exists anywhere, which is the term
+  that actually decides whether the policy is worth its price. ★★ That
+  term **belongs to the consumer, not to this library**, and is the
+  clearest thing to ask `pdfce` for through the request channel.
 - **`KMapping::Ratio` (Cholewo) remains a refusal**, unimplemented and an
   operator scope call. ★ Its six weights are three-unspecified, so **two
   faithful implementations of the paper would not agree with each
   other**.
-- **No `--bpc` + preservation coverage** at any layer.
+- **No `--bpc` + preservation coverage** at any layer. *(Unchanged
+  2026-08-19 — §G runs at media-relative with no BPC.)*
 - **Eight of the ten CMYK destinations swept are graded by nothing.**
+  ★ *(2026-08-19 — **partly, and only partly, improved.** `NC-273` grades
+  a **population** over **six** real CMYK members and 30 ordered pairs.
+  But it grades a **count**, not those profiles' behaviour, and six files
+  carry only **five behaviours** — two share an `A2B1` byte for byte. The
+  item stands as written.)*
 - ★★★ **No probe below `5.0e-2` chromatic ink** *(added 2026-08-19)*, so
   a **small** widening of the qualifying test is invisible to the whole
   suite — measured, not suspected (`NC-267` / `NC-268`). Closing it means

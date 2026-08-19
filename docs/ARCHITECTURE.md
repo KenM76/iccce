@@ -7189,3 +7189,248 @@ silently moves `E7`'s floor and invalidates NC-268's E7 half while leaving
 F8's intact; **or** a sweep-based injection harness appears, which would
 turn "inject once and see red" into "measure the floor" as a matter of
 course and retire the manual discipline this entry installs.
+
+---
+
+### DL-065 — ★★★ **a separation gate stated in the units of the INPUT cannot certify a separation in the units of the OUTPUT. A fixture whose black ink is spectrally neutral lays `0.42` of ink that carries NO COLOUR: every device-unit gate reads healthy, the preserved answer is a METAMER of the four-ink separation it replaced, and the measured cost is zero for a reason that has nothing to do with the thing being measured. No tolerance can express this; the remedy is a fixture**
+
+**Date:** 2026-08-19 · **Occasioned by:** `icc-conformance`, measuring the
+perceptual cost of black preservation and finding that the corpus's own
+committed CMYK fixture could not carry the row · **Drafted by**
+`icc-librarian` from `icc-conformance`'s measurements and `icc-engineer`'s
+re-run, with every derivable statement re-derived from committed source
+and every statement requiring a shell labelled `[REPORTED]` · **The
+numbers are `NC-276`, `NC-277`, `NC-278`, `NUMERIC_CLAIMS.md` §3.36** ·
+**Relates to DL-025** (*a control is only as good as its fixture* — the
+identity fixture that nullified a control at `1.1e-15`), **DL-020** (*a
+doubt the corpus cannot discharge is discharged by bytes this project
+authors*), **DL-049** (a defect inside a **tolerance's justification**
+rather than a candidate), and **Pass K's zero-separation finding**, of
+which this is the sibling that hides.
+
+#### The finding, in one sentence
+
+> **`v2-cmyk-chromatic-neutral` separates by `0.420705` of chromatic ink —
+> twenty-one times the declared floor — and would still have reported a
+> cost of ZERO, because its black ink appears in `L*` and in nothing
+> else, so the single-ink answer at matched lightness is
+> colorimetrically identical to the four-ink separation however much ink
+> stands between them.**
+
+#### Why this is a new kind of trap and not the old one restated
+
+Pass K already records that **a zero-separation fixture manufactures a
+false pass** — rebuilding the committed fixture like its sibling turned
+the headline row green at `0.000000`, and the remedy was **NC-259**, a
+separation floor declared in advance in **device units**. That remedy is
+sound and is untouched here. What this entry records is that **the same
+false pass is reachable with the floor comfortably cleared**:
+
+| | zero-separation trap | ★ **the metamer trap** |
+|---|---|---|
+| the fixture's failure | it lays **no** chromatic ink | it lays **plenty** of chromatic ink |
+| the ink-separation gate reads | `0` — **visibly** broken | **`0.420705`** — healthy, `21×` the floor |
+| what the measured ΔE does | collapses to `0` | collapses to `0` |
+| detected by | **NC-259**, and it was found by injection | ★★★ **nothing in this project** |
+| class of defect | a **bound** problem | ★★★ a **fixture-model** problem |
+
+★★★ **The general statement, which is the reason this is in the decision
+log rather than only in the ledger:**
+
+> **A gate expressed in the units of the transform's INPUT (ink, device
+> values, code points) cannot certify a property of its OUTPUT (colour).
+> The map between them may annihilate exactly the quantity being
+> measured, and it does so silently, with the gate green.**
+
+Every separation gate in Pass K is in device units, deliberately —
+device units are what a leak is measured in, and `TOLERANCES.md` §3.10's
+`0`-tolerance rows depend on that choice. **The choice is right and is
+not being revisited.** What is now recorded is the **cost** of it: those
+gates say the fixture *does something*, and they cannot say the something
+*is visible*.
+
+#### The decision
+
+**Author a fixture, do not widen or add a tolerance.**
+`fixtures/synthetic/v2-cmyk-warm-black.icc` (recipe
+`v2-cmyk-warm-black`) varies **exactly one variable** against its
+sibling: the black ink carries chroma, `a* += 2K` and `b* += 6K`. The
+supporting change — the `C M Y` coefficients of `a*` and of `b*` each
+summing to zero — exists so that the neutral column can be **solved** by
+Cramer's rule rather than chosen, which is what makes an exact inverse
+expressible and keeps the new pair out of the *second* disqualification
+below. **Darkness coefficients, dead band and grid sizes are the
+sibling's, unchanged** *(★ VERIFIED — the recipe and the fixture are
+present at the working tree; the constants `0.70`, `2.0`, `6.0` are read
+back in `passk.rs` as `WB_K_DARKNESS`, `WB_K_A`, `WB_K_B`)*.
+
+★★ **Why one variable and not three.** The committed pair reports
+`5.825550` ΔE2000 (NC-276). Had the recipe changed darkness, grid and
+chroma at once, that number would be unattributable — and it is the only
+cost figure in the project that **runs in CI**. One variable is what
+makes it a measurement of the black ink's chroma rather than of a new
+fixture.
+
+#### ★★ The second disqualification, which a bound DID catch — recorded so the two are not conflated
+
+The same fixture also fails for an ordinary reason: **its `B2A0` is not
+the inverse of its `A2B0`** (the separation returns `0.60 d` of composite
+gray under `0.40 d` of black, which its own `A2B0` reads back as `0.70
+d`). Its colorimetric round trip is **`21.218992` ΔE2000** wrong —
+**larger than the `19.394947` cost it would have reported** — and `G5`'s
+reference-leg bound of `1.0` catches that by more than twenty times.
+
+★★★ **These two disqualifications are independent, and only one of them
+is a lesson.** Fixing the inverse would have left the metamer trap fully
+intact: a fixture with a sound round trip **and** a spectrally neutral
+black reports `0` with **every gate in the project green**. ★ **A reader
+who takes "the fixture was replaced because its round trip was bad" has
+taken the half that a tolerance already handles and dropped the half that
+nothing does.**
+
+#### What this entry does NOT say
+
+1. **It does not fault `v2-cmyk-chromatic-neutral`.** The fixture was
+   authored for §F, is **sound there**, and its six §F rows are
+   untouched. ★ **A fixture is fit for a purpose, not fit in general** —
+   which is the same statement DL-025 made about a control's fixture, now
+   about a subject's.
+2. **It does not fault the device-unit separation floor.** `4.0e-2` is
+   declared in advance, derived from the tolerance budget rather than
+   from the fixture, and it caught a real injected defect. **It is
+   necessary and it is not sufficient.**
+3. **It does not claim the trap was ever hit.** ★ It was found **before**
+   a number was published, by measuring the fixture's fitness instead of
+   its output. **No ledger row was ever wrong because of it** — and that
+   is precisely why it needs writing down, since nothing failed and
+   nothing would have.
+4. **It asserts nothing about git state.** `3c93b62` is the reflog's last
+   line at this filing *(VERIFIED)*; **a reflog line never evidences a
+   commit's contents.**
+5. **It edits no file belonging to another role.** `passk.rs`,
+   `recipes.rs`, the fixture and `difftest/README.md` are read, not
+   written.
+
+**Revisit if:** a **spectral** or **n-ink** fixture generator appears,
+which would let a recipe state its inks' colour directly and make this
+property expressible as a *fixture-manifest assertion* rather than a
+folk rule; **or** any future recipe reintroduces a black that appears
+only in `L*` — which is easy to do accidentally, since it is the
+*simplest* black to write; **or** a mechanism appears that can test a
+fixture's **model** rather than its bytes, which would move this entry
+and DL-051 out of "caught by nothing" together.
+
+---
+
+### DL-066 — ★★★ **the number a register carries can be one that CANNOT FAIL. `G1` is `REPORTED` by design, so the ΔE2000 that NA-012 now states will stay green through any defect; its entire protection is two sibling rows failing beside it. A population row is coverage, not a gate — and this one is ONE-SIDED, blind to every defect that makes the policy cost MORE**
+
+**Date:** 2026-08-19 · **Occasioned by:** `icc-engineer`'s injection proof
+of §G, which turned two rows red and left the headline and the population
+row untouched · **Drafted by** `icc-librarian` · **The numbers are
+`NC-269`, `NC-273`, `NC-279`, `NUMERIC_CLAIMS.md` §3.36** · **Relates to
+DL-051** (*documented is not tested* — a passing row is not evidence until
+one has been made to fail), **DL-064** (an injection measures **one
+magnitude**), **DL-033** (*a differential is blind toward its reference*
+— of which the one-sidedness below is a new instance), **DL-018/DL-055**
+(*ask which layer is in the loop*), and **DL-037** (a guard that
+deliberately gates nothing).
+
+#### The finding, in two sentences
+
+> **`G1` — the row whose number `NA-012`'s cost field now carries — has an
+> infinite tolerance and therefore cannot go red under any defect.** A
+> 5 % error injected into `KPreserve::map_k` moved it, and the suite
+> stayed green on that row; what turned red was **`G12` at 62× its bound
+> and `G8` at 4.0×**, neither of which is the headline.
+
+#### Why `REPORTED` is the right classification and is still a hazard
+
+★★ **The classification is correct and is not being changed.** No
+requirement bounds what an **opt-in** policy may cost. A tolerance on
+`G1` would be this project inventing a limit for a construction ICC.1
+does not describe (`ICC_Spec` A51, a closed negative) — the exact failure
+project rule 5 forbids: a number chosen because it passed.
+
+**The hazard is not the classification. It is that nothing in the source
+records the dependency.** `G12` and `G8` are ordinary-looking rows with
+ordinary justifications; nothing in `passk.rs` says *"if you delete or
+soften either of us, the section's headline becomes unprotected."*
+
+#### The decision
+
+**Record the protection dependency explicitly, in the ledger and in §6, so
+that deleting a sibling is visible as an act with a consequence.**
+
+| the headline's protector | why it can fail | what it costs to lose |
+|---|---|---|
+| **`G12`** — cost matches the **derived closed form** | its expectation is computed from **two recipe constants**, not from any implementation, so **an injection cannot be fitted to it**; it failed by **62×** on a 5 % error | ★ the only detector that **runs in CI and needs no licence** |
+| **`G8`** — on a **same-press** pair the policy is imperceptible | it is a real bound (`1.0`, the perceptibility anchor) on a real pair; it failed by **4.0×** | the only row that would notice the framing of NA-012's *"what must not be quoted as its cost"* going wrong |
+
+★★ **`G3`, `G4` and `G5` are NOT protection** and must not be counted as
+such. They did not move under injection, **correctly** — they are
+statements about the **fixture pair**, not about the engine, and `G5` is
+bit-for-bit unmoved because the colorimetric leg never enters the policy.
+A control that moved when the engine changed would be measuring the wrong
+thing. ★ **Counting the number of green rows beside a headline is not
+counting its protection**; only injection distinguishes the two.
+
+#### ★★★ The second half: a population row is coverage, not a gate — and this one is one-sided
+
+`G16` grades a **universal** claim: *no pair entitled to price this policy
+finds it imperceptible*, at zero counterexamples, over 30 ordered pairs.
+It is the strongest-looking row in §G and it **stayed green under the
+injection**.
+
+★★★ **That is not a defect in the row; it is the row's SHAPE.** A claim
+of the form *"no pair costs less than the anchor"* is refuted only by a
+defect that makes the policy cost **less** — i.e. one that makes it stop
+doing anything. **Every natural defect in this feature increases the
+cost**, and against that whole class the row is **structurally blind**.
+
+> **A one-sided claim is a gate in one direction and documentation in the
+> other, and nothing in a row's identifier, bound or green output says
+> which direction it is facing.**
+
+★ **What `G16` genuinely guards** is the opposite failure — a policy that
+silently became a no-op — which is a real risk and is **not** covered by
+`G12` (whose derived form would also collapse) in the same way. **Keep the
+row; state its direction on it.** This is DL-033's shape (a differential
+is blind toward its reference) in a population row rather than a
+differential, and it is the second time in this project that *coverage*
+has had to be distinguished from *gate*.
+
+#### What this entry does NOT say
+
+1. **It does not ask for a tolerance on `G1`.** ★★ A bound invented to
+   make a headline failable would be **worse than an unfailable
+   headline**: it would look like a requirement, and there is none.
+   **The remedy is a named dependency, not a number.**
+2. **It does not retract NC-273.** The population row is the strongest
+   claim in §3.36 and remains so; **`0` of `11` entitled pairs find the
+   policy imperceptible** is a measured universal, and the `9 of 30` that
+   the entitlement filter removes is the measure of what the gates are
+   worth.
+3. **It does not claim the headline is wrong.** Nobody has any reason to
+   doubt `3.681203`. ★ **The claim is about what would happen if it
+   became wrong**, which is the only thing a green suite can never tell
+   you.
+4. **It asserts nothing about git state, and nothing about a run this
+   role performed.** The injection is `[REPORTED]`; the worktree is
+   reported removed; **this librarian has no shell.** What is
+   **VERIFIED** is the row inventory — **ten graded, six `REPORTED`** —
+   counted from `passk.rs`'s four `G_*` row arrays at the working tree.
+5. **It does not fix the count discrepancy it found.**
+   `tools/difftest/README.md` §26.7 says *"nine graded rows"* where the
+   inventory gives **ten**; that is **owed to `icc-conformance` /
+   `icc-engineer`** and recorded in `NUMERIC_CLAIMS.md` §3.36.13.
+
+**Revisit if:** `G1` ever acquires a finite tolerance from a **source**
+(ICC specifying a black-preservation construct would do it, and would
+re-open NA-012 as well); **or** `G12` or `G8` is deleted, softened to
+`REPORTED`, or has its fixture pair changed — which is now a §6
+dependency row; **or** a mechanism appears that marks a row as *the
+protector of an unfailable row* in the harness itself, which would move
+this entry from a written dependency to an enforced one; **or** a defect
+is ever found in this feature that makes the policy cost **less**, which
+would be the first thing `G16` could see and would retire the one-sided
+reading.

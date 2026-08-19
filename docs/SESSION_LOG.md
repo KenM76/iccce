@@ -6461,3 +6461,205 @@ row red.* ★ **This is not the discharged debt renamed** — that one asked
   implied here.**
 - **That anything was committed or pushed.** This filing edited four
   documents in the working tree and authorised nothing.
+
+---
+
+## 2026-08-19 — the **perceptual-cost** filing (thirty-second `SESSION_LOG` entry). **`NA-012`'s `UNMEASURED` is retired: `3.681203` ΔE2000. And the fixture that could not carry the row failed for a reason no tolerance in this project could ever have expressed — its black ink is spectrally neutral, so the preserved answer is a METAMER of the thing it replaced and the cost collapses to zero with every gate green**
+
+**Filed by `icc-librarian`** from `icc-conformance`'s measurements, with
+`icc-engineer`'s independent re-run of the gates. **Twelve rows added —
+`NC-269 … NC-280`, in the new `NUMERIC_CLAIMS.md` §3.36 — plus five §6
+dependency rows and §7.25; `ARCHITECTURE.md` gains DL-065 and DL-066;
+`ROADMAP.md`'s Pass K record gains a dated update and a fourth
+must-not-be-lost item.** Next free are now **`NC-281`** and **`NA-013`**.
+**No code was edited** (the work is committed at `3c93b62`; `crates/` is
+untouched by it), **no colour value moves**, and **no Pass status
+changes.**
+
+### What was owed, and it is met verbatim
+
+`NUMERIC_CLAIMS.md` §7.23 item 3, restated as §7.24 item 3: *"★★★ Measure
+the perceptual cost of preservation, and retire NA-012's `UNMEASURED`
+… Done when: NA-012's cost field carries a measured ΔE2000 with its pair,
+its direction and its intent."*
+
+**Met.** The field now reads `3.681203` ΔE2000 max / `1.580674` mean, on
+`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, **media-relative, no
+`--bpc`**, over the 101-point qualifying set. ★ **The entry stayed and
+only the field changed**, exactly as its own *"Revisit if (a)"* said it
+would — and **the original `UNMEASURED` wording is preserved beside it**,
+because a field that was accurate on its date is a record, not an error
+(DL-062).
+
+★★ **One day from registration to discharge.** NA-012 was registered on
+2026-08-18 **with its cost stated as UNMEASURED**, deliberately not in
+NA-011's posture (registered late, after the obligation had been
+discharged against a doc comment). **That is what registering an
+unmeasured cost on the day is for**: an entry with `UNMEASURED` in it is
+findable and generates an obligation; an absent entry generates nothing.
+
+★ **The instruction not to substitute `NC-244` was honoured.** NC-244 is
+untouched. The same-press regime is graded **separately**, as `NC-272`,
+on a *different* pair — `ISO Coated v2 (ECI)` → `ISO Coated v2 300%
+(ECI)`, two files whose `A2B1` tags are **byte-identical** — at
+`0.159500`, `23.1×` below the real cost. **The two are not
+interchangeable and §3.36.5 says why.**
+
+### ★★★ The entry, which is not the headline — DL-065
+
+The committed `v2-cmyk-chromatic-neutral` fixture **could not carry a ΔE
+row**, for two independent reasons, and **only one of them is a lesson**:
+
+1. **Its `B2A0` is not the inverse of its `A2B0`** — round trip
+   `21.218992` ΔE2000, *larger than the `19.394947` cost it would have
+   reported*. ★ **A bound catches this**: `G5`'s reference-leg control at
+   `1.0`, by more than twenty times. Ordinary, and handled.
+2. ★★★ **Its black ink is spectrally neutral** — `K` appears in `L*` and
+   in nothing else. On such a model the preserved answer **at matched
+   lightness** is a **metamer** of the four-ink separation it replaced:
+   **colorimetrically identical however much ink separates them.** The
+   fixture lays **`0.420705`** of chromatic ink — `21×` the declared
+   floor — and would still have reported a cost of **zero**.
+
+> **A gate stated in the units of the transform's INPUT cannot certify a
+> property of its OUTPUT. The model between them may annihilate exactly
+> the quantity being measured, silently, with the gate green.**
+
+★★ **This is the sibling of Pass K's zero-separation trap and it fails
+differently.** There the fixture laid **no** ink, the device-unit floor
+read `0`, and a declared floor (`NC-259`) was the remedy. **Here the
+floor reads healthy and the measurement is annihilated anyway.** No
+tolerance can express the difference. **The remedy was a fixture** —
+`v2-cmyk-warm-black`, varying **exactly one variable** (`a* += 2K`,
+`b* += 6K`), darkness coefficients, dead band and grid sizes unchanged —
+which is DL-020's shape: a doubt the corpus cannot discharge, discharged
+by bytes this project authors.
+
+★ **It was found BEFORE a number was published**, by measuring the
+fixture's fitness rather than its output. **No ledger row was ever wrong
+because of it**, and nothing failed — which is exactly why it needed
+writing down.
+
+### ★★★ The second entry — DL-066, and it is about this ledger's own row
+
+The injection proof (5 % error in `KPreserve::map_k`, detached worktree,
+reverted) turned **`G12` red at 62× its bound** and **`G8` at 4.0×**.
+Two rows did **not** move and both facts are load-bearing:
+
+- **`G16`, the population row, stayed GREEN — and it CANNOT see this
+  class of defect.** *"No entitled pair finds the policy imperceptible"*
+  is **one-sided**: only a defect making the policy cost **less** can
+  refute it, and every natural defect here makes it cost **more**.
+  **A population row is coverage, not a gate**, and nothing in a row's
+  identifier, bound or green output says which direction it faces.
+  (DL-033's shape, in a population row.)
+- ★★★ **`G1` — the headline, the number `NA-012` now carries — is
+  `REPORTED` and can NEVER go red.** Correctly so: no requirement bounds
+  what an **opt-in** policy may cost, and a bound invented to make it
+  failable would look like a requirement where there is none. **Its
+  entire protection is `G12` and `G8` failing beside it**, and **nothing
+  in the source records that dependency** — so it is now a
+  `NUMERIC_CLAIMS.md` §6 row.
+
+### ★★ What this role contributed beyond transcription
+
+**1. The graded-vs-reported reconciliation, and it changes what the green
+suite proves.** §G has **ten graded rows and six `REPORTED`** *(VERIFIED
+— counted from `passk.rs`'s four `G_*` row arrays)*. So `pass=353 fail=0`
+establishes `G12 ≤ 1e-2`, `G5 ≤ 1.0`, `G6 ≤ 0.25423`, `G8 ≤ 1.0`,
+`G16 = 0` and the floors — **and nothing whatever about `3.681203`.**
+★★★ **The green suite corroborates every number in §3.36 except the one
+NA-012 carries.**
+
+**2. `337 + 16 = 353`, with `skip` unchanged at `9`.** §G adds exactly 16
+rows; corpus-absent the suite skips 94, so a `skip=9` run is a
+corpus-present run and **all sixteen executed**. ★ Offered as a
+**corroboration, not a proof** — it assumes no other row count moved
+since `60c32dd`, and **this role cannot diff.**
+
+**3. A count in `tools/difftest/README.md` §26.7 disagrees with its own
+document.** *"Two of §G's **nine graded rows** are differential"* — the
+graded rows number **ten**; `9` is the count of **licensed** rows, stated
+correctly one bullet above, and the same file's §26.8 table lists exactly
+the six `REPORTED` rows. ★★ **"A count is not an inventory", with the
+inventory two subsections away.** **Owed to `icc-conformance` /
+`icc-engineer`; not edited here.**
+
+**4. `docs/FEATURES.md` carried a claim this filing FALSIFIES, and it is
+corrected.** *"The number a caller actually wants is UNMEASURED"* — in
+the consumer-facing document `pdfce` is pointed at. ★ Corrected in place
+with the measured number, its four qualifications, and a note that the
+paragraph was true when written. Two apparatus figures corrected with it:
+`pass=337` → **`pass=353`** and 46 → **47** synthetic fixtures. ★★★ **The
+`185 workspace tests` figure was deliberately NOT corrected** — the
+dispatch reports no failures and **no count**, and this role does not
+write a number nobody supplied; it is labelled as dated instead.
+
+★ **Why `FEATURES.md` was edited when `TOLERANCES.md` was not.** A
+tolerance justification is `icc-conformance`'s technical judgement. **A
+stale measured number in a consumer-facing document is this role's own
+subject matter**, and DL-062's lesson is that a stale *status* decays
+faster than a number and must be **repaired**, not merely noticed.
+
+### What was assigned
+
+| id | what |
+|---|---|
+| **`NC-269`** | ★★★ the headline — `3.681203` max / `1.580674` mean, 101 points, one ordered pair, `REPORTED`, self-comparison |
+| **`NC-270`** | the same pair **reversed**, `2.432964` — the price is the **destination's** |
+| **`NC-271a/b/c`** | the three entitlement gates: ink `0.843495` (≥ `4e-2`), press separation `3.651223` (≥ `1.0`), reference leg `0.641757` (≤ `1.0`) |
+| **`NC-272`** | the same-press control, `0.159500`, `23.1×` cheaper — **and what it does NOT do to `NC-244`** |
+| **`NC-273`** | the population: 30 pairs, **11 entitled, `0` imperceptible**, `2.023698 … 3.686985`; ★ **9 of 30 without the filter** |
+| **`NC-274`** | the ruler control: headline moves `6.643135e-3` (≤ `0.25423`, borrowed from `NC-050`) — ★ **per-point gap `0.317063` EXCEEDS the borrowed bound**, disclosed on the row |
+| **`NC-275`** | the boundary step, `3.712251` — **larger than the cost**, and what a consumer actually sees |
+| **`NC-276`** | the committed warm-black pair, in CI: `5.825550` / `3.066464`, reference leg `0.223097`, press separation `5.828241`, ink `0.630649` |
+| **`NC-277`** | ★★★ the **derived closed form**, residual `6.281370e-3` against a **counted** `1e-2` — §G's only non-implementation expectation, and the bound whose first draft was corrected **by counting**, not by widening |
+| **`NC-278`** | the disqualified fixture: round trip `21.218992` > the `19.394947` it would have reported — **and the metamer property no tolerance catches** |
+| **`NC-279`** | the §G injection: `G12` 62×, `G8` 4.0×, controls unmoved, **`G16` green and one-sided**, `G1` unfailable |
+| **`NC-280`** | the suite census `pass=353 fail=0 skip=9 error=0` at `3c93b62` — **two runners**, superseding `NC-266`'s `337` **for today's tree only** |
+| **DL-065** | *a separation gate in the units of the INPUT cannot certify a separation in the units of the OUTPUT; the remedy is a fixture, not a number* |
+| **DL-066** | *a register's number can be one that cannot fail; a population row is coverage, not a gate, and this one is one-sided* |
+| **`NA-013`** | ★ **NOT consumed, and for a different reason than last time.** §7.24 declined it because the finding was an apparatus fact. **This filing declines it because nothing NEW was approximated** — §3.36 measures the cost of a departure **already registered**, which is NA-012's own *"Revisit if (a)"* being exercised as written. **A second NA would double-count the departure**, and §4's value is that its row count equals the number of departures |
+| **`TOLERANCES.md`** | ★ **no row and no edit.** Every tolerance §G uses is already justified in `icc-conformance`'s file or in `passk.rs`'s `why` strings; the one new bound (`DERIVED_COST`) is **theirs**, is counted, and its draft error is recorded in **their** doc comment |
+
+### Newly owed
+
+**★ The `tools/difftest/README.md` §26.7 count** (item 3 above). *Done
+when: the bullet says either "ten graded rows" or "nine licensed rows",
+whichever it meant.* **Owed to `icc-conformance` / `icc-engineer`.**
+
+**★★ `docs/NEXT_SESSION.md` is stale in at least four places** and was
+**not edited here** — it is the handoff, not this role's file. Its
+"what to do next" items **2** (the `header.intent` test) and **3**
+(`Malformation`'s doc comment) were done at `19d36e9` and `abdf445`, and
+item **5** (the perceptual cost) is closed by this filing. ★ Recorded so
+the next session does not work from it uncorrected.
+
+### What is explicitly NOT claimed
+
+- **That the headline is verified.** ★★★ It is **`[REPORTED]`**, by one
+  measuring role and one transcribing role, and **the green suite cannot
+  speak for it** because `G1` is not graded. Two runners agreeing on a
+  **census** is not two measurements of a **number**.
+- **That two runs on one machine at one tree are independent in the
+  strong sense.** They corroborate transcription. They are not a second
+  implementation, a second machine, or a second day.
+- **That `3c93b62` is the tip now.** It is the reflog's last line at this
+  filing *(VERIFIED — the reflog is plain text)*, and **a reflog line
+  never evidences a commit's contents.** Every source statement here was
+  read from the **working tree**.
+- **That the working tree is clean**, or that no licensed byte is in the
+  repository. ★ Both are `git status` facts and **this role has no
+  shell.** What is **verified** is that the corpus is located through an
+  **environment variable** and that a **committed recipe** generates the
+  one new fixture.
+- **That §G closes the compiled-path gap, the eight ungraded
+  destinations, `NC-266`'s `blind = 0`, or the sub-`5.0e-2` probe debt.**
+  ★ It closes **none** of them, and §7.25 item 4 says so item by item.
+  Every §G probe sits at `C = M = Y = 0` **exactly** — §G adds **no
+  low-ink probe at all**.
+- **That the two lint gates were run by this ledger.** They are recorded
+  as **`[REPORTED]` run** by `icc-engineer`, which moves §7.23 item 7
+  from *not filed* to *reported*, **not to closed.**
+- **That anything was committed, pushed or published.** This filing edited
+  five documents in the working tree and **authorised nothing** (rule 9).

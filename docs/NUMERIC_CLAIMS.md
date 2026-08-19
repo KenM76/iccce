@@ -7246,6 +7246,428 @@ prose, not a bound.
 
 ---
 
+### 3.36 ★★★ The PERCEPTUAL COST of black preservation — **NA-012's `UNMEASURED` is retired.** `3.681203` ΔE2000 max on a real cross-press pair; and the fixture that could not carry the row, for a reason no tolerance can catch
+
+**Date:** 2026-08-19 (third filing of the session) · **Measured by:**
+`icc-conformance` · **Gates re-run independently by** `icc-engineer` at
+the tree below, which makes the **suite census** a two-runner
+observation · **Filed by** `icc-librarian`, with every derivable
+statement re-derived from committed source and every statement requiring
+a shell labelled **`[REPORTED]`**.
+
+**Tree:** the work is committed at **`3c93b62`**, *"feat(difftest): Pass K
+§G — the perceptual cost of black preservation"* — ★ **VERIFIED** from
+`.git/logs/HEAD`, whose last line at this filing is
+`2369037 → 3c93b62` (epoch `1787139766`, `-0400`). **A reflog line
+evidences a commit's existence, time and subject, NEVER its contents**,
+so nothing below is asserted about what that commit changed on the basis
+of the reflog; the source statements are read from the **working tree**.
+
+**This section discharges §7.23's owed item 3 and §7.24's item 3**
+(*"★★★ Measure the perceptual cost of preservation, and retire NA-012's
+`UNMEASURED`"*), whose stated *done-when* was: **NA-012's cost field
+carries a measured ΔE2000 with its pair, its direction and its intent.**
+**That is met** — the field is rewritten below with a dated supersession
+note, and the original `UNMEASURED` wording is preserved beside it
+because a field that was accurate on its date is a record, not an error
+(DL-062).
+
+#### 3.36.0 ★★★ Read this before the numbers — the green suite corroborates every row here EXCEPT the one NA-012 carries
+
+`icc-engineer`'s independent re-run returned **`pass=353 fail=0 skip=9
+error=0`** (NC-280). It is tempting, and wrong, to read that as
+verification of the headline.
+
+> ★★★ **A green run bounds the GRADED rows and says nothing about the
+> REPORTED ones.** Of §G's sixteen rows, **ten are graded and six carry
+> `REPORTED` (an infinite tolerance)** *(★ VERIFIED — counted from
+> `passk.rs`'s four row arrays: `G_ROWS[8]`, `G_SYNTHETIC_ROWS[2]`,
+> `G_POPULATION_ROWS[1]`, `G_WARM_ROWS[5]`)*. `fail=0` therefore
+> establishes that `G12 ≤ 1e-2`, `G5 ≤ 1.0`, `G6 ≤ 0.25423`, `G8 ≤ 1.0`,
+> `G16 = 0` and that `G3`/`G4`/`G13`/`G14`/`G15` cleared their floors.
+> **It establishes nothing whatever about `G1`'s `3.681203`** — the
+> headline is one of the six that cannot fail.
+
+So the number NA-012 will carry rests on **one runner's report,
+transcribed**, while almost everything that *frames* it — the gates, the
+population, the derived form — is defended by a run that could have gone
+red and did not. That asymmetry is the honest state of this section and
+is restated in §3.36.13 and in **DL-066**.
+
+**Two things must travel with the headline, always:**
+
+1. **It is a `self-comparison`** (`Kind::SelfConsistency`) — iccce's
+   preserved answer against iccce's own colorimetric answer. ★ **That is
+   the ceiling the subject admits, not a shortcoming of the
+   measurement.** `ICC_Spec` **A51** is a closed negative: ICC.1 contains
+   no black-preservation construct, so **no published value can exist**
+   for what preservation *should* return, and lcms2's intent 11 is the
+   construction iccce **implements** rather than an independent witness
+   (NA-012 says this of itself).
+2. **It is one ordered pair at one intent.** The population row (NC-273)
+   is the stronger claim and is what makes the single pair checkable.
+
+#### 3.36.1 The apparatus — what the two answers are, and what carried them into Lab
+
+The quantity is
+`ΔE2000( A2B1_dst(colorimetric answer), A2B1_dst(preserved answer) )` at
+each point of the qualifying set: **the two answers the shipped binary
+prints for the same input, differing only in whether `--preserve-black
+k-only-equal-lightness` was passed**, each carried into Lab through the
+**destination's own `A2B1`** by the pinned lcms2 acting as a **ruler**.
+
+| | |
+|---|---|
+| probe set | `C = M = Y = 0`, `K = j/100`, `j = 0..=100` — **101 points**, the qualifying set exactly |
+| intent | **media-relative**, and **no `--bpc`** |
+| policy | `--preserve-black k-only-equal-lightness` (`KMapping::EqualLightness`; `Ratio` is unimplemented and refused by name) |
+| ruler | the pinned `transicc` at `21c582a`, **the same map on both legs**, so most of a ruler error cancels in the difference — and `G6` **grades** that rather than asserting it (NC-274) |
+| runner | `tools/difftest`, §G, `passk/G/*`; the distribution and the 30-pair matrix come from `tools/difftest/src/bin/passk_cost_probe.rs` *(★ VERIFIED — both files read at the working tree)* |
+| licensing | ★ the corpus is located through **`$ICCCE_PRIVATE_FIXTURES`** — `passk.rs`'s **`corpus_dir()`**, which resolves *environment variable → default path → **skip***, with **no bundled copy and no third fallback** *(★ VERIFIED — read at the working tree; DL-048: cited by symbol, not by line)* — and **no licensed byte enters the repository**; `[REPORTED]` by `icc-engineer`, who states `git status` showed one new `.icc`, generated by a committed recipe |
+
+#### 3.36.2 NC-269 — the headline, and the number NA-012 now carries
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-269** | **★★★ THE PERCEPTUAL COST OF THE POLICY.** iccce's preserved answer against **iccce's own colorimetric answer** for the same input, on `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK` (Ghent v5.0, licensed, out of tree), media-relative, no BPC, over the 101-point qualifying set | **`3.681203` ΔE2000 max**, at `K = 1.00`; **`1.580674` mean**. Distribution: min **`0.007250`** (white), median ≈ **`1.61`**, p90 ≈ **`2.33`** | ★ **`REPORTED` — infinite, by design.** No requirement bounds what an **opt-in** policy may cost; a bound here would be this project inventing a limit for a construction the standard does not describe. **Consequence: this row can never go red** — see NC-279 and **DL-066** | **self-comparison** (`Kind::SelfConsistency`) — the ceiling `ICC_Spec` A51 admits. **`[REPORTED]`**; this librarian ran nothing | **NOT GRADED.** Its protection is `G12` (NC-277) and `G8` (NC-272) failing beside it under injection — **not** the row itself |
+
+★ **Why `K = 1.00` is the maximum and it is not an artefact.** The
+qualifying input at `K = 1.00` is the one the destination separates most
+aggressively into four inks, so the preserved single-ink answer departs
+from it furthest. The distribution is **monotone-ish rather than
+monotone** — median `1.61` sits close to the mean `1.580674`, and p90
+`2.33` is well below the max, so **the maximum is a tail, not a plateau**
+and quoting only the max overstates what a K-ramp costs on average.
+**Both numbers are in the row for that reason.**
+
+#### 3.36.3 NC-270 — the SAME pair, reversed: the price belongs to the DESTINATION's black
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-270** | **★★ The identical measurement with source and destination exchanged** — `GWG_GenericCMYK` → `ISO Coated v2 300% (ECI)`, same intent, same probe set, same ruler | **`2.432964` ΔE2000 max** — **`1.51×` smaller** than the forward direction | `REPORTED` | **self-comparison**. **`[REPORTED]`** | **NOT GRADED** — and it is the row that makes the headline interpretable |
+
+★★★ **The finding: the cost is a property of the DESTINATION's black, not
+of the pair.** Two presses, one policy, one intent — and the price
+changes by half again depending on which of them is written *to*. That
+is not a symmetry violation to be explained away; it follows from what
+the policy does. Preservation replaces the **destination's** four-ink
+separation with the **destination's** single black ink, so the distance
+between those two is a fact about the destination's ink set and its
+separation strategy. **The source contributes only the `L*` being
+matched.**
+
+★★ **Consequence for anyone quoting NC-269.** *"ISO Coated v2 300% and
+GWG_GenericCMYK are `3.68` apart under preservation"* is **wrong** — it
+names a pair and the number belongs to an ordered pair. This is DL-021's
+rule (*say which direction*) arriving in a new place, and it is why both
+directions are in the ledger rather than one.
+
+#### 3.36.4 NC-271 — the three ENTITLEMENT gates, measured before the policy was priced
+
+A cost is only a cost if the pair was capable of producing one. Three
+gates were measured **first**, each against a bound declared in advance:
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-271a** (`G3`) | **The colorimetric answer really does lay chromatic ink** — the trap where the destination emits K-only anyway and the policy is a **no-op** | **`0.843495`** of chromatic ink (device units), i.e. `21×` the floor | **≥ `4.0e-2`**, §F's `SEPARATION_FLOOR`, **derived from the tolerance budget and declared in advance, not from this fixture** *(★ VERIFIED — `SEPARATION_FLOOR_MET`'s `why` in `passk.rs`)* | **self-comparison**, device-abs metric. **`[REPORTED]`** | **GRADED, shortfall `0`** |
+| **NC-271b** (`G4`) | **The two profiles are not one press** — they render the same **device** `K` differently | **`3.651223` ΔE2000** apart | **≥ `1.0`**, `TOLERANCES.md` §2's perceptibility anchor used as a **LOWER** bound on the **pair** rather than an upper bound on an error | ★ **`oracle-behaviour`** (`Kind::OracleBehaviour` in `passk.rs`) — **no iccce answer is in this leg**; it is two profiles' `A2B1` compared through the ruler. **`[REPORTED]`** | **GRADED, shortfall `0`** |
+| **NC-271c** (`G5`) | **The leg the cost is differenced AGAINST is itself sound** — the colorimetric leg's own error | **`0.641757` ΔE2000**, i.e. **`5.7×` below the cost it prices** | **≤ `1.0`**, the same anchor **in its ordinary direction** | **cross-check against lcms2** (`Kind::CrossCheck`). **`[REPORTED]`** | **GRADED** |
+
+★★ **Why three gates and not one.** Each defeats a different way of
+manufacturing good news: a destination that emits K-only anyway, a pair
+that is one press in two separations, and a destination that cannot
+reproduce the source at all. **All three are `≥`/`≤` statements against
+numbers declared before the measurement**, which is what separates a gate
+from a rationalisation (project rule 5). ★ **`G4` is the only row in §G
+with no iccce answer in it**, and it is worth knowing that the pair's
+qualification rests partly on a statement about the **oracle's** reading
+of two files.
+
+#### 3.36.5 NC-272 — the trap is REAL and it is in the corpus, and what this does NOT do to NC-244
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-272** | **★★ The same-press regime, run on purpose.** `ISO Coated v2 (ECI)` → `ISO Coated v2 300% (ECI)` — ★ **two files whose `A2B1` tags are BYTE-IDENTICAL**, one press in two separations | **`0.159500` ΔE2000 max** (`1.594996e-1`) — **`23.1×` smaller than NC-269, and below the perceptibility anchor** | **≤ `1.0`**, `SAME_PRESS_IMPERCEPTIBLE` — the anchor's **third** use in §G | **self-comparison**. **`[REPORTED]`** | **GRADED** |
+
+★★★ **This is the row that makes NA-012's *"what must NOT be quoted as
+its cost"* field a measurement instead of an assertion.** Before today,
+the claim *"the same-press figure is the case where the policy is nearly
+a no-op"* was a **reading**; it is now a graded number on a pair whose
+`A2B1` tags are byte-identical.
+
+★★★ **And precisely what it does NOT do to NC-244, because the two are
+easy to conflate and are different comparisons:**
+
+- **NC-244's `1.360900e-1`** is the **same-profile** pair (one file, used
+  as both ends). **NC-272's `0.159500`** is a **two-file** pair whose
+  `A2B1` tags happen to be identical. **They are not the same
+  measurement**, they are `2.3e-2` apart, and **NC-244 is neither
+  superseded nor substituted** — the instruction in the dispatch and in
+  §7.23 was honoured.
+- What is now established is that **both belong to the same regime**, and
+  that the regime is `23×` cheaper than a real cross-press pair. ★ **A
+  future writer who quotes either as "the cost of black preservation"
+  understates it by more than an order of magnitude.**
+
+#### 3.36.6 NC-273 — the POPULATION, which is stronger than the headline
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-273** | **★★★ The same self-comparison over ALL 30 ordered pairs** of the six real CMYK members of the Ghent v5.0 corpus, with the three entitlement gates of NC-271 applied **per pair**, grading the universal claim *"no pair entitled to price this policy finds it imperceptible"* | **Of 30 ordered pairs, 11 are ENTITLED and `0` of them find the policy imperceptible.** Among the entitled the cost runs **`2.023698`** (`Coated FOGRA27` → `GWG_ICC_v4_testprofile`) to **`3.686985`** (`Coated FOGRA39` → `GWG_GenericCMYK`). ★★ **Without the entitlement filter, `9` of the 30 would have read as imperceptible** | **`0` counterexamples exactly.** ★ A universal claim is refuted by one instance, so the only bound it admits is zero; **there is no instrument error in a count**, and the per-pair threshold is `TOLERANCES.md` §2's `1.0` anchor rather than a number chosen here *(★ VERIFIED — `NO_IMPERCEPTIBLE_ENTITLED_PAIR`'s `why`)* | **self-comparison**, count metric. **`[REPORTED]`** | **GRADED at `0`** |
+
+★★★ **The `9` is the number that justifies the whole apparatus, and it
+belongs in the ledger rather than in a README.** Nine of thirty pairs —
+**thirty per cent of the population** — would have reported *"the policy
+is nearly free"* had nobody asked whether the pair could price it. Every
+one of those nine fails a gate for a stated reason. **A population run
+without an entitlement filter does not measure a weaker version of this;
+it measures the fixtures.**
+
+★ **G1's pair was chosen for CONTINUITY, not for size**, and is
+**`5.782e-3` below the largest** — stated on the row itself rather than
+left for a reader to discover. ★★ **A headline chosen as the maximum of a
+population is a different claim from one chosen for continuity**, and
+this ledger carries the second.
+
+#### 3.36.7 NC-274 — the RULER control, and the weakness it discloses rather than smooths
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-274** | **Whether the headline was decided by the instrument that carried both answers into Lab.** The whole measurement recomputed with `iccce_cmm`'s own model of the same `A2B1` tag replacing lcms2 as the ruler | **the headline moves `6.643135e-3`** — `2.6%` of the bound. ★★ **But per point the two rulers disagree by up to `0.317063`**, which is **ABOVE the bound** | **≤ `0.254 23`** — **NC-050's measured interpolation-method envelope for the media-relative `A2B1` direction** (§3.11), the largest disagreement this project has measured between two conformant evaluations of one CMYK `A2B` table | **cross-check against lcms2**. **`[REPORTED]`** | **GRADED** |
+
+★★★ **Two disclosures on this row, both of which weaken it, and both of
+which are on the row rather than in a footnote:**
+
+1. **The tolerance is BORROWED.** NC-050 was measured on `ISO Coated v2
+   300% (ECI)`; **this destination's own interpolation envelope has never
+   been measured.** A borrowed bound is a bound on a different profile's
+   behaviour used as a proxy.
+2. ★★ **The per-point ruler gap `0.317063` EXCEEDS the borrowed
+   envelope.** The row passes because what is graded is the **headline's
+   movement** — the difference of two differences, in which most of the
+   ruler error cancels — and **not** the per-point agreement, which is
+   worse than the borrowed number allows. **Both facts are true at once**
+   and the graded quantity is the right one (it is the number NA-012
+   carries), but a reader entitled to the row is not entitled to *"the
+   two rulers agree to `0.25`"* — **they do not.**
+
+#### 3.36.8 NC-275 — the BOUNDARY STEP, which is larger than the cost and is what a consumer actually sees
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-275** | **★★ The discontinuity the policy installs.** Both legs run **with** `--preserve-black`; the preserved answer at `(0, 0, 0, K)` against the preserved-path answer **one 8-bit code of cyan away**, i.e. immediately outside the qualifying set | **`3.712251` ΔE2000** — ★ **LARGER than the cost itself (`3.681203`)** | `REPORTED` | **self-comparison**. **`[REPORTED]`** | **NOT GRADED** |
+
+★★★ **This is the consumer-facing number of the section, and it is not
+the headline.** A caller painting a K-only → rich-black gradient does not
+experience `3.68` of accumulated error; they experience a **visible step
+at the boundary**, once, of `3.71`. The qualifying test fires at
+`C = M = Y = 0` **exactly** — a deliberate discontinuity, recorded in the
+Pass K completion record — and this row prices it.
+
+★ **The other half of the same fact is graded at exactly `0`**: `E7`/`F8`
+(NC-255) assert that the policy does not *touch* a non-qualifying input.
+**Those two rows and this one are the same discontinuity seen from both
+sides**, and NC-268's floor (below `5.0e-2` of chromatic ink nothing in
+the suite can see a widening) is the third.
+
+#### 3.36.9 NC-276 and NC-277 — the COMMITTED pair, and the only §G expectation that is not an implementation's output
+
+`fixtures/synthetic/v2-cmyk-chromatic-neutral.icc` →
+`fixtures/synthetic/v2-cmyk-warm-black.icc`, both committed, both
+unlicensed, **runs in CI**.
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-276** | The same cost measurement on the **committed** pair, with its own three gates | cost **`5.825550` ΔE2000 max** at `K = 1.00`, **`3.066464` mean**; reference leg **`0.223097`** (★ the legacy `65280/65535` encoding gap **and nothing else**); press separation **`5.828241`**; ink separation **`0.630649`** | cost `REPORTED`; the three gates carry `G3`/`G4`/`G5`'s bounds (`4.0e-2`, `1.0`, `1.0`) | cost **self-comparison**; gates as in NC-271. **`[REPORTED]`** | cost NOT GRADED; **three gates GRADED and green in CI** |
+| **NC-277** | **★★★ The measured cost against a CLOSED FORM derived from the two recipes' constants** — `ΔE2000((ρ·100(1−0.70k), 0, 0), (100(1−0.70k), 2k, 6k))` with `ρ = 65280/65535`, and `K′ = k` **exactly**, because both recipes carry the same `0.70` darkness per unit of `K` so the equal-lightness construction is the identity | **departs by at most `6.281370e-3`** | **≤ `1.0e-2`, COUNTED** — six named encoding/printing terms summed to `≈7.6e-3` and rounded up to the next power of ten, because a bound stated to the precision of the counting claims more than the counting supports *(★ VERIFIED — the six-row count is in `DERIVED_COST`'s doc comment and its `why` string)* | ★★★ **`derived-expectation`** (`Kind::DerivedExpectation`) — **the ONLY row in §G whose expectation is not an implementation's output**. **`[REPORTED]`** for the observation; the derivation is **VERIFIED** by this librarian from committed source | **GRADED, and it is §G's detector** — NC-279 |
+
+★★★ **The tolerance's first draft was WRONG and was corrected by
+COUNTING, not by widening — and the error is recorded in the source
+rather than in a memory.** `DERIVED_COST`'s doc comment states it
+plainly: *"A first draft of this bound omitted the `B2A0`
+output-quantisation row and counted `6e-3`, below what the run then
+observed. It is corrected here rather than widened: a count its own
+observation exceeds is not a bound, it is a coincidence."* *(★ VERIFIED —
+read verbatim at the working tree.)*
+
+★★ **Why this is worth a paragraph in a ledger.** Project rule 5 says
+tolerances are justified, not tuned, and the failure mode it guards
+against is a number moved until the suite goes green. **Here the number
+was moved — and it was moved by identifying a missing physical term and
+recounting, with the missing term named (`1.1e-3` in `L*`, `1.5e-3` in
+each chroma axis, carried by the `A2B0` coefficients).** That is the rule
+working, and it is the counter-example this project can point at. ★ **The
+margin is thin and stated as such**: `6.3e-3` observed against `1.0e-2`,
+i.e. `0.63` of the bound, so **most of the count is exercised** rather
+than being an allowance nobody tests.
+
+★ **The rival reading is named with its magnitude** (DL-064's rule): under
+the misreading in which `L* = 100` is full scale rather than `FF00h` —
+a real misreading of clause 10.10, caught by this corpus before (DL-005,
+DL-011) — the same derivation is worth **`0.22` ΔE2000 at the white end,
+twenty times the bound.** `warm_black_expected_cost_scaled` exists so
+that number can be printed rather than claimed *(★ VERIFIED)*.
+
+★★★ **What NC-276 is NOT.** `5.825550` is a property of **two authored
+models** and says **nothing about any press**. It is **not** a substitute
+for NC-269 and must never be quoted as *the* cost of the policy. The
+section keeps both because they are different claims: one is derivable
+and unlicensed, the other is real and cannot be derived.
+
+#### 3.36.10 NC-278 — ★★★ the fixture that could NOT carry the row, and the trap no tolerance can catch
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-278** | **The committed `v2-cmyk-chromatic-neutral` fixture's fitness to price this policy at all**, measured on its own round trip | **round-trip error `21.218992` ΔE2000** — ★ **LARGER than the `19.394947` cost it would have reported** | `REPORTED` (both halves), **printed in CI** rather than asserted | **cross-check** (the round trip) and **self-comparison** (the would-be cost). **`[REPORTED]`** | **NOT GRADED — and the pair of numbers IS the finding** |
+
+**Reason one, which a bound does catch.** The fixture's `B2A0` is **not
+the inverse of its `A2B0`**: the separation returns `0.60 d` of composite
+gray under `0.40 d` of black, which its own `A2B0` reads back as darkness
+`0.70 d`. `G5`'s reference-leg bound (`1.0`) **bites**, by more than
+twenty times, and that is the bound doing its job.
+
+★★★ **Reason two, which NOTHING catches, and it is the entry's reason for
+existing.** The fixture's **black ink is spectrally neutral** — `K`
+appears in `L*` and in nothing else. On such a model the preserved answer
+**at matched lightness** has the same `L*`, the same `a*` and the same
+`b*` as the four-ink separation it replaced: **the two answers are
+colorimetrically identical however much ink separates them.**
+
+> **A fixture can therefore separate by `0.420705` of ink, clear every
+> device-unit gate in §F, and report a cost of ZERO for a reason that has
+> nothing to do with the policy.**
+
+★★★ **This is the subtler sibling of the zero-separation trap already in
+this ledger** (§3.34 / `ROADMAP.md` Pass K item 2), and the two fail
+differently:
+
+| | zero-separation trap | ★ the METAMER trap |
+|---|---|---|
+| what is wrong | the fixture lays no chromatic ink | the fixture lays plenty of ink that **carries no colour** |
+| the ink-separation gate reads | **`0`** — visibly broken | **healthy** (`0.42`) |
+| detected by | **NC-259**, a declared floor in device units | ★★ **nothing in this project** |
+| what it is | a bound problem, fixed by a bound | ★★★ **a FIXTURE PROPERTY, and no tolerance can express it** |
+
+**The remedy was a new fixture, not a new tolerance.**
+`fixtures/synthetic/v2-cmyk-warm-black.icc` (recipe `v2-cmyk-warm-black`,
+`tools/gen-profiles/src/recipes.rs`) varies **exactly one variable**
+against its sibling: the black ink carries chroma (`a* += 2K`,
+`b* += 6K`), plus the bookkeeping that makes an exact inverse
+expressible — the `C M Y` coefficients of `a*` and of `b*` each sum to
+zero, so the neutral column is **solved** (Cramer) rather than chosen.
+**Darkness coefficients, dead band and grid sizes are the sibling's,
+unchanged** *(★ VERIFIED — the recipe exists at
+`recipes.rs`, `name: "v2-cmyk-warm-black"`, and the fixture and its
+`MANIFEST.md` entry are present)*. ★ **One variable is what makes NC-276
+attributable**; a fixture that changed in three places would have
+produced a number nobody could apportion.
+
+**The decision record is `ARCHITECTURE.md` DL-065.**
+
+#### 3.36.11 NC-279 — the INJECTION proof: which §G rows are load-bearing, and which cannot fail
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-279** | **A 5 % error injected into `KPreserve::map_k`** (the equal-lightness curve lookup, multiplied by `0.95`) in a **detached worktree**, release build of the shipped binary, whole suite re-run, then **reverted** — DL-051's rule that a passing row is not evidence until one has been made to fail | **`G12` RED at `6.228949e-1` against `1e-2` — 62× its bound.** **`G8` RED at `3.995933` against `1.0` — 4.0×.** `G6` moved but stayed green (`6.643135e-3` → `8.371867e-3`). ★ **`G3`, `G4`, `G5` did NOT move** (`G5` bit-for-bit at `6.417572e-1`). ★★★ **`G16` stayed GREEN.** Outside §G, `E8` and `E9` went red | the bounds above, **unchanged in every run — the code moved, the bounds did not** | **self-comparison by construction** — an injection compares a tree to itself with one line changed. **`[REPORTED]`**; the worktree is reported removed | **This row is the evidence that the graded §G rows are not inert** |
+
+★★★ **Four readings, and the last two are the uncomfortable ones.**
+
+1. **`G12` is §G's detector.** Its expectation is computed from two recipe
+   constants, so it is the one row an injection could not have been
+   fitted to — and it fails by **62×** on a 5 % error. ★ **It runs in CI
+   and needs no licence**, which makes it the only detector a future
+   session can rely on unconditionally.
+2. **The three gates not moving is CORRECT behaviour**, not a gap.
+   `G3`–`G5` are statements about the **fixture pair**, not about the
+   engine; `G5` is bit-for-bit unmoved because the colorimetric leg does
+   not pass through the policy at all. **A control that moved when the
+   engine changed would be measuring the wrong thing.**
+3. ★★★ **`G16` is ONE-SIDED and cannot see this class of defect.** Its
+   claim is *"no entitled pair finds the policy imperceptible"*, so an
+   injection that makes the policy cost **more** leaves it green — and
+   **the natural defects here all increase the cost**. It guards the
+   opposite failure: a policy that silently stopped doing anything.
+   **A population row is coverage, not a gate.** This is the same shape
+   as DL-033 (*a differential is blind toward its reference*) in a new
+   place, and it is stated **on the row** rather than inferred.
+4. ★★★ **`G1` — the headline, the number NA-012 carries — can NEVER go
+   red**, because it is `REPORTED` by design. **Its entire protection is
+   `G12` and `G8` failing beside it.** If either of those is ever deleted,
+   made `REPORTED`, or has its fixture pair changed, the headline becomes
+   unprotected **and nothing turns red while it happens.** Filed as
+   **DL-066** and as a §6 dependency row.
+
+#### 3.36.12 NC-280 — the suite census, and it is a TWO-RUNNER observation
+
+| id | what was compared | observed | tolerance | class | graded? |
+|---|---|---|---|---|---|
+| **NC-280** | **The whole `tools/difftest` suite at `3c93b62`**, licensed corpus present | **`pass=353 fail=0 skip=9 error=0`** | n/a — a census, not a claim about colour | **apparatus census.** ★★ **`[REPORTED]`, but by TWO runners**: `icc-conformance` measuring, and `icc-engineer` re-running the gates independently before dispatching. **This librarian has no shell and ran neither** | n/a |
+
+★★ **This SUPERSEDES NC-266's `pass=337 fail=0 skip=9` for the purpose of
+"what does the suite return today"** — and only for that purpose. NC-266
+remains a correct statement dated to tip `60c32dd`; **a census is a
+statement about one tree and is never restatable at another** (§7.24's
+item 5 declined to restate it for exactly this reason, and this filing
+supplies the measurement that entitles a new one).
+
+★★★ **An arithmetic corroboration this librarian CAN make without a
+shell, and its assumption.** `337 + 16 = 353` exactly, and **`skip` is
+unchanged at `9`.** §G adds exactly **16** rows *(★ VERIFIED — counted
+from the four row arrays in `passk.rs`)*. Two things follow:
+
+- **The licensed corpus was present in the verifying run.** Corpus-absent,
+  `FEATURES.md` records `skip=94`; a `skip=9` run is a corpus-present run,
+  so **all 16 §G rows executed** rather than skipping. ★ The nine §G rows
+  that *need* the licence therefore **passed**, they did not skip — and
+  `9 licensed + 7 CI = 16` reconciles with §G's own coverage statement.
+- ★ **The assumption, named:** the arithmetic holds only if **no other
+  row count changed** between `60c32dd` and `3c93b62`. This role cannot
+  diff. **It is a corroboration, not a proof**, and it is offered as one.
+
+#### 3.36.13 ★★ What this librarian found while filing, neither of which is in the dispatch
+
+**1. A count in `tools/difftest/README.md` §26.7 disagrees with its own
+document's inventory.** The bullet reads *"Two of §G's **nine graded
+rows** are differential; the rest are controls on the fixture pair"*.
+★ **The graded rows number TEN**, not nine — `G3`, `G4`, `G5`, `G6`,
+`G8`, `G12`, `G13`, `G14`, `G15`, `G16` — with **six** carrying
+`REPORTED`: `G1`, `G2`, `G7`, `G9`, `G10`, `G11`. **The same file's
+injection table (§26.8) lists exactly those six as `inf`**, so the
+document contradicts itself two subsections apart. `9` is the count of
+**licensed** rows, stated correctly in the bullet immediately above.
+*(★ VERIFIED — the ten graded and six reported rows are counted from
+`passk.rs`'s four row arrays at the working tree.)* **Owed to
+`icc-conformance` / `icc-engineer`; not edited here** — no role edits
+another's file, and `tools/` is committed. ★★ **This is "a count is not
+an inventory" with the inventory sitting in the same document**, which is
+the cheapest possible instance and still went unnoticed.
+
+**2. `docs/FEATURES.md` — the consumer-facing document — carried a claim
+this filing FALSIFIES.** Its black-preservation section said *"★ **The
+number a caller actually wants is UNMEASURED**: nobody has measured the
+ΔE2000 between the preserved and the colorimetric answer on a cross-press
+pair."* **That is now false**, and it is the document `pdfce` is pointed
+at. ★★ It is corrected in this filing — see §3.36.14 and the session log
+— together with the two apparatus counts in its §4 for which this filing
+carries evidence (`pass=353`, **47** synthetic fixtures). ★ **The
+`185 workspace tests` line is NOT corrected**: the dispatch reports
+`cargo test --workspace` with **no failures** and **no count**, and a
+count nobody supplied is not a count this role may write.
+
+#### 3.36.14 Coverage of §3.36, stated because a number without it is not a claim
+
+- **One intent** (media-relative), **no `--bpc`**, **`KMapping::EqualLightness` only** — `Ratio` is unimplemented and a standing refusal. ★ **No `--bpc` + preservation coverage exists at any layer**, unchanged by this filing.
+- **The headline is ONE ordered pair.** NC-273 covers **30 ordered pairs** — but of **six files and FIVE behaviours**, since two of the six share an `A2B1` byte for byte. ★ **"Thirty pairs" is not thirty independent presses.**
+- **101 probes, all on the `C = M = Y = 0` axis.** Nothing here says anything about inputs with ink in them; that is what makes NC-275's boundary step the row a consumer needs.
+- ★★★ **NO WEIGHTING by how often a real document contains K-only content.** That term decides whether the policy is worth its price, and it **belongs to the consumer, not to this library**. Neither NC-269 nor NC-273 is an argument for or against enabling the policy.
+- **Nine of §G's sixteen rows need the licensed corpus and skip in CI permanently**; seven run in CI. ★ **A CI run reproduces the committed pair and the derived form, and none of the real-press numbers.**
+- ★★★ **The headline is corroborated by no run that could have failed** (§3.36.0). Two runners agree on the **census**; the census constrains the **graded** rows; **`G1` is not graded.**
+- **One machine, one day, one run per condition, no repetition and no variance.** **`[REPORTED]`** throughout except where marked VERIFIED.
+- ★ **`icc-conformance` measured everything here and `icc-engineer` re-ran the gates; this librarian ran nothing.** What this role contributed: the graded-vs-reported reconciliation, the `337 + 16 = 353` corroboration and its named assumption, the NC-244/NC-272 separation, the README count discrepancy, the `FEATURES.md` falsification, and DL-065/DL-066.
+- **Licensing:** no licensed byte entered the repository; the corpus is located through `$ICCCE_PRIVATE_FIXTURES` *(★ VERIFIED — the environment variable is read in `passk.rs`'s corpus-directory helper)*. The one new `.icc` is **generated by a committed recipe**. ★ **Nothing was pushed, tagged or published by this filing, and nothing here authorises it** (rule 9).
+
+---
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -8049,19 +8471,20 @@ constants** — including **ICC's own reference CMM**.)*
 
 ---
 
-### NA-012 ★★★ *(registered 2026-08-18, Pass K filing)* — **K-only black preservation is a deliberate departure from the colorimetric answer, inside a specification silence, implementing a VENDOR construction that is also this project's ORACLE.** Cost **UNMEASURED**
+### NA-012 ★★★ *(registered 2026-08-18, Pass K filing · **cost MEASURED 2026-08-19**, §3.36)* — **K-only black preservation is a deliberate departure from the colorimetric answer, inside a specification silence, implementing a VENDOR construction that is also this project's ORACLE.** Cost ~~**UNMEASURED**~~ → **`3.681203` ΔE2000 max**
 
 | Field | Value |
 |---|---|
 | **The approximation** | `--preserve-black k-only-equal-lightness` / `Chain::with_black_preservation(KMapping::EqualLightness)` **deliberately returns something other than the colorimetric conversion** for any input with `C = M = Y = 0` exactly. The colorimetric answer for a K-only input on a cross-press pair is a full four-ink separation; the preserved answer is `(0, 0, 0, K′)` with `K′` chosen to match lightness. ★ **This is not an error term or a rounding cost — it is a different answer on purpose**, and the caller opts into it by name. |
 | **Why it is a rule-4 entry at all** | ★★★ **ICC.1 mandates nothing here — it contains no black-preservation construct in either edition checked** (`ICC_Spec` register entry **A51**, a *closed negative*; structural reason: the PCS is three components, so every device→device transform is 4→3→4 and **K has no carrier**). A silence is not permission to depart silently: rule 4 says every departure from exact colorimetry is **named and measured**, and §4 is the only artifact that can answer *"what does iccce approximate?"* |
 | **Whose construction it is** | ★★ **lcms2's** — *equal lightness*, the definition little-cms implements as intent 11. ★★★ **That makes it a construction this project also uses as its ORACLE**, so agreement with lcms2 on it (NC-245, NC-257) is **expected by design and is not independent evidence that the definition is right.** The second published definition (**`KMapping::Ratio`**, Cholewo) is **unimplemented and a standing refusal**; the two disagree by up to **`4.889900e-2`** in `K` on the furthest cross-press pair measured (NC-249). ★ That disagreement is why the CLI ships **no default** — a default would be iccce choosing one definition and reporting it under a name that means both. |
-| **Cost — ★★★ UNMEASURED, and stated so rather than bounded** | **Nobody has measured the ΔE2000 between the preserved answer and the colorimetric one on a cross-press pair.** Every Pass K row is in **device units** (§3.34.6). ★★ **The number a caller weighing this policy actually wants is exactly the one that does not exist**, and no row in §3.34 is a substitute for it. |
-| **What must NOT be quoted as its cost** | ★★★ **NC-249's `4.889900e-2`** is *lcms2's* re-mapping magnitude and belongs to the oracle, not to this approximation (§3.34.3). ★★ **NC-263's `0.366689` / `0.881462`** are `K_out` values from a **self-comparison sweep with no oracle leg** — they show the re-mapping is non-identity, which is what distinguishes this policy from *copy-K-through*, and they are **not a cost**. ★ **NC-244's `1.360900e-1` ΔE2000** is the distance between the colorimetric and K-only builds on the **same-profile** pair, i.e. **the case where the policy is nearly a no-op** — it is a *lower* bound at best and must never be quoted as the policy's price. |
+| **Cost — ★★★ MEASURED 2026-08-19 (`3c93b62`), and it carries its pair, its direction and its intent** | **`3.681203` ΔE2000 max, `1.580674` mean**, over the 101-point qualifying set, on **`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`** (Ghent v5.0, licensed, out of tree), **media-relative**, **no `--bpc`**, policy `k-only-equal-lightness`. **NC-269**, §3.36. ★★ **Evidence class `self-comparison`, which is the CEILING this subject admits and not a shortcoming** — A51 is a closed negative, so no published value for what preservation *should* return can exist. ★★★ **Three qualifications travel with the number, always:** (a) **direction** — the same pair **reversed** costs `2.432964` (**NC-270**), so the price is a property of the **destination's** black, not of the pair; (b) **population** — over all 30 ordered pairs, **11 are entitled** to price the policy and **0 of them find it imperceptible**, cost `2.023698` … `3.686985` (**NC-273**), and **9 of 30 would have read as imperceptible without the entitlement gates**; (c) ★ **what a consumer actually sees is the BOUNDARY STEP, `3.712251` — larger than the cost itself** (**NC-275**). |
+| **★★ The original cost field, preserved because it was accurate on its date** | *(as filed 2026-08-18)* — *"**UNMEASURED, and stated so rather than bounded.** Nobody has measured the ΔE2000 between the preserved answer and the colorimetric one on a cross-press pair. Every Pass K row is in **device units** (§3.34.6). ★★ **The number a caller weighing this policy actually wants is exactly the one that does not exist**, and no row in §3.34 is a substitute for it."* ★★★ **The entry's own *"Revisit if"* clause (a) said this field would change and the entry would stay. It did, and it has.** The posture is vindicated: **an entry with `UNMEASURED` in it is findable and generates an obligation**, and this is the obligation being discharged **one day later** — against NA-011, whose lateness meant the same obligation generated nothing for weeks. |
+| **What must NOT be quoted as its cost** | ★★★ **NC-249's `4.889900e-2`** is *lcms2's* re-mapping magnitude and belongs to the oracle, not to this approximation (§3.34.3). ★★ **NC-263's `0.366689` / `0.881462`** are `K_out` values from a **self-comparison sweep with no oracle leg** — they show the re-mapping is non-identity, which is what distinguishes this policy from *copy-K-through*, and they are **not a cost**. ★ **NC-244's `1.360900e-1` ΔE2000** is the distance between the colorimetric and K-only builds on the **same-profile** pair, i.e. **the case where the policy is nearly a no-op** — it is a *lower* bound at best and must never be quoted as the policy's price. ★★★ ***(added 2026-08-19, and it upgrades this clause from a reading to a measurement.)*** That regime is now **graded**: **NC-272** runs `ISO Coated v2 (ECI)` → `ISO Coated v2 300% (ECI)` — **two files whose `A2B1` tags are byte-identical** — at **`0.159500`**, **`23.1×` below the real cost and below the perceptibility anchor**. ★ **NC-272 does NOT supersede or substitute NC-244**: one is a same-*profile* pair and the other a same-*press* pair of two files, they are `2.3e-2` apart, and both belong to the cheap regime. **Quoting either as "the cost of black preservation" understates it by more than an order of magnitude — now measured, not asserted.** |
 | **What IS established, so the entry is not read as weaker than it is** | The policy **does what it says** on inputs that qualify (NC-250, NC-261, at exactly `0`), **does not touch inputs that do not** (NC-255, at exactly `0` over 192 and 50 probes), **is the identity where algebra says it must be** (NC-256 — and the oracle is not), and **implements the definition it names** at the oracle's own CLUT nodes (NC-257). ★ **All of that is about fidelity to the named construction, none of it about the construction being right.** |
 | **Where** | `crates/iccce-cmm/src/black_preserve.rs` (module doc; `KPreserve::apply` at `:407`, the literal-zero emit); `Chain::with_black_preservation` and the `k_preserve` field, `crates/iccce-cmm/src/transform.rs`; the compiled path's copy, `crates/iccce-cmm/src/compiled.rs` *(verified — all four read at the tip by symbol; DL-048: **cited by symbol, not by line**, except the two lines this filing measured)*. |
 | **Tolerance budget** | `TOLERANCES.md` §3.10 (Pass K). ★ §3.10.12.7 was **stale at the time of this filing** — see §7.23 owed item 1; `icc-conformance` was correcting it concurrently and **this librarian did not edit that file.** |
-| **Revisit if** | (a) anyone measures the ΔE2000 cost on a cross-press pair — **then this entry's cost field changes and the entry stays**; (b) `KMapping::Ratio` gains an implementation — **then iccce implements two policies that disagree and the register needs a second entry, not an edited one**; (c) ICC ever specifies a black-preservation construct — which would move rows in §3.34 from *no possible ground truth* to *ground truth available*, the single largest change any future edition could make to this section. |
+| **Revisit if** | (a) ~~anyone measures the ΔE2000 cost on a cross-press pair — **then this entry's cost field changes and the entry stays**~~ — ★★★ **DISCHARGED 2026-08-19: measured, the cost field changed, the entry stayed** (§3.36, NC-269). ★ **What replaces it as condition (a):** the cost is measured on a **second intent**, with **`--bpc`**, or on a probe set that leaves the `C = M = Y = 0` axis — any of which would make the present field a **sub-case** rather than the cost, since today's number is one intent, no BPC, one axis; (b) `KMapping::Ratio` gains an implementation — **then iccce implements two policies that disagree and the register needs a second entry, not an edited one**; (c) ICC ever specifies a black-preservation construct — which would move rows in §3.34 from *no possible ground truth* to *ground truth available*, the single largest change any future edition could make to this section. |
 
 > ★★★ **Registered on the day the code landed, with its cost stated as
 > UNMEASURED — the same posture NA-006 and NA-009 were registered under,
@@ -8305,6 +8728,11 @@ are the rows to re-run or retire.
 | **★★ The lcms2 pin moving off `21c582a`** *(extended 2026-08-18, Pass K)* | Now additionally **NC-245, NC-248, NC-249, NC-251, NC-252, NC-253, NC-254, NC-257 and NC-256's rival half.** ★★★ **NC-248 and NC-249 are the sharp ones and they are sharp in a new way: their ENTIRE CONTENT is a statement about lcms2**, so a pin move does not weaken them — **it makes them false**. ★ **NC-250, NC-255, NC-261, NC-262, NC-263, NC-264 and NC-265 are the Pass K rows the pin cannot touch**, because no implementation but ours is in them. **Re-run, not re-read.** |
 | **★★★ ICC specifying a black-preservation construct in a future edition** *(added 2026-08-18, Pass K)* | **Nothing is invalidated — the whole of §3.34 changes CLASS.** Today `published-ground-truth` is **structurally impossible** for every row there (`ICC_Spec` **A51**, a closed negative), so the section's ceiling is *cross-check*. A specified construct would give the section an expectation for the first time and would **re-open NA-012** as a possible deviation from normative text rather than a choice inside a silence. ★ **This is the single largest change any future edition could make to this ledger**, and it is recorded so that a reader of A51 knows what turns on it. |
 | **★★ THE MACHINE'S LOAD, as distinct from the machine** *(added 2026-08-12, §3.27)* | **NC-161, NC-162 and NC-173 — the speedup, which is now WITHDRAWN because of this row.** The quantity spans **2,03× within one session at grid 33** with no change of grid, code or workload. ★ **NC-171 and NC-172 (build time and break-even) survive it**, because `N ≈ build × reference_rate` puts the noisy term where it barely enters — measured spread **1,13×** over the same five runs. **A quantity insensitive to the arm that varies is the one to publish** |
+| **★★★ `G12` or `G8` being deleted, made `REPORTED`, or having its fixture pair changed** *(added 2026-08-19, §3.36)* | **NC-269 — the headline itself, and NOTHING WOULD TURN RED.** `G1` carries `REPORTED` by design (no requirement bounds an opt-in policy's cost), so **the number NA-012 carries can never fail**; its entire protection is `G12` failing at **62×** and `G8` at **4.0×** under injection (**NC-279**). ★★ **A row that cannot fail is defended only by its siblings**, and the siblings are not marked as load-bearing anywhere in the source. **DL-066.** |
+| **★★★ A fixture whose black ink is SPECTRALLY NEUTRAL being used to price this policy** *(added 2026-08-19, §3.36)* | **Any future cost row, and NO GATE IN THIS PROJECT WOULD NOTICE.** On such a model the preserved answer at matched lightness is a **metamer** of the four-ink separation — colorimetrically identical however much ink separates them — so the fixture clears every **device-unit** separation gate (`0.420705` of ink on `v2-cmyk-chromatic-neutral`) and reports a cost of **zero** for a reason unrelated to the policy (**NC-278**). ★★★ **This is not a bound problem and no tolerance can express it**; the remedy was a fixture (`v2-cmyk-warm-black`), not a number. **DL-065.** |
+| **★★ `fixtures/synthetic/v2-cmyk-warm-black.icc`'s bytes, or recipe `v2-cmyk-warm-black`'s FOUR constants** *(added 2026-08-19, §3.36)* | **NC-276 and NC-277 — and NC-277 fails at the DERIVATION, not at the tolerance.** `warm_black_expected_cost` hard-codes `0.70` darkness, `a* = 2K`, `b* = 6K` and `ρ = 65280/65535`; **change any of them in the recipe and the closed form silently prices a profile that no longer exists.** ★ `K′ = k` is exact **only** while both recipes share the `0.70`, so **editing the SIBLING's darkness coefficient breaks a row that names neither file's darkness in its identifier.** `gen-profiles verify` is the only detector for edited bytes and **nothing runs it automatically**; nothing at all detects a changed *recipe* that is regenerated consistently. |
+| **★ The Ghent v5.0 corpus's membership, or `$ICCCE_PRIVATE_FIXTURES` pointing elsewhere** *(added 2026-08-19, §3.36)* | **NC-269 … NC-275 and NC-279's `G8` half — nine of §G's sixteen rows.** They **skip** rather than fail, and a skipping suite is green. ★★ **NC-273's whole content is a statement about a 6-member population**: adding or removing one member changes 30 pairs to 42 or 20 and **re-bases the `11 entitled` and the `9 without the filter` at once**, while the row's identifier and bound stay identical. **Re-run, not re-read.** |
+| **★★ `TOLERANCES.md` §2's `1.0` perceptibility anchor (DL-004 revisited)** *(added 2026-08-19, §3.36)* | **NC-271b, NC-271c, NC-272 and NC-273 — FOUR rows, and the anchor is used in THREE different directions.** As a **lower** bound on a pair's separation (`G4`), as an **upper** bound on an error (`G5`), and as the **threshold a population is counted against** (`G16`, via `G8`'s constant). ★★★ **Moving the anchor moves an entitlement criterion, a soundness criterion and a count simultaneously and in opposite senses** — a *larger* anchor entitles fewer pairs while making more of them "imperceptible". This is the first place in the ledger where one number is load-bearing in both directions at once. |
 
 ---
 
@@ -10409,6 +10837,121 @@ subject specifically the impossibility is **structural** (A51), which
   2026-08-19 is claimed.
 - **That anything was committed, pushed or published.** This filing edited
   documents in the working tree and authorised nothing.
+
+---
+
+### 7.25 Status of §7 … §7.24, re-checked 2026-08-19 at the **perceptual-cost** filing
+
+**★★ TWELVE ROWS ARE ADDED: `NC-269` … `NC-280`, in the new §3.36.** The
+next free identifiers are now **`NC-281`** and **`NA-013`**.
+
+**★★★ `NA-013` was NOT consumed, and for a different reason than last
+time.** §7.24 declined it because the finding was an apparatus fact. This
+filing declines it because **nothing new was approximated**: §3.36
+**measures the cost of an approximation already registered**, which is
+NA-012's own *"Revisit if (a)"* being exercised as written — *the cost
+field changes and the entry stays.* ★ **Filing a second NA for a measured
+cost would double-count the departure**, and §4's whole value is that its
+row count equals the number of departures.
+
+#### 1. ★★★ Owed item 3 of §7.23 (= item 3 of §7.24) is DISCHARGED
+
+**The done-when was:** *NA-012's cost field carries a measured ΔE2000 with
+its pair, its direction and its intent.* **Met verbatim** — pair
+`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, direction stated **and
+its reverse measured**, intent media-relative, no `--bpc`. **NC-269**,
+and NA-012's cost field is rewritten with the original preserved beside
+it.
+
+★ **The instruction not to substitute NC-244 was honoured.** NC-244 is
+untouched; the same-press regime is now graded **separately** as NC-272
+on a *different* pair, and §3.36.5 states why the two are not
+interchangeable.
+
+#### 2. ★★ NEWLY OWED — a count in `tools/difftest/README.md` §26.7
+
+*"Two of §G's **nine graded rows** are differential"* — **the graded rows
+number ten** and the reported ones six; `9` is the count of **licensed**
+rows, stated correctly one bullet above. The same file's §26.8 injection
+table lists exactly the six `inf` rows, so **the document contradicts
+itself two subsections apart.** **Owed to `icc-conformance` /
+`icc-engineer`; not edited here.** The durable statement is §3.36.13.
+
+#### 3. ★★ `docs/FEATURES.md` carried a FALSIFIED consumer-facing claim, and it is corrected
+
+*"The number a caller actually wants is UNMEASURED"* is **false as of
+`3c93b62`**, in the document `pdfce` is pointed at. ★★ Corrected in this
+filing, together with the two apparatus figures for which this filing
+holds evidence (`pass=353`, **47** synthetic fixtures). ★★★ **The
+`185 workspace tests` figure is deliberately NOT corrected** — the
+dispatch reports no failures and **no count**, and this role does not
+write a number nobody supplied. It is flagged in place as dated.
+
+★ **Why this file was edited when `TOLERANCES.md` was not.** A tolerance
+justification is `icc-conformance`'s technical judgement; **a stale
+measured number in a consumer-facing document is this role's own
+subject matter**, and DL-062's lesson was that a stale *status* decays
+faster than a number and must be **repaired**, not merely noticed.
+
+#### 4. ★★★ Items 4, 5, 6, 7 of §7.23 and items 1, 2 of §7.24 are UNMOVED
+
+- **§7.23 item 4 — a difftest row for the compiled path.** Untouched.
+  ★ **§G does not supply it**: every §G row drives the **shipped CLI**,
+  and `iccce bench` still cannot reach `--preserve-black`. **NC-264's
+  `crates` test remains the only detector.**
+- **§7.23 item 5 — eight of ten CMYK destinations graded by nothing.**
+  ★★ **Partly, and only partly, improved.** NC-273 grades a **population**
+  over **six** real CMYK members — but it grades a *count*, not those
+  profiles' behaviour, and it covers **six files with five behaviours**,
+  not the ten swept by NC-262/NC-263. **The item stands as written.**
+- **§7.23 item 6 — NC-266's `blind = 0` needs an enumeration.** Untouched;
+  **sixth-plus filing of that debt.**
+- **§7.23 item 7 — two lint gates.** ★ **Now `[REPORTED]` as run** by
+  `icc-engineer` at `3c93b62` (`cargo fmt --all --check` exit 0, plus
+  `tools/gen-profiles` separately since it is not a workspace member;
+  `cargo clippy --workspace --all-targets -- -D warnings` zero errors).
+  **This ledger still did not run them**, and the item is recorded as
+  *reported*, not *closed*.
+- **§7.24 items 1 and 2 — the sub-`5.0e-2` probe set and the falsified
+  `TOLERANCES.md` §3.10.12.2 clause.** ★ **Both untouched**, and §3.36
+  could not have touched them: every §G probe sits at `C = M = Y = 0`
+  **exactly**, which is *above* nothing — it is the qualifying set itself.
+  **§G adds no low-ink probe at all.**
+
+#### 5. ★★ The standing debt is UNMOVED, at its eleventh-plus consecutive filing
+
+**No `published-ground-truth` row exists for any transform.** §3.36 could
+not have supplied one and says so structurally: **A51 is a closed
+negative**, so the ceiling for this subject is self-comparison, and
+NC-277 — a `derived-expectation` from two authored recipes — **is the
+strongest class this subject admits.** `IEC 61966-2-1` remains
+**paywalled and unobtained**.
+
+#### 6. ★★★ What this filing does NOT claim about the repository
+
+- **That `3c93b62` is the tip *now*.** It is **the last line of
+  `.git/logs/HEAD` at the moment of filing** *(VERIFIED — the reflog is
+  plain text)*, and **a reflog line evidences a commit's existence, time
+  and subject, never its contents.** Nothing here asserts what that
+  commit changed on the reflog's authority; every source statement was
+  read from the **working tree**.
+- **That the working tree is clean.** ★ The dispatch reports it; **a
+  `git status` is a shell operation and this role has none.** What is
+  **verified** is that `passk.rs`'s §G rows, `DERIVED_COST`, the
+  `v2-cmyk-warm-black` recipe, the fixture file and `README.md` §26 all
+  read as described **right now**.
+- **That the licensed corpus is absent from the repository.** ★ Verified
+  only that the corpus is located through an **environment variable** and
+  that a committed recipe generates the one new fixture. **"No licensed
+  bytes entered the repo" is `[REPORTED]`**, on the dispatching agent's
+  `git status`.
+- **Any statement about pushes, tags, releases or crates.io.** ★ This
+  filing fetched nothing, published nothing and **authorises nothing**
+  (rule 9). No claim is made about how many commits are unpushed.
+- **That `icc-conformance`'s and `icc-engineer`'s runs were independent in
+  the strong sense.** They are **two runs on one machine at one tree**,
+  which corroborates transcription and a green census; **it is not a
+  second implementation, a second machine, or a second day.**
 
 ---
 

@@ -14,10 +14,12 @@
 
 - [Documented is not tested](project_documented_is_not_tested.md) — DL-051: five injections, the BEST-documented constant caught by NONE; the doc comment's length is what hid it. Injection, never inspection.
 - [An injection measures ONE magnitude](project_injection_measures_one_magnitude.md) — DL-064: the red runs discharge the debt, the GREEN run is the floor; rival named with `1e-9`, guard claimed without a number.
+- [A gate in INPUT units can't certify the OUTPUT](project_gate_in_input_units_cannot_certify_output.md) — DL-065: a spectrally neutral black makes the answer a METAMER; 0.42 of ink, every gate green, cost zero. Fixture, not tolerance.
+- [A row that cannot fail](project_unfailable_row_protected_only_by_siblings.md) — DL-066: `G1` is REPORTED by design so only `G12`/`G8` protect it; and a population row is coverage, not a gate — `G16` is one-sided.
 - [A count from a sample is not the population](project_count_from_a_sample_is_not_the_population.md) — DL-053: "two iccMAX" was TEN; [VERIFIED] certifies the measurement happened, never what it ranged over.
 
 - [ICC.1 PDF blocker — cleared](project_icc1_pdf_operator_blocker.md) — resolved 2026-08-11; the lasting lesson is that "free download" never implies "automated retrieval permitted" (ITU-R is next).
-- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-19 **leak-guard injection** filing: reflog tip `abdf445`; NC-267/NC-268 filed; next free NC-269/NA-013, DL-064 newest.
+- [iccce Pass status](project_iccce_pass_status.md) — to the 2026-08-19 **perceptual-cost** filing: tip `3c93b62`; NA-012 MEASURED (`3.681203`); NC-269…NC-280; next free NC-281/NA-013, DL-066 newest.
 - [Compatibility is not certification](project_compatibility_not_certification.md) — DL-045/046/047: a third-party corpus gives a CATEGORICAL expectation but never a number; promote a [REPORTED] claim only by re-running with a control.
 - [Ground truth: a test is not a row](project_ground_truth_cannot_exist.md) — DL-041: the LUT path's ground truth CANNOT exist; Annex D.6.3 now has a TEST but still no ledger row — NC-001 remains the only one.
 - [A negative finding removes its own auditor](project_negative_finding_removes_its_auditor.md) — DL-042: a wrong REJECTION survives forever; re-audit the REASON an item is owed, not just the item.

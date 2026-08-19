@@ -2,6 +2,97 @@
 
 ---
 
+# ★★★ HANDOFF — 2026-08-19, four owed items discharged
+
+**Read this block first. It supersedes the 2026-08-18 block below and
+anything else that conflicts.** The 2026-08-18 block is otherwise still
+accurate and still the reference — but **its "WHAT TO DO NEXT" items 1,
+2, 3 and 5 are now DONE**, and reading them as open will waste a session.
+
+## Do this first, exactly as the block below says
+
+1. **List the request channel.** Nothing was owed inbound when this
+   session ended. One outbound note was written and is awaiting an
+   optional reply: `open/note_malformations_count_is_not_a_verdict.md`.
+2. **Re-arm the 15-minute channel poll** — unchanged, still mandatory,
+   still dies with the session. ★ **New this session: tell every
+   dispatched subagent NOT to arm its own.** They inherit `CLAUDE.md`
+   rule 10 and each arm a duplicate; two dispatches produced **three**
+   monitors on one folder, and `TaskStop` was not available to undo it.
+   Prevention in the dispatch prompt is the only control.
+
+## What the 2026-08-18 block lists as next, and its true status
+
+| its item | status now |
+|---|---|
+| 1. Verify the `pdfce` link | ★ **DONE — still NOT linked.** The grep returns only *comments*. `pdfce`'s own `crates/pdfce-core/build.rs` now reports `iccce: not-linked-yet` **structurally**, and documents it as unstarted work rather than a decision to stay apart. Nothing here reaches `pdfce`. |
+| 2. The CLI's `header.intent` line has no test | ★ **DONE** — `crates/iccce-cli/tests/cli_header_intent_line.rs`, commit `19d36e9`. Five tests, and the `& 0xFFFF` masking edit was **applied** to confirm three of them turn red, then reverted. |
+| 3. `Malformation`'s doc comment is falsified | ★ **DONE** — **DL-063**, commit `abdf445`. Three sites carried the false reading, not one; all corrected. |
+| 4. No `published-ground-truth` row for any transform | **UNCHANGED — operator decision.** CHF 210 for IEC 61966-2-1 pp. 16–51 is still the only route. |
+| 5. The perceptual cost of black preservation | ★★★ **DONE — `NA-012` retired.** `3.681203` ΔE2000 max / `1.580674` mean, `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, media-relative. Commit `3c93b62`, Pass K **§G**, `NC-269 … NC-280`. |
+| 6. No difftest row for the compiled path | **UNCHANGED, and now sharper**: every §G row drives the **CLI**, and `iccce bench` still cannot reach `--preserve-black`. |
+| 7. `blind = 11`, Pass I `chad` rows | **UNCHANGED** — still judged intrinsic, still leave alone. |
+
+## ★★ WHAT TO DO NEXT — the new list
+
+1. **★★★ A probe set below `5.0e-2` chromatic ink.** The sharpest thing
+   this session found. The Pass K leak guards **were** proven to fire
+   (`NC-267`) — but only above a floor: E7 at `1.106780e-1`, F8 at
+   `5.0e-2`. **At an injected widening of `t = 0.04` the entire difftest
+   suite is green with the defect compiled in.** And `TOLERANCES.md`
+   §3.10.12.2 names its rival as *"`10⁻⁹` of cyan"* while claiming those
+   rows would catch it — **seven orders below the floor**. Both numbers
+   were on the page; nobody subtracted them (**DL-064**). ★ §G added **no
+   low-ink probe at all** — every §G probe sits at `C = M = Y = 0`
+   exactly. *Owed to `icc-conformance`.*
+2. **★★ Correct `TOLERANCES.md` §3.10.12.2's falsified clause.** Scoped
+   tightly: the section's derivation of tolerance `0` is **correct and
+   untouched**, and the `E4`/`E5`/`F4`/`F7` repointing is **vindicated**.
+   **One clause, not a section** (DL-057). *Owed to `icc-conformance`.*
+3. **★ E7's floor is not re-derivable from anything in the repo.**
+   `1.106780e-1` is **incidental** — its LCG draws on `[0, 0.8)`, so
+   **re-seeding would move E7's sensitivity with no line of intent,
+   comment or tolerance changing**, and the `probe_floor` bin that
+   measured it was deleted with its worktree. F8's `5.0e-2` is
+   structural and carries the durable half of the claim. Making E7's
+   floor computable in-tree is cheap and closes a `[REPORTED]`.
+4. ~~**`docs/FEATURES.md`'s `185 workspace tests` is dated.**~~ **DONE
+   at the end of this session — measured `190`** (185 + the five new CLI
+   tests) and corrected in place.
+5. **The compiled path still has no difftest row** — carried from the
+   old item 6, unchanged.
+
+## ★ Two traps this session hit that are worth knowing before you measure
+
+1. **A spectrally neutral black manufactures a false PASS that no
+   tolerance catches.** `v2-cmyk-chromatic-neutral` separates by
+   `0.420705` of **ink** — the separation gate reads healthy — but its
+   black is spectrally neutral, so a preserved answer at matched
+   lightness is a **metamer** of the four-ink separation: colorimetrically
+   identical *however much ink separates them*. This is the subtler
+   sibling of the zero-separation trap. `NC-278`.
+2. **A green suite can be silent about the number you care about.** §G is
+   sixteen rows: **ten graded, six `REPORTED`**, and **`G1` — the
+   headline `3.681203` — is one of the `REPORTED` and can never go red.**
+   Its only protection is `G12` and `G8` failing beside it. Check which
+   class a row is in before quoting a green run as its evidence.
+
+## State of the tree
+
+| | |
+|---|---|
+| tip | **`3c93b62`** + one uncommitted README fix |
+| commits this session | **4** (`400179b..3c93b62`) |
+| ★★ ahead of `origin/master` | **4 commits** — this session's, and only this session's. **Measured**, `git rev-list --count origin/master..HEAD`. Pushing is not authorised; this is a state, not a backlog. |
+| ★★★ the previous handoff's *"14 commits. NOTHING IS PUSHED"* | **STALE — the operator pushed.** `git reflog show origin/master` carries `update by push` at `400179b`, `5e1e5df`, `533844f`, and the ref now sits at `400179b`, the tip that handoff was written at. Nothing was wrong when written; it decayed. **DL-062's mechanism, fourth instance.** ★ Do not carry a push-state claim forward without re-running the count — it is two seconds and it was wrong here. |
+| `cargo test --workspace` | **190 passed, 0 failed** (measured; was 185 + the 5 new CLI tests) |
+| difftest | **`pass=353 fail=0 skip=9 error=0`**, verified at `3c93b62` |
+| fmt / clippy | exit 0, workspace **and** `tools/gen-profiles` separately |
+| synthetic fixtures | **47** (`v2-cmyk-warm-black` added) |
+| decision log | **DL-066** is the last; next `NC-281` / `NA-013` |
+
+---
+
 # ★★★ HANDOFF — 2026-08-18 (later), work PAUSED by the operator
 
 **Read this block first. It supersedes every block below it and anything

@@ -5605,8 +5605,20 @@ A consumer painting a K-only-to-rich-black ramp sees the step, not the cost.
 - the committed pair's cost is a property of **two authored models** and says
   nothing about any press — it is not a substitute for `G1`;
 - ★★ **the injection proof, and exactly which rows it turned red** — see
-  §26.8. Two of §G's nine graded rows are differential; the rest are controls on
-  the fixture pair, which is what they are for;
+  §26.8. Two of §G's **ten** graded rows are differential; the rest are controls
+  on the fixture pair, which is what they are for;
+- ★★★ **`G1`, the headline, is `REPORTED` — a green suite says NOTHING about
+  `3.681203`.** §G is **sixteen rows: ten graded, six `REPORTED`** (counted from
+  the four `G_*` arrays in `passk.rs` and confirmed against a live run —
+  `G_ROWS` 8 + `G_SYNTHETIC_ROWS` 2 + `G_POPULATION_ROWS` 1 + `G_WARM_ROWS` 5).
+  ★ **An earlier draft of this section said "nine graded", which is the
+  *licensed* count wearing the wrong label** — the two numbers are different
+  facts about the same sixteen rows and were conflated. What `pass=353 fail=0`
+  actually establishes is `G12 ≤ 1e-2`, `G5 ≤ 1.0`, `G6 ≤ 0.25423`, `G8 ≤ 1.0`,
+  `G16 = 0` and the floors. **The green suite corroborates every number in this
+  section except the one `NA-012` carries.** `G1` cannot go red; its protection
+  is `G12` and `G8` failing beside it (§26.8), and that dependency is the whole
+  reason those two rows exist;
 - **no weighting by how often a document contains K-only content**, which is
   the term that decides whether the policy is worth its price and which belongs
   to the consumer, not to this harness.
