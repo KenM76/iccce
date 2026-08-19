@@ -254,6 +254,17 @@ pub mod passi;
 // the comments above.
 pub mod passk;
 
+// Pass L - which reading of sRGB does lcms2 implement? Two currently-in-force
+// standards define sRGB with different transfer-function constants (ICC_Spec
+// A57, filed OPEN), the two curves are 4.8e-6 apart at most, and they are
+// EXACTLY equal over all 256 8-bit codes. The pass measures which one lcms2
+// implements - a fact about an implementation, NOT a resolution of A57 - and
+// prices the choice in dE2000. Read its module header before quoting any of
+// it: the maximum separation is INTERIOR and sits in a DIFFERENT PLACE for
+// each output space, and the oracle is demonstrably NOT usable as the ruler
+// for the destination half. Same `//`-not-`///` reason as the comments above.
+pub mod passl;
+
 // ===========================================================================
 // Locating the oracle
 // ===========================================================================

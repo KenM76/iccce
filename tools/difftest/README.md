@@ -5674,3 +5674,219 @@ and it is `REPORTED` — by design, since no requirement bounds what an opt-in
 policy may cost — so **the headline itself can never go red**. Its protection is
 `G12` and `G8` failing beside it, not the row itself. A reader who wants the
 headline defended must read those two rows, and this table is why they exist.
+
+---
+
+## 27. ★★★ Pass L — **which reading of sRGB does lcms2 implement?** (2026-08-19)
+
+`tools/difftest/src/passl.rs`, `src/bin/passl_probe.rs`. **20 records, all
+pass.** Run it alone with `cargo run --release --bin passl_probe`.
+
+### 27.1 The question, and why it is not a conformance question
+
+`icc-spec-librarian` filed register row **`A57`** on 2026-08-19: **two
+currently-in-force standards define "sRGB" with different transfer-function
+constants, and neither is a typo.**
+
+| reading | offset `α` | encoded breakpoint | printed by |
+|---|---|---|---|
+| **C⁰** — value continuity, offset pinned at `0.055` | `1.055` exactly | `0.04045` | ICC's own sRGB document, W3C CSS Color 4, Khronos KDF |
+| **C¹** — value **and slope** continuity | `1.055 010 718 947 586 4` | `0.039 293 370 676 847 5` | **required** by `Rec. ITU-T H.273 (V4) (07/2024) / ISO/IEC 23091-2` clause 8.2 for `TransferCharacteristics = 13` — what AVIF, HEIF, AV1 and ISOBMFF `nclx` point at |
+
+`iccce` ships both (`iccce_cmm::builtin::SrgbTrc`), default unchanged, C¹
+constants **derived** from the clause at run time rather than transcribed.
+
+**Pass L does not settle `A57` and cannot.** IEC's normative text would say
+what sRGB *is*; nobody in this project has read it (the operator declined to
+buy it, 2026-08-19). What Pass L establishes is a **fact about an
+implementation**, obtained by measurement:
+
+> **lcms2 implements the C⁰ reading.**
+
+Scope, which travels with it: lcms2 **2.19.1** at pin `21c582a`, **MSVC build,
+Windows 11**, lcms2's **own built-in** sRGB (`cmsCreate_sRGBProfileTHR`) and
+**not** a system sRGB file, **one intent** (media-relative), **one direction**,
+**neutral probes only**, `-c0`, float I/O.
+
+★ **Every `passl/A/*` record carries "A FACT ABOUT lcms2, NOT a claim about
+what sRGB is: ICC_Spec A57 stays OPEN" in its `source` column**, so the
+distinction lives inside the machine-readable record and not only in this file.
+
+★★ **Had it come out the other way it would have been a finding, not a
+failure** (`CLAUDE.md` rule 7) — and a large one, since it would have meant the
+ICC-ecosystem consensus and the dominant ICC implementation disagree. The
+whitebox read was done **first**, and the blackbox measurement was then
+designed to be able to contradict it. Nothing was adjusted.
+
+### 27.2 Why an ordinary probe cannot see this at all
+
+The two curves are **`4.777 283×10⁻⁶` apart at most in linear light** and
+**exactly zero apart at all 256 8-bit codes**. Three traps had to be avoided,
+and two of them are new statements of an old lesson.
+
+**Trap 1 — 8-bit or 16-bit I/O erases the signal.** The 16-bit quantum is
+`1.526×10⁻⁵`, itself three times the maximum linear-light separation.
+`transicc`'s default float I/O plus `-c0` (`cmsFLAGS_NOOPTIMIZE`) is the only
+configuration in which the question is askable at all.
+
+**Trap 2 — ★★ the maximum is INTERIOR, and it is in a DIFFERENT PLACE for each
+output space.**
+
+| probe | separation | printed quanta |
+|---|---|---|
+| the **C¹ breakpoint**, code `10.019 81` | ★ **`1.42×10⁻¹⁴` `L*` — zero** | 0 |
+| the **C⁰ breakpoint**, code `10.314 75` | `6.93×10⁻⁴` `L*` | 6.9 |
+| the **`L*` interior maximum**, code `23.513 60` | **`1.202 916×10⁻³` `L*`** | **12.0** |
+| the **linear-light interior maximum**, code `142.905 68` | `4.777×10⁻⁴` (`Y`×100) but only `4.376×10⁻⁴` `L*` | 4.8 / **3.6** |
+
+Two separate ways to throw the measurement away, and both are the *obvious*
+choice:
+
+1. **Probing at a breakpoint.** `iccce_cmm::builtin`'s
+   `tests::breakpoint_is_the_c0_solution_not_the_1996_value` already records
+   this trap for the *other* breakpoint question. Here it is worse than merely
+   weak: H.273 clause 8.2 **defines** `β` by value continuity with the *same*
+   linear segment the C⁰ reading uses, so the two curves **meet at `β` by
+   construction** and the separation there is exactly zero. Row
+   `passl/A/trap/breakpoint-probe-has-zero-discriminating-power` records it and
+   the harness prints `ZERO-SEPARATION` beside it, with no human in the loop.
+2. **Probing at the linear-light maximum** — the number the feature's own doc
+   comment prints, and therefore the one a reader would reach for. It sits
+   **119.4 codes away** from the `L*` maximum and retains only **36 %** of the
+   `L*` signal. Row `passl/A/design/l-signal-at-the-linear-light-max` grades
+   that ratio at `0.5`, so the probe set's own justification is defended by a
+   row rather than by a paragraph.
+
+**Trap 3 — the model must be lcms2's, not the standard's.** §A probes only
+neutrals, because for `R = G = B` and D50-adapted colorants `Y_PCS = TRC(v)`
+*identically* — no matrix and no adaptation left to model wrong — and it uses
+**lcms2's own `f()`** from `src/cmspcs.c`. The apparatus row
+`passl/A/apparatus/model-exact-in-shared-region` grades that model in the
+region where the two readings are **the same function**, so it validates the
+model while being structurally incapable of answering the question; it prints
+`ZERO-SEPARATION` too, and that is the correct disclosure.
+
+### 27.3 §A — the measurement
+
+| | value |
+|---|---|
+| probes | **275** (all 256 8-bit codes + 19 designed points) |
+| max `abs(lcms2 − C⁰)` | **`5.300 706×10⁻⁵` `L*`** at code `159.000 00` — **below one printed quantum** |
+| max `abs(lcms2 − C¹)` | **`1.230 354×10⁻³` `L*`** at code `23.513 60` — **12.3 printed quanta** |
+| ratio | **`23.2×`** |
+| probes resolvable at ≥ 2 quanta that favour **C¹** | **`0` of 204** |
+| second instrument (`-o*XYZ`, code `142.905 68`) | `abs(−C⁰)` `5.096×10⁻⁵` against `abs(−C¹)` `5.287×10⁻⁴`, in `Y`×100 units |
+
+**Whitebox corroboration**, graded as an `oracle-reproducibility` row so that a
+pin move which changed it is caught: `vendor/lcms2/src/cmsvirt.c`
+`Build_sRGBGamma()` L640–647 writes `Parameters[1] = 1./1.055`,
+`[2] = 0.055/1.055`, `[3] = 1./12.92`, `[4] = 0.04045` into a **type-4
+parametric** curve. `cmsBuildSegmentedToneCurve` leaves `nSegments = 1`, so
+`cmsEvalToneCurveFloat` takes the **analytic** branch and the 4 096-entry
+`Table16` is reached only by 8/16-bit transforms — which is *why* float I/O is
+what makes the question measurable.
+
+★ One row, `passl/A/lab/rival-reading-is-rejected-by-two-printed-quanta`,
+grades the **instrument** rather than lcms2: `(2 × quantum) / residual_vs_C¹`
+against `1`. It goes red when the measurement loses the power to tell the two
+readings apart — a different and **earlier** failure than lcms2 changing its
+answer, and the one this whole apparatus would be worthless without.
+
+### 27.4 §B — what `transicc` can and cannot resolve, measured
+
+`transicc` prints every float with **`%.4f`** (`utils/transicc/transicc.c`,
+`PrintFloatResults`, L694–698). No flag widens it, so `1×10⁻⁴` is *the*
+instrument quantum, and every §A tolerance is derived from it rather than
+chosen.
+
+| output space | printed unit | max separation available | verdict |
+|---|---|---|---|
+| `*Lab` | `L*` `0..100` | `1.202 916×10⁻³` | **resolvable — 12.0 quanta** |
+| `*XYZ` at the linear-light max | `Y × 100` | `4.777×10⁻⁴` | **resolvable — 4.8 quanta** |
+| `*XYZ` at the `L*` max instead | `Y × 100` | `1.33×10⁻⁴` | **1.3 quanta — NOT resolvable** |
+| a destination profile's `A2B` used as a ruler | `L*` | — | ★ **NOT resolvable** |
+
+★★★ **The oracle cannot be the ruler for the destination half**, and that was
+*measured*, not assumed. lcms2 evaluates a `lut16Type` (`mft2`) CLUT stage
+inside a **float** pipeline through `EvaluateCLUTfloatIn16` (`src/cmslut.c`
+L445–456), whose first act is `FromFloatTo16` — **it quantises its float input
+to 16 bits before the lookup.** A control sweep of one ink across
+`2.95×10⁻²` % in `5×10⁻⁴` % steps returned **7 distinct `L*` values out of 60
+samples**: a staircase with a tread of `≈4.9×10⁻³` % ink. The largest device
+separation the reading choice produces at a real destination is
+`6.36×10⁻³` % — **≈1.3 treads at its maximum, and a small fraction of one
+typically.**
+
+This was caught the expensive way. A first attempt measured the end-to-end ΔE
+with the oracle as the ruler and produced a plausible-looking `6.58×10⁻³`
+ΔE2000 whose "gain" over the PCS difference ranged from **`0.00` to `36.44`**
+across neighbouring probes. *A quantity whose amplification factor varies by
+four orders of magnitude between adjacent points is an apparatus fault, not a
+finding* — the same lesson §19's harness bug taught, arriving by a different
+road. §C therefore measures the destination half **entirely in process, in
+`f64`**, and every §C record says so.
+
+### 27.5 §C — what the choice COSTS (self-comparison, iccce vs iccce)
+
+★ **§C is in process and has to be: the shipped `iccce` binary has no flag that
+selects `SrgbTrc`.** The variant is reachable **only through the library API**.
+Pass 5b set the precedent. That is a scope statement about the *feature*, not
+merely about the harness — **no CLI user can select the C¹ reading today.**
+
+| | ΔE2000 |
+|---|---|
+| **PCS, max** | **`1.857 907×10⁻³`** at `rgb(0.039 299 306, 0.093 208 075, 0.039 299 242)` = codes `(10.0213, 23.7681, 10.0213)` |
+| PCS, mean over 55 938 probes | `3.630 359×10⁻⁴` |
+| PCS, **neutral ramp only** | `7.395 940×10⁻⁴` at code `23.5135` — **40 % of the true cost** |
+| end-to-end, `→ USWebCoatedSWOP → sRGB → Lab` | **`2.207 972×10⁻³`**, mean `3.409×10⁻⁴` |
+| end-to-end, committed synthetic pair | `7.347 420×10⁻⁴`, mean `2.926×10⁻⁴` |
+
+Three things in that table are worth more than the headline.
+
+1. ★★ **The gray ramp — the natural probe for a transfer-function question —
+   understates the cost by `2.51×`.** The true maximum is *off* the neutral
+   axis, at a point where `R` and `B` sit essentially **exactly on the C¹
+   breakpoint** (where their own contribution is therefore zero) while `G` sits
+   at the `L*` junction. ΔE2000's chroma and hue terms put the worst case
+   precisely where a one-dimensional probe cannot reach it. Row
+   `passl/C/pcs/the-neutral-ramp-understates-the-cost` grades it at `0.75`.
+2. ★★★ **"`0` of 256 8-bit codes change" is true of sRGB's own encoding and
+   FALSE end to end.** Through a real destination:
+
+   | destination | max device separation | 8-bit codes changed | 16-bit |
+   |---|---|---|---|
+   | `v2-cmyk-mft2-lab.icc` (committed) | `1.193×10⁻⁵` = 1/329 of a code | **2 of 5 169** | 1 145 |
+   | `USWebCoatedSWOP.icc` (system) | `6.361×10⁻⁵` = 1/62 of a code | **14 of 5 169** | 3 022 |
+   | `AdobeRGB1998.icc` (system) | `8.096×10⁻⁶` = 1/484 of a code | **11 of 5 169** | 2 893 |
+
+   Re-run on a half-step-offset grid, the SWOP and AdobeRGB counts move to
+   **17** and **6**, so the effect is real and not a grid artefact. The
+   mechanism is **not amplification** — the movement is a small fraction of one
+   code — it is that a difference that small still flips a code whenever the
+   value happens to straddle a rounding boundary, which ≈0.3 % of points do.
+3. ★★ **The destination does not wash the difference out; `USWebCoatedSWOP`
+   amplifies it by `1.52×`** (`2.208×10⁻³` end to end against `1.453×10⁻³` for
+   the PCS alone over the same probe set). The committed synthetic destination
+   attenuates by `0.51×`, so this is a **property of the destination**, and the
+   record computes the word `AMPLIFIES`/`ATTENUATES` from the ratio rather than
+   asserting either.
+
+★ And a correction to the feature's own doc comment, which says the separation
+sits "below one 16-bit PCS quantum". **That is a statement about the ENCODED
+domain and does not carry over to ΔE2000 in the PCS**: one 16-bit PCS `L*`
+quantum *evaluated at the argmax point* is `9.262×10⁻⁴` ΔE2000, so the maximum
+is **`2.01×` a PCS quantum.** Evaluating that quantum anywhere else would have
+been dishonest — ΔE2000's `SL` term varies by 1.6× between `L*` 6 and `L*` 50.
+
+### 27.6 Coverage, stated so "verified" cannot be read without its scope
+
+- §A: one implementation, one build, one platform, one profile, one intent, one
+  direction, neutral probes only. It says **nothing** about what any other CMM
+  does, and nothing about what the standard requires.
+- §B's destination-ruler finding is **`mft2`-specific**: a property of lcms2's
+  16-bit CLUT stage, silent about `mAB `.
+- §C is iccce against iccce and is **not** evidence that either reading is
+  right. It is the price of the choice.
+- Nothing in Pass L is ground truth. The only ground-truth-class statement in
+  the neighbourhood is H.273 clause 8.2 itself, and that is `ICC_Spec`'s to
+  hold.

@@ -1,5 +1,6 @@
 # icc-conformance — memory index
 
+- [Pass L — which sRGB does lcms2 implement?](project_passl_which_srgb_lcms2_implements.md) — C0, measured; the interior max moves with the OUTPUT SPACE; the oracle can't rule a destination; "0 of 256 codes" is false end-to-end.
 - [The four-cell gate, and what each injection reds](project_the_four_cell_gate_and_its_injections.md) — two conditions = FOUR cells and the corpus held one; the four are not equally licensed; a string equality can't tell a vanished report from a cited one.
 - [`Malformation` is the wrong channel for a non-violation](project_malformation_channel_overclaims.md) — `malformations: 1` printed for a v2 file that violates nothing; the CLI separates interpretation from conformance BY ACCIDENT, the parser conflates them by design.
 - [A third fixture category: DISPUTED](project_a_third_fixture_category_disputed.md) — well-formed/malformed are both CLAIMS; the category EMPTIED the same day it was created, and what does NOT belong in it.

@@ -145,6 +145,39 @@ pub enum Destination<'a> {
     /// you could not use it, that is a refusal to report, not a reason
     /// to substitute a different destination.
     None,
+    /// As [`Destination::None`], but naming **which reading of sRGB's
+    /// transfer function** to construct.
+    ///
+    /// ## Why this variant exists
+    ///
+    /// Two currently-in-force standards define sRGB's transfer function
+    /// with different constants — see [`crate::builtin::SrgbTrc`] for the
+    /// full account, including the proof that H.273's C1 reading is
+    /// deliberate rather than a typo. The operator's standing instruction
+    /// is that a source disagreement ships as a **selectable option with a
+    /// reasoned default**, and an option that cannot be selected through
+    /// the public API is only half-shipped.
+    ///
+    /// [`Destination::None`] is exactly
+    /// `BuiltinSrgb(SrgbTrc::ValueContinuous)` and stays the recommended
+    /// spelling: it is what every measured number in
+    /// `docs/NUMERIC_CLAIMS.md` was produced under, and it is also what
+    /// **lcms2 implements** — measured in Pass L, `23.2x` closer than the
+    /// alternative, `0 of 204` resolvable probes favouring C1.
+    ///
+    /// A caller should reach for [`crate::builtin::SrgbTrc::SlopeContinuous`]
+    /// only to match the **CICP/video ecosystem** — AVIF, HEIF, AV1,
+    /// ISOBMFF `nclx`.
+    ///
+    /// ### What selecting it costs
+    ///
+    /// ★ It **silently invalidates** the ledger's numbers. Not by much —
+    /// `1.857907e-3` DeltaE2000 at worst, **538x below** the perceptibility
+    /// line — but it is **not** the no-op it looks like: through a real
+    /// destination it moves an 8-bit ink code at **14 of 5169** probe
+    /// points in `USWebCoatedSWOP`. **Anything quoting a number produced
+    /// this way must say so.**
+    BuiltinSrgb(crate::builtin::SrgbTrc),
 }
 
 /// Where a built [`Chain`]'s destination came from.
@@ -674,7 +707,10 @@ impl Chain {
     ) -> Result<Chain, ChainError> {
         match dst {
             Destination::Profile(p) => Chain::new_inner(src, p, intent, true),
-            Destination::None => Chain::new_builtin_srgb_dest(src, intent),
+            Destination::None => {
+                Chain::new_builtin_srgb_dest(src, intent, crate::builtin::SrgbTrc::default())
+            }
+            Destination::BuiltinSrgb(v) => Chain::new_builtin_srgb_dest(src, intent, v),
         }
     }
     /// Derive the SOURCE half's device→PCS model, per the 8.10.2
@@ -824,14 +860,18 @@ impl Chain {
     /// the source model by building a scaffold `src → src` chain and
     /// discarding its destination — see `derive_source_model`'s doc for
     /// why that was wrong and what it reported instead.**
-    fn new_builtin_srgb_dest(src: &Profile, intent: Intent) -> Result<Chain, ChainError> {
+    fn new_builtin_srgb_dest(
+        src: &Profile,
+        intent: Intent,
+        variant: crate::builtin::SrgbTrc,
+    ) -> Result<Chain, ChainError> {
         // The source half only. No phantom destination is derived, so a
         // profile that cannot serve as a destination — an A2B-only
         // profile with no B2A, no colorant matrix and no grayTRC — is
         // still a perfectly good SOURCE here.
         let source = Chain::derive_source_model(src, intent)?;
 
-        let srgb = crate::builtin::srgb();
+        let srgb = crate::builtin::srgb_with(variant);
         // The destination's own device→PCS direction, needed only by
         // BPC's round trip. For a matrix/TRC destination this IS the
         // forward model, so it is exact rather than approximated.

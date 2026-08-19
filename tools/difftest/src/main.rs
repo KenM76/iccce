@@ -117,7 +117,7 @@ use std::io::Write;
 
 use iccce_difftest::{
     Bpc, Check, Intent, Kind, Metric, Oracle, Outcome, Precalc, Report, Request, Space, Tolerance,
-    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi, passk,
+    pass3, pass4, pass4b, pass4c, pass5, pass5b, pass5c, pass6, passg, passh, passi, passk, passl,
 };
 
 /// The system sRGB profile used by `README.md` §8.2.
@@ -513,6 +513,27 @@ fn main() {
     let (pk, pk_records) = passk::run(&oracle);
     report.note(format!("passk: {}", passk::note(&pk)));
     for r in pk_records {
+        report.push_record(r);
+    }
+
+    // Pass L - WHICH READING OF sRGB DOES lcms2 IMPLEMENT? Two in-force
+    // standards disagree about sRGB's transfer-function constants (ICC_Spec
+    // A57, OPEN), iccce ships both readings, and the two curves are 4.8e-6
+    // apart at most and EXACTLY equal at every 8-bit code. §A settles what
+    // lcms2 does - by measurement, at float precision, at an INTERIOR maximum
+    // that is in a different place for each output space; §B states what the
+    // oracle can and cannot resolve, including the measured proof that it
+    // CANNOT serve as the ruler for a destination's A2B; §C prices the choice.
+    //
+    // ★ Nothing in Pass L settles A57. It measures an implementation, not the
+    // standard, and every §A record's `source` string says so where a quoter
+    // will trip over it.
+    //
+    // ★ §C runs IN PROCESS and has to: the shipped iccce binary has no flag
+    // that selects SrgbTrc. Same precedent as Pass 5b.
+    let (pl, pl_records) = passl::run(Some(&oracle));
+    report.note(format!("passl: {}", passl::note(&pl)));
+    for r in pl_records {
         report.push_record(r);
     }
 

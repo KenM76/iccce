@@ -242,17 +242,47 @@ pub const SRGB_TRC_PARAMS: [f64; 5] = [
 /// ## ★★ What the choice costs — MEASURED, and this is the number that
 /// ## decides whether you should care
 ///
+/// ### The curve in isolation
+///
 /// | quantity | separation |
 /// |---|---|
 /// | max, encoded domain, over a 200 001-point sweep | **`9.76×10⁻⁶`** |
 /// | max, linear-light domain | **`4.78×10⁻⁶`** |
-/// | ★ **8-bit codes that change, of 256** | ★ **`0` — none** |
+/// | 8-bit codes that change **in sRGB's own encoding**, of 256 | **`0`** |
 ///
-/// So at 8-bit this is **exactly a curiosity**: no image changes, ever.
-/// It is potentially reachable at 16-bit (the PCS quantum is
-/// `1/65535 = 1.5×10⁻⁵`, so `9.76×10⁻⁶` sits just *below* one quantum)
-/// and in long float chains. **State which variant produced any number
-/// you quote.**
+/// ### ★★★ END-TO-END, WHICH IS DIFFERENT, AND TWO EARLIER
+/// ### CLAIMS HERE WERE WRONG
+///
+/// **The two rows above are correct and NARROWLY SCOPED, and the first
+/// version of this doc comment stated them as though they were general.
+/// Both overclaims are corrected here rather than quietly amended,
+/// because I made them and then repeated them to the operator.**
+///
+/// | claim as first written | what Pass L measured |
+/// |---|---|
+/// | *"no image changes, ever"* | ★ **FALSE end-to-end.** Through a real destination, **14 of 5169** probe points move an 8-bit ink code in `USWebCoatedSWOP`, **11 of 5169** in `AdobeRGB1998`, **2 of 5169** in the committed synthetic pair. The movement is only `1/62` of a code — but ≈`0.3 %` of points sit close enough to a rounding boundary to be pushed across it. **Zero-in-sRGB's-own-encoding does not survive a second transform.** |
+/// | *"below one 16-bit PCS quantum"* | ★ **FALSE as ΔE.** True in the *encoded* domain. Measured as ΔE2000 in the PCS the max is **`1.857907×10⁻³`**, which is **2.01×** one 16-bit `L*` quantum at that point (`9.262×10⁻⁴` ΔE00). |
+///
+/// The honest summary is therefore: **a curiosity, but not an
+/// invisibility.** `1.86×10⁻³` ΔE2000 is **538× below** the `1.0`
+/// perceptibility line, so nobody will ever see it — *and it still
+/// changes 8-bit ink codes*, which is the kind of thing that shows up as
+/// a one-code diff in somebody's regression suite.
+///
+/// | end-to-end ΔE2000 (self-comparison) | value |
+/// |---|---|
+/// | PCS max | `1.857907×10⁻³` at rgb `(0.039299306, 0.093208075, 0.039299242)` |
+/// | PCS mean, 55 938 probes | `3.630359×10⁻⁴` |
+/// | → `USWebCoatedSWOP` → sRGB → Lab | `2.207972×10⁻³` — the destination **AMPLIFIES by 1.52×** |
+/// | → the committed synthetic pair | `7.347420×10⁻⁴` — **attenuates by 0.51×** |
+///
+/// ★★ **A neutral gray ramp understates the cost by 2.51×.** The PCS
+/// maximum is **off-axis**, at codes `(10.0213, 23.7681, 10.0213)` —
+/// ΔE2000's chroma and hue terms put the worst case exactly where a
+/// one-dimensional probe cannot reach it. **Do not measure this on a
+/// gray ramp.**
+///
+/// **State which variant produced any number you quote.**
 ///
 /// ★ A trap worth recording, because the first estimate of this cost was
 /// wrong by an order of magnitude: the naive bound `|α − 1.055| ≈
@@ -616,13 +646,14 @@ pub fn srgb_white_d65() -> Option<Xyz> {
 /// [`srgb`] is this with [`SrgbTrc::ValueContinuous`], and is what
 /// callers should use unless they specifically need the CICP/video
 /// reading — see [`SrgbTrc`] for the full argument, the measured cost
-/// (`9.76×10⁻⁶` encoded max, **zero** of 256 8-bit codes) and why the
-/// default is where it is.
+/// (`9.76×10⁻⁶` encoded max in the curve itself, but `1.86×10⁻³` ΔE2000
+/// end-to-end, and it **does** move 8-bit ink codes through a real
+/// destination) and why the default is where it is.
 ///
 /// ★ **A non-default selection invalidates every ΔE figure in
 /// `docs/NUMERIC_CLAIMS.md`**, all of which were measured under the
 /// default. It does not make them wrong by much — the separation is
-/// below one 16-bit PCS quantum — but it makes them *unmeasured* rather
+/// 2.01x a 16-bit PCS quantum as DeltaE2000 — but it makes them *unmeasured* rather
 /// than merely imprecise, which is a different and worse thing. Anything
 /// quoting a number produced under [`SrgbTrc::SlopeContinuous`] must say
 /// so.
