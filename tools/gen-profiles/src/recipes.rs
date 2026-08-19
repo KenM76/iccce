@@ -1006,6 +1006,333 @@ fn v2_cmyk_chromatic_neutral() -> Vec<u8> {
     .assemble()
 }
 
+// ---------------------------------------------------------------------------
+// (c3) Well-formed: the CMYK press whose BLACK INK IS CHROMATIC, and whose
+//      B2A INVERTS its own A2B on the neutral axis
+// ---------------------------------------------------------------------------
+//
+// ★★★ WHY A SECOND SEPARATING FIXTURE EXISTS, AND WHAT THE FIRST ONE CANNOT DO.
+//
+// [`v2_cmyk_chromatic_neutral`] was authored so that "K-only in implies K-only
+// out" would have **two different answers** on a committed profile: its `B2A0`
+// puts `0.60 d` of composite gray into a neutral, so a black-preserving
+// consumer and a colorimetric one differ by `0.420700` of ink. Pass K §F
+// grades exactly that, in CI, and it is sound — **in device units**.
+//
+// It cannot carry a **ΔE** row, and the reason is structural. Its `B2A0`
+// returns `0.60 d` of gray under `0.40 d` of black for a neutral of encoded
+// darkness `d`, and its own `A2B0` reads that separation back as darkness
+// `0.70 d`: **the two tables do not invert each other.** The fixture's own
+// colorimetric round trip is therefore wrong by more than twenty ΔE2000, which
+// is larger than any cost a preservation policy could have — so a ΔE measured
+// on it prices the fixture and not the policy. Pass K §G measures that
+// disqualification rather than asserting it (`G9`).
+//
+// **This recipe is the fixture a ΔE row needs.** Three properties, and each is
+// exactly one of §G's gates:
+//
+// 1. **Its `B2A0` is the algebraic INVERSE of its `A2B0` on the neutral axis.**
+//    The separation is not a chosen gray slope: it is the solution of the
+//    three-equation system *"lay ink that reaches this darkness with `a* = b*
+//    = 0`"*, so `A2B0(B2A0(L, 0, 0))` is `(L, 0, 0)` back — up to the encoding
+//    gap the fixture's white end makes visible and nothing else. §G's
+//    reference-leg control passes on it.
+// 2. **Its black ink is CHROMATIC**: `K` contributes `+2` to `a*` and `+6` to
+//    `b*` at full ink, a warm black, which is what real black ink is and what
+//    [`chromatic_neutral_a2b`]'s spectrally neutral `K` deliberately is not.
+//    **This is the property that gives black preservation a price at all.**
+//    With a neutral `K` a preserved answer at matched lightness is a *metamer*
+//    of the colorimetric one and the cost is zero however much ink the two
+//    answers differ by — which is the second, subtler way a fixture can
+//    manufacture a false "the policy is nearly free".
+// 3. **Everything else is held equal with the sibling.** The darkness
+//    coefficients are `chromatic_neutral_a2b`'s, unchanged, including
+//    `K = 0.70`. Paired with `v2-cmyk-chromatic-neutral` as the *source*, the
+//    two profiles therefore differ in **exactly one variable — the chroma of
+//    the black ink** — and the ΔE §G measures is attributable to it. A pair
+//    that differed in three things would report a number nobody could
+//    apportion.
+//
+// ★★ WHAT IS DELIBERATELY NOT CLAIMED. These coefficients are not
+// colorimetry, no instrument produced them, and `+2 / +6` is not a
+// measurement of any ink. Like every colorant in this corpus the model is an
+// arbitrary but **exactly stated** structural relation
+// (`fixtures/synthetic/README.md`). What the fixture provides is a pair on
+// which the cost of K-only preservation is (a) non-zero, (b) derivable in
+// closed form from these bytes, and (c) measurable without a licence. The
+// magnitude is of the same order as the one a real cross-press pair produces,
+// which is a convenience for a reader and not evidence about presses.
+//
+// ★ THE INTERPOLATION ARGUMENT IS INHERITED, NOT RE-DERIVED. Both models are
+// affine with no cross terms; the `B2A0` chroma ramp has the same three-node
+// dead band about the neutral axis; the darkness variable is the node's own
+// coordinate. Clauses 1–3 of the sibling's header apply here word for word and
+// are not repeated.
+
+/// `K`'s contribution to `a*` at full ink — the **warm black**, and the
+/// property that gives preservation a price.
+///
+/// ★ **If this and [`WB_K_B`] were zero this fixture would be useless**: the
+/// preserved answer at matched lightness would be colorimetrically identical
+/// to the four-ink separation, the cost would be zero, and the zero would be a
+/// property of the model rather than of the policy. That is precisely the
+/// state `v2-cmyk-chromatic-neutral` is in — its `K` appears in `L*` and in
+/// nothing else — and it is why a second fixture had to be authored rather
+/// than a second row added.
+const WB_K_A: f64 = 2.0;
+/// `K`'s contribution to `b*` at full ink. Positive is yellow: printers' black
+/// is warm, and the sign is the one a reader will expect to see.
+const WB_K_B: f64 = 6.0;
+
+/// The **gray-component-replacement rule** the separation is built on:
+/// `K = 0.55 d` at a neutral of encoded darkness `d`.
+///
+/// Larger than the sibling's `0.40` for an arithmetic reason, not an aesthetic
+/// one: with `0.40` the `C M Y` the system demands exceeds `1.0` at `d = 1` and
+/// the darkest node of the `B2A` clamps, which would destroy the affinity the
+/// exactness argument rests on at the one node a reader is most likely to
+/// probe. At `0.55` every channel of the neutral column stays inside `0..1`
+/// for every `d ∈ 0..1`, so the column is clamp-free everywhere and not merely
+/// where §G happens to measure.
+const WB_GCR: f64 = 0.55;
+
+/// The `A2B0` model of the warm-black press: device `C M Y K` in `0..1` to
+/// `L* a* b*`.
+///
+/// ```text
+/// D  = 0.25·C + 0.25·M + 0.20·Y + 0.70·K       (total darkness, the SIBLING's)
+/// L* = 100·(1 − D)                             clamped to 0..100
+/// a* = −60·C + 70·M − 10·Y + 2·K
+/// b* = −50·C − 45·M + 95·Y + 6·K
+/// ```
+///
+/// ★ **The `C M Y` coefficients of `a*` and `b*` each sum to zero**, so a
+/// balanced composite gray `C = M = Y = g` is **exactly neutral** for every
+/// `g`. That is what makes an exact inverse possible to write down: the
+/// separation has to cancel only the black ink's own chroma, and it has three
+/// ink channels with which to do it.
+///
+/// ★ Ranges: `a*` spans `−70..72`, `b*` spans `−95..101`, both inside the
+/// encodable `±128`, so neither clamps at any node. `L*` clamps only where
+/// `D > 1`, which no point §G measures and no corner of any cell it measures
+/// reaches — the same statement the sibling makes, with the same obligation on
+/// a future probe set.
+fn warm_black_a2b(c: f64, m: f64, y: f64, k: f64) -> (f64, f64, f64) {
+    let d = CN_C_DARKNESS * c + CN_M_DARKNESS * m + CN_Y_DARKNESS * y + CN_K_DARKNESS * k;
+    let l = (100.0 * (1.0 - d)).clamp(0.0, 100.0);
+    let a_star = -60.0 * c + 70.0 * m - 10.0 * y + WB_K_A * k;
+    let b_star = -50.0 * c - 45.0 * m + 95.0 * y + WB_K_B * k;
+    (l, a_star, b_star)
+}
+
+/// **The neutral separation, solved rather than chosen.** Returns the
+/// `C M Y K` that [`warm_black_a2b`] maps to `L* a* b* = (100(1 − d), 0, 0)`.
+///
+/// With `K` fixed by the GCR rule `K = 0.55 d`, the remaining three unknowns
+/// are determined by three equations — reach the darkness, cancel `a*`, cancel
+/// `b*`:
+///
+/// ```text
+/// 0.25·C + 0.25·M + 0.20·Y = d − 0.70·K       (the darkness K did not supply)
+///  −60·C +   70·M −   10·Y = −2·K             (cancel the black ink's a*)
+///  −50·C −   45·M +   95·Y = −6·K             (cancel the black ink's b*)
+/// ```
+///
+/// Every right-hand side is proportional to `d`, so the solution is **linear
+/// in `d`** — which is what lets the `B2A0`'s neutral column be reproduced
+/// exactly by any conformant interpolation, exactly as the sibling's `0.60 d`
+/// is. The system is solved here by Cramer's rule rather than pre-computed
+/// into three literals so that changing a coefficient above changes the
+/// separation with it; a hard-coded column would silently stop inverting the
+/// model it is supposed to invert.
+///
+/// ★ **Clamp-free for every `d ∈ 0..1`**: the solution at `d = 1` is
+/// approximately `C = 0.899`, `M = 0.877`, `Y = 0.854`, `K = 0.550`, a total
+/// area coverage of `318 %`. High for a real press and irrelevant here — the
+/// fixture is a structural relation and the recipe states so — but every
+/// channel is inside `0..1`, which is the property the exactness argument
+/// needs. See [`WB_GCR`] for why the rule is `0.55` and not the sibling's
+/// `0.40`.
+fn warm_black_neutral(d: f64) -> [f64; 4] {
+    let k = WB_GCR * d;
+    // The 3x3 system above, as rows.
+    let a = [
+        [CN_C_DARKNESS, CN_M_DARKNESS, CN_Y_DARKNESS],
+        [-60.0, 70.0, -10.0],
+        [-50.0, -45.0, 95.0],
+    ];
+    let rhs = [d - CN_K_DARKNESS * k, -WB_K_A * k, -WB_K_B * k];
+    let det = det3(&a);
+    let mut out = [0.0_f64; 4];
+    for (i, slot) in out.iter_mut().take(3).enumerate() {
+        let mut m = a;
+        for (row, r) in m.iter_mut().zip(rhs) {
+            row[i] = r;
+        }
+        *slot = det3(&m) / det;
+    }
+    out[3] = k;
+    out
+}
+
+/// Determinant of a 3×3, by the rule of Sarrus. Written out because
+/// [`warm_black_neutral`] needs Cramer's rule and this crate has no
+/// dependencies by policy.
+fn det3(m: &[[f64; 3]; 3]) -> f64 {
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+}
+
+/// The `B2A0` model of the warm-black press, **defined on CLUT node indices**
+/// exactly as the sibling's is.
+///
+/// ```text
+/// d  = 1 − li/(N−1)                  darkness in the CLUT's OWN input coordinate
+/// ca = chroma_ramp(ai)               0 for ai in {3,4,5}
+/// cb = chroma_ramp(bi)               0 for bi in {3,4,5}
+/// (C0, M0, Y0, K0) = warm_black_neutral(d)
+///
+/// C = C0 − 0.25·ca − 0.125·cb
+/// M = M0 + 0.25·ca − 0.125·cb
+/// Y = Y0 + 0.075·ca + 0.25·cb
+/// K = K0
+/// ```
+/// each clamped to `0..1`.
+///
+/// ★★ On the neutral axis (`ca = cb = 0`) this is **the exact inverse of
+/// [`warm_black_a2b`]**, which is the whole point of the recipe and the
+/// property `v2-cmyk-chromatic-neutral` does not have. Off the dead band the
+/// chroma terms are the sibling's, unchanged, and they clamp in the same
+/// places for the same reasons; nothing measured lies there.
+fn warm_black_b2a(li: usize, ai: usize, bi: usize, n: usize) -> [f64; 4] {
+    let d = 1.0 - frac(li, n);
+    let ca = chroma_ramp(ai, n);
+    let cb = chroma_ramp(bi, n);
+    let base = warm_black_neutral(d);
+    [
+        (base[0] - CN_CHROMA * ca - 0.5 * CN_CHROMA * cb).clamp(0.0, 1.0),
+        (base[1] + CN_CHROMA * ca - 0.5 * CN_CHROMA * cb).clamp(0.0, 1.0),
+        (base[2] + 0.3 * CN_CHROMA * ca + CN_CHROMA * cb).clamp(0.0, 1.0),
+        base[3].clamp(0.0, 1.0),
+    ]
+}
+
+/// v2.4 CMYK Output profile whose **black ink is chromatic** and whose `B2A0`
+/// **inverts its own `A2B0`** on the neutral axis — the fixture a ΔE cost row
+/// needs and the corpus did not have.
+///
+/// See the section header for why it exists and what
+/// `v2-cmyk-chromatic-neutral` cannot do.
+///
+/// ## What a conformant consumer must produce
+///
+/// Writing `ρ = 65 280 / 65 535` for the legacy-PCSLAB full-scale ratio:
+///
+/// * `A2B0(0, 0, 0, k) = L*a*b*(100(1 − 0.70 k), 2k, 6k)` exactly — the K-only
+///   ramp is an **edge** of the hypercube, so every interpolation scheme
+///   agrees along it, and unlike the sibling's it is **off the neutral axis**.
+/// * `B2A0(L*, 0, 0)` returns the solution of [`warm_black_neutral`] at
+///   `d = 1 − ρ·L*/100`, to 16-bit sample precision, and
+///   `A2B0(B2A0(L*, 0, 0)) = (100 ρ L*/100, 0, 0)` — the input `L*` back,
+///   short by the `ρ` gap the legacy encoding puts between `L* = 100` and full
+///   scale, and by nothing else.
+/// * **The two candidate answers for a K-only input**, at `k`, are therefore
+///   `L*a*b*(100 ρ (1 − 0.70 k), 0, 0)` from a colorimetric consumer and
+///   `L*a*b*(100(1 − 0.70 k), 2k, 6k)` from a black-preserving one **when the
+///   source is `v2-cmyk-chromatic-neutral`**, whose own K ramp is
+///   `(100(1 − 0.70 k), 0, 0)` and whose `0.70` this recipe deliberately
+///   shares. Their ΔE2000 is the closed form Pass K §G grades the measurement
+///   against; it is `0` at neither end and rises with `k`.
+/// * `mft2`: `A2B0` is `inputChan = 4`, `outputChan = 3`, `clutPoints = 5`;
+///   `B2A0` is `inputChan = 3`, `outputChan = 4`, `clutPoints = 9`. Both
+///   matrices are the identity. Both CLUTs use the **legacy** 16-bit PCSLAB
+///   encoding, unconditionally, per clause 10.10.
+///
+/// ## Conformance note
+///
+/// Two tags rather than clause 8.5.2's six, exactly as both siblings do and
+/// for the same reason (corpus finding **A34**). A consumer asked for the
+/// media-relative intent falls back to `A2B0`/`B2A0`.
+fn v2_cmyk_warm_black() -> Vec<u8> {
+    let na = CN_A2B_NODES;
+    let mut a2b_clut = Vec::with_capacity(na * na * na * na * 3);
+    for ci in 0..na {
+        for mi in 0..na {
+            for yi in 0..na {
+                for ki in 0..na {
+                    let (l, a_star, b_star) =
+                        warm_black_a2b(frac(ci, na), frac(mi, na), frac(yi, na), frac(ki, na));
+                    a2b_clut.push(legacy_lab_l(l));
+                    a2b_clut.push(legacy_lab_ab(a_star));
+                    a2b_clut.push(legacy_lab_ab(b_star));
+                }
+            }
+        }
+    }
+
+    let nb = CN_B2A_NODES;
+    let mut b2a_clut = Vec::with_capacity(nb * nb * nb * 4);
+    for li in 0..nb {
+        for ai in 0..nb {
+            for bi in 0..nb {
+                for v in warm_black_b2a(li, ai, bi, nb) {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        reason = "clamped to 0..1 by warm_black_b2a, so 0..65535 here"
+                    )]
+                    let enc = (v * 65_535.0).round() as u16;
+                    b2a_clut.push(enc);
+                }
+            }
+        }
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "both node counts are compile-time constants, 5 and 9"
+    )]
+    let (na8, nb8) = (na as u8, nb as u8);
+    let a2b0 = Mft2 {
+        input_chan: 4,
+        output_chan: 3,
+        clut_points: na8,
+        pad: 0,
+        matrix: Mft2::IDENTITY,
+        input_ent: 2,
+        output_ent: 2,
+        input_tables: [0x0000u16, 0xFFFF].repeat(4),
+        clut: a2b_clut,
+        output_tables: [0x0000u16, 0xFFFF].repeat(3),
+    };
+    let b2a0 = Mft2 {
+        input_chan: 3,
+        output_chan: 4,
+        clut_points: nb8,
+        pad: 0,
+        matrix: Mft2::IDENTITY,
+        input_ent: 2,
+        output_ent: 2,
+        input_tables: [0x0000u16, 0xFFFF].repeat(3),
+        clut: b2a_clut,
+        output_tables: [0x0000u16, 0xFFFF].repeat(4),
+    };
+    let mut tags_ = v2_meta("iccce synthetic v2 CMYK, warm black ink, B2A0 inverts A2B0");
+    tags_.push(wtpt());
+    tags_.push(Tag::own(b"A2B0", a2b0.encode()));
+    tags_.push(Tag::own(b"B2A0", b2a0.encode()));
+    ProfileSpec {
+        version: 0x0240_0000,
+        class: *b"prtr",
+        color_space: *b"CMYK",
+        pcs: *b"Lab ",
+        rendering_intent: 1,
+        tags: tags_,
+    }
+    .assemble()
+}
+
 // ===========================================================================
 // (d) Well-formed: the D2 discriminator pair — mft2 Lab in v4 and in v2
 // ===========================================================================
@@ -2828,6 +3155,42 @@ pub fn all() -> Vec<Recipe> {
                      preserving path should emit is an OPEN FORK (lcms2's equal-L* construction vs \
                      Cholewo 2000's K_MIN/K_MAX ratio) and this fixture presupposes neither.",
             build: v2_cmyk_chromatic_neutral,
+        },
+        Recipe {
+            name: "v2-cmyk-warm-black",
+            category: WellFormed,
+            covers: "mft2 both directions; a CHROMATIC black ink, and a B2A that is the exact \
+                     INVERSE of its own A2B on the neutral axis",
+            what: "v2.4.0.0 prtr CMYK, Lab PCS, mft2 A2B0 (4->3, 5^4 grid) and B2A0 (3->4, 9^3 \
+                   grid). Same affine construction, same dead band and the same darkness \
+                   coefficients as v2-cmyk-chromatic-neutral, differing in exactly two things: K \
+                   carries CHROMA (a* += 2K, b* += 6K, a warm black) and the C M Y coefficients of \
+                   a* and b* each sum to zero, so the B2A0 neutral column can be SOLVED for the \
+                   ink that reaches a darkness with a* = b* = 0 instead of being a chosen gray \
+                   slope",
+            expect: "parses; 0 malformations; lut16 in=4 out=3 clutPoints=5 and lut16 in=3 out=4 \
+                     clutPoints=9; matrixIdentity=true. \
+                     \u{2605}\u{2605}\u{2605} THE POINT OF THE FIXTURE: A2B0(B2A0(L,0,0)) returns \
+                     (L,0,0) - the two tables INVERT each other on the neutral axis, short only by \
+                     the legacy encoding's 65280/65535 gap. Its sibling v2-cmyk-chromatic-neutral \
+                     does NOT: its B2A0 lays 0.60 d of gray under 0.40 d of black, which its own \
+                     A2B0 reads back as darkness 0.70 d, so its colorimetric round trip is wrong \
+                     by more than 20 dE2000 and no dE row can run on it. That is measured, in CI, \
+                     by Pass K \u{a7}G. \
+                     \u{2605}\u{2605} A2B0(0,0,0,k) = Lab(100(1 - 0.70k), 2k, 6k): the K-only ramp is \
+                     an EDGE of the hypercube and is OFF the neutral axis. Paired with \
+                     v2-cmyk-chromatic-neutral as the SOURCE (whose K ramp is the same lightness \
+                     and exactly neutral), the two profiles differ in EXACTLY ONE variable - the \
+                     chroma of the black ink - so the dE2000 between a preserved and a \
+                     colorimetric answer is attributable to it. \
+                     \u{2605} With a spectrally neutral K the preserved answer at matched lightness \
+                     is a METAMER of the colorimetric one and the cost is zero however much INK \
+                     the two answers differ by. That is the second way a fixture can manufacture a \
+                     false 'the policy is nearly free', and it is why this recipe exists rather \
+                     than a second row on the sibling. \
+                     \u{2605} DO NOT change WB_K_A, WB_K_B, WB_GCR or the darkness coefficients: \
+                     Pass K \u{a7}G grades the measured cost against a closed form derived from them.",
+            build: v2_cmyk_warm_black,
         },
         Recipe {
             name: "v2-cmyk-mft1-lab",

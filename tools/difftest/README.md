@@ -5443,6 +5443,11 @@ before `a05476c` it would have been a **disclosure**; now it would be a
 - **the perceptual cost of preservation is unmeasured** — nobody has asked what
   `ΔE2000` the preserved answer sits from the colorimetric one on a cross-press
   pair, which is the number a caller weighing the policy would want;
+  ★★★ **DISCHARGED 2026-08-19 by §26 below** — `3.681203 ΔE2000` max,
+  `1.580674` mean, on `ISO Coated v2 300% (ECI) → GWG_GenericCMYK` at
+  media-relative. The bullet is left as written, with the discharge dated
+  beside it, because the coverage statement was true of the grading it
+  describes; **`§25.13.6`'s other bullets are NOT affected by it.**
 - ★★★ **the compiled path is unmeasured by any row of this harness** —
   §25.13.7. ★ **CORRECTED 2026-08-18 (later the same day):** this bullet read
   *"unmeasured **and measurably wrong**"* and the second half was stale when
@@ -5452,3 +5457,208 @@ before `a05476c` it would have been a **disclosure**; now it would be a
   near the axis) and **not wrong**. The first half stands: **no row here
   drives it**, and a `crates/` test carries no tolerance from
   `docs/TOLERANCES.md` and never reaches a `summary` line.
+
+---
+
+## 26. ★★★ Pass K §G — what black preservation COSTS, in colour (2026-08-19)
+
+### 26.1 The debt this discharges, and its exact wording
+
+`docs/NUMERIC_CLAIMS.md` registered **NA-012** on 2026-08-18 with its cost
+field reading `UNMEASURED`, and §7.23's owed item 3 stated the discharge
+condition:
+
+> *Done when: NA-012's cost field carries a measured ΔE2000 with its pair, its
+> direction and its intent.*
+
+§G measures it. **`3.681203 ΔE2000` max, `1.580674` mean, at `K = 1.00`, over
+101 qualifying points**, on **`ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`**,
+**media-relative**, `--preserve-black k-only-equal-lightness`. Reproduce with
+either of:
+
+```text
+cargo run --release --bin iccce-difftest        # rows passk/G/*
+cargo run --release --bin passk_cost_probe      # the distribution behind them
+```
+
+### 26.2 ★★ What the number is a difference OF, and its evidence class
+
+`ΔE2000( A2B1_dst(colorimetric answer), A2B1_dst(preserved answer) )` at each
+point of the qualifying set — the two answers the shipped binary prints for the
+**same input**, differing only in whether `--preserve-black` was passed, each
+carried into Lab through the **destination's own `A2B1`**.
+
+It is a **self-comparison** (`Kind::SelfConsistency`), and that is the ceiling
+this subject admits rather than a shortcoming of this measurement:
+
+- the question is *"what does applying this policy cost relative to not
+  applying it"*, which is intrinsically iccce against iccce;
+- `ICC_Spec` register entry **A51** is a **closed negative** — ICC.1 contains no
+  black-preservation construct in either edition checked — so **no published
+  value can exist** for what preservation *should* return;
+- lcms2's intent 11 is the construction iccce **implements**, so agreement with
+  it is not independent evidence (NA-012 says this itself).
+
+**lcms2 appears only as a RULER.** The same map carries both legs into Lab, so
+most of a ruler error cancels in the difference — and `G6` grades that instead
+of asserting it, by recomputing the headline through `iccce_cmm`'s own model of
+the same tag. The headline moves by `6.643135e-3` when the ruler changes;
+per-point the two rulers disagree by up to `0.317063`, which is **above**
+NC-050's `0.25423` envelope and is disclosed on the row.
+
+### 26.3 ★★★ The two traps, and the four rows that exist only to defeat them
+
+A pair that does not separate manufactures a false *"the policy is nearly
+free"*, and the resulting number looks exactly like good news.
+
+| trap | row | what it observed |
+|---|---|---|
+| the destination emits K-only anyway, so the policy is a **no-op** | `G3` | `0.843495` of chromatic ink in the colorimetric answer, floor `4e-2` |
+| the two profiles are **one press**, so the two answers cannot differ much | `G4` | the two render the same device `K` `3.6512 ΔE2000` apart, floor `1.0` |
+| the destination **cannot reproduce the source at all**, so the reference leg is itself wrong | `G5` | `0.641757 ΔE2000`, bound `1.0` — `5.7×` below the cost it prices |
+| ★ the preserved answer is a **METAMER** of the colorimetric one | *(no row catches this; it is a property of the fixture's model — §26.5)* | |
+
+`G8` runs the trap on purpose: **`ISO Coated v2 (ECI)` → `ISO Coated v2 300%
+(ECI)`**, two files whose `A2B1` tags are **byte-identical**, costs
+**`0.159500`** — `23.1×` smaller, and imperceptible. That is the regime
+NC-244's same-profile `1.360900e-1` belongs to, and it is why NA-012 forbids
+quoting it as the policy's price.
+
+### 26.4 ★★ The population, which is stronger than the headline
+
+`G16` runs the same measurement over **all thirty ordered pairs** of the six
+real CMYK members of the Ghent corpus and grades a universal statement:
+
+> **Of 30 ordered pairs, 11 are ENTITLED to price this policy, and 0 of them
+> find it imperceptible.** Among the entitled the cost runs **`2.023698`**
+> (`Coated FOGRA27 → GWG_ICC_v4_testprofile`) to **`3.686985`**
+> (`Coated FOGRA39 → GWG_GenericCMYK`).
+
+Without the entitlement filter the same count is **9**, which is the row's
+separation and the measure of what the three gates are worth. ★ `G1` grades a
+pair `5.782e-3` below the largest, chosen for continuity with §A–§E — stated on
+the row rather than left for a reader to notice.
+
+### 26.5 ★★★ Why a new committed fixture had to be authored
+
+`v2-cmyk-chromatic-neutral` was authored for §F and is sound there. It **cannot
+carry a ΔE row**, for two independent reasons, and `G9`/`G10` print both in CI
+rather than asserting them:
+
+1. **Its `B2A0` is not the inverse of its `A2B0`.** The separation returns
+   `0.60 d` of composite gray under `0.40 d` of black, which its own `A2B0`
+   reads back as darkness `0.70 d`. Its colorimetric round trip is
+   **`21.218992 ΔE2000`** wrong — *larger* than the `19.394947` cost it would
+   have reported.
+2. ★ **Its black ink is spectrally neutral** (`K` appears in `L*` and nothing
+   else). On such a model the preserved answer at matched lightness has the
+   same `L*a*b*` as the four-ink separation it replaced: the two answers are
+   **colorimetrically identical however much ink separates them.** A fixture
+   can therefore separate by `0.42` of ink, pass every device-unit gate in §F,
+   and report a cost of zero for a reason that has nothing to do with the
+   policy. **No tolerance catches that**, which is why it is a fixture problem
+   and not a bound problem.
+
+`fixtures/synthetic/v2-cmyk-warm-black.icc` (recipe `v2-cmyk-warm-black`)
+varies **exactly one variable** against its sibling: the black ink carries
+chroma (`a* += 2K`, `b* += 6K`), and the `C M Y` coefficients of `a*` and `b*`
+each sum to zero so the neutral column can be **solved** for the ink that
+reaches a darkness with `a* = b* = 0` rather than chosen. Darkness
+coefficients, dead band and grid sizes are the sibling's, unchanged.
+
+Paired **`v2-cmyk-chromatic-neutral` → `v2-cmyk-warm-black`**, in CI:
+
+| | |
+|---|---|
+| cost | **`5.825550 ΔE2000`** max at `K = 1.00`, `3.066464` mean |
+| reference leg | `0.223097` — the legacy `65280/65535` encoding gap and nothing else |
+| pair separation | `5.828241 ΔE2000`; ink `0.630649` |
+| ★ **vs the closed form** | departs by at most **`6.281370e-3`**, bound `1e-2` **counted** |
+
+`G12` is **the only row in §G whose expectation is not an implementation's
+output**: `ΔE2000((ρ·100(1−0.70k), 0, 0), (100(1−0.70k), 2k, 6k))` with
+`ρ = 65280/65535`, derived from the two recipes' constants. `K′ = k` exactly,
+because both recipes carry the same `0.70` darkness per unit of `K` and the
+equal-lightness construction is then the identity.
+
+★ **The bound's first draft was wrong and is recorded as such** in
+`DERIVED_COST`'s doc comment: it omitted the `B2A0` device-output quantisation
+term and counted `6e-3`, **below what the run then observed**. It was corrected
+by counting the missing term (`7.6e-3`), not by widening to fit.
+
+### 26.6 The discontinuity, which the cost distribution does not show
+
+The policy fires at `C = M = Y = 0` **exactly**. `G7` measures what a gradient
+sees when it leaves the qualifying set by **one 8-bit code of cyan**: both legs
+run *with* `--preserve-black`, and the answers step by **`3.712251 ΔE2000`** —
+slightly **larger** than the cost itself. `E7`/`F8` grade the other half of the
+same fact at exactly `0`: the policy does not touch a non-qualifying input.
+A consumer painting a K-only-to-rich-black ramp sees the step, not the cost.
+
+### 26.7 Coverage of §G, stated
+
+- **one intent** (media-relative), **no `--bpc`**, **`KMapping::EqualLightness`
+  only** — `Ratio` is unimplemented and refused by name;
+- the headline is **one ordered pair**; `G16` covers thirty, but of **six files
+  and five behaviours** (two of the six share an `A2B1` byte for byte);
+- **nine of sixteen rows need the licensed corpus** and skip in CI permanently;
+- the committed pair's cost is a property of **two authored models** and says
+  nothing about any press — it is not a substitute for `G1`;
+- ★★ **the injection proof, and exactly which rows it turned red** — see
+  §26.8. Two of §G's nine graded rows are differential; the rest are controls on
+  the fixture pair, which is what they are for;
+- **no weighting by how often a document contains K-only content**, which is
+  the term that decides whether the policy is worth its price and which belongs
+  to the consumer, not to this harness.
+
+### 26.8 ★★★ The injection proof — which §G rows are load-bearing, measured
+
+**DL-051's rule: a passing row is not evidence until one has been made to
+fail.** Every §G row above was verified green. This section records what
+happened when a defect was injected into the feature they watch.
+
+**The injection.** `crates/iccce-cmm/src/black_preserve.rs`, `KPreserve::map_k`
+(the equal-lightness curve lookup), multiplied by `0.95` — a **5 % error in the
+preserved `K` value**, which is the smallest defect that is unambiguously wrong
+and not an encoding artefact. Applied in a detached worktree, release build of
+the shipped binary, whole suite re-run, then reverted.
+
+| row | bound | clean | INJECTED | verdict |
+|---|---|---|---|---|
+| `G12` cost matches the DERIVED closed form | `1e-2` | `6.281370e-3` | **`6.228949e-1`** | **RED, 62× the bound** |
+| `G8` on a SAME-PRESS pair the policy is imperceptible | `1.0` | `1.594996e-1` | **`3.995933e0`** | **RED, 4.0×** |
+| `G3` the colorimetric answer lays ink | `0` shortfall | `0` | `0` | green — correct |
+| `G4` the two presses render `K` differently | `0` shortfall | `0` | `0` | green — correct |
+| `G5` the reference leg is sound | `1.0` | `6.417572e-1` | `6.417572e-1` | green, **unmoved** — correct |
+| `G6` the headline does not depend on the ruler | `0.25423` | `6.643135e-3` | `8.371867e-3` | green — correct |
+| `G13`/`G14`/`G15` the warm-black controls | — | — | unmoved | green — correct |
+| `G16` no entitled pair finds it imperceptible | `0` | `0` | `0` | **green, and it CANNOT catch this** |
+| `G1`, `G2`, `G7`, `G9`, `G10`, `G11` | `inf` | — | moved | **REPORTED — cannot go red by construction** |
+
+Outside §G the same injection turned `E8` and `E9` red, which is the coverage
+those two were added for on 2026-08-18.
+
+★★★ **Three findings, and the third is the uncomfortable one.**
+
+1. **`G12` is the section's detector.** Its expectation is computed from two
+   recipe constants, so it is the one row here an injection could not have been
+   fitted to — and it fails by 62× on a 5 % error. That is the row a future
+   session should watch.
+2. **The four controls did not move, and that is the correct behaviour.**
+   `G3`–`G6` are statements about the **fixture pair**, not about the engine; a
+   control that moved when the engine changed would be measuring the wrong
+   thing. `G5` in particular is bit-for-bit unmoved, because the colorimetric
+   leg does not pass through the policy at all.
+3. ★★★ **`G16` is one-sided and cannot detect a defect that makes the policy
+   WORSE.** Its claim is *"no entitled pair finds the policy imperceptible"*, so
+   an injection that **increases** every cost leaves it green — and the natural
+   defects here all increase the cost. It guards against the opposite failure:
+   a policy that silently stopped doing anything. **A population row is
+   coverage, not a gate**, and this is the second time that distinction has had
+   to be written down in this file.
+
+★ **What the injection did NOT prove.** `G1` is the number NA-012 will carry
+and it is `REPORTED` — by design, since no requirement bounds what an opt-in
+policy may cost — so **the headline itself can never go red**. Its protection is
+`G12` and `G8` failing beside it, not the row itself. A reader who wants the
+headline defended must read those two rows, and this table is why they exist.

@@ -56,6 +56,41 @@
 //!    cross-check against a **vendor extension outside the ICC intent
 //!    numbering** — see "The oracle is a non-ICC intent" below.
 //!
+//! ### ★★★ §G ADDED 2026-08-19 — what the policy COSTS, in colour
+//!
+//! Everything above §G is in **device units**, for the reason the headline
+//! finding below states: ΔE2000 is blind to the *defect* preservation exists to
+//! fix. That left `NUMERIC_CLAIMS.md`'s **NA-012** carrying `UNMEASURED` in its
+//! cost field — *"nobody has measured the ΔE2000 between the preserved answer
+//! and the colorimetric one on a cross-press pair"* — and §G is that
+//! measurement. Sixteen rows, of which **seven run in CI** and nine need the
+//! licensed corpus.
+//!
+//! | | |
+//! |---|---|
+//! | the cost, `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, media-relative | `G1`/`G2`, licensed |
+//! | the same over **every** ordered pair of the six real CMYK members | `G16`, licensed |
+//! | the same on a **committed** pair, against a **closed form** | `G11`–`G15`, CI |
+//! | why the pair §F already had **cannot** carry a ΔE row | `G9`/`G10`, CI |
+//!
+//! ★★ **Its evidence class is `SelfConsistency` and that is the ceiling, not a
+//! shortcoming**: the question *"what does this policy cost relative to not
+//! applying it"* is intrinsically a comparison of the engine with itself, and
+//! `ICC_Spec` **A51** is a closed negative — no published value can exist for
+//! what preservation *should* return. lcms2 appears only as a **ruler**, and
+//! `G6` grades the claim that the ruler does not decide the answer.
+//!
+//! ★★ **A fixture had to be authored for it.** `v2-cmyk-chromatic-neutral`
+//! separates the two candidate answers by `0.420705` of **ink** and is sound
+//! for §F — and its `B2A0` is not the inverse of its `A2B0`, so a ΔE measured on
+//! it prices the fixture. Worse, its black ink is **spectrally neutral**, which
+//! makes a preserved answer at matched lightness a **metamer** of the
+//! colorimetric one: a fixture can separate by half a unit of ink and still
+//! report a cost of zero for a reason that has nothing to do with the policy.
+//! `fixtures/synthetic/v2-cmyk-warm-black.icc` varies exactly that one
+//! variable. See §G's own header for both traps and the table of which row
+//! catches which.
+//!
 //! ## ★★★ THE HEADLINE FINDING, stated before anything else
 //!
 //! > **ΔE is blind to the defect black preservation exists to fix.**
@@ -874,7 +909,7 @@ pub const EXACT_ZERO: Tolerance = Tolerance::new(
 /// before touching the inverter.
 pub const PRINT_FLOOR: Tolerance = Tolerance::new(
     1e-6,
-    "ONE printed unit of `iccce transform`'s six decimals in 0..1. The expectation is ALGEBRA,      not a measurement: on a same-profile pair the equal-lightness construction is the identity      K_out = K_in for any strictly monotonic L*(K) ramp, so no press, encoding or interpolation      term exists to allow for. The probe's own K values are j/40 and are exactly representable      in six decimals. ★ The premise is the fixture's strict monotonicity; a flat stretch would      make the inversion ill-posed and this row would go red about the FIXTURE",
+    "ONE printed unit of `iccce transform`'s six decimals in 0..1. The expectation is ALGEBRA, not a measurement: on a same-profile pair the equal-lightness construction is the identity K_out = K_in for any strictly monotonic L*(K) ramp, so no press, encoding or interpolation term exists to allow for. The probe's own K values are j/40 and are exactly representable in six decimals. ★ The premise is the fixture's strict monotonicity; a flat stretch would make the inversion ill-posed and this row would go red about the FIXTURE",
 );
 
 /// **§D1: two 16-bit quanta**, the encoding's own precision.
@@ -1884,6 +1919,19 @@ pub struct Bundle {
     pub separating: Option<Separating>,
     /// §F's run of that fixture through the shipped binary and the oracle.
     pub separating_run: Option<SeparatingRun>,
+    /// §G's licensed legs — the cross-press headline, its reversal, and the
+    /// same-press control.
+    pub cost: Option<Cost>,
+    /// §G's committed leg, which runs in CI and exists to show why the
+    /// headline cannot.
+    pub cost_synthetic: Option<CostLeg>,
+    /// §G's OTHER committed leg — the pair authored so that a ΔE cost row can
+    /// run without a licence — and the largest departure of its measurement
+    /// from the closed form derived from the two recipes.
+    pub cost_warm_black: Option<(CostLeg, (f64, f64, f64))>,
+    /// §G's population sweep over every ordered pair of the licensed CMYK
+    /// members.
+    pub cost_population: Option<CostPopulation>,
     pub unavailable: Vec<String>,
 }
 
@@ -1964,6 +2012,10 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
                 "Pass K, tools/difftest/src/passk.rs",
             );
             skip_or_error(&mut records, &F_XFORM_ROWS, &u, "Pass K §F");
+            skip_or_error(&mut records, &G_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_SYNTHETIC_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_WARM_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
             b.separating = separating.ok();
             return (b, records);
         }
@@ -1977,6 +2029,10 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
                 "Pass K, tools/difftest/src/passk.rs",
             );
             skip_or_error(&mut records, &F_XFORM_ROWS, &u, "Pass K §F");
+            skip_or_error(&mut records, &G_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_SYNTHETIC_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_WARM_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
             b.separating = separating.ok();
             return (b, records);
         }
@@ -2050,6 +2106,79 @@ pub fn run(oracle: &Oracle) -> (Bundle, Vec<Record>) {
         }
     }
     b.separating = separating.ok();
+
+    // §G. The COMMITTED leg is measured first, for the same reason §F's file
+    // rows come first: it runs everywhere, and it is the row that says why the
+    // licensed one has to exist. Each set of records is given the other leg so
+    // that every cross-reference between them is INTERPOLATED from a
+    // measurement rather than typed — and reads "[not measured in this run]"
+    // when the other leg did not run, which is the honest state and not a
+    // number somebody would have had to keep current.
+    let cost_syn = match analyse_cost_synthetic(oracle, &iccce) {
+        Ok(x) => Some(x),
+        Err(u) => {
+            b.unavailable
+                .push(format!("§G (committed pair): {}", u.reason()));
+            skip_or_error(&mut records, &G_SYNTHETIC_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_WARM_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
+            None
+        }
+    };
+    match analyse_cost(oracle, &iccce) {
+        Ok(x) => {
+            records.extend(cost_records(&x, cost_syn.as_ref()));
+            b.cost = Some(x);
+        }
+        Err(u) => {
+            b.unavailable.push(format!("§G: {}", u.reason()));
+            skip_or_error(&mut records, &G_ROWS, &u, "Pass K §G");
+        }
+    }
+    match (analyse_cost_population(oracle, &iccce), b.cost.as_ref()) {
+        (Ok(p), Some(c)) => {
+            records.extend(cost_population_records(&p, &c.cross));
+            b.cost_population = Some(p);
+        }
+        (Ok(_), None) => {
+            // Unreachable in practice: the population sweep needs the same
+            // corpus §G's headline does. Emitted rather than panicked on.
+            let u = Unavailable::Error(
+                "the population sweep ran but the headline pair did not, so the row has no pair \
+                 to state its choice against"
+                    .into(),
+            );
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
+        }
+        (Err(u), _) => {
+            b.unavailable
+                .push(format!("§G (population): {}", u.reason()));
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
+        }
+    }
+    if let Some(x) = &cost_syn {
+        records.extend(cost_synthetic_records(x, b.cost.as_ref()));
+    }
+    match analyse_cost_warm_black(oracle, &iccce)
+        .and_then(|leg| Ok((leg, warm_black_derivation_residual(oracle, &iccce)?)))
+    {
+        Ok((leg, residual)) => {
+            records.extend(cost_warm_black_records(
+                &leg,
+                residual,
+                b.cost.as_ref(),
+                cost_syn.as_ref(),
+            ));
+            b.cost_warm_black = Some((leg, residual));
+        }
+        Err(u) => {
+            b.unavailable
+                .push(format!("§G (warm-black pair): {}", u.reason()));
+            skip_or_error(&mut records, &G_WARM_ROWS, &u, "Pass K §G");
+            skip_or_error(&mut records, &G_POPULATION_ROWS, &u, "Pass K §G");
+        }
+    }
+    b.cost_synthetic = cost_syn;
 
     (b, records)
 }
@@ -4388,6 +4517,1557 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
 }
 
 // ===========================================================================
+// §G — WHAT THE POLICY COSTS, IN COLOUR, ON A PAIR OF DIFFERENT PRESSES
+// ===========================================================================
+//
+// ★★★ THE QUESTION §A–§F DELIBERATELY DID NOT ANSWER.
+//
+// Every row above this one is in **device units**, for the reason §A measured
+// and the module header states: ΔE2000 is blind to the *defect* black
+// preservation exists to fix (`0.705320` of chromatic ink at `0.136090`
+// ΔE2000). That is a statement about detecting the defect. It is **not** a
+// statement about what applying the policy costs, and `NUMERIC_CLAIMS.md`
+// registered the difference as **NA-012**'s `UNMEASURED` cost field: *nobody
+// has measured the ΔE2000 between the preserved answer and the colorimetric
+// one on a cross-press pair.* §G is that measurement.
+//
+// ★★★ THE EVIDENCE CLASS, STATED FIRST BECAUSE IT IS THE EASIEST THING TO
+// OVERSTATE.
+//
+// **Every cost row here is `Kind::SelfConsistency` — iccce's preserved answer
+// against iccce's own colorimetric answer.** That is the weakest class this
+// suite emits and it is nevertheless the *right* class, because the question
+// is intrinsically a comparison of the engine against itself: *what does
+// applying this policy cost relative to not applying it?* No stronger class is
+// available and none ever will be — `ICC_Spec` register entry **A51** is a
+// closed negative (ICC.1 contains no black-preservation construct in either
+// edition checked), so no published value can exist for what preservation
+// *should* return, and lcms2's intent 11 is the construction iccce implements
+// rather than an independent check of it.
+//
+// **lcms2 appears here only as a RULER**, never as an answer: both device
+// answers are carried into Lab through the *destination's own* `A2B1`,
+// evaluated by `transicc`. The same map is applied to both legs, so a ruler
+// error largely cancels in the difference — and `G6` grades that claim rather
+// than asserting it, by recomputing the headline through iccce's own `A2B1`
+// evaluation and comparing the two.
+//
+// ★★★ THE TRAP THIS SECTION IS BUILT AROUND: A PAIR THAT DOES NOT SEPARATE
+// MANUFACTURES A FALSE "THE POLICY IS NEARLY FREE".
+//
+// The policy is a **no-op** wherever the colorimetric answer is already
+// K-only, and **nearly** a no-op wherever the two profiles describe the same
+// press. Both are properties of the *fixture pair*, not of the engine, and
+// both produce a small ΔE that reads exactly like good news. §G therefore
+// measures the pair before it measures the policy, and four rows exist only to
+// keep the headline honest:
+//
+// | row | what it defends against |
+// |---|---|
+// | `G3` | a destination whose `B2A` emits K-only anyway — the `E6` zero-separation failure, in device units |
+// | `G4` | two files that are the *same press* — they must render the same device `K` values at least `1.0` ΔE2000 apart |
+// | `G5` | a destination that cannot reproduce the source at all, so that the "colorimetric answer" being differenced is itself perceptibly wrong |
+// | `G8` | the same measurement on a **same-press** pair, printed beside the headline so the two regimes cannot be confused |
+//
+// ★★ `G5` IS THE ROW THAT DISQUALIFIES THE COMMITTED SYNTHETIC PAIR, AND THAT
+// IS WHY IT IS A GATE AND NOT A NOTE.
+//
+// `v2-cmyk-chromatic-neutral` separates the two candidate answers by
+// `0.420705` **in device units** — §F grades exactly that, in CI, and it is
+// sound. It cannot carry a **ΔE** row, and the reason is structural rather
+// than incidental: **its `B2A0` is not the inverse of its `A2B0`.** The
+// separation returns `0.60 d` of composite gray under `0.40 d` of black for a
+// neutral of encoded darkness `d`, which the `A2B0` model reads back as
+// darkness `0.70 d` — so the fixture's own colorimetric round trip is wrong by
+// far more than any cost it could report. `G9`/`G10` run that pair in CI and
+// print both numbers so the disqualification is a measurement rather than a
+// paragraph. A reader who wants the cost row to run without a licence must
+// first author a fixture whose two tables invert each other on the neutral
+// axis; the corpus does not contain one today, and saying so is `G9`'s whole
+// job.
+//
+// ★★ THE PAIR, AND WHY THIS ONE.
+//
+// `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK`, media-relative, over the
+// **qualifying set** — `C = M = Y = 0`, `K = j/100`, `j = 0..=100`, the only
+// inputs `KPreserve::apply` acts on at all. It is the largest cost of the
+// **thirty ordered pairs** the six real CMYK members of the Ghent corpus admit
+// (`passk_cost_probe` prints the whole matrix); the smallest cross-press pair
+// is an order below it and the same-press pairs are two. Reporting the largest
+// is deliberate: **a caller weighing an opt-in policy needs its worst case on
+// a real pair**, and a mean over a matrix of profiles nobody uses together
+// would hide it. `G2` reports the mean over the ramp beside it because
+// `Metric`'s own doc comment forbids quoting one for the other.
+//
+// ★ THE DIRECTION IS PART OF THE CLAIM, and `G1` states it from a measurement
+// rather than an assertion: the same pair reversed is a third licensed leg of
+// this section, and it costs materially less. The policy's price is a property
+// of the **destination's** black behaviour, so swapping the two profiles is a
+// different measurement and not a check of the same one.
+//
+// ★★ THE INJECTION PROOF IS IN `tools/difftest/README.md` §26.8, and it is the
+// reason to trust `G12` rather than the row count. A 5 % error injected into
+// `KPreserve::map_k` turns `G12` red at **62x its bound** and `G8` red at 4x
+// theirs; the four controls `G3`-`G6` do **not** move, which is correct
+// because they are statements about the fixture pair rather than the engine;
+// and `G16` stays green, because a population row of the shape *"no entitled
+// pair finds the policy imperceptible"* is **one-sided** and cannot see a
+// defect that makes the policy cost more. ★ The headline `G1` is `REPORTED`
+// and can never go red: its protection is `G12` and `G8` failing beside it.
+//
+// ★ WHAT IS NOT MEASURED HERE, stated so a reader does not infer it: one
+// intent (media-relative), no `--bpc`, one pair for the headline,
+// `KMapping::EqualLightness` only — `KMapping::Ratio` is unimplemented and
+// refused by name — and no weighting by the *frequency* with which a document
+// contains K-only content, which is the term that decides whether the policy
+// is worth its price and which belongs to the consumer.
+
+/// **§G's probe: the qualifying set at 1 % resolution.**
+///
+/// `C = M = Y = 0` exactly, `K = j/100`. The predicate `KPreserve::apply`
+/// tests is `C = M = Y = 0` **exactly**, so this ramp *is* the set on which
+/// the policy does anything at all; a "broader sample" of qualifying inputs
+/// can only be a finer ramp. Non-qualifying inputs cost exactly zero by
+/// construction (`E7`/`F8` grade that at `0`), which is why the interesting
+/// neighbouring measurement is not a sample but a **step** — see
+/// [`CostLeg::boundary_step`].
+///
+/// 101 points rather than §A's 41 because the maximum is what is reported and
+/// a coarse ramp can only under-state it.
+#[must_use]
+pub fn cost_ramp() -> Vec<[f64; 4]> {
+    (0..=100)
+        .map(|j| [0.0, 0.0, 0.0, f64::from(j) / 100.0])
+        .collect()
+}
+
+/// Everything §G measured on **one ordered pair** of profiles.
+///
+/// Kept as data, like every other section's struct, so that the records and
+/// the `note` line read the same numbers and cannot drift apart — the rule
+/// three claim-bearing literals in this crate went false inside a day for.
+#[derive(Debug, Clone)]
+pub struct CostLeg {
+    /// `source → destination`, in words, including which files.
+    pub label: String,
+    /// Points on the ramp.
+    pub points: usize,
+    /// ★ **The headline.** `max` over the ramp of
+    /// `ΔE2000(A2B1_dst(colorimetric), A2B1_dst(preserved))`.
+    pub cost_max: f64,
+    /// Mean of the same quantity over the same ramp.
+    pub cost_mean: f64,
+    /// Minimum of the same quantity — always at or near the white end, where
+    /// `K = 0` and the two answers coincide.
+    pub cost_min: f64,
+    /// The `K` at which `cost_max` occurred.
+    pub cost_argmax_k: f64,
+    /// `cost_max` recomputed with **iccce's own** `A2B1` evaluation as the
+    /// ruler instead of lcms2's. `G6` grades the difference.
+    pub cost_max_iccce_ruler: f64,
+    /// The largest **per-point** disagreement between the two rulers. Reported
+    /// rather than graded: nobody has measured this destination's own
+    /// interpolation envelope, and NC-050's figure was measured elsewhere.
+    pub ruler_gap: f64,
+    /// **Separation, device units.** The most chromatic ink the *colorimetric*
+    /// answer lays down anywhere on the ramp. Zero means the destination emits
+    /// K-only anyway and the policy cannot change anything (`E6`).
+    pub sep_device: f64,
+    /// **Separation, ΔE2000.** How differently the two profiles render the
+    /// *same* device `(0,0,0,K)` values. Zero means one press described twice.
+    pub sep_press: f64,
+    /// **Control.** How far the colorimetric answer itself lands from the
+    /// colour the source asked for — the reference leg's own error. If this
+    /// approaches the cost, the difference prices the fixture and not the
+    /// policy.
+    pub round_trip: f64,
+    /// **The discontinuity.** `max` over the ramp of
+    /// `ΔE2000(preserved(0,0,0,K), preserved(1/255,0,0,K))` — the step a
+    /// consumer sees where a gradient leaves the qualifying set by one 8-bit
+    /// code of cyan. Both legs are run with `--preserve-black`; only the
+    /// input differs, so this is the policy's own edge and not a difference of
+    /// flags.
+    pub boundary_step: f64,
+    /// The `K` at which `boundary_step` occurred.
+    pub boundary_argmax_k: f64,
+}
+
+/// The three licensed legs §G measures.
+#[derive(Debug, Clone)]
+pub struct Cost {
+    /// `ISO Coated v2 300% (ECI)` → `GWG_GenericCMYK` — the headline.
+    pub cross: CostLeg,
+    /// The same pair **reversed**, so that "the direction is part of the
+    /// claim" is a measurement and not an assertion.
+    pub reversed: CostLeg,
+    /// `ISO Coated v2 (ECI)` → `ISO Coated v2 300% (ECI)` — two files whose
+    /// `A2B1` tags are **byte-identical** (see the note on `ISOCOATED350` in
+    /// the `file` module), i.e. one press with two separations. The regime
+    /// NC-244's `1.360900e-1` belongs to.
+    pub same_press: CostLeg,
+}
+
+/// Build a device → Lab evaluator from a profile's own `A2B1`, falling back to
+/// `A2B0` for the two-tag synthetic fixtures.
+///
+/// This is **iccce's** reading of the destination table, used as §G's second
+/// ruler. It is deliberately the reference model (`iccce_cmm`'s LUT types,
+/// linked by the harness under the Pass 3 decision recorded in
+/// `tools/difftest/Cargo.toml`) and not the shipped binary: the binary has no
+/// device → PCS mode, and adding one for the benefit of a measurement would
+/// put a feature in the product that no consumer asked for.
+fn a2b_ruler(path: &Path) -> Result<crate::pass5c::TagModel, Unavailable> {
+    let bytes = std::fs::read(path).map_err(|e| Unavailable::Error(e.to_string()))?;
+    let p =
+        iccce_profile::Profile::parse(&bytes).map_err(|e| Unavailable::Error(format!("{e:?}")))?;
+    for want in [crate::pass5c::tag::A2B1, crate::pass5c::tag::A2B0] {
+        let Some(e) = p.tags.iter().find(|t| t.sig == want) else {
+            continue;
+        };
+        let Some(Ok(d)) = p.decode_tag(e) else {
+            continue;
+        };
+        let m = match d.data {
+            iccce_profile::tag_types::TagData::Lut16(l) => {
+                iccce_cmm::lut_transform::Lut16Model::from_lut16(
+                    &l,
+                    false,
+                    iccce_cmm::lut_transform::PcsKind::Lab,
+                )
+                .ok()
+                .map(crate::pass5c::TagModel::Lut16)
+            }
+            iccce_profile::tag_types::TagData::Lut8(l) => {
+                iccce_cmm::lut_transform::Lut16Model::from_lut8(
+                    &l,
+                    false,
+                    iccce_cmm::lut_transform::PcsKind::Lab,
+                )
+                .ok()
+                .map(crate::pass5c::TagModel::Lut16)
+            }
+            iccce_profile::tag_types::TagData::LutAToB(l) => {
+                iccce_cmm::lut_ab::LutAbModel::from_lut_ab(
+                    &l,
+                    iccce_cmm::lut_transform::PcsKind::Lab,
+                )
+                .ok()
+                .map(crate::pass5c::TagModel::Mab)
+            }
+            _ => None,
+        };
+        if let Some(m) = m {
+            return Ok(m);
+        }
+    }
+    Err(Unavailable::Error(format!(
+        "{}: neither A2B1 nor A2B0 decodes to a Lab LUT model, so §G has no second ruler",
+        path.display()
+    )))
+}
+
+/// Evaluate a set of CMYK rows through an [`a2b_ruler`] model.
+fn ruler_lab(m: &crate::pass5c::TagModel, rows: &[[f64; 4]]) -> Option<Vec<Lab>> {
+    rows.iter()
+        .map(|r| match m.device_to_pcs(r) {
+            Some(iccce_cmm::lut_transform::PcsValue::Lab(l)) => Some(l),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Measure one ordered pair. Three `iccce transform` invocations — two of them
+/// differing **only** in `--preserve-black` — and four `transicc` runs used as
+/// the ruler.
+fn analyse_cost_leg(
+    oracle: &Oracle,
+    iccce: &Iccce,
+    label: &str,
+    src: &Path,
+    dst: &Path,
+) -> Result<CostLeg, Unavailable> {
+    let ramp = cost_ramp();
+    let rows: Vec<Vec<f64>> = ramp.iter().map(|r| r.to_vec()).collect();
+
+    let off = as_cmyk(
+        iccce
+            .transform_rows_shaped(src, dst, Intent::RelativeColorimetric, &rows, 4)
+            .map_err(|e| Unavailable::Error(e.to_string()))?,
+    )?;
+    let on = as_cmyk(
+        iccce
+            .transform_rows_shaped_preserve_black(
+                src,
+                dst,
+                Intent::RelativeColorimetric,
+                &rows,
+                4,
+                PRESERVE_POLICY,
+            )
+            .map_err(|e| Unavailable::Error(e.to_string()))?,
+    )?;
+
+    let lab_off = to_lab(oracle, dst, &off)?;
+    let lab_on = to_lab(oracle, dst, &on)?;
+    // The colour the SOURCE asked for, and what the DESTINATION would make of
+    // the same device values — the two halves of the pair's separation.
+    let lab_src_in = to_lab(oracle, src, &ramp)?;
+    let lab_dst_in = to_lab(oracle, dst, &ramp)?;
+
+    let model = a2b_ruler(dst)?;
+    let mine_off = ruler_lab(&model, &off);
+    let mine_on = ruler_lab(&model, &on);
+
+    let mut cost_max = 0.0_f64;
+    let mut cost_min = f64::INFINITY;
+    let mut cost_argmax_k = 0.0;
+    let mut sum = 0.0;
+    let mut sep_device = 0.0_f64;
+    let mut sep_press = 0.0_f64;
+    let mut round_trip = 0.0_f64;
+    let mut ruler_gap = 0.0_f64;
+    let mut cost_max_iccce_ruler = 0.0_f64;
+    for (i, p) in ramp.iter().enumerate() {
+        let c = delta_e_2000(lab_off[i], lab_on[i]);
+        if c > cost_max {
+            cost_max = c;
+            cost_argmax_k = p[3];
+        }
+        cost_min = cost_min.min(c);
+        sum += c;
+        sep_device = sep_device.max(off[i][0].max(off[i][1]).max(off[i][2]));
+        sep_press = sep_press.max(delta_e_2000(lab_src_in[i], lab_dst_in[i]));
+        round_trip = round_trip.max(delta_e_2000(lab_src_in[i], lab_off[i]));
+        if let (Some(a), Some(b)) = (&mine_off, &mine_on) {
+            let mine = delta_e_2000(a[i], b[i]);
+            cost_max_iccce_ruler = cost_max_iccce_ruler.max(mine);
+            ruler_gap = ruler_gap.max((mine - c).abs());
+        }
+    }
+
+    // The boundary step: the same PRESERVING invocation, one 8-bit code of
+    // cyan away from the qualifying set.
+    let just_off: Vec<Vec<f64>> = ramp
+        .iter()
+        .map(|r| vec![1.0 / 255.0, 0.0, 0.0, r[3]])
+        .collect();
+    let nb = as_cmyk(
+        iccce
+            .transform_rows_shaped_preserve_black(
+                src,
+                dst,
+                Intent::RelativeColorimetric,
+                &just_off,
+                4,
+                PRESERVE_POLICY,
+            )
+            .map_err(|e| Unavailable::Error(e.to_string()))?,
+    )?;
+    let lab_nb = to_lab(oracle, dst, &nb)?;
+    let mut boundary_step = 0.0_f64;
+    let mut boundary_argmax_k = 0.0;
+    for (i, p) in ramp.iter().enumerate() {
+        let d = delta_e_2000(lab_on[i], lab_nb[i]);
+        if d > boundary_step {
+            boundary_step = d;
+            boundary_argmax_k = p[3];
+        }
+    }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the ramp has 101 points; the count is exactly representable"
+    )]
+    let mean = sum / ramp.len() as f64;
+    Ok(CostLeg {
+        label: label.to_string(),
+        points: ramp.len(),
+        cost_max,
+        cost_mean: mean,
+        cost_min,
+        cost_argmax_k,
+        cost_max_iccce_ruler,
+        ruler_gap,
+        sep_device,
+        sep_press,
+        round_trip,
+        boundary_step,
+        boundary_argmax_k,
+    })
+}
+
+/// §G's licensed legs.
+fn analyse_cost(oracle: &Oracle, iccce: &Iccce) -> Result<Cost, Unavailable> {
+    let iso300 = need_corpus(file::ISOCOATED300)?;
+    let gwg = need_corpus(file::GENERIC_CMYK)?;
+    let iso350 = need_corpus(file::ISOCOATED350)?;
+    Ok(Cost {
+        cross: analyse_cost_leg(
+            oracle,
+            iccce,
+            "ISO Coated v2 300% (ECI) -> GWG_GenericCMYK [two different presses]",
+            &iso300,
+            &gwg,
+        )?,
+        reversed: analyse_cost_leg(
+            oracle,
+            iccce,
+            "GWG_GenericCMYK -> ISO Coated v2 300% (ECI) [the same pair, reversed]",
+            &gwg,
+            &iso300,
+        )?,
+        same_press: analyse_cost_leg(
+            oracle,
+            iccce,
+            "ISO Coated v2 (ECI) -> ISO Coated v2 300% (ECI) [ONE press, two separations: the \
+             two files' A2B1 tags are byte-identical]",
+            &iso350,
+            &iso300,
+        )?,
+    })
+}
+
+/// §G's committed leg — the one that runs in CI, and the one whose job is to
+/// show that it **cannot** carry the headline.
+fn analyse_cost_synthetic(oracle: &Oracle, iccce: &Iccce) -> Result<CostLeg, Unavailable> {
+    let src = need_synthetic(SYNTHETIC_CMYK)?;
+    let dst = need_synthetic(SYNTHETIC_SEPARATING)?;
+    analyse_cost_leg(
+        oracle,
+        iccce,
+        "fixtures/synthetic/v2-cmyk-mft2-lab.icc -> \
+         fixtures/synthetic/v2-cmyk-chromatic-neutral.icc [committed, unlicensed, runs in CI — \
+         and DISQUALIFIED as a cost fixture by the row above]",
+        &src,
+        &dst,
+    )
+}
+
+/// **`G4`'s floor: the two profiles must be perceptibly different presses.**
+///
+/// `1.0` ΔE2000 — §2's perceptibility anchor, used here as a **lower** bound
+/// on the *fixture pair* rather than an upper bound on an error. If the two
+/// profiles render the same device `(0,0,0,K)` within the threshold of
+/// perceptible difference, they describe one press for this subject, the
+/// preserved and colorimetric answers cannot differ by much whatever the
+/// engine does, and a small cost is a property of the pair. The corpus
+/// contains such a pair and `G8` runs it on purpose.
+pub const PRESS_SEPARATION_FLOOR: f64 = 1.0;
+
+/// `G4`'s gate, in the shortfall form `F3` established: `observed =
+/// max(0, floor − separation)`, graded at zero.
+pub const PRESS_SEPARATION_FLOOR_MET: Tolerance = Tolerance::new(
+    0.0,
+    "ZERO SHORTFALL against a PAIR separation floor of 1.0 dE2000 — TOLERANCES.md §2's \
+     perceptibility anchor, applied as a LOWER bound on the fixture pair rather than an upper \
+     bound on an error. Below it the two profiles are one press for this subject and any cost \
+     they report is a property of the pair rather than of the policy. Derived from the anchor, \
+     NOT from what this pair happens to measure — which at the time of writing is several times \
+     the floor, and the margin is printed on the row",
+);
+
+/// **`G5`'s gate: the leg being differenced must itself be sound.**
+///
+/// A cost is a difference between two answers, and it prices the *policy* only
+/// while the answer it is differenced against is the colour the source asked
+/// for. `1.0` ΔE2000 — the perceptibility anchor again, and this time in its
+/// ordinary direction: if the colorimetric answer is itself *perceptibly*
+/// wrong, the difference measures the destination's gamut and its round trip
+/// rather than the policy.
+///
+/// ★ **This bound bites, and the row exists because it did.** On the committed
+/// synthetic pair the same quantity is more than an order of magnitude above
+/// it — larger than the cost that pair would have reported — and `G9` prints
+/// the number in CI rather than leaving it to this comment.
+pub const REFERENCE_LEG_SOUND: Tolerance = Tolerance::new(
+    1.0,
+    "the accepted threshold of perceptible difference for adjacent patches (TOLERANCES.md §2), \
+     applied to the leg the cost is differenced AGAINST. A cost prices the policy only while \
+     the colorimetric answer is the colour the source asked for; once that leg is itself \
+     perceptibly wrong the difference prices the destination's gamut and round trip instead. \
+     The bound BITES: the committed synthetic pair is disqualified by it, which is why the \
+     headline needs a licensed corpus",
+);
+
+/// **`G8`'s bound: on a same-press pair the policy is imperceptible.**
+///
+/// Same anchor, third use, and the claim is the one NA-012's *"what must NOT
+/// be quoted as its cost"* field is about: where the two profiles describe one
+/// press, K-only preservation changes the answer by less than the threshold of
+/// perceptible difference — so quoting that number as the policy's price
+/// understates it by more than an order of magnitude.
+pub const SAME_PRESS_IMPERCEPTIBLE: Tolerance = Tolerance::new(
+    1.0,
+    "the perceptibility anchor (TOLERANCES.md §2). The claim being graded is that on a pair of \
+     profiles describing ONE press the policy is invisible — which is why NC-244's same-profile \
+     1.360900e-1 must never be quoted as the cost of the policy. A red row here would mean the \
+     same-press regime is NOT the cheap one and the framing of NA-012's cost field is wrong",
+);
+
+/// **`G6`'s bound: the headline must not depend on which ruler carried the
+/// device answers into Lab.**
+///
+/// `0.254 23` ΔE2000 — **NC-050's measured interpolation-method envelope for
+/// the media-relative `A2B1` direction** on a real CMYK profile
+/// (`NUMERIC_CLAIMS.md` §3.11; the `A2B0` figure is `1.5741` and is *not* the
+/// one that applies here, because §G converts at media-relative). It is the
+/// largest disagreement this project has measured between two conformant
+/// evaluations of one CMYK `A2B` table, so a headline that moves by less than
+/// it when the ruler changes has not been decided by the ruler.
+///
+/// ★ **What it is not.** It was measured on `ISO Coated v2 300% (ECI)`, not on
+/// this destination, whose own envelope nobody has measured; the per-point
+/// gap between the two rulers ([`CostLeg::ruler_gap`]) exceeds the borrowed
+/// number on this pair. That is disclosed on the row rather than smoothed
+/// over — the graded quantity is the **headline's** movement, because that is
+/// the number NA-012's cost field will carry.
+pub const RULER_INVARIANCE: Tolerance = Tolerance::new(
+    0.254_23,
+    "NC-050's MEASURED interpolation-method envelope for the media-relative A2B1 direction on a \
+     real CMYK profile (NUMERIC_CLAIMS.md §3.11) — the largest disagreement this project has \
+     measured between two conformant evaluations of one CMYK A2B table. BORROWED from a \
+     different profile, which is stated on the row: this destination's own envelope has never \
+     been measured and the per-point ruler gap here exceeds the borrowed figure. What is graded \
+     is the movement of the HEADLINE when the ruler changes, because that is the number NA-012 \
+     will carry",
+);
+
+const G_ROWS: [(&str, Kind, Metric, Tolerance); 8] = [
+    (
+        "passk/G/cost/isocoated300-to-generic-cmyk/media-relative/dE2000-max",
+        SELF,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/G/cost/isocoated300-to-generic-cmyk/media-relative/dE2000-mean",
+        SELF,
+        Metric::DeltaE2000Mean,
+        REPORTED,
+    ),
+    (
+        "passk/G/separation/the-colorimetric-answer-DOES-lay-chromatic-ink",
+        SELF,
+        DEV,
+        SEPARATION_FLOOR_MET,
+    ),
+    (
+        "passk/G/separation/the-two-presses-render-the-same-K-DIFFERENTLY",
+        OR,
+        DE,
+        PRESS_SEPARATION_FLOOR_MET,
+    ),
+    (
+        "passk/G/control/the-leg-the-cost-is-differenced-against-is-SOUND",
+        CC,
+        DE,
+        REFERENCE_LEG_SOUND,
+    ),
+    (
+        "passk/G/control/the-headline-does-not-depend-on-the-RULER",
+        CC,
+        DE,
+        RULER_INVARIANCE,
+    ),
+    (
+        "passk/G/cost/boundary-step-at-one-8-bit-code-of-cyan",
+        SELF,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/G/control/on-a-SAME-PRESS-pair-the-policy-is-imperceptible",
+        SELF,
+        DE,
+        SAME_PRESS_IMPERCEPTIBLE,
+    ),
+];
+
+/// §G's two committed rows. They need no licence and run in CI; neither is the
+/// headline, and the second says so in its identifier.
+const G_SYNTHETIC_ROWS: [(&str, Kind, Metric, Tolerance); 2] = [
+    (
+        "passk/G/synthetic-pair/control/the-reference-leg-is-NOT-sound",
+        CC,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/G/synthetic-pair/cost/DISQUALIFIED-by-its-own-reference-leg",
+        SELF,
+        DE,
+        REPORTED,
+    ),
+];
+
+const SRC_COST: &str = "Pass K §G — the SHIPPED iccce binary run twice on the same input, \
+    differing only in --preserve-black k-only-equal-lightness, both answers carried into Lab \
+    through the DESTINATION's own A2B1 by the pinned lcms2 acting as a RULER. Self-comparison: \
+    iccce's preserved answer against iccce's own colorimetric answer, which is the only class \
+    the question admits (ICC_Spec A51 is a closed negative). Ghent v5.0, licensed, skips in CI";
+
+const SRC_COST_SYN: &str = "Pass K §G — the same measurement on two COMMITTED synthetic CMYK \
+    fixtures, so that the reason the headline needs a licence is a number in CI rather than a \
+    claim in a comment";
+
+/// A number from a leg that may not have run, rendered for a detail string.
+/// Never a typed literal: a claim-bearing numeral that goes stale is the
+/// failure this helper exists to make impossible.
+fn opt_num(v: Option<f64>, digits: usize) -> String {
+    v.map_or_else(
+        || "[not measured in this run]".to_string(),
+        |x| format!("{x:.digits$}"),
+    )
+}
+
+fn cost_records(c: &Cost, synthetic: Option<&CostLeg>) -> Vec<Record> {
+    let x = &c.cross;
+    let s = &c.same_press;
+    let r = &c.reversed;
+    let mut out = Vec::new();
+
+    out.push(
+        Record::graded(
+            G_ROWS[0].0,
+            G_ROWS[0].1,
+            G_ROWS[0].2,
+            G_ROWS[0].3,
+            x.cost_max,
+            SRC_COST,
+            format!(
+                "★★★ THE COST OF THE POLICY, and the number NA-012's cost field was registered \
+                 as UNMEASURED for. {}: the preserved answer differs from the colorimetric one \
+                 by up to {:.6} dE2000, at K = {:.2}, over {} qualifying points at \
+                 media-relative. Mean {:.6} (G2). REPORTED, never graded: no requirement bounds \
+                 what an opt-in policy may cost, and grading it would gate the caller's choice. \
+                 The pair separates — {:.6} of chromatic ink in the colorimetric answer (G3) and \
+                 {:.4} dE2000 between the two presses' own rendering of the same device K (G4) \
+                 — and the leg this is differenced against is itself within {:.4} dE2000 of the \
+                 colour asked for (G5). ★ DIRECTION IS PART OF THE CLAIM: reversed, the same \
+                 pair costs {:.6}, because the price is a property of the DESTINATION's black",
+                x.label,
+                x.cost_max,
+                x.cost_argmax_k,
+                x.points,
+                x.cost_mean,
+                x.sep_device,
+                x.sep_press,
+                x.round_trip,
+                r.cost_max
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the SAME measurement on a same-press pair — ISO Coated v2 (ECI) -> ISO Coated v2 \
+             300% (ECI), whose A2B1 tags are byte-identical — which is the regime NC-244's \
+             1.360900e-1 belongs to and the number NA-012 forbids quoting as the cost. It is a \
+             property of the PAIR, so it is supplied and not derived: it does not collapse when \
+             the engine changes",
+            s.cost_max,
+            x.cost_max - s.cost_max,
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_ROWS[1].0,
+            G_ROWS[1].1,
+            G_ROWS[1].2,
+            G_ROWS[1].3,
+            x.cost_mean,
+            SRC_COST,
+            format!(
+                "The mean of the same distribution over the same {} points — its own row because \
+                 a mean and a max answer different questions and Metric's own doc comment \
+                 forbids quoting one for the other. The distribution is far from flat: {:.6} at \
+                 its minimum, {:.6} at its maximum (K = {:.2}), where the destination's K ink \
+                 alone can no longer reach the lightness its four-ink separation reaches. \
+                 `passk_cost_probe` prints every point",
+                x.points, x.cost_min, x.cost_max, x.cost_argmax_k
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same-press pair's mean over the same ramp",
+            s.cost_mean,
+            x.cost_mean - s.cost_mean,
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    let sep_shortfall = (SEPARATION_FLOOR - x.sep_device).max(0.0);
+    out.push(
+        Record::graded(
+            G_ROWS[2].0,
+            G_ROWS[2].1,
+            G_ROWS[2].2,
+            G_ROWS[2].3,
+            sep_shortfall,
+            SRC_COST,
+            format!(
+                "★★ THE ANTI-ARTEFACT ROW, in device units. The colorimetric answer lays down \
+                 {:.6} of chromatic ink at its worst point on this ramp, against a floor of \
+                 {:.0e} declared by §F in advance; the observed value is the shortfall below \
+                 that floor. A destination whose B2A emits K-only anyway would report a cost of \
+                 nearly zero and it would be a property of the fixture — which is exactly what \
+                 E6 measured on v2-cmyk-mft2-lab, whose separation is 0.000000",
+                x.sep_device, SEPARATION_FLOOR
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same quantity on the fixture E6 disqualified (v2-cmyk-mft2-lab as the \
+             destination), where the colorimetric answer is already K-only, the separation is \
+             exactly zero and the shortfall would be the whole floor",
+            SEPARATION_FLOOR,
+            x.sep_device,
+            SepUnits::Other("device units of chromatic ink, not a shortfall"),
+        )),
+    );
+
+    let press_shortfall = (PRESS_SEPARATION_FLOOR - x.sep_press).max(0.0);
+    out.push(
+        Record::graded(
+            G_ROWS[3].0,
+            G_ROWS[3].1,
+            G_ROWS[3].2,
+            G_ROWS[3].3,
+            press_shortfall,
+            "Pass K §G — the pinned lcms2 rendering the SAME device values through each of the \
+             two profiles' own A2B1. iccce is absent from this row entirely: it is a statement \
+             about the FIXTURE PAIR, with the oracle used as an instrument",
+            format!(
+                "★★ THE SECOND ANTI-ARTEFACT ROW, and the one a device-unit separation cannot \
+                 make. The two profiles render the same (0,0,0,K) device values up to {:.4} \
+                 dE2000 apart, against a floor of {:.1}; the observed value is the shortfall. \
+                 Two files describing ONE press pass G3 — their separations still differ — and \
+                 fail here, and the corpus contains such a pair: ISO Coated v2 (ECI) and ISO \
+                 Coated v2 300% (ECI) have byte-identical A2B1 tags and separate by exactly \
+                 {:.4}. G8 runs it on purpose",
+                x.sep_press, PRESS_SEPARATION_FLOOR, s.sep_press
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same quantity on the same-press pair, which is the state this floor exists to \
+             reject and which the corpus actually contains",
+            s.sep_press,
+            x.sep_press - s.sep_press,
+            SepUnits::Other("dE2000 between two profiles' renderings, not a shortfall"),
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_ROWS[4].0,
+            G_ROWS[4].1,
+            G_ROWS[4].2,
+            G_ROWS[4].3,
+            x.round_trip,
+            "Pass K §G — iccce's colorimetric answer carried back into Lab by the pinned lcms2 \
+             and compared with the source profile's own rendering of the input. A CROSS-CHECK: \
+             the two ends of this comparison come from different implementations",
+            format!(
+                "★★★ THE ROW THAT DISQUALIFIES A FIXTURE PAIR, and the reason §G needs a \
+                 licensed corpus. The colorimetric answer — the leg the cost is differenced \
+                 AGAINST — lands {:.6} dE2000 from the colour the source asked for: inside the \
+                 perceptibility anchor, and {:.1}x below the cost it is used to price. On the \
+                 committed synthetic pair the same quantity is {} (G9), which is why that pair \
+                 cannot carry the headline however large a DEVICE separation it has",
+                x.round_trip,
+                x.cost_max / x.round_trip.max(f64::MIN_POSITIVE),
+                opt_num(synthetic.map(|y| y.round_trip), 4)
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same control on the committed synthetic pair, whose destination's B2A0 is not \
+             the inverse of its A2B0 — measured by G9 in CI, and reported here as unavailable \
+             rather than typed when that leg did not run",
+            synthetic.map_or(f64::NAN, |y| y.round_trip),
+            synthetic.map_or(f64::NAN, |y| y.round_trip - x.round_trip),
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    let ruler_move = (x.cost_max - x.cost_max_iccce_ruler).abs();
+    out.push(
+        Record::graded(
+            G_ROWS[5].0,
+            G_ROWS[5].1,
+            G_ROWS[5].2,
+            G_ROWS[5].3,
+            ruler_move,
+            "Pass K §G — the SAME two device answers carried into Lab twice: once by the pinned \
+             lcms2 (transicc, through the destination's A2B1) and once by iccce_cmm's own LUT \
+             model of the same tag. A cross-check OF THE INSTRUMENT, not of the answer",
+            format!(
+                "The headline moves by {:.6} dE2000 when the ruler changes ({:.6} vs {:.6}), \
+                 against NC-050's measured A2B1 interpolation envelope. ★ The per-point \
+                 disagreement between the two rulers reaches {:.6}, ABOVE the borrowed bound — \
+                 disclosed here rather than smoothed over, and the reason the bound is applied \
+                 to the headline's movement and not to the ramp. It is also the answer to the \
+                 obvious objection to a self-comparison ruled by lcms2: the same map is applied \
+                 to both legs, so most of the ruler cancels in the difference",
+                ruler_move, x.cost_max, x.cost_max_iccce_ruler, x.ruler_gap
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the per-point ruler gap over the same ramp — what this row would observe if the two \
+             legs were NOT differenced under one ruler",
+            x.ruler_gap,
+            (x.ruler_gap - ruler_move).abs(),
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_ROWS[6].0,
+            G_ROWS[6].1,
+            G_ROWS[6].2,
+            G_ROWS[6].3,
+            x.boundary_step,
+            SRC_COST,
+            format!(
+                "★★ THE DISCONTINUITY, which the cost distribution does not show. The policy \
+                 fires at C = M = Y = 0 EXACTLY, so a gradient that leaves the qualifying set by \
+                 one 8-bit code of cyan steps by up to {:.6} dE2000 (at K = {:.2}) — both legs \
+                 run WITH --preserve-black, so this is the policy's own edge and not a \
+                 difference of flags. It is the number a consumer painting a K-only-to-rich ramp \
+                 actually sees, and on this pair it is slightly LARGER than the cost itself \
+                 ({:.6}). E7/F8 grade the other half of the same fact at exactly 0: the policy \
+                 does not touch a non-qualifying input",
+                x.boundary_step, x.boundary_argmax_k, x.cost_max
+            ),
+        )
+        .with_separation(Separation::none(
+            "no rival READING of a step: the two answers compared are one invocation shape at \
+             two adjacent inputs, and the only alternative — a policy with a wider qualifying \
+             region, as KMapping::Ratio's near-neutral band would be — is a different feature \
+             rather than a different reading of this one",
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_ROWS[7].0,
+            G_ROWS[7].1,
+            G_ROWS[7].2,
+            G_ROWS[7].3,
+            s.cost_max,
+            SRC_COST,
+            format!(
+                "★★★ THE ROW THAT KEEPS NC-244 IN ITS PLACE. {}: cost {:.6} dE2000 max, {:.6} \
+                 mean — imperceptible, and {:.1}x smaller than the cross-press number G1 \
+                 reports. The two files' A2B1 tags are byte-identical, so their press separation \
+                 is {:.4}: this is ONE press with two separations, the regime NC-244's \
+                 same-profile 1.360900e-1 belongs to. Quoting either as the policy's cost \
+                 understates it by more than an order of magnitude, which is what NA-012's \
+                 'what must NOT be quoted' field says and what this row measures",
+                s.label,
+                s.cost_max,
+                s.cost_mean,
+                x.cost_max / s.cost_max.max(f64::MIN_POSITIVE),
+                s.sep_press
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the cross-press pair G1 measures — the same policy, the same ramp, the same intent, \
+             a genuinely different destination press",
+            x.cost_max,
+            x.cost_max - s.cost_max,
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    out
+}
+
+fn cost_synthetic_records(c: &CostLeg, licensed: Option<&Cost>) -> Vec<Record> {
+    let mut out = Vec::new();
+    out.push(
+        Record::graded(
+            G_SYNTHETIC_ROWS[0].0,
+            G_SYNTHETIC_ROWS[0].1,
+            G_SYNTHETIC_ROWS[0].2,
+            G_SYNTHETIC_ROWS[0].3,
+            c.round_trip,
+            SRC_COST_SYN,
+            format!(
+                "★★★ WHY THE COST ROW NEEDS A LICENCE, as a number in CI. On {} the colorimetric \
+                 answer lands {:.6} dE2000 from the colour the source asked for — {:.0}x G5's \
+                 bound of {:.1}. The cause is structural and is in the recipe: \
+                 v2-cmyk-chromatic-neutral's B2A0 returns 0.60d of composite gray under 0.40d of \
+                 black for a neutral of encoded darkness d, and its own A2B0 reads that back as \
+                 darkness 0.70d — the two tables do not invert each other. Sound for §F, which \
+                 grades DEVICE values, and fatal for a dE row. REPORTED and not graded: a red \
+                 row in CI would be a claim about the engine, and this is a claim about the \
+                 fixture",
+                c.label,
+                c.round_trip,
+                c.round_trip / REFERENCE_LEG_SOUND.value,
+                REFERENCE_LEG_SOUND.value
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same control on the licensed cross-press pair (G5) — the state this fixture \
+             would have to reach before it could carry the headline",
+            licensed.map_or(f64::NAN, |l| l.cross.round_trip),
+            licensed.map_or(f64::NAN, |l| c.round_trip - l.cross.round_trip),
+            SepUnits::SameAsMetric,
+        )),
+    );
+    out.push(
+        Record::graded(
+            G_SYNTHETIC_ROWS[1].0,
+            G_SYNTHETIC_ROWS[1].1,
+            G_SYNTHETIC_ROWS[1].2,
+            G_SYNTHETIC_ROWS[1].3,
+            c.cost_max,
+            SRC_COST_SYN,
+            format!(
+                "★★ THE NUMBER THIS PAIR WOULD HAVE REPORTED, printed so that nobody derives it \
+                 independently and quotes it: {:.6} dE2000 max, {:.6} mean. It is NOT the cost \
+                 of the policy and must never be quoted as one — the row above measures a \
+                 reference leg {:.6} dE2000 wrong, larger than this number, so what is \
+                 differenced here is mostly the destination's failure to invert its own A2B. \
+                 The identifier carries the disqualification so that a grep for 'cost' cannot \
+                 return it without it. The licensed cross-press headline is {}",
+                c.cost_max,
+                c.cost_mean,
+                c.round_trip,
+                opt_num(licensed.map(|l| l.cross.cost_max), 6)
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the licensed cross-press pair's cost (G1), which is the number NA-012 carries",
+            licensed.map_or(f64::NAN, |l| l.cross.cost_max),
+            licensed.map_or(f64::NAN, |l| (c.cost_max - l.cross.cost_max).abs()),
+            SepUnits::SameAsMetric,
+        )),
+    );
+    out
+}
+
+// ---------------------------------------------------------------------------
+// §G, third part — the POPULATION, because one pair is a fixture
+// ---------------------------------------------------------------------------
+//
+// ★★★ WHY A POPULATION ROW EXISTS AT ALL. `G1` reports one ordered pair, and
+// a reader is entitled to ask whether that pair was chosen because it was
+// large. It was: it is the largest cost among the pairs **entitled** to price
+// the policy. `G16` is the row that makes that admission checkable, by
+// running the same measurement over **every ordered pair** the six real CMYK
+// members of the corpus admit and grading a statement about all of them:
+//
+// > **No pair entitled to price this policy finds it imperceptible.**
+//
+// A count, graded at zero. It is a weaker statement than the headline and a
+// much harder one to have got lucky with — the headline could be one unusual
+// destination; this cannot.
+//
+// ★★ "ENTITLED" IS THE SAME THREE GATES `G3`/`G4`/`G5` APPLY, and they are
+// applied here **per pair** rather than to one chosen pair: the colorimetric
+// answer must lay ink (§F's `4e-2` floor), the two profiles must render the
+// same device `K` at least `1.0` ΔE2000 apart, and the reference leg must be
+// sound to `1.0` ΔE2000. **Nineteen of the thirty pairs fail at least one**,
+// and every one of them would have reported a comfortable "the policy is
+// nearly free". Without the filter the same count is not zero — the row's
+// separation says by how much, which is the number that shows the filter is
+// load-bearing rather than decorative.
+//
+// ★ WHAT THE POPULATION IS NOT. Six profiles, one intent, one direction of
+// each pair. It is a statement about **these six files**, not about presses;
+// two of them (`ISO Coated v2 (ECI)` and its `300 %` sibling) share an `A2B1`
+// byte for byte, so the six sources are five behaviours.
+
+/// The six real CMYK members of the corpus, in the order `G16` walks them.
+const POPULATION: [(&str, &str); 6] = [
+    ("ISO Coated v2 300% (ECI)", file::ISOCOATED300),
+    ("ISO Coated v2 (ECI)", file::ISOCOATED350),
+    ("Coated FOGRA39", file::FOGRA39),
+    ("Coated FOGRA27", file::FOGRA27),
+    ("GWG_GenericCMYK", file::GENERIC_CMYK),
+    ("GWG_ICC_v4_testprofile (X-Rite)", file::XRITE_V4),
+];
+
+/// What `G16` measured over every ordered pair.
+#[derive(Debug, Clone)]
+pub struct CostPopulation {
+    /// Ordered pairs measured.
+    pub pairs: usize,
+    /// Of those, how many pass all three entitlement gates.
+    pub entitled: usize,
+    /// ★ **The graded quantity**: entitled pairs whose cost is at or below the
+    /// perceptibility anchor. Zero is the claim.
+    pub imperceptible_entitled: usize,
+    /// The same count **without** the entitlement filter — the row's
+    /// separation, and the number that shows the filter is load-bearing.
+    pub imperceptible_all: usize,
+    /// Smallest and largest cost among entitled pairs, with their names.
+    pub smallest: (f64, String),
+    pub largest: (f64, String),
+}
+
+/// Run the whole matrix. Thirty ordered pairs at three subprocess invocations
+/// each; the whole block costs a few seconds, which is why it is a row rather
+/// than a probe-only statement.
+fn analyse_cost_population(oracle: &Oracle, iccce: &Iccce) -> Result<CostPopulation, Unavailable> {
+    let mut out = CostPopulation {
+        pairs: 0,
+        entitled: 0,
+        imperceptible_entitled: 0,
+        imperceptible_all: 0,
+        smallest: (f64::INFINITY, String::new()),
+        largest: (0.0, String::new()),
+    };
+    for (sn, sf) in POPULATION {
+        for (dn, df) in POPULATION {
+            if sn == dn {
+                continue;
+            }
+            let src = need_corpus(sf)?;
+            let dst = need_corpus(df)?;
+            let leg = analyse_cost_leg(oracle, iccce, &format!("{sn} -> {dn}"), &src, &dst)?;
+            out.pairs += 1;
+            if leg.cost_max <= SAME_PRESS_IMPERCEPTIBLE.value {
+                out.imperceptible_all += 1;
+            }
+            let entitled = leg.sep_device >= SEPARATION_FLOOR
+                && leg.sep_press >= PRESS_SEPARATION_FLOOR
+                && leg.round_trip <= REFERENCE_LEG_SOUND.value;
+            if !entitled {
+                continue;
+            }
+            out.entitled += 1;
+            if leg.cost_max <= SAME_PRESS_IMPERCEPTIBLE.value {
+                out.imperceptible_entitled += 1;
+            }
+            if leg.cost_max < out.smallest.0 {
+                out.smallest = (leg.cost_max, format!("{sn} -> {dn}"));
+            }
+            if leg.cost_max > out.largest.0 {
+                out.largest = (leg.cost_max, format!("{sn} -> {dn}"));
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// **`G16`'s bound: zero, and it is a UNIVERSAL statement.**
+///
+/// The graded quantity is a count of pairs, so there is no instrument error in
+/// it — a pair either costs more than the perceptibility anchor or it does
+/// not, and the anchor is `TOLERANCES.md` §2's, not a number chosen here. The
+/// claim is *"no entitled pair finds this policy imperceptible"*, which **one
+/// counterexample refutes**; a bound above zero would be an allowance for
+/// counterexamples, which is the opposite of what a universal claim admits.
+///
+/// ★ It is deliberately **not** [`EXACT_ZERO`], whose `why` is about three ink
+/// channels carrying the encoded value zero. Reusing that constant here would
+/// have put a justification about ink beside a count of profile pairs — a
+/// tolerance whose reason belongs to another row is the failure `Tolerance`'s
+/// required `why` exists to prevent.
+pub const NO_IMPERCEPTIBLE_ENTITLED_PAIR: Tolerance = Tolerance::new(
+    0.0,
+    "ZERO COUNTEREXAMPLES. The claim is universal - no pair ENTITLED to price this policy \
+     finds it imperceptible - and a universal claim is refuted by one instance, so the only \
+     bound it admits is zero. There is no instrument error in a count. The threshold each \
+     pair is tested against is TOLERANCES.md \u{a7}2's 1.0 dE2000 perceptibility anchor and \
+     not a number chosen here; the entitlement gates are G3's, G4's and G5's, applied per pair",
+);
+
+const G_POPULATION_ROWS: [(&str, Kind, Metric, Tolerance); 1] = [(
+    "passk/G/population/no-ENTITLED-pair-finds-the-policy-imperceptible",
+    SELF,
+    CNT,
+    NO_IMPERCEPTIBLE_ENTITLED_PAIR,
+)];
+
+fn cost_population_records(p: &CostPopulation, cross: &CostLeg) -> Vec<Record> {
+    vec![
+        Record::graded(
+            G_POPULATION_ROWS[0].0,
+            G_POPULATION_ROWS[0].1,
+            G_POPULATION_ROWS[0].2,
+            G_POPULATION_ROWS[0].3,
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "a count of at most 30 pairs is exact in f64"
+            )]
+            {
+                p.imperceptible_entitled as f64
+            },
+            "Pass K §G — the same self-comparison as G1, run over EVERY ordered pair \
+             of the six real CMYK members of the Ghent v5.0 corpus. Licensed; skips in CI",
+            format!(
+                "★★★ THE POPULATION CLAIM, and it is the one that makes G1's single pair \
+                 checkable. Of {} ordered pairs, {} are ENTITLED to price this policy (the \
+                 colorimetric answer lays ink, the two profiles' K axes are at least {:.1} \
+                 dE2000 apart, and the reference leg is sound to {:.1}), and {} of those find \
+                 the policy imperceptible. Among the entitled the cost runs {:.6} ({}) to \
+                 {:.6} ({}); G1 grades {:.6} on {}, chosen for continuity with §A-§E rather \
+                 than for size — it is {:.6} below the largest. ★ The other {} pairs fail a \
+                 gate, and every one of them would have read as 'the policy is nearly free' \
+                 — which is what the separation prices",
+                p.pairs,
+                p.entitled,
+                PRESS_SEPARATION_FLOOR,
+                REFERENCE_LEG_SOUND.value,
+                p.imperceptible_entitled,
+                p.smallest.0,
+                p.smallest.1,
+                p.largest.0,
+                p.largest.1,
+                cross.cost_max,
+                cross.label,
+                p.largest.0 - cross.cost_max,
+                p.pairs - p.entitled
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same count WITHOUT the entitlement filter — what this row would have observed \
+             if a reader took any two CMYK profiles and measured. A property of the corpus, \
+             supplied and not derived, and it is what the three gates are worth",
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "a count of at most 30 pairs is exact in f64"
+            )]
+            {
+                p.imperceptible_all as f64
+            },
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "a count of at most 30 pairs is exact in f64"
+            )]
+            {
+                (p.imperceptible_all - p.imperceptible_entitled) as f64
+            },
+            SepUnits::SameAsMetric,
+        )),
+    ]
+}
+
+// ---------------------------------------------------------------------------
+// §G, second half — the COMMITTED pair that CAN carry a ΔE row
+// ---------------------------------------------------------------------------
+//
+// ★★★ WHAT THE FIRST HALF ESTABLISHED, AND WHY A FIXTURE WAS AUTHORED.
+//
+// `G9` measures, in CI, that the committed pair Pass K already had cannot
+// price this policy: `v2-cmyk-chromatic-neutral`'s `B2A0` is not the inverse
+// of its own `A2B0`, so the leg a cost is differenced *against* is itself more
+// than twenty ΔE2000 wrong. A device-unit separation of `0.420705` does not
+// rescue that — the two failures are independent, and a fixture must survive
+// **both** to carry a ΔE row:
+//
+// | trap | detected by | the committed pair |
+// |---|---|---|
+// | the colorimetric answer is already K-only | `G3`-shaped device separation | **survives** — §F's whole point |
+// | the reference leg is itself wrong | `G5`-shaped round-trip control | **fails**, at more than 20 ΔE2000 |
+// | the two profiles are one press | `G4`-shaped pair separation | survives |
+// | ★ the preserved answer is a **METAMER** of the colorimetric one | *nothing above* | **fails silently** |
+//
+// ★★ THE FOURTH ROW OF THAT TABLE IS THE ONE NOBODY WOULD HAVE PREDICTED, and
+// it is the reason the new fixture varies the black ink's **chroma** rather
+// than anything else. `chromatic_neutral_a2b`'s `K` appears in `L*` and in
+// nothing else — a *spectrally neutral* black. On such a profile the
+// preserved answer at matched lightness has the same `L*`, the same `a*` and
+// the same `b*` as the four-ink separation it replaced: the two answers are
+// **colorimetrically identical however much ink separates them**, and the cost
+// is zero as a property of the model. A fixture can therefore separate by
+// `0.42` of ink, pass every device-unit gate in §F, and still report a cost of
+// zero for a reason that has nothing to do with the policy. `fixtures/synthetic`
+// `/v2-cmyk-warm-black.icc` exists because that is not a defect a tolerance
+// can catch.
+//
+// ★★ WHAT WAS VARIED, AND WHAT WAS HELD. Against its sibling the new recipe
+// changes exactly two things: `K` carries chroma (`a* += 2K`, `b* += 6K`), and
+// the `C M Y` coefficients of `a*` and `b*` each sum to zero so that a
+// balanced composite gray is exactly neutral and the separation can be
+// **solved** rather than chosen. The darkness coefficients — including
+// `K = 0.70` — are the sibling's, unchanged. Paired source-to-destination the
+// two profiles therefore differ in **one variable**, and the ΔE below is
+// attributable to it rather than to a fixture that changed in three places at
+// once.
+//
+// ★ THE CLOSED FORM, and why `G12` is a `DerivedExpectation` rather than a
+// second self-comparison. Writing `ρ = 65 280/65 535` for the legacy-PCSLAB
+// full-scale ratio and `k` for the input black:
+//
+// ```text
+// source A2B0(0,0,0,k)  = (100(1 − 0.70k), 0, 0)          exactly, both edges affine
+// destination separation reproduces that L* through the node coordinate
+//                        = (ρ·100(1 − 0.70k), 0, 0)       the ρ gap and nothing else
+// preserved answer       = (100(1 − 0.70K′), 2K′, 6K′)
+// and K′ = k EXACTLY, because both profiles carry the same 0.70 darkness per
+// unit of K and the equal-lightness construction is then the identity.
+// ```
+//
+// So the expectation is `ΔE2000` between two Lab points **computed from the
+// two recipes' constants**, with no implementation's output in it. That is the
+// strongest class this subject admits — `ICC_Spec` **A51** rules out ground
+// truth — and it is strictly stronger than the licensed headline, which is a
+// self-comparison with no derivation available on a real press table.
+//
+// ★ WHAT THIS PAIR IS NOT. It is **not** a substitute for `G1`. Its number is
+// a property of two authored models and says nothing about any press; `G1`'s
+// is a property of two real press profiles and cannot be derived. They are
+// different claims and the section keeps both.
+
+/// The legacy-PCSLAB full-scale ratio, `65 280/65 535` — the gap between
+/// `L* = 100` and full scale that clause 10.10's encoding leaves, and the only
+/// term in `G12`'s closed form that is neither a recipe constant nor `1`.
+const LEGACY_FULL_SCALE: f64 = 65_280.0 / 65_535.0;
+
+/// `v2-cmyk-warm-black`'s darkness per unit of `K`, shared with its sibling —
+/// which is what makes `K′ = k` exact.
+const WB_K_DARKNESS: f64 = 0.70;
+/// `v2-cmyk-warm-black`'s `a*` per unit of `K`.
+const WB_K_A: f64 = 2.0;
+/// `v2-cmyk-warm-black`'s `b*` per unit of `K`.
+const WB_K_B: f64 = 6.0;
+
+/// The committed warm-black destination, and the sibling used as the source.
+const SYNTHETIC_WARM_BLACK: &str = "v2-cmyk-warm-black.icc";
+
+/// **`G12`'s expectation, derived from the two recipes and nothing else.**
+///
+/// Returns the ΔE2000 a conformant consumer must observe between the
+/// colorimetric and the preserved answer at input black `k`, on
+/// `v2-cmyk-chromatic-neutral → v2-cmyk-warm-black` at media-relative.
+///
+/// See the section header for the derivation. No value here comes from
+/// running anything.
+#[must_use]
+pub fn warm_black_expected_cost(k: f64) -> f64 {
+    warm_black_expected_cost_scaled(k, LEGACY_FULL_SCALE)
+}
+
+/// The same derivation with the legacy full-scale ratio as a parameter, so
+/// that `G12` can state what it would have observed under the **rival
+/// reading** in which `L* = 100` is full scale (`scale = 1.0`) rather than
+/// `FF00h`. That is a real misreading of clause 10.10 and the one this corpus
+/// has caught before (DL-005, DL-011); it is worth `0.22` ΔE2000 at the white
+/// end, twenty times `G12`'s bound.
+#[must_use]
+pub fn warm_black_expected_cost_scaled(k: f64, scale: f64) -> f64 {
+    let l_src = 100.0 * (1.0 - WB_K_DARKNESS * k);
+    let colorimetric = Lab {
+        l: scale * l_src,
+        a: 0.0,
+        b: 0.0,
+    };
+    let preserved = Lab {
+        l: l_src,
+        a: WB_K_A * k,
+        b: WB_K_B * k,
+    };
+    delta_e_2000(colorimetric, preserved)
+}
+
+/// **`G12`'s bound: one hundredth of a ΔE2000, COUNTED.**
+///
+/// The expectation is exact algebra, so everything between it and the
+/// observation is encoding and printing. The two legs do not carry the same
+/// terms and the count keeps them apart — the **colorimetric** leg passes
+/// through the `B2A0` table and the **preserved** leg does not:
+///
+/// | term | leg | `L*` | `a*`/`b*` |
+/// |---|---|---|---|
+/// | half a legacy-PCSLAB sample quantum in the `A2B0` CLUT (`100/65 280` and `255/65 535`) | both | `7.7e-4` | `1.9e-3` |
+/// | half a quantum of `B2A0` **device** output (`0.5/65 535`), carried by the `A2B0` coefficients — `1.40` in darkness, `140` and `190` in `a*` and `b*` | colorimetric | `1.1e-3` | `1.5e-3` |
+/// | half a quantum on the PCS handed between the two legs | colorimetric | `7.7e-4` | — |
+/// | the equal-lightness inversion reading the same 16-bit `L*(K)` ramp | preserved | `7.7e-4` | — |
+/// | `iccce transform`'s six printed device decimals, through the same coefficients | colorimetric | `7.0e-5` | `1.0e-4` |
+/// | `transicc`'s four printed decimals of Lab | both | `1.0e-4` | `1.0e-4` |
+///
+/// Colorimetric leg `≈2.7e-3` in `L*` and `≈3.5e-3` in each of `a*`, `b*`;
+/// preserved leg `≈1.6e-3` and `≈2.0e-3`. Their difference is what ΔE2000
+/// sees: `4.3e-3` in `L*`, `5.5e-3` in each chroma axis. Divided by ΔE2000's
+/// own weighting (`S_L ≥ 1.29` and `S_C ≥ 1.15` everywhere on this ramp) and
+/// combined in quadrature the counted sum is **`≈7.6e-3`**. The bound is **the
+/// next power of ten above it**, because a bound stated to the precision of
+/// the counting claims more than the counting supports.
+///
+/// ★ **The margin is thin, and that is the honest state.** Observed
+/// `6.3e-3` at the time of writing, `0.63` of the bound — most of the count is
+/// exercised, unlike `F4`'s, whose largest term was an allowance for a
+/// conformant consumer that requantises the PCS. **A first draft of this bound
+/// omitted the `B2A0` output-quantisation row and counted `6e-3`, below what
+/// the run then observed.** It is corrected here rather than widened: a count
+/// its own observation exceeds is not a bound, it is a coincidence.
+pub const DERIVED_COST: Tolerance = Tolerance::new(
+    1.0e-2,
+    "ONE HUNDREDTH of a dE2000, COUNTED from the encoding and the printing, because the \
+     expectation is exact algebra derived from two recipes' constants and nothing else can \
+     stand between it and the observation. Per leg: half a legacy-PCSLAB sample quantum in the \
+     A2B0 CLUT (7.7e-4 in L*, 1.9e-3 in a*/b*, BOTH legs); half a quantum of B2A0 DEVICE output \
+     carried by the A2B0 coefficients (1.1e-3 and 1.5e-3, COLORIMETRIC leg only); half a \
+     quantum on the PCS handoff (7.7e-4, colorimetric); the equal-lightness inversion's reading \
+     of the same 16-bit ramp (7.7e-4, preserved); and the two programs' printing. Differenced, \
+     divided by dE2000's own S_L >= 1.29 and S_C >= 1.15 on this ramp and combined in \
+     quadrature: about 7.6e-3, rounded UP to the next power of ten. NOT perceptual: \
+     TOLERANCES.md \u{a7}2's 1.0 anchor is two orders away and is irrelevant to it",
+);
+
+const G_WARM_ROWS: [(&str, Kind, Metric, Tolerance); 5] = [
+    (
+        "passk/G/synthetic-warm-black/cost/dE2000-max",
+        SELF,
+        DE,
+        REPORTED,
+    ),
+    (
+        "passk/G/synthetic-warm-black/cost/matches-the-DERIVED-closed-form",
+        DE_KIND,
+        DE,
+        DERIVED_COST,
+    ),
+    (
+        "passk/G/synthetic-warm-black/control/the-reference-leg-IS-sound",
+        CC,
+        DE,
+        REFERENCE_LEG_SOUND,
+    ),
+    (
+        "passk/G/synthetic-warm-black/separation/the-two-presses-render-the-same-K-DIFFERENTLY",
+        OR,
+        DE,
+        PRESS_SEPARATION_FLOOR_MET,
+    ),
+    (
+        "passk/G/synthetic-warm-black/separation/the-colorimetric-answer-DOES-lay-chromatic-ink",
+        SELF,
+        DEV,
+        SEPARATION_FLOOR_MET,
+    ),
+];
+
+const SRC_WARM: &str = "Pass K §G — fixtures/synthetic/v2-cmyk-chromatic-neutral.icc -> \
+    fixtures/synthetic/v2-cmyk-warm-black.icc, both COMMITTED and unlicensed, driven through the \
+    shipped iccce binary twice (differing only in --preserve-black) with the pinned lcms2 as the \
+    ruler. Runs in CI. The expectation on the DERIVED row comes from the two recipes' constants \
+    and no implementation's output";
+
+/// §G's committed cost leg, measured on the fixture authored for it.
+fn analyse_cost_warm_black(oracle: &Oracle, iccce: &Iccce) -> Result<CostLeg, Unavailable> {
+    let src = need_synthetic(SYNTHETIC_SEPARATING)?;
+    let dst = need_synthetic(SYNTHETIC_WARM_BLACK)?;
+    analyse_cost_leg(
+        oracle,
+        iccce,
+        "fixtures/synthetic/v2-cmyk-chromatic-neutral.icc -> \
+         fixtures/synthetic/v2-cmyk-warm-black.icc [committed, unlicensed, runs in CI; the two \
+         models differ in ONE variable, the chroma of the black ink]",
+        &src,
+        &dst,
+    )
+}
+
+/// The largest departure of the measured cost from [`warm_black_expected_cost`]
+/// over the same ramp `analyse_cost_leg` measured — recomputed here rather than
+/// carried on [`CostLeg`], because it is meaningful for exactly one pair.
+fn warm_black_derivation_residual(
+    oracle: &Oracle,
+    iccce: &Iccce,
+) -> Result<(f64, f64, f64), Unavailable> {
+    let src = need_synthetic(SYNTHETIC_SEPARATING)?;
+    let dst = need_synthetic(SYNTHETIC_WARM_BLACK)?;
+    let ramp = cost_ramp();
+    let rows: Vec<Vec<f64>> = ramp.iter().map(|r| r.to_vec()).collect();
+    let off = as_cmyk(
+        iccce
+            .transform_rows_shaped(&src, &dst, Intent::RelativeColorimetric, &rows, 4)
+            .map_err(|e| Unavailable::Error(e.to_string()))?,
+    )?;
+    let on = as_cmyk(
+        iccce
+            .transform_rows_shaped_preserve_black(
+                &src,
+                &dst,
+                Intent::RelativeColorimetric,
+                &rows,
+                4,
+                PRESERVE_POLICY,
+            )
+            .map_err(|e| Unavailable::Error(e.to_string()))?,
+    )?;
+    let lab_off = to_lab(oracle, &dst, &off)?;
+    let lab_on = to_lab(oracle, &dst, &on)?;
+    let mut worst = 0.0_f64;
+    let mut at_k = 0.0;
+    let mut worst_rival = 0.0_f64;
+    for (i, p) in ramp.iter().enumerate() {
+        let seen = delta_e_2000(lab_off[i], lab_on[i]);
+        let d = (seen - warm_black_expected_cost(p[3])).abs();
+        if d > worst {
+            worst = d;
+            at_k = p[3];
+        }
+        worst_rival = worst_rival.max((seen - warm_black_expected_cost_scaled(p[3], 1.0)).abs());
+    }
+    Ok((worst, at_k, worst_rival))
+}
+
+fn cost_warm_black_records(
+    c: &CostLeg,
+    residual: (f64, f64, f64),
+    licensed: Option<&Cost>,
+    sibling: Option<&CostLeg>,
+) -> Vec<Record> {
+    let mut out = Vec::new();
+    out.push(
+        Record::graded(
+            G_WARM_ROWS[0].0,
+            G_WARM_ROWS[0].1,
+            G_WARM_ROWS[0].2,
+            G_WARM_ROWS[0].3,
+            c.cost_max,
+            SRC_WARM,
+            format!(
+                "★★★ THE COST OF THE POLICY, ON A COMMITTED PAIR, IN CI. {}: {:.6} dE2000 max at \
+                 K = {:.2}, {:.6} mean, {:.6} minimum, over {} qualifying points at \
+                 media-relative. Boundary step at one 8-bit code of cyan {:.6}. ★ It is NOT a \
+                 substitute for the licensed headline ({}): this number is a property of two \
+                 authored models and says nothing about any press. What it is: the same policy \
+                 priced on a pair whose reference leg is sound (the row below), whose separation \
+                 is real in BOTH senses, and whose answer is derivable in closed form",
+                c.label,
+                c.cost_max,
+                c.cost_argmax_k,
+                c.cost_mean,
+                c.cost_min,
+                c.points,
+                c.boundary_step,
+                opt_num(licensed.map(|l| l.cross.cost_max), 6)
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same measurement on the SIBLING fixture v2-cmyk-chromatic-neutral, whose black \
+             ink is spectrally NEUTRAL: there the preserved answer at matched lightness is a \
+             METAMER of the four-ink separation and the cost would be the encoding gap alone, \
+             ~0.22, however much ink separates the two answers. It is a property of the FIXTURE \
+             and is supplied, not derived",
+            c.cost_min,
+            c.cost_max - c.cost_min,
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_WARM_ROWS[1].0,
+            G_WARM_ROWS[1].1,
+            G_WARM_ROWS[1].2,
+            G_WARM_ROWS[1].3,
+            residual.0,
+            SRC_WARM,
+            format!(
+                "★★★ THE ONLY ROW IN §G WHOSE EXPECTATION IS NOT AN IMPLEMENTATION'S OUTPUT. The \
+                 measured cost departs from the closed form by at most {:.3e} (at K = {:.2}), \
+                 against a counted bound of {:.0e}. The closed form is \
+                 dE2000((rho*100(1-0.70k), 0, 0), (100(1-0.70k), 2k, 6k)) with rho = 65280/65535 \
+                 — the colorimetric answer is the source's own lightness reproduced through the \
+                 destination's node coordinate, the preserved answer is the destination's warm \
+                 black at K' = k, and K' = k is EXACT because both recipes carry the same 0.70 \
+                 darkness per unit of K. Nothing in the expectation was run",
+                residual.0, residual.1, DERIVED_COST.value
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same comparison against the SIBLING's model — a spectrally neutral black, i.e. \
+             WB_K_A = WB_K_B = 0 — under which the closed form collapses to the encoding gap \
+             alone at every k. That is what this row would observe if the fixture's black ink \
+             were not chromatic, and it is far outside the bound",
+            (c.cost_max - c.cost_min).abs(),
+            (c.cost_max - c.cost_min).abs() - residual.0,
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    out.push(
+        Record::graded(
+            G_WARM_ROWS[2].0,
+            G_WARM_ROWS[2].1,
+            G_WARM_ROWS[2].2,
+            G_WARM_ROWS[2].3,
+            c.round_trip,
+            SRC_WARM,
+            format!(
+                "★★ THE GATE THE SIBLING FAILS, PASSED. The colorimetric answer lands {:.6} \
+                 dE2000 from the colour the source asked for — against {} on the sibling pair \
+                 (G9), which is the whole reason this fixture was authored. The residue is the \
+                 legacy encoding's own 65280/65535 gap at the white end and nothing else: the \
+                 destination's B2A0 neutral column is the SOLUTION of 'lay ink that reaches this \
+                 darkness with a* = b* = 0', so the two tables invert each other by construction",
+                c.round_trip,
+                opt_num(sibling.map(|y| y.round_trip), 6)
+            ),
+        )
+        .with_separation(Separation::against_distance(
+            "the same control on the sibling pair (G9), which is what this fixture was authored \
+             to move",
+            sibling.map_or(f64::NAN, |y| y.round_trip),
+            sibling.map_or(f64::NAN, |y| y.round_trip - c.round_trip),
+            SepUnits::SameAsMetric,
+        )),
+    );
+
+    let press_shortfall = (PRESS_SEPARATION_FLOOR - c.sep_press).max(0.0);
+    out.push(Record::graded(
+        G_WARM_ROWS[3].0,
+        G_WARM_ROWS[3].1,
+        G_WARM_ROWS[3].2,
+        G_WARM_ROWS[3].3,
+        press_shortfall,
+        SRC_WARM,
+        format!(
+            "The two committed profiles render the same (0,0,0,K) device values up to {:.4} \
+             dE2000 apart, against a floor of {:.1}; the observed value is the shortfall. The \
+             separation IS the varied variable: the source's black is spectrally neutral, the \
+             destination's is warm, and at K = 1 they differ by exactly the chroma (2, 6) the \
+             recipe puts there",
+            c.sep_press, PRESS_SEPARATION_FLOOR
+        ),
+    )
+    .with_separation(Separation::against_distance(
+        "a destination whose black ink were spectrally NEUTRAL, as the sibling recipe's is, with \
+         the same 0.70 darkness: the two profiles' K axes would then COINCIDE, this quantity \
+         would be exactly zero and the shortfall would be the whole floor. A property of the \
+         fixture pair, so it is supplied and not derived",
+        PRESS_SEPARATION_FLOOR,
+        c.sep_press,
+        SepUnits::Other("dE2000 between two profiles' renderings, not a shortfall"),
+    )));
+
+    let sep_shortfall = (SEPARATION_FLOOR - c.sep_device).max(0.0);
+    out.push(Record::graded(
+        G_WARM_ROWS[4].0,
+        G_WARM_ROWS[4].1,
+        G_WARM_ROWS[4].2,
+        G_WARM_ROWS[4].3,
+        sep_shortfall,
+        SRC_WARM,
+        format!(
+            "The colorimetric answer lays down {:.6} of chromatic ink at its worst point, against \
+             §F's declared floor of {:.0e}; the observed value is the shortfall. This is the \
+             device-unit gate §F already had, restated on the new fixture so that a future edit \
+             to the recipe cannot quietly turn the pair into a K-only-out destination and leave \
+             the dE rows reporting zero for the wrong reason",
+            c.sep_device, SEPARATION_FLOOR
+        ),
+    )
+    .with_separation(Separation::against_distance(
+        "the fixture E6 disqualified (v2-cmyk-mft2-lab as the destination), whose B2A0 emits \
+         [0,0,0,k] at every node: there the colorimetric answer is already K-only, this quantity \
+         is exactly zero and the shortfall would be the whole floor",
+        SEPARATION_FLOOR,
+        c.sep_device,
+        SepUnits::Other("device units of chromatic ink, not a shortfall"),
+    )));
+
+    out
+}
+
+// ===========================================================================
 // The one-line note
 // ===========================================================================
 
@@ -4471,6 +6151,58 @@ pub fn note(b: &Bundle) -> String {
              is {:.3e} vs the derived table and {:.3e} vs lcms2 over {} points, and the \
              leak guard on the same points is {:.6}",
             r.chromatic, r.gray_vs_derived, r.gray_vs_oracle, r.gray_points, r.leak
+        ));
+    }
+    if let Some(c) = &b.cost {
+        parts.push(format!(
+            "§G COST OF THE POLICY ({}, {} qualifying points, media-relative): {:.6} dE2000 max at K = {:.2}, {:.6} mean — against {:.6} on the SAME-PRESS pair and {:.6} on the same pair reversed. The pair separates: {:.6} chromatic ink in the colorimetric answer, {:.4} dE2000 between the two presses' own K rendering, reference leg sound to {:.4}. Boundary step at one 8-bit code of cyan {:.6}",
+            c.cross.label,
+            c.cross.points,
+            c.cross.cost_max,
+            c.cross.cost_argmax_k,
+            c.cross.cost_mean,
+            c.same_press.cost_max,
+            c.reversed.cost_max,
+            c.cross.sep_device,
+            c.cross.sep_press,
+            c.cross.round_trip,
+            c.cross.boundary_step
+        ));
+    }
+    if let Some(c) = &b.cost_synthetic {
+        parts.push(format!(
+            "§G on the COMMITTED pair (runs in CI): DISQUALIFIED as a cost fixture — its reference leg is {:.6} dE2000 wrong, larger than the {:.6} it would have reported",
+            c.round_trip, c.cost_max
+        ));
+    }
+    if let Some(p) = &b.cost_population {
+        parts.push(format!(
+            "\u{a7}G POPULATION: {} of {} ordered pairs of the six real CMYK members are ENTITLED to \
+             price the policy, and {} of those find it imperceptible; among them the cost runs \
+             {:.6} ({}) to {:.6} ({}). Without the entitlement filter {} of {} would read as \
+             imperceptible",
+            p.entitled,
+            p.pairs,
+            p.imperceptible_entitled,
+            p.smallest.0,
+            p.smallest.1,
+            p.largest.0,
+            p.largest.1,
+            p.imperceptible_all,
+            p.pairs
+        ));
+    }
+    if let Some((c, res)) = &b.cost_warm_black {
+        parts.push(format!(
+            "§G on the COMMITTED warm-black pair authored for it (runs in CI): cost {:.6} dE2000 max at K = {:.2}, {:.6} mean; reference leg sound to {:.6}; press separation {:.4}; the measurement departs from the CLOSED FORM derived from the two recipes by {:.3e} at K = {:.2}, bound {:.0e}",
+            c.cost_max,
+            c.cost_argmax_k,
+            c.cost_mean,
+            c.round_trip,
+            c.sep_press,
+            res.0,
+            res.1,
+            DERIVED_COST.value
         ));
     }
     if parts.is_empty() {
