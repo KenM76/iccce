@@ -11,10 +11,21 @@
 //!   an iccMAX (ICC.2) profile, which this engine identifies and
 //!   refuses **by name** rather than executing or mistaking for
 //!   corruption (`README.md` scope).
-//! - [`Malformation`] — the file violates a rule but a faithful
-//!   representation is still constructible. These accumulate on the
-//!   parsed [`Profile`](crate::Profile); nothing is corrected, and the
-//!   caller (e.g. `iccce-cli inspect`) is the disclosure surface.
+//! - [`Malformation`] — something about the file worth telling the caller,
+//!   where a faithful representation is still constructible. These
+//!   accumulate on the parsed [`Profile`](crate::Profile); nothing is
+//!   corrected, and the caller (e.g. `iccce-cli inspect`) is the
+//!   disclosure surface.
+//!
+//!   ★ **Not every one of these is a rule violation**, and this line said
+//!   otherwise until 2026-08-19. Two variants report on files that breach
+//!   nothing — `TrailingBytes` (normal for a container-embedded profile)
+//!   and `UnknownRenderingIntent` under [`IntentRule::V2Undefined`]
+//!   (ICC.1:2001-04 defines four values and forbids no others). The
+//!   consequence is that **`malformations: N` is not a conformance
+//!   verdict**; see [`Malformation`]'s own doc comment for what a caller
+//!   may and may not conclude from the count, and `docs/ARCHITECTURE.md`
+//!   DL-063 for why the mixed channel is kept rather than split.
 //!
 //! WHY not one merged error list: a caller that gets a `Profile` back
 //! must be able to trust that every field means what the *file* said,
@@ -103,8 +114,61 @@ pub enum IntentRule {
     V2Undefined,
 }
 
-/// A rule violation the file carries but the representation survives.
-/// Reported verbatim; **never corrected**.
+/// A **disclosure** about the file that the parser makes and never acts
+/// on: something worth telling a caller, where the representation
+/// nonetheless survives and parsing continues. Reported verbatim;
+/// **never corrected** (project rule 6).
+///
+/// ## ★ This is a channel for disclosures, NOT only for violations
+///
+/// The obvious reading of the name — and this type's own doc comment
+/// until 2026-08-19, which said *"a rule violation the file carries"* —
+/// is that every variant reports a **breach of ICC.1**. **That reading is
+/// false, and it is falsified by two of the variants below.** It is
+/// corrected here rather than left implicit because the mis-reading is
+/// not harmless: `iccce inspect` prints `malformations: N`, and a
+/// consumer that treats a non-zero `N` as *"this file violates the
+/// specification"* — a **conformance verdict** — will condemn conforming
+/// files.
+///
+/// The two variants that carry no violation at all:
+///
+/// | variant | what it actually reports | why it is not a violation |
+/// |---|---|---|
+/// | [`Malformation::TrailingBytes`] | bytes past the header's declared size | **Normal** for a profile embedded in a container (a PDF stream, an ICC-tagged image). The emitted text says so. Nothing in ICC.1 is breached by a caller handing us a longer buffer than the profile claims. |
+/// | [`Malformation::UnknownRenderingIntent`] with [`IntentRule::V2Undefined`] | a `renderingIntent` value ICC.1:2001-04 does not define | 2001-04 Table 18 defines four values and **forbids no others**. The report says *"unrecognised"*, deliberately, and *"do not forbid others"* in the same sentence. The file may be entirely conforming. |
+///
+/// Both were already careful in their **wording** — the sentences a user
+/// reads do not accuse anyone. What was not careful is the **channel**:
+/// they arrive through a type named `Malformation` and are added into a
+/// machine-readable count. Words are read by humans; the count is read by
+/// code.
+///
+/// ## What a caller may and may not conclude from the count
+///
+/// * **`N == 0`** — iccce found nothing to say. This is **not** a
+///   certificate of conformance: iccce checks the constraints it has
+///   implemented, not every clause of ICC.1.
+/// * **`N > 0`** — there is at least one thing worth reading. **It does
+///   not follow that the file is non-conforming.** To decide that, a
+///   caller must look at *which* variants, not how many.
+///
+/// A caller wanting a conformance verdict must therefore match on the
+/// variants; the count is a prompt to look, not an answer. This is a
+/// deliberate design choice and not an accident of naming — see
+/// `docs/ARCHITECTURE.md`'s decision log. The alternative, splitting the
+/// type into `Violation` and `Observation`, was considered and is
+/// recorded there with the reason it was not taken.
+///
+/// ## Why the name is kept anyway
+///
+/// Renaming the type is a public API break with no numeric benefit, and
+/// it would move the ambiguity rather than remove it: an
+/// `Observation::TrailingBytes` next to an `Observation::ReservedNonZero`
+/// under-states the second exactly as much as the present name
+/// over-states the first. The mixed channel is real, so it is
+/// **documented** here and at the print site rather than papered over
+/// with a rename that would still need this table.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Malformation {
     /// Header bytes 100–127 shall be zero in ICC.1 (`icc__s__header.md`

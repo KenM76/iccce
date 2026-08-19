@@ -234,7 +234,22 @@ fn cmd_inspect(path: &str) -> ExitCode {
         }
     }
 
-    // Disclosure surface: everything the file got wrong, verbatim.
+    // Disclosure surface: everything the parser has to say about the file,
+    // verbatim and uncorrected.
+    //
+    // ★ NOT "everything the file got wrong" — that is what this comment
+    // said until 2026-08-19, and it is false. `Malformation` is a mixed
+    // channel: `TrailingBytes` is normal for a container-embedded profile,
+    // and a v2 unrecognised rendering intent breaches nothing, because
+    // ICC.1:2001-04 defines four values and forbids no others. So
+    // `malformations: N` **can be non-zero for a fully conforming file**,
+    // and a consumer reading N as a conformance verdict will condemn one.
+    // A verdict requires matching on the variants; the count only says
+    // there is something to read. See `docs/ARCHITECTURE.md` DL-063 and
+    // `iccce_profile::diag::Malformation`'s doc comment.
+    //
+    // The count is printed before the lines deliberately, so that a caller
+    // reading only the first line still learns there is something to read.
     println!("malformations: {}", profile.malformations.len());
     for m in &profile.malformations {
         println!("malformation: {m}");
