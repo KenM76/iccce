@@ -279,6 +279,56 @@ fn cmd_inspect(path: &str) -> ExitCode {
     // The count is printed before the lines deliberately, so that a caller
     // reading only the first line still learns there is something to read.
     println!("malformations: {}", profile.malformations.len());
+
+    // ★★★ `violations: N` — the quantity a conformance question actually
+    // wants, added 2026-08-21 because its absence had already produced a
+    // false accusation in this project's own test suite.
+    //
+    // DL-063 established that `malformations` counts DISCLOSURES. The
+    // comment above says so. But the comment was the only place it was
+    // said: every consumer, including `tools/difftest`'s
+    // `passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file`
+    // row, still had nothing to read but the `.len()` above. That row
+    // went red against **five ICC-PUBLISHED profiles** —
+    // `sRGB2014.icc`, `ITU-RBT709ReferenceDisplay.icc`,
+    // `PSOsc-b_paper_v3_FOGRA54.icc`, `PSOuncoated_v3_FOGRA52.icc`,
+    // `SC_paper_eci.icc` — each disclosing exactly one
+    // `HeaderReservedNonZero`, because they are **v2** files carrying an
+    // MD5 in bytes 84..99 where v4 later put `profileID`.
+    //
+    // ★★ The row's own text offers two hypotheses — *"either iccce
+    // over-reports or a published ICC profile is defective"* — and the
+    // truth is **neither**. `Malformation::violation_status` already
+    // answers `NotAViolation` for that variant on v2, correctly and for
+    // a sourced reason: ICC.1:2001-04 Table 9's cell is the unmodalised
+    // *"44 bytes reserved for future expansion"*, the only mention in
+    // the document, so there is no `shall` to breach. **The engine was
+    // right, the files are conformant, and the row was counting the
+    // wrong quantity.** A corrected doc comment did not reach the code
+    // that needed it, and a graded row resting on the old reading was
+    // never re-derived.
+    //
+    // ★ Printed unconditionally, including when it is `0` and when it
+    // equals the line above. A disclosure that appears only when it is
+    // interesting teaches a reader to treat its absence as "nothing to
+    // see", and the whole point of this line is that `malformations: 5`
+    // beside `violations: 0` is a *different fact* from `malformations:
+    // 5` alone — which is the one a reader of the older output could not
+    // obtain at any price.
+    //
+    // This does NOT repair, hide or reclassify anything (rule 6). Every
+    // malformation line below is still emitted verbatim and uncorrected;
+    // this adds a second count over the same unaltered set.
+    let violations = profile
+        .malformations
+        .iter()
+        .filter(|m| {
+            m.violation_status(profile.header.version)
+                == iccce_profile::diag::ViolationStatus::Violation
+        })
+        .count();
+    println!("violations: {violations}");
+
     for m in &profile.malformations {
         println!("malformation: {m}");
     }
