@@ -1,6 +1,6 @@
 ---
 name: iccce-pass-status
-description: iccce status snapshot to the 2026-08-19 PERCEPTUAL-COST filing (32nd SESSION_LOG entry; tip 3c93b62; NA-012's cost is MEASURED at 3.681203 dE2000 and its UNMEASURED retired; NC-269…NC-280 in the new §3.36 + §7.25, next free NC-281/NA-013 — NA-013 again NOT consumed; DL-065 + DL-066 filed, 66 decision-log entries; suite pass=353 fail=0 skip=9) (earlier: the LEAK-GUARD INJECTION filing, 31st SESSION_LOG entry; DL-064 filed, 64 decision-log entries; NC-267 + NC-268 filed in the new §3.35 + §7.24, next free NC-269/NA-013 — NA-013 deliberately NOT consumed; reflog tip abdf445, two commits past the measured 400179b; the injection DISCHARGED the Pass K debt and found that below 5.0e-2 the WHOLE SUITE is green with a defect compiled in) (earlier: the DISCLOSURE-CHANNEL filing, 30th entry, DL-063, no row moved, tip 400179b) (earlier: the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274)) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
+description: iccce status snapshot to the 2026-08-20 PASS L + profileID filing (33rd SESSION_LOG entry; tip 0a88ad6; the FIRST filing ever made against work COMMITTED AND NEVER FILED — 4 commits, zero doc mentions; lcms2 implements the C0 reading of sRGB but A57 STAYS OPEN; §C is SELF-COMPARISON not a cross-check, so 14/11/2-of-5169 is one class weaker than the dispatch assumed; two of our own doc-comment claims FALSIFIED because a claim in a UNIT is silently scoped to that unit's domain; DL-067 a fabricated value is a FORGED CREDENTIAL, DL-068 DL-062's revisit-if has fired twice so carry ref HASHES not a push count; NC-281…NC-300 in §3.37 + §7.26, next free NC-301/NA-013 — NA-013 declined a THIRD time, on the ground that H.273 governs CICP not ICC profiles) (earlier: the 2026-08-19 PERCEPTUAL-COST filing, 32nd SESSION_LOG entry, tip 3c93b62; NA-012's cost is MEASURED at 3.681203 dE2000 and its UNMEASURED retired; NC-269…NC-280 in the new §3.36 + §7.25, next free NC-281/NA-013 — NA-013 again NOT consumed; DL-065 + DL-066 filed, 66 decision-log entries; suite pass=353 fail=0 skip=9) (earlier: the LEAK-GUARD INJECTION filing, 31st SESSION_LOG entry; DL-064 filed, 64 decision-log entries; NC-267 + NC-268 filed in the new §3.35 + §7.24, next free NC-269/NA-013 — NA-013 deliberately NOT consumed; reflog tip abdf445, two commits past the measured 400179b; the injection DISCHARGED the Pass K debt and found that below 5.0e-2 the WHOLE SUITE is green with a defect compiled in) (earlier: the DISCLOSURE-CHANNEL filing, 30th entry, DL-063, no row moved, tip 400179b) (earlier: the 2026-08-18 STALE-STATUS filing (29th SESSION_LOG entry; DL-062 filed with TWO instances, 62 decision-log entries; NO row moved, next free still NC-267/NA-013; §7.23 item 1 DISCHARGED but its difftest-row debt item 4 STAYS OPEN) (earlier: the PASS K filing, tip 60c32dd, clean; NC-243…NC-266 + NA-012 filed — largest row block ever, and ZERO of them published-ground-truth because A51 makes it impossible; E8/NC-256 is rule 7's strongest form — the ORACLE is wrong by algebra; §D is self-comparison of the ORACLE; the compiled-path defect was already fixed in a05476c so 0.617121 is HISTORY; next free NC-267/NA-013, DL-061 newest, 27 log entries) (earlier: the first-use-of-the-raster filing at tip 1a0509b; Pass K LANDED as 846952f; the raster capability is now VERIFIED not REPORTED; GWG 23.0's row was wrong about its NUMBERS too — 25%/0/0/0/75, which is ISO 32000's formula evaluated; two false statements found in passk.rs PROSE, one printed into the report; next free NC-243/NA-012, DL-061 newest, 27 session-log entries) (ORIGINAL SCOPE COMPLETE — Passes 0–7 DONE; ICC's own sRGB document INVERTED the 12-ULP attribution — it is the FILE's error; NC-230 is the ledger's SECOND published-ground-truth row so "NC-001 is the only one" retires; a shipped crash fixed; crates.io names checked but only 5 of 6 and NOT a reservation; GWG 23.0 reclassified OUT of "ours" so six-genuinely-ours becomes FIVE and the suite is 51 patches not ~48; Pass K exists in the WORKING TREE and in NO commit; PDF page RENDERING turns out to be available via pypdfium2 so NC-230's second reading is unblocked; next free NC-243/NA-012, DL-060 newest, 26 session-log entries; Pass H filed at pass=274)) — what remains is Pass 8 in pdfce, purchased documents, Passes 9–10, standing debts
 metadata:
   type: project
 ---
@@ -922,6 +922,121 @@ difftest **`pass=353 fail=0 skip=9 error=0`**, `fmt`/`clippy`/`test`
 clean, `gen-profiles verify` **47 identical**. ★ Tip **`3c93b62`**
 *(VERIFIED from `.git/logs/HEAD`)*; **`crates/` untouched by the work**;
 nothing committed, pushed or published by the filing.
+
+**★★★ UPDATED 2026-08-20, THE PASS L + `profileID` FILING (thirty-THIRD
+`SESSION_LOG` entry). ★★ THE FIRST FILING EVER MADE AGAINST WORK THAT WAS
+COMMITTED AND NEVER FILED — four commits, none in any doc this role
+keeps.** `grep -rn "Pass L" docs/*.md` returned **nothing** before it, and
+so did `A57`, `SrgbTrc`, `SlopeContinuous` *(VERIFIED, four patterns,
+zero matches)*. ★ **The failure was not invisibility — the numbers were
+LIVE in three doc comments and a README, unscoped by any dated record.**
+**Tip `0a88ad6`** *(VERIFIED — `.git/refs/heads/master`)*.
+
+**★★★ lcms2 implements the C⁰ reading of sRGB** — `α = 1.055`, breakpoint
+`0.04045`. `max|lcms2−C⁰|` **`5.300706e-5`** `L*` vs `max|lcms2−C¹|`
+**`1.230354e-3`**, ratio **`23.2×`**, **`0` of `204`** resolvable probes
+favour C¹. ★★★ **`A57` STAYS OPEN — a measurement of an implementation
+cannot adjudicate between two in-force standards** (C⁰: ICC's own sRGB
+doc, W3C, Khronos; C¹: **required** by H.273 cl. 8.2 for
+`TransferCharacteristics = 13`, i.e. AVIF/HEIF/AV1/`nclx`). **IEC
+61966-2-1 still paywalled and unobtained.**
+
+**★★★ THE CORRECTION TO MY OWN DISPATCH: only §A is a cross-check.**
+**Every §C record is `Kind::SelfConsistency`** — so `14`/`11`/`2` of
+`5169`, the headline falsification counts, are **iccce vs iccce, ONE
+CLASS WEAKER than a cross-check**. ★★ And that is **forced by a
+measurement, not a scope refusal**: lcms2 quantises float input to 16 bits
+before an `mft2` CLUT (`EvaluateCLUTfloatIn16`) — **7 distinct `L*` from
+60 samples**, tread ≈`4.9e-3` % ink against a `6.36e-3` % effect. **The
+oracle cannot be the ruler.** ★ §A also **never runs iccce's transform
+code** — the harness evaluates both curves and transcribes lcms2's `f()`;
+iccce supplies only the constants.
+
+**★★★ TWO CLAIMS IN `SrgbTrc`'s DOC COMMENT FALSIFIED, both ours.**
+*"no image changes, ever"* — **FALSE end-to-end** (`14`/`11`/`2` of
+`5169`; `17`/`6` on a half-step grid ⇒ not an artefact). *"below one
+16-bit PCS quantum"* — **FALSE as ΔE**: PCS max **`1.857907e-3`** =
+**`2.01×`** a quantum **evaluated at the argmax** (ΔE2000's `SL` varies
+`1.6×` between `L*` 6 and 50). ★★★ **THE GENERAL FORM: a claim in a UNIT
+is silently scoped to the domain that unit lives in.** Neither was ever
+wrong where measured; both became wrong **one transform later**. DL-063's
+shape applied to a unit. ★ Honest summary: **a curiosity, NOT an
+invisibility** — `538×` below perceptibility *and it still moves 8-bit ink
+codes*. ★★ **A gray ramp understates by `2.51×`** — the max is **off-axis**
+at codes `(10.0213, 23.7681, 10.0213)`.
+
+**★★ The option was HOLLOW until Pass L found it** — C¹ was unreachable
+from any public entry point. `Destination::BuiltinSrgb(SrgbTrc)` added;
+guard is a **WINDOW** `(1e-9, 1e-2)` — ★★ **a lower bound, because a
+collapse to exactly zero PASSES a ceiling-only assertion.** ★ **No CLI
+flag selects `SrgbTrc`** — library API only.
+
+**★★★ DL-067 — A FABRICATED VALUE IS A FORGED CREDENTIAL.** iccce read
+header bytes `84..100` as a `profileID` **regardless of edition**; v2 has
+no such field (ICC.1:2001-04 Table 9: `84..127` = one 44-byte reserved
+block). A v2 profile printed a plausible 32-hex-digit id **and
+`malformations: 0`**. ★★★ **Worse than the 2026-08-18 rendering-intent
+defect, which ACCUSED a conforming file — loud and arguable. This one
+INVENTED a CHECKABLE claim and reported nothing: it invites VERIFICATION,
+not scepticism.** ★ It **under-reported simultaneously** — 16 bytes of
+v2's reserved block checked by nothing, the same 16. **One defect, two
+directions, one line.** Fixed by an edition gate; **the bytes are still
+disclosed — only the MISLABELLING stopped.** ★★ Same commit, **second
+instance caught at design time**: `violation_status(version)` is **not a
+`bool`** — `TagTooSmall` has no requirement in **either** edition (A61),
+`TagOverrun` none in v2 (A62), so a bool **would have forced an invention
+that looked as authoritative as the sourced answers**.
+`Violation/NotAViolation/Unsourced{register_id}`; **3 of 9 variants split
+by edition**. ★ **v2 requires with "must" (76) not "shall" (27)** — a
+`shall`-grep reads v2 backwards. ★★ **`DuplicateTagSignature` was labelled
+"NOT SOURCED" and BOTH editions prohibit duplicates — the decision
+survives, its RATIONALE was false; DL-003's revisit-if has fired.**
+
+**★★★ DL-068 — DL-062's "revisit if a third instance" HAS FIRED TWICE and
+no guard was built.** `NEXT_SESSION.md` says *"ahead of `origin/master` —
+**4 commits**… Measured"*; **it is `0`** *(VERIFIED: `refs/heads/master`
+and `refs/remotes/origin/master` are the same hash)*. **FIFTH instance,
+and the SECOND CONSECUTIVE handoff to carry a wrong push count** — the
+2026-08-19 block records instance 4 **in its own body** and states the
+remedy **in the same row**. ★★★ **A field that goes wrong twice in a row
+under full awareness is not being filled carelessly; it is the WRONG
+FIELD.** **Decision: carry the TWO REF HASHES, not the derived integer** —
+a hash becomes *historical* rather than *false*, while `4` and `0` look
+identical in authority; and **nothing in any handoff depends on the
+number** (pushing is unauthorised regardless), so it carries no decision
+and the project's highest staleness risk. ★ Caveat kept:
+`refs/remotes/origin/master` records **what the last fetch/push
+observed**, never the remote's present contents.
+
+**★★ `NA-013` DECLINED a THIRD time, on a NARROWER ground than offered.**
+The dispatch said *"a selection between two documented readings is not an
+approximation"* — true but it would also excuse a real deviation. The
+ruling: **H.273 governs CICP code points, not ICC profiles**, and iccce
+makes no CICP claim, so its requirement is a **disagreement between
+documents** (A57), not a departure. **The default departs from nothing
+that governs the artifact.** ★ **Three triggers recorded** that would make
+an NA owed: a CICP conformance claim; `SlopeContinuous` becoming the
+default or CLI-reachable; IEC 61966-2-1 turning out to require C¹.
+
+**Newly owed:** ★★★ **a universal claim about the harness is FALSE in two
+documents** — *"EVERY `passl/A/*` record carries the A57 disclaimer"* is
+**six of nine**, one of the six a paraphrase; the three without it are the
+three **with no lcms2 output**, each carrying *"no implementation's output
+appears in this row"* instead ⇒ **nothing mis-scoped, a COUNT is wrong**;
+★★ **`2 of 3` `profileID` tests turn red on reverting — the third is not
+shown to be discriminating** and must not be rounded to *"proven by
+mutation"*; ★ a **second** false count in `tools/difftest/README.md` one
+day after §7.25 filed the first.
+
+**Ledger: `NC-281` … `NC-300` in the new §3.37 + §7.26; next free
+`NC-301` / `NA-013`. DL-067 + DL-068 filed; 68 decision-log entries.
+`SESSION_LOG.md` has 33 entries. `ROADMAP.md` gained the Pass L entry it
+never had; `TOLERANCES.md` untouched** (every Pass L tolerance is derived
+in `passl.rs`'s own `why` strings from `transicc`'s `%.4f` quantum).
+**Gates `[REPORTED]` by ONE runner on commit messages** — `195`→`198`
+tests, difftest **`pass=373 fail=0 skip=9 error=0`** (`353 + 20` closes),
+clippy clean. ★ **Weaker than NC-280's two-runner census.**
+**47 fixtures still** *(VERIFIED by listing)*.
 
 Related: [[iccce-gate-in-input-units-cannot-certify-output]],
 [[iccce-unfailable-row-protected-only-by-siblings]],

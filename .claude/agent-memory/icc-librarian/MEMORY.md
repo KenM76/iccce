@@ -9,8 +9,10 @@
 - [A patch is named for what it LOOKS at](project_patch_named_for_what_it_looks_at.md) — DL-059: GWG 23.0 was ours and is pdfce's; corroborated 2026-08-18 by the artwork's own numbers.
 - [An inferred environment constraint is a READING](project_inferred_environment_constraint_is_a_reading.md) — DL-060, now VERIFIED: pypdfium2 renders; and engines' silence about a FIGURE reads as absence of the fact.
 - [A number labelled with its source](project_source_labelled_number.md) — DL-061: "GWG's own patch value" printed into a report for a value the patch lacks; the label is the untested half.
-- [A stale STATUS decays faster than a number](project_stale_status_decays_faster_than_a_number.md) — DL-062, TWO instances (2nd inside the filing of the 1st) ⇒ structural; write ROWS, don't just re-check.
+- [A stale STATUS decays faster than a number](project_stale_status_decays_faster_than_a_number.md) — DL-062, now FIVE instances ⇒ DL-068: carry the two ref HASHES, not a push count. The field itself is wrong.
 - [Words are read by humans, the COUNT by code](project_words_are_read_by_humans_count_by_code.md) — DL-063: `malformations: N` counts DISCLOSURES; two files, same bytes, same count, one conformant.
+- [A fabricated value is a forged credential](project_fabricated_value_is_a_forged_credential.md) — DL-067: a v2 `profileID` invented from reserved bytes, `malformations: 0`. Worse than a false accusation — it invites verification.
+- [A claim in a UNIT is scoped to that unit](project_claim_in_a_unit_is_scoped_to_that_unit.md) — Pass L falsified two of our own doc-comment claims; and §C is SELF-comparison because the oracle was MEASURED blind to it.
 
 - [Documented is not tested](project_documented_is_not_tested.md) — DL-051: five injections, the BEST-documented constant caught by NONE; the doc comment's length is what hid it. Injection, never inspection.
 - [An injection measures ONE magnitude](project_injection_measures_one_magnitude.md) — DL-064: the red runs discharge the debt, the GREEN run is the floor; rival named with `1e-9`, guard claimed without a number.

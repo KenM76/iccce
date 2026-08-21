@@ -67,5 +67,43 @@ disclosure would vanish with a green suite. One test in
 scoped the task to "tell me which you think it is", and asserting an unnamed
 choice would have decided it.
 
+## 5. ★★★ It reached a GRADED ROW, 2026-08-21 — `passh/B` is now RED and no profile is defective
+
+At tip `0a88ad6` the difftest suite is **`pass=372 fail=1`** in the main tree
+(and `371/1` in a worktree, which lacks `vendor/` and skips one `passl` row).
+The failure is
+`passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file`,
+observed **`5.000000e0`** against a required `0`, on
+`ITU-RBT709ReferenceDisplay.icc`, `PSOsc-b_paper_v3_FOGRA54.icc`,
+`PSOuncoated_v3_FOGRA52.icc`, `SC_paper_eci.icc` and `sRGB2014.icc`.
+
+**All five are v2** (`2.0.0` or `2.4.0`) carrying a 16-byte MD5 at bytes
+84..99 — the position v4 later named `profileID` — with 100..127 all zero.
+`0a88ad6` correctly stopped reading that as a `profileID` on v2 and widened
+`HeaderReservedNonZero` to name `84..128`; `Malformation::violation_status`
+correctly returns **`NotAViolation`** for v2 (ICC.1:2001-04 Table 9 states
+nothing; ICC.1:2022 7.2.19 states a `shall`). **Nothing in the parser is
+wrong and no published profile is defective.**
+
+★★ **The `malformations: N` line does not consult `violation_status`.** So a
+correct, edition-aware disclosure is counted as a conformance failure by a
+row whose expectation is *"a profile published as conformant contains nothing
+for a conformant parser to disclose"*. This is §1's conflation reaching a
+**graded row** for the first time, and the remedy is in the **channel**, not
+in `passh/B`'s bound — widening that bound would be `CLAUDE.md` rule 5 in
+reverse. Candidates: a second counter (`violations: N` beside
+`malformations: N`), or `passh/B` grading violations rather than disclosures.
+**Not this role's to choose**; reported to the lead 2026-08-21.
+
+★★★ **And `passh/B`'s expectation was already falsified in writing.** The CLI's
+own comment above `println!("malformations: {}", profile.malformations.len())`
+has said since `DL-063` (2026-08-19) that the count *"can be non-zero for a
+fully conforming file"* and that *"a consumer reading N as a conformance
+verdict will condemn one"* — which is exactly what `passh/B` does. **The row is
+measuring the wrong quantity, not measuring the right one too tightly.** A doc
+comment retracted a claim and the graded row that rested on it was not
+re-derived: [[a-fixed-defect-goes-stale-in-someone-elses-doc]] with the
+direction reversed — here the DOC was corrected and the TEST went stale.
+
 Related: [[project-the-four-cell-gate-and-its-injections]],
 [[project-header-rendering-intent-finding]].

@@ -1,8 +1,9 @@
 # icc-conformance — memory index
 
+- [A guard's floor is a FREE PARAMETER](project_a_guards_floor_is_a_free_parameter.md) — the response RISES as ink falls; probe ink that underflows to 0.0 reds a CORRECT engine; an injection can be modelled on the shipped binary.
 - [Pass L — which sRGB does lcms2 implement?](project_passl_which_srgb_lcms2_implements.md) — C0, measured; the interior max moves with the OUTPUT SPACE; the oracle can't rule a destination; "0 of 256 codes" is false end-to-end.
 - [The four-cell gate, and what each injection reds](project_the_four_cell_gate_and_its_injections.md) — two conditions = FOUR cells and the corpus held one; the four are not equally licensed; a string equality can't tell a vanished report from a cited one.
-- [`Malformation` is the wrong channel for a non-violation](project_malformation_channel_overclaims.md) — `malformations: 1` printed for a v2 file that violates nothing; the CLI separates interpretation from conformance BY ACCIDENT, the parser conflates them by design.
+- [`Malformation` is the wrong channel for a non-violation](project_malformation_channel_overclaims.md) — a v2 file that violates nothing prints `malformations: 1`; ★ 2026-08-21 it reached a GRADED row — `passh/B` is red at 5 and no profile is defective.
 - [A third fixture category: DISPUTED](project_a_third_fixture_category_disputed.md) — well-formed/malformed are both CLAIMS; the category EMPTIED the same day it was created, and what does NOT belong in it.
 - [The header renderingIntent field](project_header_rendering_intent_finding.md) — lcms2 reads it in ONE place (DeviceLink); the two engines ignore it while defaulting DIFFERENTLY; the library API has no "unspecified", so only the CLI arm could fail.
 - [Pass K — GRADING the landed feature](project_passk_grading_the_landed_feature.md) — the repointing named the PREDICATE rows and missed the GUARD; `blind` was a typed NOUN that went false; ★ the compiled-path defect I filed as OPEN was already FIXED one commit earlier.

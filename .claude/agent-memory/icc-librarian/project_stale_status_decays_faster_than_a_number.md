@@ -1,6 +1,6 @@
 ---
 name: iccce-stale-status-decays-faster-than-a-number
-description: DL-062 (filed 2026-08-18) — a document said "not fixed here, deliberately" about a defect fixed 28 s earlier; a stale STATUS decays faster than a stale number because the fix lands in someone else's commit. TWO instances, the second inside the filing that documented the first — so it is structural, not haste; the defence is writing rows, not re-checking
+description: DL-062 (2026-08-18) — a document said "not fixed here, deliberately" about a defect fixed 28 s earlier; a stale STATUS decays faster than a stale number because the fix lands in someone else's commit. NOW FIVE INSTANCES: #4 and #5 are consecutive handoffs carrying a wrong PUSH COUNT, #5 written directly below #5's own warning ⇒ DL-068 (2026-08-20) rules the field itself wrong — carry the two REF HASHES, not the derived integer
 metadata:
   type: project
 ---
@@ -105,6 +105,65 @@ came from **this librarian's own Pass K `SESSION_LOG` entry**, which
 extended DL-053 without labelling the extension. **Cite the AXIS, not
 just the DL number** — three readings of `[VERIFIED]` are now in play
 and only one is DL-053's.
+
+**★★★ UPDATED 2026-08-20 — THE "REVISIT IF A THIRD INSTANCE APPEARS"
+CLAUSE HAS FIRED TWICE, AND THE RECURRING CARRIER IS ONE ROW OF ONE
+DOCUMENT. Filed as DL-068.**
+
+| # | date | the claim | how it went stale |
+|---|---|---|---|
+| 1 | 2026-08-18 | `TOLERANCES.md` *"not fixed here"* | fixed **28 s** earlier |
+| 2 | 2026-08-18 | `NUMERIC_CLAIMS.md` §7.23 item 2 | discharged **concurrently**, while writing up #1 |
+| **4** | 2026-08-18 | `NEXT_SESSION.md` *"14 commits. NOTHING IS PUSHED"* | the operator pushed |
+| **5** | 2026-08-19 | `NEXT_SESSION.md` *"ahead of `origin/master` — **4 commits**… **Measured**"* | the operator pushed; it is **`0`** |
+
+★★★ **Instance 5 was carried by the document that had just recorded
+instance 4, in the row directly below it, with the remedy stated in its
+own text** (*"Do not carry a push-state claim forward without re-running
+the count"*). **The count WAS re-run. It was right when written. It went
+stale anyway.**
+
+> **A field that goes wrong twice in a row under full awareness is not
+> being filled carelessly. It is the WRONG FIELD.**
+
+**Why a push count specifically fails BOTH of DL-062's constructive
+clauses:** its subject is **the one tree no agent may touch** (pushing is
+the operator's act, rule 9), so it changes exactly when nobody here is
+looking; the interval it must survive is **the longest in the project**
+(written at session end, read at the next session's start — which is when
+the operator pushes); and ★★★ **nothing in any handoff DEPENDS on it** —
+pushing is unauthorised regardless. **No decision, highest staleness
+risk: the worst possible ratio.**
+
+**THE DECISION (DL-068): a handoff records the two REF HASHES, not a
+derived count.**
+
+```text
+local  refs/heads/master           0a88ad6…
+remote refs/remotes/origin/master  0a88ad6…   (as of the last fetch/push this repo observed)
+```
+
+★ **A hash is a dated READING** — when the world moves it becomes
+*historical* and says so by not matching what the reader finds. **`4` and
+`0` look identical in authority.** Same move as NC-264/NC-265 surviving a
+concurrent correction by being dated measurements with commit anchors.
+
+**Three cheap supporting rules:** state the **method** beside the hashes
+(loose ref files vs `git rev-list --count` — they fail differently);
+**never write *"nothing is pushed"* as a standalone sentence**, which is
+the form both instances decayed into; and **add to the grep list**:
+`ahead of origin`, `NOTHING IS PUSHED`, `unpushed`, `commits this
+session`.
+
+★★ **Caveat that must travel with the hashes:** `refs/remotes/origin/master`
+records **what the last fetch or push observed**, **never** the remote
+server's present contents. It supports *"`rev-list --count` returns 0"*;
+it supports **no** claim about publication (rule 9).
+
+★ **DL-068 does NOT build the mechanical guard DL-062 imagined.** It
+removes **one recurring carrier** by changing what gets written. A
+pre-commit phrase-grep for cross-role status claims is still unbuilt and
+unowned, and must not be read as done.
 
 Related: [[iccce-pass-status]],
 [[iccce-artifact-existence-is-not-obligation-status]] (an artifact's

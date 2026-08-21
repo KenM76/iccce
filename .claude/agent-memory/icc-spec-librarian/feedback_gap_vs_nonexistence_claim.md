@@ -57,7 +57,19 @@ as though **"checked" were a property of the source rather than of a question.**
    promoted two categories beyond its evidence.
 3. **If a file contains both a NOT-FOUND claim and a NOT-FETCHED row, the
    NOT-FOUND claim is provisional by construction.** Grep for the pair.
-4. **When a held source is re-read for a NEW question, record that in the
+4. **★ A NEGATIVE FROM `grep` IS A NEGATIVE ABOUT ONE LINE, NOT ABOUT THE
+   DOCUMENT.** Text dumps of standards wrap mid-sentence, so a phrase search
+   for a sentence that exists returns nothing. **Twice on 2026-08-21** a
+   cross-edition divergence was within one keystroke of being filed on exactly
+   this: *"the computation shall be the same whether the colour space is
+   additive or subtractive"* was declared a PDF 2.0 addition because the 2008
+   dump broke it as `additive or` / `subtractive.`; and the §11.7.3
+   conversion-timing sentence was declared 2.0-only for the same reason. **Both
+   were present in 2008.** ⟹ before filing ANY "absent from edition X", search
+   a **short distinctive fragment** (3–5 words, no line-break risk), and search
+   **two engines' dumps** — `pypdf` and `poppler` wrap at different points, so
+   agreement between them on a negative is worth far more than either alone.
+5. **When a held source is re-read for a NEW question, record that in the
    source's own file.** `w3c__s__css_color_4.md` said nothing about examples
    either way, so nothing disclosed that the question had never been asked. A
    banner naming *which predicates this file has been searched under* is now on
