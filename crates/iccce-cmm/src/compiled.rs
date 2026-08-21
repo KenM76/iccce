@@ -80,8 +80,38 @@ pub const fn recommended_grid_points(input_channels: usize) -> usize {
         0..=2 => 129,
         // 3-D at 33 is 35 937 nodes — the industry-standard size.
         3 => 33,
-        // 4-D at 33 is 1 185 921 nodes (~27 MB, ~14 s to build) and
-        // is what the measurement above says is needed.
+        // 4-D at 33 is 1 185 921 nodes, and is what the measurement
+        // above says is needed.
+        //
+        // ★★ COST, RE-MEASURED 2026-08-21 AND NOW LABELLED, because the
+        // previous version of this comment said "~27 MB, ~14 s to build"
+        // and BOTH halves were misleading — each in a different way, and
+        // each in the direction that makes a grid look more expensive
+        // than it is.
+        //
+        //   build, RELEASE, four committed synthetic CMYK sources
+        //       1.419442 / 1.439321 / 1.585943 / 1.783205 seconds
+        //   build, DEBUG, the same profile pair as the 1.419442 above
+        //       14.323247 seconds
+        //
+        // ★★★ 10.1x, one profile pair, one machine, one afternoon. The
+        // old "~14 s" was a DEBUG measurement with no build profile
+        // named. An unlabelled timing is not merely stale — it is wrong
+        // by an order of magnitude for every reader who assumes the
+        // other profile, and this one sat inside the function that
+        // decides how many nodes to spend. A performance number without
+        // its build profile is not a number.
+        //
+        // And the memory figure depended on a variable this function
+        // cannot see. Grid storage is nodes x OUTPUT channels x 8 bytes,
+        // and `recommended_grid_points` takes INPUT channels only:
+        //
+        //   CMYK -> RGB   1 185 921 x 3 x 8  =  27.2 MiB   <- the old "~27 MB"
+        //   CMYK -> CMYK  1 185 921 x 4 x 8  =  36.2 MiB
+        //
+        // So the old figure was one destination shape stated as if it
+        // were the grid's cost. Both rows are DERIVED from the node
+        // count, not measured by instrumenting the allocator.
         4 => 33,
         // ★★ FIVE CHANNELS AND UP — COMPUTED, not tabulated, and a
         // MEMORY bound rather than an accuracy result. See the note on
@@ -367,6 +397,69 @@ impl CompiledTransform {
     /// `n × input_channels` values, `dst` receives `n × output_channels`.
     /// Returns false on a shape mismatch rather than panicking — a
     /// raster loop is exactly where a panic is least welcome.
+    ///
+    /// # This is [`Self::convert`] in a loop, and that is a contract
+    ///
+    /// ★★★ **It delegates to [`Self::convert`] rather than reproducing
+    /// its body, and that is deliberate rather than stylistic.** From
+    /// its introduction until 2026-08-21 this function called
+    /// `self.grid.eval` directly and therefore **never consulted the
+    /// K-preservation policy at all**. The consequence was two answers
+    /// from one `CompiledTransform`: a caller who asked for black
+    /// preservation and evaluated one pixel at a time got it, and the
+    /// same caller evaluating the identical values as a buffer did not.
+    ///
+    /// Measured at the fix, on `v2-cmyk-chromatic-neutral`, grid 17:
+    ///
+    /// ```text
+    ///   worst |convert - convert_buffer|   7.195269e-1 of ink
+    ///   at input                           [0.0, 0.0, 0.0, 1.0]
+    ///   the same on non-qualifying probes  0.0   (exact)
+    /// ```
+    ///
+    /// **Seventy-two percent of a colorant channel**, on solid black, on
+    /// the entry point a renderer would actually use — and the control
+    /// was exactly zero, so it was the policy and nothing else. For the
+    /// perceptual size of what was being discarded see `NC-269`
+    /// (`3.681203` ΔE2000 max, `1.580674` mean, for a real press pair).
+    ///
+    /// ★★ **Why nothing caught it, and this is the transferable half.**
+    /// The only caller of this function in the whole repository is
+    /// `iccce bench` (`crates/iccce-cli/src/main.rs:614`), and `bench`
+    /// builds its chain with a bare [`crate::transform::Chain::new`] —
+    /// **it cannot request black preservation at all.** So the defect
+    /// was unreachable from the CLI, and `difftest` drives the CLI.
+    /// **A defect that only a LIBRARY consumer can reach is invisible
+    /// to a CLI-driven suite**, however green that suite is. The unit
+    /// tests that did exist all evaluated through
+    /// [`Self::convert`], so the two entry points were never once
+    /// compared to each other.
+    ///
+    /// The lesson is in the shape, not the bug: **one struct offering
+    /// two evaluation surfaces owes callers a guarantee that they are
+    /// the same transform.** The only way to keep that guarantee under
+    /// future edits is for one to be defined in terms of the other, so
+    /// there is no second place for a policy to be forgotten. The
+    /// pattern was already in this crate —
+    /// `MatrixTrcTransform::convert` is a one-line delegation to
+    /// `convert_with_intent` — so this was an inconsistently applied
+    /// technique rather than an unknown one.
+    /// `crates/iccce-cmm/tests/compiled_buffer_agrees_with_single_pixel.rs`
+    /// asserts it by bit-equality, which is the right strength of claim
+    /// here because both paths run the same arithmetic on the same
+    /// inputs — any difference is structural, so a tolerance would only
+    /// be somewhere for the next instance to hide.
+    ///
+    /// # Cost, stated because rule 8 says optimise only after correct
+    ///
+    /// [`crate::black_preserve::KPreserve::apply`] returns an owned
+    /// `Vec<f64>`, so a **qualifying** pixel now allocates. Only pixels
+    /// with `C = M = Y = 0` exactly take that branch, and only on a
+    /// transform built with [`crate::transform::Chain::with_black_preservation`]
+    /// — every other pixel, and every transform without the policy, runs
+    /// exactly the arithmetic it ran before. That allocation is a known
+    /// and named cost of correctness here, **not** a measured throughput
+    /// figure: no benchmark has been run against it, and none is claimed.
     #[must_use]
     pub fn convert_buffer(&self, src: &[f64], dst: &mut [f64]) -> bool {
         if src.len() % self.input_channels != 0 {
@@ -379,7 +472,7 @@ impl CompiledTransform {
         for p in 0..pixels {
             let i = p * self.input_channels;
             let o = p * self.output_channels;
-            if !self.grid.eval(
+            if !self.convert(
                 &src[i..i + self.input_channels],
                 &mut dst[o..o + self.output_channels],
             ) {
