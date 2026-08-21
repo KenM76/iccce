@@ -2,6 +2,179 @@
 
 ---
 
+# ★★★ HANDOFF — 2026-08-21. Seven commits, PUSHED. Two real defects found and fixed.
+
+**Read this block first. It supersedes the 2026-08-19 block below and anything
+else that conflicts.** Everything below is otherwise still the reference,
+**except** its "State of the tree" table, which is wrong in four places and is
+superseded here.
+
+## Do this first, exactly as every previous block says
+
+1. **List `D:\Dev\FeatureRequests\iccce_FeatureRequests\open\`.**
+   ★★ **It is now 8 files, down from 20, and `INDEX.md` finally has rows.**
+   Nothing is owed inbound. Three outbound notes await an optional reply.
+   **Read `INDEX.md` before `open/`** — it is the memory, it was empty for four
+   days, and that emptiness cost a real misunderstanding (item 5 below).
+2. **Re-arm the 15-minute channel poll.** Monitors die with the session.
+   ★ **Tell every dispatched subagent NOT to arm its own** — they inherit
+   `CLAUDE.md` rule 10 and each arms a duplicate that cannot be stopped
+   mid-session. Four dispatches this session, four prevention clauses, **zero
+   duplicates. The clause works; keep using it.**
+   ★ The monitor will echo your OWN writes. Read the file's `**from:**` header
+   before treating an event as inbound.
+
+## ★★★ THIS HANDOFF NO LONGER CARRIES A PUSH COUNT, DELIBERATELY
+
+Every previous block carried *"N commits ahead of `origin/master`"*. **That
+line is retired on `icc-librarian`'s recommendation, and the reasoning is the
+part worth keeping:**
+
+- It went stale **five times**, and instance 5 sat in the row directly below
+  instance 4's own warning about it (`DL-062`, now escalated as `DL-068`).
+- ★ **Nothing in any handoff ever depended on it.** Pushing is unauthorised
+  without a current go-ahead regardless of what the count says, so it carried
+  no decision and the project's highest staleness risk.
+- **`4` and `0` look identical in authority.** A wrong count reads exactly like
+  a right one — which is this project's rule 1 applied to its own paperwork.
+
+**Carry the two ref hashes instead.** A hash becomes *historical* when the
+world moves, and says so by not matching:
+
+| | |
+|---|---|
+| `.git/refs/heads/master` | **`533ea8566f51c40150555752d9a2dfa07bc73884`** |
+| `.git/refs/remotes/origin/master` | **`533ea8566f51c40150555752d9a2dfa07bc73884`** |
+
+★ **A ref file records what the last fetch or push OBSERVED, never the
+remote's present contents.** It supports "these two matched at that moment"
+and supports **no** publication claim beyond it.
+
+## State of the tree — measured after committing and pushing, not before
+
+| | |
+|---|---|
+| tip | **`533ea85`** |
+| commits this session | **7** (`d1029c3` … `533ea85`) |
+| working tree | **clean** |
+| ★ pushed | **YES** — `0a88ad6..533ea85`, on the operator's explicit instruction *"commit and publish to git"* |
+| `cargo test --workspace` | **205 passed, 0 failed** |
+| difftest | ★★ **`pass=374 fail=0 skip=9 error=0`** — read trap 1 about what this was before |
+| `cargo fmt --all --check` / `clippy --workspace --all-targets -D warnings` | **exit 0**, measured |
+| `tools/gen-profiles` fmt | **clean**, checked separately (not a workspace member) |
+| synthetic fixtures | **47** |
+| ledger | **`DL-068`** is last; next **`NC-301`** / **`NA-013`** |
+
+## What landed
+
+1. **★★★ `CompiledTransform::convert_buffer` silently dropped black
+   preservation.** One pixel at a time honoured the policy; the same values as
+   a buffer did not. **`7.195269e-1` of ink apart at `[0,0,0,1]`, with the
+   non-qualifying control at exactly `0.0`.** Fixed by delegation, so there is
+   no second place for a future policy to be forgotten.
+   ★★ **The transferable half:** the only caller was `iccce bench`, which
+   cannot request preservation, and difftest drives the CLI — so *a defect that
+   only a LIBRARY consumer can reach is invisible to a CLI-driven suite,
+   however green that suite is.*
+2. **★★ `iccce inspect` now prints `violations: N` beside
+   `malformations: N`.** `DL-063` established the distinction and recorded it
+   in three doc comments — **nowhere a program could read.**
+3. **★★ `passh/B` repointed. The bound did not move** (`0` before, `0`
+   after); the **subject** did. The old disclosure count survives as a
+   **REPORTED** row, so the corpus fact (five ICC-published files use the v2
+   reserved block) was not tidied away by its own fix.
+4. **The leak guards' floor was a free parameter, not a machine limit.** Both
+   now reach **`1e-12`**, seven orders below the old floor, proven by
+   injection, **with no tolerance moved.**
+5. **The request channel had no memory.** `INDEX.md` said *"no exchange has
+   closed yet"* while `archive/` already held a closed pair, and `open/` had
+   reached 20 files including a four-day-old byte-identical duplicate.
+6. **Pass L filed at last** — committed 2026-08-19, and
+   `grep -rn "Pass L" docs/*.md` returned nothing until today.
+
+## ★★ WHAT TO DO NEXT
+
+1. **★★★ The compiled path STILL has no difftest row, and it is no longer
+   a tidiness item.** `iccce bench` cannot reach `--preserve-black`, and **that
+   is precisely what hid the `convert_buffer` defect for its entire life.** The
+   gap has now demonstrably cost a real bug. *Needs a CLI flag first
+   (`icc-engineer`), then the row (`icc-conformance`).*
+2. **★★ Two false counts in `tools/difftest/README.md`, filed a day apart.**
+   §26.7's *"nine graded rows"* (Pass K), and §27.1 at `:5711`'s *"every
+   `passl` record carries that sentence"* — **it is six of nine**, and the same
+   false claim is in `ac921e2`'s commit message. ★ *Two false counts in one
+   document is a claim about how that file is maintained:* the count and its
+   subject are written by the same hand and nothing re-derives either.
+3. **★★ `NC-268` needs two corrections** — the floor is `1e-12`, and
+   `1.106780e-1` should be **`1.1067772e-1`**. ★ The old figure is a **new
+   failure mode**: not stale, not mistyped, **RE-BASED** — the six-*decimal*
+   rounding `0.110678` re-dressed as scientific notation, which promotes a
+   rounded decimal into a wrong sixth significant figure. *`icc-librarian`'s.*
+4. **★ `NC-299`: the revert proof is `2 of 3` tests red**, and which one
+   stayed green is carried nowhere. **`2 of 3` must not be rounded to "proven
+   by mutation"**, which is how the commit summary reads at a glance.
+5. **★ The per-paint API question is open, costed, and unscoped.**
+   ISO 32000-2 §11.7.5.3 requires the rendering intent live *at the painting
+   operation*, not once per document. Caching one compiled chain per
+   `(src, dst, intent, BPC)` tuple costs **~13 s and ~290 MiB** for a full
+   4×2 cache — **derived by linear scaling from four measured builds, not
+   measured as an aggregate.** Neither a lazy-population variant nor a
+   re-parameterisable transform has been designed. `ARCHITECTURE.md` records it
+   as a **question, not a plan**.
+6. **★ The `f32`/`u8` evaluation surface** — the last open one of the four
+   capability gaps `pdfce` named on 2026-08-17; the other three are closed.
+   Every surface is `f64`; measured, `grep -rn "f32" crates/iccce-cmm/src`
+   returns nothing.
+
+**Housekeeping owed:** three `[REPORTED]` clause facts from the `pdfce`
+session need independent re-derivation — §8.6.6.4's *"applies only to
+subtractive output devices"* gate, §10.3.1's edition split, and §8.6.6.5's
+one-directional `Separation`/`DeviceN` equivalence. **Annex P is not
+ingested** and is the bounded next step that would settle `GCS-A1`: nothing in
+either edition defines *"not equivalent to the group's blending colour
+space"*, and that predicate is what triggers the `shall` the whole compositing
+pipeline turns on.
+
+## ★★ Traps this session hit, worth knowing before you measure
+
+1. **★★★ THE SUITE WAS RED AT HEAD AND NOBODY KNEW.** `pass=372 fail=1` at
+   `0a88ad6`, while the last recorded census said `pass=353 fail=0` — written
+   before the `profileID` fix that caused it. **A green census is evidence
+   about the tree it was measured on and no other. Re-run it; it is minutes.**
+2. **A passing test can have skipped the arm that matters.** The new
+   `violations` test skips its v2 arm without the licensed corpus, and a skip
+   looks exactly like a pass. **Run with `-- --nocapture` and confirm no `SKIP`
+   was printed.** Then break it on purpose — the load-bearing test went red
+   under mutation while both controls stayed green.
+3. **★★ An unlabelled performance number is wrong by 10×, not stale.**
+   `recommended_grid_points` said *"~14 s to build"*. Release:
+   **`1.419442` s**. Debug, **the same profile pair**: **`14.323247` s**. A
+   stale number was true once; this one was never true for any reader who
+   assumed the other build profile — and it sat inside the function deciding
+   how many grid nodes to spend.
+4. **★ A `grep` negative is a negative about ONE LINE.** `pypdf` emits
+   **intra-word spaces** (`furthe r`, `s hou ld`), so whitespace normalisation
+   is not enough: two of five verification fragments returned a false `0` where
+   the sentence indisputably exists. Poppler caught both. **On these documents
+   two extraction engines is the minimum that works, not belt-and-braces.**
+5. **★ `tools/difftest` is outside the workspace and is NOT fmt-gated.**
+   Running `cargo fmt` there rewrites **18 unrelated files** that an older
+   rustfmt left alone. Pre-existing debt — do not sweep it inside an unrelated
+   change; it will drown the diff.
+
+## ★ One thing that is an OPERATOR question, not a session one
+
+**Two channel exchanges cannot be closed at all**, and `INDEX.md` now says so
+rather than fudging it. The Ghent workstream's durable home is
+`docs/GHENT_COMPATIBILITY.md`, **deliberately untracked** (operator decision
+2026-08-18, `5e1e5df`, reasoning in `.gitignore` lines 29–50). The channel's
+contract requires a durable home **in git, backed up**; this one is local-only,
+on one machine, and unbacked. Applied literally and recorded, rather than
+papered over with a row pointing at a path in no repository.
+
+
+---
+
 # ★★★ HANDOFF — 2026-08-19, four owed items discharged
 
 **Read this block first. It supersedes the 2026-08-18 block below and
