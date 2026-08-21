@@ -611,6 +611,25 @@ impl FileVerdict {
         self.run.field("malformations")?.trim().parse().ok()
     }
 
+    /// The subset of the disclosed set that breaches a stated
+    /// requirement, as printed by `iccce inspect`'s `violations:` line.
+    ///
+    /// ★★ **This is the quantity a conformance question wants, and it
+    /// did not exist until 2026-08-21.** `malformations` counts
+    /// *disclosures*; `DL-063` established that a v2 profile can be
+    /// fully conformant and still have something to disclose. Until the
+    /// CLI printed this second number there was nothing for a row to
+    /// grade except the mixed count — which is how
+    /// `passh/B/acceptance/...` came to accuse five ICC-published files.
+    ///
+    /// `None` when the line is absent, which on a profile the parser
+    /// accepted is itself a defect and is counted as one by the caller —
+    /// **not** silently treated as zero.
+    #[must_use]
+    pub fn violations(&self) -> Option<u32> {
+        self.run.field("violations")?.trim().parse().ok()
+    }
+
     /// Every condition §A requires of a refusal, as a list of the ones that
     /// FAILED — so a red row names what was wrong rather than only that
     /// something was.
@@ -847,9 +866,18 @@ const ROWS: &[(&str, Kind, Tolerance)] = &[
         EXACT_COUNT,
     ),
     (
-        "passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file",
+        "passh/B/acceptance/no-VIOLATION-is-disclosed-on-any-accepted-file",
         Kind::DerivedExpectation,
         EXACT_COUNT,
+    ),
+    // ★ REPORTED sibling, added 2026-08-21 with the repointing above.
+    // The disclosure count it carries used to BE the graded row; it is
+    // kept so the corpus fact survives the fix rather than being tidied
+    // away by it.
+    (
+        "passh/B/acceptance/lawful-disclosures-on-accepted-files",
+        Kind::DerivedExpectation,
+        REPORTED,
     ),
     (
         "passh/B/acceptance/iccce-and-lcms2-reach-the-same-verdict-on-every-file",
@@ -1496,46 +1524,118 @@ fn section_b(v: &[FileVerdict], out: &mut Vec<Record>) {
         .with_metric(Metric::IndicatorCount),
     );
 
-    // --- B2: malformations -------------------------------------------------
-    let mut total = 0.0_f64;
-    let mut who = Vec::new();
+    // --- B2: violations, and the disclosure count reported beside it -------
+    //
+    // ★★★ REPOINTED 2026-08-21, and the bound did NOT move. It was `0`
+    // before and it is `0` now. What changed is the QUANTITY: this row
+    // graded `malformations:` — a count of DISCLOSURES — and therefore
+    // went red against five ICC-PUBLISHED profiles (`sRGB2014.icc`,
+    // `ITU-RBT709ReferenceDisplay.icc`, `PSOsc-b_paper_v3_FOGRA54.icc`,
+    // `PSOuncoated_v3_FOGRA52.icc`, `SC_paper_eci.icc`), each disclosing
+    // one `HeaderReservedNonZero` because they are **v2** files carrying
+    // an MD5 in bytes 84..99 where **v4** later placed `profileID`.
+    //
+    // ★★ The old row's own text offered two hypotheses — "either iccce
+    // over-reports or a published ICC profile is defective" — and the
+    // answer was NEITHER. ICC.1:2001-04 Table 9's cell is the
+    // unmodalised "44 bytes reserved for future expansion", the only
+    // mention in the document, so a v2 file breaches no `shall` by using
+    // it. `Malformation::violation_status` had said so since DL-063; the
+    // CLI simply printed no number carrying that judgement, so this row
+    // had nothing to grade but the mixed count.
+    //
+    // ★ THIS IS NOT RULE 5 BEING BENT. Widening would be moving `0` to
+    // `5` and leaving the subject alone. This moves the SUBJECT to the
+    // quantity the claim was always about and leaves the bound at zero —
+    // and the old quantity is not discarded, it is REPORTED below, so
+    // the corpus fact (five published files use reserved space) stays
+    // visible rather than being tidied away by the fix.
+    let mut violations_total = 0.0_f64;
+    let mut violators = Vec::new();
+    let mut disclosed_total = 0u32;
+    let mut disclosers = Vec::new();
     let mut silent = Vec::new();
     for f in &expect_accept {
-        match f.malformations() {
-            None => silent.push(f.name.clone()),
-            Some(0) => {}
-            Some(n) => {
-                total += f64::from(n);
-                who.push(format!("{} ({n})", f.name));
+        // A file the parser accepted must print BOTH counts. A missing
+        // line is a defect in its own right and is counted, never read
+        // as zero.
+        match (f.malformations(), f.violations()) {
+            (Some(m), Some(v)) => {
+                if v > 0 {
+                    violations_total += f64::from(v);
+                    violators.push(format!("{} ({v})", f.name));
+                }
+                if m > 0 {
+                    disclosed_total += m;
+                    disclosers.push(format!("{} ({m})", f.name));
+                }
             }
+            _ => silent.push(f.name.clone()),
         }
     }
     out.push(
         graded(
-            "passh/B/acceptance/no-malformation-is-disclosed-on-any-accepted-file",
+            "passh/B/acceptance/no-VIOLATION-is-disclosed-on-any-accepted-file",
             Kind::DerivedExpectation,
             EXACT_COUNT,
-            total + silent.len() as f64,
-            "the expectation is that a profile published as conformant contains nothing for a \
-             conformant parser to disclose. ★ It is NOT derived from any implementation, and it \
-             is the weakest-argued expectation in this pass: NOTHING guarantees a published file \
-             is well formed",
+            violations_total + silent.len() as f64,
+            "the expectation is that a profile published as conformant breaches no STATED \
+             requirement of the edition it declares. ★ It is NOT derived from any implementation. \
+             It is materially better argued than the disclosure count this row graded until \
+             2026-08-21: a disclosure can be lawful (ICC.1:2001-04 Table 9 attaches no modal verb \
+             to the v2 reserved block), whereas a violation names the `shall` it breaks",
             format!(
-                "★ this row grades the CORPUS as much as the engine. A non-zero is a FINDING to \
-                 ADJUDICATE - either iccce over-reports or a published ICC profile is defective - \
-                 and it is NEVER answered by widening the bound (CLAUDE.md rule 5). \
-                 {} files; disclosed: [{}]; files that printed no `malformations:` line at all \
-                 (itself a defect, counted): [{}]",
+                "★ a non-zero is STILL a FINDING to ADJUDICATE - either iccce over-accuses or a \
+                 published ICC profile breaches a stated requirement - and it is NEVER answered \
+                 by widening the bound (CLAUDE.md rule 5). {} files; violating: [{}]; files that \
+                 printed no `malformations:`/`violations:` pair at all (itself a defect, \
+                 counted): [{}]",
                 expect_accept.len(),
-                who.join(", "),
+                violators.join(", "),
                 silent.join(", ")
             ),
         )
         .with_separation(Separation::none(
             "there is no rival READING of this quantity. A non-zero result is an adjudication \
-             between two hypotheses - iccce over-reports, or a published profile is defective - \
-             and this corpus cannot settle it alone; a second parser's malformation list would be \
-             needed, and transicc does not emit one",
+             between two hypotheses - iccce over-accuses, or a published profile breaches a \
+             stated requirement - and this corpus cannot settle it alone; a second parser's \
+             violation list would be needed, and transicc does not emit one",
+        ))
+        .with_metric(Metric::IndicatorCount),
+    );
+    // ★ The old quantity, kept and REPORTED rather than deleted. Five
+    // ICC-published files using the v2 reserved block is a real fact
+    // about the corpus and it should not vanish because it stopped being
+    // a failure. Ungraded on purpose: nothing guarantees a published
+    // file has nothing to disclose, which is exactly the weakness the
+    // superseded row's own justification confessed to.
+    out.push(
+        graded(
+            "passh/B/acceptance/lawful-disclosures-on-accepted-files",
+            Kind::DerivedExpectation,
+            REPORTED,
+            f64::from(disclosed_total),
+            "REPORTED, never graded, and it must stay that way: NOTHING guarantees a published \
+             file has nothing to disclose. That was the confessed weakness of the graded row this \
+             replaced, and promoting this one to graded would reinstate the same defect under a \
+             new id",
+            format!(
+                "{} of {} accepted files disclose {} observations between them, of which {} are \
+                 VIOLATIONS (graded on the row above). Disclosing: [{}]. ★ A disclosure is not an \
+                 accusation - see DL-063 and `iccce_profile::diag::Malformation`. This row exists \
+                 so that the corpus fact survives the 2026-08-21 repointing instead of being \
+                 tidied away by it",
+                disclosers.len(),
+                expect_accept.len(),
+                disclosed_total,
+                violations_total,
+                disclosers.join(", ")
+            ),
+        )
+        .with_separation(Separation::none(
+            "an ungraded baseline has no rival reading to separate from: it records what the \
+             corpus contains, and any value it takes is the answer rather than evidence for one \
+             hypothesis over another",
         ))
         .with_metric(Metric::IndicatorCount),
     );
