@@ -133,6 +133,33 @@ Matrix/TRC and LUT paths; all four rendering intents; a compiled
 (grid-interpolated) fast path; black point compensation; K-only black
 preservation. See §3 and §4.
 
+**★ Three evaluation surfaces, and which one to call.** They are not
+interchangeable and the difference matters at raster scale:
+
+| call | shape | use it for |
+|---|---|---|
+| `Chain::convert` | `&[f64] -> Result<Vec<f64>, ChainError>` | **build time and diagnostics only.** It allocates a `Vec` per call, so it is *not* callable from a per-pixel loop |
+| `CompiledTransform::convert` | `&[f64] -> &mut [f64]`, `-> bool` | one pixel, no allocation on the ordinary path |
+| `CompiledTransform::convert_buffer` | `n` interleaved pixels | **the raster surface.** Returns `false` on a shape mismatch rather than panicking |
+
+★★ **`convert_buffer` is `convert` in a loop, and that is a contract, not
+an implementation detail.** It delegates rather than reproducing the
+body. From its introduction until **2026-08-21** it did reproduce the
+body, and consequently **never applied the K-preservation policy at
+all** — a caller who asked for preservation received it one pixel at a
+time and silently did not receive it for a buffer. Measured at the fix:
+**`7.195269e-1` of ink** at `[0, 0, 0, 1]` on `v2-cmyk-chromatic-neutral`
+at grid 17, with the non-qualifying control at **exactly `0.0`**.
+
+★ **The reason it survived so long is worth a consumer's attention more
+than the bug is:** the only in-repository caller of `convert_buffer` is
+`iccce bench`, and `bench` cannot request black preservation — so the
+defect was **unreachable from the CLI, and `difftest` drives the CLI**.
+*A defect that only a library consumer can reach is invisible to a
+CLI-driven suite, however green it is.* The guarantee is now asserted by
+bit-equality in
+`crates/iccce-cmm/tests/compiled_buffer_agrees_with_single_pixel.rs`.
+
 ### Measurement — `iccce-measure`
 
 Reads CGATS/IT8.7 measurement-data files. No ICC, no colour maths.
@@ -238,8 +265,15 @@ Full detail in `docs/NUMERIC_CLAIMS.md` (numbered claims through
 justification). Summary — ★ **each figure below is dated, because an
 apparatus count goes stale silently:**
 
-- **190 workspace tests**, green. *Counted 2026-08-19 at `3c93b62`, not
-  carried forward: 185 plus the five new `cli_header_intent_line` tests.*
+- **202 workspace tests**, green. *Counted 2026-08-21 by running
+  `cargo test --workspace` and summing every `test result:` line — **not**
+  carried forward from the previous figure. The stated `190` was itself
+  measured on 2026-08-19 at `3c93b62` and had already decayed twice by
+  the time it was re-checked: Pass L added tests after it was written,
+  and four more landed with the `convert_buffer` fix above.*
+  ★ This is the reason each figure here carries a date: **the number was
+  right when written and wrong when read**, which is the failure mode
+  the project's decision log calls `DL-062`.
 - **Differential suite vs pinned lcms2 2.19**: **`pass=353 fail=0 skip=9
   error=0`** with the licensed corpus present *(2026-08-19, `3c93b62`;
   was `pass=337` at `60c32dd` before Pass K §G added 16 rows)*.
@@ -271,6 +305,29 @@ wrong.
   mis-filed.
 - **Finding a profile inside a PDF.** Container parsing is the
   consumer's.
+- **★★ Supply a space to COMPOSITE in.** The built-in sRGB destination
+  is a **destination**, not a working space. **ISO 32000-2:2020 §11.7.2
+  NOTE 4** says the CIE-based sRGB space *"is nonlinear and hence can be
+  unsuitable for use as a group colour space"* — blending computes
+  linear combinations and assumes linear components. ★ The `should` is
+  **normative body text in 2.0 and an informative NOTE in 2008**, so
+  whether a processor is deviating depends on the edition. **Disclosed,
+  not guarded**: iccce cannot see what a caller does with the model it
+  returns. Full statement at `crates/iccce-cmm/src/builtin.rs` and
+  `docs/DEFAULT_DESTINATION.md` §5.5.
+- **★ Evaluate in `f32` or `u8`.** Every evaluation surface is `f64` —
+  measured 2026-08-21, `grep -rn "f32" crates/iccce-cmm/src` returns
+  **nothing**. A consumer whose raster is `f32` (which a compositing
+  buffer generally is) pays a widen on the way in and a narrow on the
+  way out for every pixel. **This is a known, requested and unbuilt
+  gap**, asked for by `pdfce` on 2026-08-18; three of the four
+  capability gaps named in that exchange are now closed and this is the
+  fourth. What a narrower surface would and would not buy is settled
+  and is *not* a measurement: it **solves the memory** (268 MB → 67 MB
+  in, 201 MB → 25 MB out for a 300 DPI A4 CMYK raster) and **does
+  nothing for the time**, because the ~1.4 Mpix/s is grid evaluation
+  and is per-pixel however the pixel arrived. Deferred to Pass 6 under
+  the project's *optimise only after correct* rule.
 - **Profile creation** from measurement data (Pass 10, not sized).
 - **HDR** — BT.2100 PQ/HLG, BT.2020/2100 primaries (Pass 9, blocked on
   standards sourcing).

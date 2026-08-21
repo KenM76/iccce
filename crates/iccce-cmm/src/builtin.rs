@@ -87,6 +87,46 @@
 //! `0.90` in that one cell. Both numbers are correct and the comparison
 //! is not: **our `0.90` is a partial cancellation of two ≈2.5 ULP
 //! terms**, not a small error. See [`srgb`] for the decomposition.
+//!
+//! ## ★★ What this space must NOT be used for, and the standard says so
+//!
+//! **This is a destination. It is not a working space, and in particular
+//! it is not a transparency-group blending space.**
+//!
+//! **ISO 32000-2:2020 §11.7.2 NOTE 4** — the CIE-based sRGB colour space
+//! *"is nonlinear and hence can be unsuitable for use as a group colour
+//! space."* Its NOTE 3 gives the reason and it is general, not a fact
+//! about sRGB: compositing computations and blend functions compute
+//! **linear combinations** *"on the assumption that the component values
+//! themselves are linear"*, so a group space **should** have a linear
+//! gamma function, and *"if a nonlinear colour space is chosen, the
+//! results are still well-defined, but the appearance might not match
+//! the user's expectations."*
+//!
+//! ★ **Evidence class and edition, because they differ and the
+//! difference is load-bearing.** Sourced 2026-08-21 from
+//! `PDF_Spec\_sources\ISO_32000-2_sponsored_EC3.pdf`, printed p. 426,
+//! **verified from primary with two independent extraction engines**,
+//! and errata-checked (**no erratum against §11.7.2** — `/Annots` scan
+//! plus `pdf-issues.pdfa.org` clause 11, two channels agreeing). The
+//! **`should` is body text in ISO 32000-2:2020 and sits inside NOTE 3 in
+//! ISO 32000-1:2008** — *normative in the newer edition, informative in
+//! the older one*. So this is a recommendation a 2.0 processor departs
+//! from and a 1.7 processor does not.
+//!
+//! ★★★ **Why this is disclosed here rather than left to the caller.**
+//! [`crate::transform::Destination::None`] hands a consumer this exact
+//! space, and a PDF engine building a transparency-group buffer is
+//! precisely the consumer that might reach for the destination it
+//! already has. **The failure mode is not an error — it is a page that
+//! renders, looks plausible, and composites in a nonlinear space.**
+//! That is this project's rule 1, and the only defence against it is
+//! that the limitation is written where the space is defined.
+//!
+//! **This is a disclosure, not a guard.** Nothing in this module can
+//! detect what a caller does with the model it returns, and nothing
+//! here tries to. The obligation discharged is that the caller cannot
+//! say they were not told.
 
 use crate::curve::Trc;
 use crate::matrix_trc::MatrixTrc;

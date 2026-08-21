@@ -456,16 +456,43 @@ be. Do not let the two uses blur.
    right for `pdfce`, which rasterises to an sRGB pixmap. A caller
    converting for press wants its own output intent, and §2's rule is
    what protects that case.
-3. **Anything about `/N` validation**, which is a separate gap: `pdfce`'s
-   item 4 needs the profile's true component count to disclose a mismatch
-   against the PDF's declared `/N`, and **iccce currently exposes no
-   public signature→component-count helper** — `Header::color_space`
-   cannot be turned into `/N` without building a chain first. That gap is
-   named in `NEXT_SESSION.md` §0 and has no ROADMAP entry. It is now
-   load-bearing for a consumer and should get one.
+3. ~~**Anything about `/N` validation** … **iccce currently exposes no
+   public signature→component-count helper**~~ ★ **CLOSED, and this
+   paragraph was stale.** Re-measured 2026-08-21: the helper exists as
+   `iccce_profile::colour_space::components()`
+   (`crates/iccce-profile/src/colour_space.rs:181`), returning a
+   `ComponentCount`, and it does **not** require building a chain. The
+   text above was written when it was true and was never revisited.
+   **Left struck rather than deleted**, because the gap is cited from
+   the request channel and a reader arriving from there needs to see
+   that it closed rather than find no trace of it.
 4. **Whether `pdfce` should route `/OutputIntents` CMYK through iccce**,
    which is the *other* owed design question and is a **conformance**
    argument, never an accuracy one.
+5. ★★ **That this space is fit to COMPOSITE in. It is a destination, and
+   the standard says it can be unsuitable as a blending space.**
+   **ISO 32000-2:2020 §11.7.2 NOTE 4**: the CIE-based sRGB colour space
+   *"is nonlinear and hence can be unsuitable for use as a group colour
+   space"*, because (NOTE 3) compositing and blend functions compute
+   **linear combinations** *"on the assumption that the component values
+   themselves are linear"*. ★ **Edition-dependent**, and the difference
+   decides whether a processor is deviating: the `should` is **body text
+   in ISO 32000-2:2020** and sits **inside NOTE 3 in ISO 32000-1:2008** —
+   normative in the newer edition, informative in the older.
+
+   **Why it belongs in this document specifically.** §1's decision is
+   that a caller with no destination gets *this* space; a PDF engine
+   building a transparency-group buffer is exactly the caller that would
+   reach for the destination it already holds. **The failure mode is a
+   page that renders and looks plausible.** Disclosed at the definition
+   site too (`crates/iccce-cmm/src/builtin.rs` module doc). ★ **It is a
+   disclosure and not a guard** — nothing in iccce can see what a caller
+   does with the model it returns, and nothing pretends to.
+
+   Sourced 2026-08-21 from `PDF_Spec\_sources\`, printed p. 426,
+   **verified from primary, two independent extraction engines**,
+   errata-checked (no erratum against §11.7.2; `/Annots` scan plus
+   `pdf-issues.pdfa.org`, two channels agreeing).
 
 ---
 
