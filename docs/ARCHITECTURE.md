@@ -5918,8 +5918,8 @@ corpus**, not taken from the dispatch:
 |---|---|---|
 | **ISO 32000-1:2008 §10.3.3** (= **ISO 32000-2:2020 §10.4.2.3**) | the CMYK equivalent of a gray level **shall** be `c = m = y = 0`, `k = 1.0 − gray` | `PDF_Spec\color\color__cie_based.md:549` — *"§10.3.3  cyan = magenta = yellow = 0.0 ; black = 1.0 − gray"* |
 | **ISO 32000-2:2020 §10.3.2** | *"If the native device colour space is CMYK, then converting colours in the DeviceGray colour space to that CMYK should follow the method described in 10.4.2.3"* — **and the sentence sits inside the ICC-enabled branch** | `[REPORTED]` — `icc-spec-librarian`, not re-derived here |
-| **ISO 32000-1 §8.6.6.4** (`Separation`) | where the named colourant is one the device has, the reader **shall ignore** `alternateSpace` and `tintTransform` | clause identity corroborated at `PDF_Spec\color\color__separation.md:4,13`; the ignore-rule itself is `[REPORTED]` |
-| **ISO 32000-1 §10.3.1** | `DeviceCMYK` is passed through unconverted | `[REPORTED]` |
+| **ISO 32000-1 §8.6.6.4** (`Separation`) | where the named colourant is one the device has, the reader **shall ignore** `alternateSpace` and `tintTransform` — ★★ **AND THAT RULE IS GATED**: *"The preceding paragraph applies only to **subtractive output devices**."* | clause identity corroborated at `PDF_Spec\color\color__separation.md:4,13`; the ignore-rule itself is `[REPORTED]`; ★ the gate is **`[REPORTED]` by the `pdfce` session, 2026-08-21**, and is **not** re-derived here |
+| **ISO 32000-1 §10.3.1** | `DeviceCMYK` is passed through unconverted — ★ **needs an edition qualifier**: this is **1.7's** §10.3.1. **ISO 32000-2 DELETED that sentence**, and 2.0's §10.3.1 is *"General"* under the CIE branch | `[REPORTED]` — the passthrough by `icc-spec-librarian`; the edition split by the `pdfce` session, 2026-08-21, **not re-derived here** |
 
 ★ **The middle row is the decisive one and it is the one that would be
 missed.** It is easy to accept that gray→CMYK is a device rule *in a
@@ -5929,6 +5929,192 @@ branch.** So the four grays agree **inside PDF, with no ICC transform
 anywhere in the path** — the equivalence is not something a CMM achieves,
 it is something the consumer's colour-space resolution produces before a
 CMM is reached.
+
+★★ **The `Separation` row's gate matters to iccce more than to the
+consumer, and it was missing here until 2026-08-21.** *"The preceding
+paragraph applies only to subtractive output devices"* means the
+`shall ignore` never fires on an **additive** device — and **iccce's own
+built-in destination is an additive device**, a constructed sRGB
+(`crates/iccce-cmm/src/builtin.rs`), which is what a caller gets whenever
+a document declares no output intent. On that path a `Separation`
+**always** reverts to its `alternateSpace` and `tintTransform`, and the
+device-colourant test never runs at all. Stated without the gate, the row
+reads as a universal rule and would have been quoted at exactly the
+destination it does not govern. `[REPORTED]` by the `pdfce` session,
+2026-08-21; **not re-derived here**, and it is owed a re-derivation
+against `PDF_Spec\_sources\` before anything is built on it.
+
+★ Related and equally not re-derived: *"a `Separation` is a
+one-component `DeviceN`"* — a phrasing this project has used — **overstates
+§8.6.6.5**, which says one *can be defined* as such. That is an
+equivalence in **one direction**, not an identity, and the difference
+matters the moment code treats the two as interchangeable in the other
+direction.
+
+### ★★★ Three requirements ISO 32000-2 places on **iccce**, not on the consumer
+
+Sourced 2026-08-21 by `icc-spec-librarian` from
+`PDF_Spec\_sources\ISO_32000-2_sponsored_EC3.pdf`, **verified from primary
+with two independent extraction engines**, and **errata-checked**: the
+sponsored copy carries its errata as unapplied PDF *annotations*, so a
+naive text extraction returns the **uncorrected** standard. The `/Annots`
+were scanned and independently cross-checked against
+`pdf-issues.pdfa.org/32000-2-2020/clause11.html`; **two channels agree
+that none of the clauses below carries an erratum.**
+
+★ **Licence.** That source is `licensed_primary_private_rag` — *"Single
+user only, copying and networking prohibited"*. **Clause numbers, modal
+verbs, parameter names and algorithm structure are facts and are freely
+usable; multi-paragraph verbatim reproduction is not.** Short quotation
+with citation only, here and in every consumer-facing document.
+
+**These three are recorded here rather than in the request channel because
+the channel is in no repository and nothing may exist only there.**
+
+#### 1. The page-group → device conversion has a mandated rendering intent
+
+**ISO 32000-2:2020 §11.4.7** (printed p. 412) — *the colour conversion*
+***shall*** *use a rendering intent of* ***RelativeColorimetric*** *unless
+the processor has an implementation-dependent way of specifying it
+otherwise*, and *the use of* ***black point compensation*** *in this
+colour conversion process is* ***implementation-dependent***.
+
+★ **This is the default iccce must offer for a consumer's final
+composite-buffer → display step**, and it independently confirms what the
+`ICC_Spec` register already records at `A41`: **BPC is the caller's
+decision, not the library's.** ★ **Absent from ISO 32000-1:2008** — this
+is a 2.0 addition, so it is edition-dependent and must be cited as such.
+
+#### 2. ★★ The conversion is per-paint, not once per document
+
+**ISO 32000-2:2020 §11.7.5.3** (printed p. 435) states that intent,
+black generation, undercolour removal and BPC *may need to be applied*
+***earlier than the actual rendering of colour onto the page***, and that
+when painting a CIE-based object into a group with a different colour
+space, the intent used ***shall*** be *the current rendering intent in
+effect in the graphics state* ***at the time of the painting operation***.
+**§11.6.6** (printed p. 423) adds that for compositing a group into its
+parent, the intent and BPC come from the graphics state ***at the point of
+invocation of the*** `Do` ***operator***.
+
+★★★ **That is an API-shape requirement on this library and it is not one
+the current design satisfies well.** A consumer with a CMYK page group
+calls iccce **per paint operation, with a per-call intent and a per-call
+BPC flag**, and once more at the end — **not** with one `Chain` built at
+document open. Today `Chain::new` takes the intent at construction and
+`with_bpc` is a build-time builder step, so honouring §11.7.5.3 means a
+consumer building and caching **one chain per (source, destination,
+intent, BPC) tuple** and choosing between them per operation.
+
+★★★ **The first draft of this paragraph said "that is workable" and that
+was an unmeasured assertion — which is the exact failure this project's
+rules exist to prevent, committed in the sentence documenting somebody
+else's requirement. Measured instead, 2026-08-21:**
+
+| | |
+|---|---|
+| `iccce bench`, release build, CMYK→CMYK at the recommended grid | `33` points/axis, **`1 185 921` nodes** |
+| build time, four committed synthetic sources | **`1.419442`, `1.439321`, `1.585943`, `1.783205` seconds** |
+| grid storage per compiled transform, 4 output channels | **`36.2` MiB** *(DERIVED: `1 185 921 × 4 × 8` bytes; not measured by instrumenting the allocator)* |
+
+**A full `(4 intents × BPC on/off)` cache for one source/destination pair
+is therefore `8` compiled transforms — about `13` seconds of build and
+about `290` MiB resident**, both scaled linearly from the rows above and
+both **derived, not measured as an aggregate**. That is a real cost and
+it is a very different sentence from *"workable"*.
+
+★ **It is also not obviously the right design**, and this document should
+not pretend to have chosen one. A consumer that only ever paints at one
+intent pays none of it; a consumer honouring §11.7.5.3 literally, on a
+document that switches intent mid-page, pays all of it. **Neither the
+lazy-population variant nor a re-parameterisable transform has been
+designed, costed or scoped.** Recorded as an **open API question**, not a
+plan, and it is not yet a roadmap item.
+
+### ★★★ A 10× performance claim that was wrong because it never named its build profile
+
+`recommended_grid_points`'s comment said a 4-D grid at 33 was
+*"~27 MB, ~14 s to build"*. Both halves were misleading and **the
+discrepancy was settled by measurement rather than left flagged**:
+
+| | |
+|---|---|
+| build, **release**, `v2-cmyk-warm-black` → `v2-cmyk-mft2-lab` | **`1.419442` s** |
+| build, **debug**, ★ **the same profile pair** | **`14.323247` s** |
+| ratio | **`10.1×`** |
+
+**The old `~14 s` was a debug measurement with no build profile named.**
+The first hypothesis was that it came from a heavier real press profile
+than any committed synthetic; running the *same* pair under `cargo build`
+without `--release` reproduced it to within 1 %, which rules that out.
+
+★★ **The lesson is sharper than "the number was stale", because it was
+never right for the reader it was written for.** A stale number was true
+once. **An unlabelled timing is wrong by an order of magnitude for every
+reader who assumes the other build profile** — and this one sat inside
+the function that decides how many grid nodes to spend, so it was
+steering the decision it was documenting. **A performance number without
+its build profile is not a number.** Filed as a distinct failure from
+`DL-062`'s staleness mechanism: staleness is a claim decaying, this is a
+claim that had no truth condition attached.
+
+**And the memory half depended on a variable the function cannot see.**
+Grid storage is `nodes × OUTPUT channels × 8` bytes, while
+`recommended_grid_points` takes **input** channels only:
+
+| destination shape | derived storage |
+|---|---|
+| CMYK → RGB | `1 185 921 × 3 × 8` = **`27.2` MiB** ← the old *"~27 MB"* |
+| CMYK → CMYK | `1 185 921 × 4 × 8` = **`36.2` MiB** |
+
+So the old figure was **one destination shape stated as if it were the
+grid's cost**. Both rows are **derived** from the node count, not
+measured by instrumenting the allocator. The comment now carries both,
+with their build profiles and their evidence class.
+
+#### 3. ★ The clause that binds a PDF processor to ICC names **ICC.1:2010**, not ICC.1:2022
+
+**ISO 32000-2:2020 §10.3.1** (printed p. 361): conversion from a CIE-based
+source colour to a CIE-based destination colour ***shall*** be performed
+based on ***ISO 15076-1:2010 (ICC.1:2010)*** — that is **v4.3**.
+
+**Consequence for how this project cites itself.** iccce's doc comments
+cite ICC.1:2022 (v4.4) throughout, which is correct as a statement about
+*this library's* conformance target. It is **not** interchangeable with
+the edition a PDF processor is bound to. Anywhere a consumer-facing
+document says *"iccce implements what ISO 32000-2 requires"*, the edition
+named by §10.3.1 is **2010**, and any place the two editions differ is a
+gap that has to be argued rather than assumed away. **No such difference
+has been identified or looked for** — this is a flag, not a finding.
+
+### ★ What ICC.1 says about compositing: nothing, and the search is recorded
+
+**Verified negative, primary source, two independent extraction engines
+agreeing exactly, both editions** (`ICC.1:2022-05`, 126 pp.;
+`ICC.1:2001-04`, 102 pp.). Term counts over the full text, every hit
+individually inspected and every one a false positive:
+
+| term | ICC.1:2022 | ICC.1:2001-04 |
+|---|---|---|
+| `composit` | **1** — *"the spectral **composition** of the light"*, Annex D | **0** |
+| `blend` | 0 | 0 |
+| `premultipl` | 0 | 0 |
+| `opacity` | 0 | 0 |
+| `alpha` | **4** — all `ISO 639-1 Alpha-2`, `alphanumerical`, `alphabetical` | 0 |
+| `transparen` | **6** — all the *media-type* sense (the reflective/transparency measurement-flag bit, back-lit transparencies) | **22** — same sense |
+
+`interpolat` has 14 hits in ICC.1:2022; all were read and **all concern
+interpolation between CLUT or curve grid points inside one transform**.
+**Nothing anywhere about interpolation across a composite of two colours.**
+
+★ **State this as a searched negative with its predicate, never as
+"ICC.1 permits it".** The predicate searched was *a
+compositing/blending/alpha model*. The structural reason is that **ICC.1
+specifies a transform and compositing is outside its scope by
+construction** — which is an argument, and the counts above are the
+evidence. ★ **Not searched: ICC White Papers and Technical Notes**, which
+are behind an access-terms posture this project's agents do not breach.
+That is an access blocker, not an existence claim.
 
 **Part 2 — the patch's own readme, and it does not claim what §3.1 said
 it claimed.** Extracted by `icc-engineer` from
@@ -7434,3 +7620,330 @@ this entry from a written dependency to an enforced one; **or** a defect
 is ever found in this feature that makes the policy cost **less**, which
 would be the first thing `G16` could see and would retire the one-sided
 reading.
+
+---
+
+### DL-067 — ★★★ **a parser that INVENTS a checkable identity claim out of bytes that mean something else, while reporting `malformations: 0`, is WORSE than one that makes a false accusation. A false accusation is loud and arguable; a fabricated value is silent and confident, and it arrives in the shape a consumer VERIFIES AGAINST. The same defect was simultaneously about to ship through an API — as a conformance BOOLEAN whose third answer would have had to be invented — and was refused there. One instance shipped and one was caught at design time; the discriminator is that a well-formed value LOOKS like evidence**
+
+**Date:** 2026-08-20 · **Occasioned by:** commit `0a88ad6`, *"a v2 profile
+has no profileID — iccce was fabricating one"*, filed retrospectively —
+the commit landed unrecorded and this entry is written from the working
+tree · **Drafted and filed by** `icc-librarian`, **with every statement
+below re-verified against live source; the printed strings from before the
+fix are labelled `[REPORTED]` because this role has no shell and could not
+re-run the pre-fix binary** · **The numbers are `NC-298`, `NC-299`,
+`NUMERIC_CLAIMS.md` §3.37.8** · **Relates to** **DL-063** (`malformations: N`
+counts *disclosures*; the count is the only part a program reads),
+**DL-061** (a number labelled with its supposed source is harder to check
+than a bare one), **DL-051** (documented is not tested), and project
+**rule 6** (*the parser reports; it does not repair*), of which this is the
+first recorded violation **in the inventing direction**.
+
+#### The defect, in one sentence
+
+> **`profileID` was added in v4. iccce read header bytes `84..100` as a
+> `profileID` regardless of edition, so a v2 profile carrying arbitrary
+> content in its reserved space printed a plausible 32-hex-digit
+> identifier — and reported `malformations: 0` beside it.**
+
+#### What the specification actually says, and it says it once
+
+**ICC.1:2001-04 Table 9** makes header bytes **`84..127` a single 44-byte
+block**, *"44 bytes reserved for future expansion"*, **and that sentence
+is the only mention of it in the document.** There is no identifier there.
+ICC.1:2022 7.2.18/7.2.19 splits the same region: **`84..99` `profileID`,
+`100..127` reserved**.
+
+*(The clause content is `[REPORTED]` on `0a88ad6`'s message and on the
+corpus; what is **VERIFIED** here is the code that now acts on it.)*
+
+#### ★★★ Why this is worse than the 2026-08-18 defect, and the comparison is the entry
+
+The rendering-intent defect fixed on 2026-08-18 (commit `7f89829`) is the
+right thing to hold this one against, because they are **the same
+edition-confusion bug in opposite directions**:
+
+| | **2026-08-18 — rendering intent** | **2026-08-20 — `profileID`** |
+|---|---|---|
+| what the parser did | **ACCUSED** a conforming v2 profile of a malformation, for a requirement ICC.1:2001-04 imposes on neither half of the field | **INVENTED** an identifier for a v2 profile that has no such field |
+| what a consumer saw | a malformation, in words, in a report | ★ **a 32-hex-digit value**, and **`malformations: 0`** |
+| how it fails | **loud and arguable.** Somebody reads the accusation, disputes it, and the dispute surfaces the bug | ★★★ **silent and confident.** Nothing invites a dispute, because **nothing looks wrong** |
+| what the value invites | scepticism | ★★ **VERIFICATION.** An MD5 profile ID is a **checkable** claim; a consumer would reasonably hash the profile and compare |
+| who could have caught it | any reader of the report | ★ **nobody**, without independently knowing the edition's field layout |
+
+> **★★★ THE RULE. A fabricated value is not a wrong answer; it is a
+> FORGED CREDENTIAL. It occupies the slot where evidence goes, in the
+> format evidence arrives in, and the more legitimate the format the
+> better it hides. A false accusation costs an argument. A fabricated
+> identity costs the argument nobody has.**
+
+#### ★★ And it UNDER-reported at the same instant, which is the half a fix could easily miss
+
+Checking only `100..128` on a v2 profile **misses 16 bytes of that
+edition's reserved block entirely** — the very 16 bytes being presented as
+a `profileID`. **One defect, two directions, one line of code**
+(**`NC-298`**).
+
+★ **That is the diagnostic worth carrying.** When a parser applies a
+v4-shaped concept to a v2 profile, the over-claim and the under-check are
+usually **the same off-by-one region**, and a fix aimed at the visible
+half will leave the other. **Ask what the misread region was supposed to
+be doing, not merely what it was wrongly called.**
+
+#### The decision — what changed, and the one thing that did NOT
+
+**VERIFIED at the tree, line by line:**
+
+1. **The reserved range is edition-gated.** `crates/iccce-profile/src/header.rs:195–206`
+   selects `first_byte = 100` when `version.major() >= 4` and **`84`
+   otherwise**, and scans `profile_id` chained with `reserved` in the v2
+   branch.
+2. **The report names the range it actually checked.**
+   `Malformation::HeaderReservedNonZero { first_byte }` carries it.
+3. **`header.id` stops printing a value.** `crates/iccce-cli/src/main.rs:189–199`
+   prints **`header.id: n/a (no profileID field before v4; bytes 84..128
+   are reserved)`** for `major() < 4`, and for v4 distinguishes
+   **`not computed`** (all-zero, which is **not** an error — corpus `D4`)
+   from the hex value.
+
+★★★ **THE BYTES ARE STILL DISCLOSED.** They reach the reader through the
+**edition-correct** report. **Nothing is hidden, and rule 6 is not
+weakened — what stopped is the MISLABELLING.** ★ This distinction is
+load-bearing: a fix that had *suppressed* the bytes would have traded a
+fabrication for a concealment, and this project would have called that an
+improvement because the visible symptom was gone.
+
+#### ★★★ The second instance, in the same commit, refused BEFORE it shipped — `violation_status(version)` is not a `bool`
+
+`pdfce` asked for an `is_violation()` so a report could say *"3
+observations, 1 of which breaches ICC.1"* while still showing all three.
+★ **Their own rule forbids hiding diagnostics**, so they explicitly
+declined both a filtered accessor and a conformance boolean. **A bool was
+then found to be unimplementable honestly.**
+
+**VERIFIED at `crates/iccce-profile/src/diag.rs`:** the shipped type is
+
+```
+pub enum ViolationStatus { Violation, NotAViolation, Unsourced { register_id: &'static str } }
+```
+
+and `Unsourced` carries the `ICC_Spec` ambiguity-register row so a caller
+can find out **what is unknown**.
+
+**Why the third value exists, with the two cases that forced it:**
+
+- **`TagTooSmall` has NO requirement behind it in EITHER edition** (`A61`).
+  v4 7.4 says a tag's size *"shall only be restricted by the limits
+  imposed by the 32-bit values"*; v2 6.2.3 says *"An element may have any
+  size"*. **"A byte that does not exist has not been set to 0" is an
+  inference, not a quotation.**
+- **`TagOverrun` has none in v2** (`A62`).
+
+> ★★★ **A boolean would have forced an INVENTED answer, and the invention
+> would have looked exactly as authoritative as the seven that are
+> sourced.** That is the same sentence as the `profileID` finding, with
+> the fabricated value moved from a hex string into a `bool`.
+
+★★ **`Unsourced` means *iccce has not established the modality*. It does
+NOT mean the file is fine, and it must never be rendered as though it did.
+It is a statement about this project's knowledge, not about the profile**
+— quoted from the type's own doc comment (`:114–117`), which is where a
+consumer will actually read it.
+
+★ **And the edition must be supplied**, because **exactly 3 of the 9
+variants split by edition** — `HeaderReservedNonZero`,
+`UnknownRenderingIntent` and `TagOverrun` *(VERIFIED — counted from the
+per-edition table at `:328–339` and the `match` at `:366`)*. **"Is this a
+malformation a violation?" is not a well-formed question of a malformation
+alone.**
+
+#### ★★ The prerequisite fact, without which a `shall`-grep gets v2 exactly backwards
+
+**ICC.1:2001-04 requires with *"must"* (76 occurrences), not *"shall"*
+(27, three of them in the copyright notice and none on a
+header/tag-table/tag-type rule); its own change list concedes it *"does
+not meet all of the ISO/IEC drafting rules"*.
+*(Counts `[REPORTED]` on `0a88ad6`'s message; this role ran no grep of the
+corpus.)*
+
+★★★ **The symmetric half is the one that gets forgotten: v2's unmodalised
+sentences really ARE silent** — precisely because the drafters used
+*"must"* in the adjacent sentence. **A modality register built by grepping
+`shall` would read v2 as having no requirements at all, and would then
+read its silences as though they were deliberate permissions.** Anyone
+re-deriving the per-edition table must know this **first**.
+
+#### ★★ Two entries that were WRONG in this project until `0a88ad6`
+
+1. **`DuplicateTagSignature` was labelled *"Legality NOT SOURCED"* and
+   graded SILENT. Both editions PROHIBIT duplicates** — v4 7.3.1
+   *"Duplicate tag signatures shall not be included in the tag table"*;
+   v2 6.2 *"must be unique"*, plus v2's own change list, *"A tag can now
+   only appear once in a profile. Per: Resolution voted 1998-03-15"*.
+   ★★ **The decision built on it survives — keep both, first wins, because
+   WHICH duplicate wins is still genuinely unsourced — but its stated
+   RATIONALE was false. `DL-003`'s *"revisit if"* has fired.**
+   > ★★★ **A right decision resting on a wrong reason is the hardest
+   > defect class to find**, because the thing that would prompt a review
+   > — a bad outcome — never occurs. **DL-042's shape** (*re-audit the
+   > REASON an item is owed, not just the item*), here in a decision
+   > rather than in a debt.
+2. **`TagTooSmall` is not sourced at all.** The validation table its doc
+   cited was written as *"checks iccce should perform and REPORT"* — **no
+   row of it was ever a quotation of a requirement.** ★ A document of
+   *intended checks* was read as a document of *requirements*, by the code
+   that cited it, for as long as it existed.
+
+#### What this entry does NOT say
+
+1. **It does not claim `0a88ad6` contains these changes.** ★ Commit
+   contents are **`[REPORTED]`**; what is verified is the **tree**.
+2. **It does not claim the fix is proven.** **2 of 3** new tests turn red
+   on reverting the range logic (**`NC-299`**, `[REPORTED]`); **the third
+   was not shown to be discriminating**, and that is owed
+   (`NUMERIC_CLAIMS.md` §7.26 item 3). ★ **`2 of 3` is not *"proven by
+   mutation"*.**
+3. **It does not weaken rule 6.** The bytes are disclosed; only the label
+   changed.
+4. **It does not resolve `A61` or `A62`.** `Unsourced` is the honest
+   record that they are open — **it is an admission, not a verdict.**
+5. **It asserts nothing about git state.** No push, tag or publication
+   claim is made or authorised (rule 9).
+
+**Revisit if:** `A61` or `A62` acquires a source, which would move a
+variant out of `Unsourced` and **change a public API's returned value
+without changing any file's bytes** — a consumer-visible event that needs
+its own note; **or** a fourth edition-confusion instance appears, which
+would argue that the edition gate belongs in **one** place rather than at
+each site that reads a header field (there are now three: the rendering
+intent, the `Malformation` doc comment, and this); **or** `pdfce` (or any
+consumer) is found rendering `Unsourced` as *"not a violation"*, which is
+the exact misreading the third value was created to prevent and would mean
+the type's honesty did not survive its first caller.
+
+---
+
+### DL-068 — ★★★ **DL-062's *"revisit if a third instance appears"* has FIRED TWICE and no guard was built. The recurring carrier is one row of one document — a HANDOFF's push count — and the decision is to stop carrying the DERIVED INTEGER and carry the TWO HASHES instead. A count is a claim about a tree the author cannot fix; a pair of hashes is a dated READING that stays true as a reading, and lets the next reader derive the count themselves**
+
+**Date:** 2026-08-20 · **Occasioned by:** the Pass L + `profileID` filing's
+staleness sweep, which found `docs/NEXT_SESSION.md` asserting *"ahead of
+`origin/master` — 4 commits"* where the count is **`0`** · **Drafted and
+filed by** `icc-librarian` · **The evidence is `NUMERIC_CLAIMS.md` §7.26
+item 4** · **This entry does not reverse DL-062; it DISCHARGES DL-062's
+own "Revisit if" clause**, which named a third instance as the threshold
+for a mechanical guard.
+
+#### The count of instances, and why the count is the argument
+
+| # | date | the claim | how it went stale |
+|---|---|---|---|
+| 1 | 2026-08-18 | `TOLERANCES.md` §3.10.12.7: *"not fixed here — the remedy belongs to the engineer"* | fixed **28 seconds** earlier, in another role's commit (DL-062) |
+| 2 | 2026-08-18 | `NUMERIC_CLAIMS.md` §7.23 item 2, *"`TOLERANCES.md` §3.10.12.7 is STALE"* | discharged **concurrently**, while the entry describing instance 1 was being written (DL-062) |
+| 3 | *(the threshold DL-062 named)* | — | — |
+| **4** | 2026-08-18 | `NEXT_SESSION.md`: *"14 commits. NOTHING IS PUSHED"* | **the operator pushed.** ★ Recorded **by the next handoff, at `:87`, correctly** |
+| **5** | 2026-08-19 | `NEXT_SESSION.md`: *"ahead of `origin/master` — **4 commits**… **Measured**"* | **the operator pushed.** `refs/heads/master` and `refs/remotes/origin/master` are **the same hash** at this filing *(VERIFIED — both loose ref files read `0a88ad61c69334237998b589503c5dd2c1b85cd4`)* |
+
+★★★ **Instance 5 is not merely another instance. It was carried by the
+document that had just recorded instance 4, in the row directly below it,
+under the heading `★★ Measured`, with the remedy stated in its own text**
+— *"Do not carry a push-state claim forward without re-running the count —
+it is two seconds and it was wrong here."* **The count was re-run. It was
+right when written. It went stale anyway.**
+
+> **★★★ THE FINDING. Two consecutive handoffs carried a wrong push count,
+> the second while explicitly warning about the first. That is no longer
+> evidence about staleness — it is evidence about the DOCUMENT'S FORMAT.
+> A field that goes wrong twice in a row under full awareness is not being
+> filled carelessly; it is the wrong field.**
+
+★ **And note what DL-062 already said and nobody applied here:** *"care is
+not the remedy, because care was present."* **Instance 5 is that sentence
+being demonstrated by the document that quoted it.**
+
+#### ★★ Why a push count specifically, and why re-checking cannot save it
+
+DL-062's constructive half is that a filing must *"either re-verify at
+commit time, or be written to be correct regardless of the other file's
+state."* **A push count fails both clauses structurally:**
+
+1. **Its subject is the one tree no agent in this project may touch.**
+   Pushing is the operator's act (rule 9). So the count is, by
+   construction, **a claim about a state that only the operator can
+   change** and that **changes precisely when nobody here is looking**.
+2. **The interval it must survive is the longest in the project.** A
+   handoff is written at session end and read at the *start of the next
+   session* — the operator's pushes happen **in exactly that gap**, which
+   is why instances 4 and 5 are both handoffs and neither of the first
+   three was.
+3. ★★★ **Nothing in the document depends on it.** This is the decisive
+   point. **No instruction in any handoff is conditioned on the number.**
+   Pushing is unauthorised regardless; the handoff says so itself
+   (*"a state, not a backlog"*). **The field carries no decision and
+   carries the project's highest staleness risk** — the worst possible
+   ratio.
+
+#### The decision
+
+> **★★★ A handoff records the two REF HASHES, not a derived count.**
+>
+> ```text
+> local  refs/heads/master           0a88ad6…
+> remote refs/remotes/origin/master  0a88ad6…   (as of the last fetch/push this repo observed)
+> ```
+>
+> **A reader compares two strings in one glance** and derives *"nothing
+> ahead"* themselves. If the hashes have moved, the reader sees **that
+> they moved**, which a stale integer can never show.
+
+**Why this satisfies DL-062's second clause where a count cannot.** A
+hash is **a reading of a file, dated**. A reading does not become false
+when the world moves — it becomes **historical**, and it says so by not
+matching what the reader finds. **An integer has no such property: `4` and
+`0` look identical in authority.** ★ This is the same move as DL-062's own
+worked example, where **NC-264 and NC-265** survived a concurrent
+correction by being *dated measurements with commit anchors* while the §7
+prose about them did not.
+
+**Three supporting rules, all cheap:**
+
+1. **State the method beside the hashes** — *"loose ref files, read
+   directly"* or *"`git rev-list --count`"*. They fail differently, and a
+   reader who knows which was used knows what it does not prove.
+2. **Never write *"nothing is pushed"* as a standalone sentence.** It is
+   the form both instances 4 and 5 decayed into once the number beside it
+   was forgotten. ★ **A push-state assertion with no reading attached is
+   the carrier.**
+3. **Add the phrase to DL-062's grep list**, beside *"not fixed here"* and
+   *"belongs to the engineer"*: **`ahead of origin`**, **`NOTHING IS
+   PUSHED`**, **`unpushed`**, **`commits this session`**.
+
+#### ★★ What this does NOT decide, and one of them is deliberate restraint
+
+1. **It does not make a claim about the remote server.** ★★ `refs/remotes/origin/master`
+   records **what the last fetch or push observed**, not what the remote
+   holds now. The decision *improves the honesty of the field*; it does
+   not turn a local file into evidence about a network service. **Nothing
+   here asserts that anything is or is not published, and nothing here
+   authorises a push, a tag or a release** (rule 9).
+2. **It does not edit `docs/NEXT_SESSION.md`.** ★★★ That file belongs to
+   the lead session; **this role recorded what is stale so the lead can
+   write it correctly.** Editing another role's file to fix a staleness
+   entry would be **instance 6 in advance** — a cross-role write whose
+   correctness depends on the other role not having written concurrently.
+3. **It does not propose the pre-commit phrase-grep DL-062 imagined.** ★ A
+   mechanical guard is still the better answer **for cross-role status
+   claims in general**, and it remains unbuilt and unowned. This entry
+   removes **one recurring carrier** by changing what gets written; it
+   does not build the guard, and it must not be read as having done so.
+4. **It does not retract the four earlier instances or their entries.**
+   DL-062 stands unedited; append-only.
+
+**Revisit if:** a sixth instance appears **in a field other than the push
+count**, which would show the carrier is cross-role status claims
+generally rather than this one row, and would re-open the mechanical guard
+as the only remedy; **or** a handoff is written with the two hashes and a
+reader still mis-derives the state, which would mean the format change was
+not the fix; **or** an agent in this project ever gains the ability to
+observe the remote directly, which would change what
+`refs/remotes/origin/master` is evidence *of* and would make a live count
+defensible again.

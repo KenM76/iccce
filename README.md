@@ -124,9 +124,11 @@ found something.
 
 ## Status
 
-**Early, and in active development.** Version `0.0.1`. **Nothing has been
-published to crates.io**, the API is not stable, and no compatibility is
-promised between commits.
+**Early, and in active development.** Version `0.1.0` — read from the
+workspace manifest on 2026-08-21, which is the authoritative source; this
+line previously said `0.0.1` and had been wrong since the manifest moved.
+**Nothing has been published to crates.io**, the API is not stable, and no
+compatibility is promised between commits.
 
 Work is organised as numbered Passes. `docs/ROADMAP.md` is the record and
 states each Pass's verdict in its own words; the table below summarises

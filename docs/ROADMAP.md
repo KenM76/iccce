@@ -6008,3 +6008,244 @@ unverified**, and DL-002's rule — *no claim in this project may cite an
 ICC.1 clause number* — **should be treated as still standing until that
 agent files its successor entry.** A PDF nobody has read is not yet a
 citable source. Pointer entry: `ARCHITECTURE.md` **DL-006**.
+
+---
+
+## ★★★ Pass L — **which reading of sRGB does lcms2 implement?** — plus the sRGB reading OPTION and a parser conformance fix. **RETROSPECTIVE: four commits landed and NONE of them was in any document this file's owner keeps.** Filed 2026-08-20 by `icc-librarian`
+
+**Read this first.** Before this entry existed,
+`grep -rn "Pass L" docs/*.md` returned **nothing** — and so did `A57`,
+`SrgbTrc` and `SlopeContinuous` *(VERIFIED — grepped `docs/` at the tree,
+all four patterns, zero matches)*. **A Pass that runs and is never filed
+is, to every later reader, a Pass that did not happen.** Meanwhile its
+numbers were being quoted in three doc comments and a README, which is the
+worst arrangement available: **the claims propagated and the record that
+would date and scope them did not.**
+
+This entry is written **from the working tree**, not from the commit
+messages. Where the two disagree, the tree is what is recorded and the
+disagreement is stated (there are three; see `NUMERIC_CLAIMS.md` §7.26
+item 7).
+
+### The four commits
+
+| commit | subject | what it is |
+|---|---|---|
+| `4db44a1` | *feat(cmm): both readings of sRGB's transfer function, default unchanged* | **the option** |
+| `ac921e2` | *feat(cmm): Pass L — lcms2 implements the C0 reading, and two of my claims were wrong* | **the measurement** |
+| `609ba67` | *memory: the reconstruction decision, and what to do when sources disagree* | agent memory only — **no `crates/`, no `docs/`, no numbers** |
+| `0a88ad6` | *fix(profile): a v2 profile has no profileID — iccce was fabricating one* | **a parser conformance defect and its fix** |
+
+*(Commit **contents** are `[REPORTED]` — this role has no shell. What is
+verified is that the source described below reads as described **right
+now**, and that `.git/refs/heads/master` is `0a88ad6`.)*
+
+### 1. The option — `SrgbTrc`, and why an option at all
+
+★★★ **Two currently-in-force standards define sRGB's transfer function
+with different constants, and neither is a typo.** `icc-spec-librarian`
+filed this as register row **`A57`** on 2026-08-19:
+
+| reading | offset `α` | encoded breakpoint | printed by |
+|---|---|---|---|
+| **C⁰** — value continuity | `1.055` exactly | `0.04045` | ICC's own sRGB document, W3C CSS Color 4, Khronos KDF |
+| **C¹** — value **and slope** continuity | `1.055 010 718 947 586 4` | `0.039 293 370 676 847 5` | **required** by `Rec. ITU-T H.273 (V4) (07/2024) / ISO/IEC 23091-2` clause 8.2 for `TransferCharacteristics = 13` — what AVIF, HEIF, AV1 and ISOBMFF `nclx` point at |
+
+**Both ship.** `iccce_cmm::builtin::SrgbTrc::{ValueContinuous,
+SlopeContinuous}`, **default unchanged**, and ★ the C¹ constants are
+**derived from H.273's clause at run time by bisection, never
+transcribed** — which is rule 2 satisfied in the strongest available form:
+there is no decimal for anybody to have typed wrongly.
+
+★ **The reason the default is C⁰** is reasoned and written out in
+`builtin.rs`: this is an **ICC** CMM and ICC's own published sRGB document
+prints the `0.055` family; **three independent free sources** print it
+against H.273's one; **Khronos performs H.273's exact derivation for
+BT.709 and pointedly does not apply it to sRGB**; and changing the default
+would silently invalidate every ΔE claim in `NUMERIC_CLAIMS.md`.
+
+### 2. Pass L — the measurement, and what it can and cannot settle
+
+> **lcms2 implements the C⁰ reading.**
+> `max |lcms2 − C⁰|` = **`5.300706×10⁻⁵`** `L*` (below one printed
+> quantum); `max |lcms2 − C¹|` = **`1.230354×10⁻³`** `L*`; **ratio
+> `23.2×`**; and **`0` of `204`** resolvable probes favour C¹.
+
+**★★★ `A57` STAYS OPEN and Pass L cannot close it.** IEC's normative text
+would say what sRGB **is**; this says what **one implementation does**.
+Rows, classes, tolerances and coverage: **`NUMERIC_CLAIMS.md` §3.37,
+`NC-281` … `NC-300`**. The disclaimer is carried **in the records' own
+`source` column** so a quoter trips over it — ★ though **not on every
+record, and two documents say otherwise**; see item 5 below.
+
+★★ **The Pass's design content is worth more than its verdict.** The two
+curves are `4.777 283×10⁻⁶` apart at most in linear light and **exactly
+zero apart at all 256 8-bit codes**, so an ordinary difftest probe has
+**no discriminating power whatever**. Three traps had to be got right:
+float I/O rather than 8- or 16-bit; **the maximum is INTERIOR and in a
+different place for each output space** (the two instruments' maxima are
+**119 codes apart**, and the linear-light one — *which this crate's own
+doc comment prints* — throws away **64 %** of the `L*` signal); and the
+model had to be **lcms2's**, not the standard's.
+
+★★★ **The C¹ breakpoint — the single most obvious probe — has EXACTLY
+ZERO power, structurally.** H.273 clause 8.2 defines `β` by value
+continuity with the **same linear segment the C⁰ reading uses**, so the
+two curves meet there **by construction**. This is the third time in this
+project that the obvious breakpoint probe has been measured to have no
+power.
+
+### 3. ★★★ Two claims in `SrgbTrc`'s doc comment were FALSIFIED — and both were ours
+
+**This is the most valuable outcome of the Pass.**
+
+| the claim as first written | what Pass L measured |
+|---|---|
+| *"no image changes, ever"* | ★ **FALSE end-to-end.** Through a real destination, **14 of 5169** probe points move an 8-bit ink code in `USWebCoatedSWOP`, **11 of 5169** in `AdobeRGB1998`, **2 of 5169** in the committed synthetic pair (**17** and **6** on a half-step-offset grid, so it is real and not a grid artefact). ★ The mechanism is **not amplification** — the device separation is `1/62` of a code — it is that a difference that small still **flips a code whenever the value straddles a rounding boundary**, which ≈`0.3 %` of points do |
+| *"below one 16-bit PCS quantum"* | ★ **FALSE as ΔE.** True in the **encoded** domain. As ΔE2000 in the PCS the max is **`1.857907×10⁻³`**, which is **`2.01×`** one 16-bit `L*` quantum **evaluated at that same point** |
+
+★★ **Both were correct-but-scoped and read as unscoped, and both were
+corrected in place with the scope stated** — *"because I made them and
+then repeated them to the operator."* **The original wording is preserved
+beside the correction**, not amended away.
+
+★★★ **The general form, which is the durable part:** *"below one quantum"*
+and *"no code changes"* are **claims in a UNIT**, and a claim in a unit is
+silently scoped to the domain that unit lives in. **Neither statement was
+ever wrong where it was measured.** Both became wrong by being **read one
+transform later**, and nothing in either sentence carried the domain it
+was true in.
+
+★ **And a gray ramp — the natural probe for a transfer-function question —
+understates the cost by `2.51×`.** The PCS maximum is **off-axis**, at
+codes `(10.0213, 23.7681, 10.0213)`: ΔE2000's chroma and hue terms put the
+worst case exactly where a one-dimensional probe cannot reach.
+
+★ **The honest summary:** **a curiosity, but NOT an invisibility.**
+`538×` below the perceptibility anchor — *and it still moves 8-bit ink
+codes*, which shows up as a one-code diff in somebody else's regression
+suite.
+
+### 4. The option was HOLLOW until Pass L found it, and the guard is a WINDOW
+
+★★ **Pass L found the C¹ reading was unreachable from any public entry
+point**, which made *"both readings ship"* only half true.
+`Destination::BuiltinSrgb(SrgbTrc)` was added — **additive, not a
+break** — with `Destination::None` **exactly**
+`BuiltinSrgb(ValueContinuous)`.
+
+`srgb_trc_variant_is_selectable.rs` guards **the plumbing, not the
+constants**, with a **window** rather than a ceiling: **`> 1×10⁻⁹`**
+catches the variants collapsing or the argument being dropped;
+**`< 1×10⁻²`** catches the option becoming perceptible. ★★★ **A lower
+bound is unusual in this project and it is the point** — without it, a
+regression that collapsed the two variants would produce a separation of
+**exactly zero** and **pass a ceiling-only assertion**. Verified by
+mutation: dropping the argument yields **`0.000000e0`** and fires the
+guard with the right message *(`[REPORTED]`)*.
+
+★ **Scope, stated because it is a fact about the feature and not about the
+harness: the shipped `iccce` binary has NO FLAG that selects `SrgbTrc`.**
+The variant is reachable **only through the library API**, so **no CLI
+user can select the C¹ reading today**, and every §C number was produced
+in process.
+
+### 5. ★★ A universal claim about the harness is false, and it is owed
+
+*"**Every** `passl/A/*` record carries the A57 disclaimer in its `source`
+column"* — `tools/difftest/README.md` §27.1, and the wider *"every passl
+record"* in `ac921e2`'s message. **Counted from the emitters: six of the
+nine §A records carry it, one of the six in a variant wording, and three
+do not.**
+
+★ **The three that lack it are the three with no lcms2 output in them**,
+and each carries *"no implementation's output appears in this row"*
+instead — an equally strong guard. **Nothing is mis-scoped; a countable
+claim about the harness is wrong.** Inventory at `NUMERIC_CLAIMS.md`
+§3.37.7; **owed to `icc-conformance` / `icc-engineer`**, §7.26 item 2.
+
+### 6. ★★★ The parser fix — a v2 profile has no `profileID`, and iccce was fabricating one
+
+**Not part of Pass L; filed here because it landed unrecorded in the same
+window.** It belongs to **Pass 2**'s subject matter, whose completion
+record above is closed and is **not** edited.
+
+`profileID` was added in **v4**. In **ICC.1:2001-04 Table 9** header bytes
+`84..127` are **one 44-byte block**, *"44 bytes reserved for future
+expansion"* — **there is no identifier there.** iccce read `84..100` as a
+`profileID` **regardless of edition**, so a v2 profile printed a plausible
+32-hex-digit identifier **and `malformations: 0` beside it**.
+
+> ★★★ **That is worse than a false accusation.** The rendering-intent
+> defect fixed 2026-08-18 **accused a conforming file** — loud, and
+> arguable. This one **invented a CHECKABLE IDENTITY CLAIM** out of bytes
+> that mean something else and **reported nothing at all.** A consumer
+> would reasonably believe the profile carries an MD5 profile ID it could
+> verify.
+
+★★ **And it simultaneously UNDER-reported:** checking only `100..128` on a
+v2 profile **misses 16 bytes of that edition's reserved block** — the same
+16 being presented as an identifier. **One defect, two directions, one
+line of code.**
+
+**Now:** the range is **edition-gated** (v4 `100..128`, v2 `84..128`), the
+report **names the range it checked**, and `header.id` prints
+**`n/a (no profileID field before v4; bytes 84..128 are reserved)`**.
+★ **The bytes are still disclosed** through the edition-correct report —
+**rule 6 is not weakened; what stopped is the MISLABELLING.**
+
+**Also in that commit:** `Malformation::violation_status(version)`, built
+for `pdfce`, and ★ **it is deliberately NOT a `bool`** —
+`Violation / NotAViolation / Unsourced { register_id }`, because
+`TagTooSmall` has **no requirement behind it in either edition** (`A61`)
+and `TagOverrun` has none in v2 (`A62`); **a boolean would have forced an
+invented answer that looked exactly as authoritative as the sourced ones.**
+The edition must be supplied because **3 of the 9 variants split by
+edition**. Decision record: **`ARCHITECTURE.md` DL-067**, which files the
+fabrication and the refused boolean as **one class in two directions —
+one shipped, one caught at design time.**
+
+★ **Two entries that were WRONG in this project until this commit:**
+`DuplicateTagSignature` was labelled *"Legality NOT SOURCED"* when **both
+editions prohibit duplicates** — the decision built on it survives, its
+**rationale** was false, and **`DL-003`'s *"revisit if"* has fired**; and
+`TagTooSmall` is not sourced at all, its cited table having been written
+as *"checks iccce should perform and REPORT"*, never as a quotation of a
+requirement.
+
+### Done-when, judged on these terms
+
+**Pass L had no done-when written in advance, because it had no roadmap
+entry.** ★ That is stated rather than retrofitted: **writing a done-when
+now and marking it met would be this document deciding after the fact what
+the Pass was for.** What can be judged is what the work claims:
+
+| the claim the work makes | judged |
+|---|---|
+| *"Both readings ship"* | **MET** — and it was **half false until `ac921e2`**, which is the Pass's own finding about the Pass |
+| *"lcms2 implements C⁰"* | **MET, as an implementation fact**, with the pin, build, platform, profile, intent, direction and probe class all stated |
+| *"The default is right for a measured reason rather than a judged one"* | **MET** |
+| *"`A57` is settled"* | ★★★ **NOT CLAIMED, and must never be** |
+| *"The option is not hollow"* | **MET**, and proven by mutation rather than asserted |
+| *"No image changes"* | ★ **RETRACTED by the Pass itself** — see item 3 |
+
+### What this does NOT close
+
+1. **`A57`.** Two in-force standards still disagree. **`IEC 61966-2-1`
+   remains paywalled and unobtained**, as at every filing since §7.11.
+2. **The standing debt — no `published-ground-truth` row for any
+   transform**, at its **twelfth-plus** consecutive filing. ★★ Pass L is
+   the sharpest illustration of why: it measured to `10⁻⁵` `L*` against
+   **two** published readings and still produced no ground-truth row,
+   because the two candidates come from documents that **disagree**.
+3. **`NA-013` was NOT consumed.** A **selection between two documented
+   readings is not an approximation of colorimetry**, and the default
+   departs from nothing that governs an ICC profile. ★ The reasoning, and
+   the **three triggers** that would make an `NA` owed, are
+   `NUMERIC_CLAIMS.md` §7.26 item 1.
+4. **No CLI surface for `SrgbTrc`.** Item 4 above.
+5. **The `mAB ` question §B raises.** lcms2's 16-bit quantisation finding
+   is **`mft2`-specific** and says nothing about the `mAB ` float path.
+6. **The third `profileID` test is not shown to be discriminating** —
+   `2 of 3` turn red on reverting; **`2 of 3` is not *"proven by
+   mutation"***. §7.26 item 3.

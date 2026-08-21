@@ -7668,6 +7668,422 @@ count nobody supplied is not a count this role may write.
 
 ---
 
+### 3.37 ★★★ Pass L — **which reading of sRGB does lcms2 implement?** and **the two claims of ours that Pass L falsified.** The section whose §A rows say, in the record itself, that they settle nothing about what sRGB *is* — and whose §C rows are **self-comparison**, not a cross-check, which is one class weaker than the dispatch that requested them assumed
+
+**Filed 2026-08-20 by `icc-librarian`**, retrospectively, from commits
+**`4db44a1`** (the option) and **`ac921e2`** (the measurement), neither of
+which had any entry in any document this role owns until this filing.
+**Every numeral below was re-read from the working tree** —
+`tools/difftest/src/passl.rs`, `crates/iccce-cmm/src/builtin.rs`,
+`crates/iccce-cmm/src/transform.rs`,
+`crates/iccce-cmm/tests/srgb_trc_variant_is_selectable.rs` and
+`tools/difftest/README.md` §27 — **and where the commit message and the
+tree disagree, the tree is what is filed and the disagreement is stated.**
+
+#### 3.37.0 ★★★ Read this before the numbers — three scope statements, and the third is a correction to the request
+
+**1. Nothing in this section is `published-ground-truth`, and nothing in
+it settles `A57`.** `A57` is `icc-spec-librarian`'s register row recording
+that **two currently-in-force standards define sRGB's transfer function
+with different constants and neither is a typo**: the **C⁰** reading
+(`α = 1.055` exactly, encoded breakpoint `0.04045`) printed by ICC's own
+sRGB document, W3C CSS Color 4 and Khronos KDF; and the **C¹** reading
+(`α = 1.055 010 718 947 586 4`, breakpoint `0.039 293 370 676 847 5`)
+**required** by `Rec. ITU-T H.273 (V4) (07/2024) | ISO/IEC 23091-2`
+clause 8.2 for `TransferCharacteristics = 13`, which is what AVIF, HEIF,
+AV1 and the ISOBMFF `nclx` box point at. **IEC 61966-2-1's normative text
+would say which is sRGB; nobody in this project has read it** (paywalled;
+the operator declined the purchase, **`[REPORTED]` on the commit message
+of `ac921e2`, 2026-08-19 — this role observed no such exchange**).
+
+> **What Pass L establishes is a fact about an implementation: `lcms2`
+> implements the C⁰ reading.** That is a different claim from *"sRGB is
+> C⁰"*, and it is the only claim the rows below support.
+
+★ **VERIFIED that the distinction is carried in the machine-readable
+record and not only in prose** — `passl.rs:662–666` builds one `source`
+string, *"…A FACT ABOUT lcms2, NOT a claim about what sRGB is: ICC_Spec
+A57 stays OPEN"*, and clones it into the §A records.
+★★ **But not into all of them, and both the commit message and
+`tools/difftest/README.md` §27.1 overstate this. See §3.37.7.**
+
+**2. `A57` STAYS OPEN and this filing does not close it.** A measurement
+of an implementation cannot resolve a disagreement between two standards
+documents. Anyone quoting a Pass L number as evidence about **sRGB** is
+quoting it wrongly, and `CLAUDE.md` rule 7's posture applies in reverse:
+had lcms2 come out C¹ it would have been **a finding, not a failure** —
+the dominant ICC implementation against the ICC-ecosystem consensus. The
+whitebox source read was done **first** and the blackbox measurement was
+designed to be able to contradict it (`passl.rs:115–120`).
+
+**3. ★★★ THE CORRECTION TO THE REQUEST, and it is the reason this box is
+here.** The dispatch that ordered this filing stated: *"Every Pass L
+row's oracle is `cross-check against another implementation` (lcms2)."*
+**That is true of §A and FALSE of §B and §C**, verified by reading the
+`Kind` on every record emitter in `passl.rs`:
+
+| section | `Kind` in the tree | this ledger's class | is lcms2 in the loop? |
+|---|---|---|---|
+| **§A** (which reading does lcms2 implement) | `Kind::CrossCheck` ×5, `Kind::DerivedExpectation` ×2, `Kind::OracleReproducibility` ×1, plus the `-o*XYZ` arm `Kind::CrossCheck` | **implementation-cross-check**, scoped — see §3.37.1 | **yes** |
+| **§B** (the honest precision statement) | `Kind::DerivedExpectation` ×2, `Kind::CrossCheck` ×1 | **derived-expectation** / an **oracle-behaviour** measurement | the staircase row, yes; the two quantum rows, no |
+| **§C** (what the choice costs) | **`Kind::SelfConsistency` on every record** (`:1210`, `:1232`, `:1246`, `:1305`, `:1317`, `:1327`, `:1362`) | **self-comparison** | ★ **NO. Both sides are iccce, in process, in `f64`** |
+
+★★★ **This matters for exactly the numbers the dispatch named as
+headlines.** `14 of 5169`, `11 of 5169` and `2 of 5169` are **§C**
+records. They are **iccce compared with iccce** — one variant against the
+other through the same destination — and are therefore **one class weaker
+than a cross-check**, not equal to it. Writing them as *"cross-checked
+against lcms2"* would attribute to the oracle a measurement the oracle
+**provably cannot make**: §B measured that lcms2 quantises a float input
+to 16 bits before a `mft2` CLUT lookup, which is coarser than the whole
+effect (§3.37.4). ★ **The harness says so itself on every §C destination
+record** — `:1367–1369` emits *"The ORACLE CANNOT MEASURE THIS"* with the
+§B row id that proves it.
+
+#### 3.37.1 The §A rows — NC-281 … NC-285. **What is cross-checked is the CONSTANTS and the CURVE FORM, not iccce's evaluation path**
+
+★★ **A scope statement that belongs on the class, not in a footnote.**
+In §A, **iccce's transform code never runs.** The harness evaluates ICC
+`parametricCurveType` function type 3 itself (`eval_type3`, `:290`) and
+transcribes **lcms2's own** `f()` from `src/cmspcs.c` (`lcms2_lstar`,
+`:301`); what comes from iccce is the **parameter array**
+(`srgb_trc_params`). So these rows cross-check **iccce's constants and
+the ICC curve form** against lcms2's output — they say nothing about
+`MatrixTrc`, `Chain`, or any shipped evaluation path. They also inherit
+**`oracle-behaviour-at-pin`'s invalidation property**: the pin moving can
+falsify every one of them, which is exactly what the whitebox row exists
+to catch.
+
+**Instrument** *(`[REPORTED]` — this role has no shell and ran nothing)*:
+`transicc -i*sRGB -o*Lab4 -t1 -c0 -n`, **275 neutral probes** (all 256
+8-bit codes + 19 designed points), **float in, float out**, lcms2 pin
+`21c582a`, MSVC build, Windows 11, lcms2's **own built-in** sRGB via
+`cmsCreate_sRGBProfileTHR`. ★ **`275` is VERIFIED structurally** —
+`probe_codes` (`:318–342`) pushes `0..=255` and then extends by exactly
+19 values.
+
+| id | what was compared | measured | tolerance | class | grading |
+|---|---|---|---|---|---|
+| **NC-281** | **The headline.** `max abs(lcms2 − C⁰)` in `L*` over the 275-probe sweep — `passl/A/lab/residual-against-c0-over-the-sweep` | **`5.300706×10⁻⁵`** `L*` — **below one printed quantum** | **`1×10⁻⁴`**, `TOL_PRINTED`: one quantum of `transicc`'s `%.4f` (`utils/transicc/transicc.c` L694–698). ★ **Derived from the instrument, not chosen** — round-to-nearest bounds the print error at half a quantum and the other half covers lcms2's `float32` curve evaluation, whose measured excess over the rounding bound is `3.0×10⁻⁶`, i.e. **~16× head-room** | **implementation-cross-check**, scoped as above. **`[REPORTED]`** | **GRADED, passes** |
+| **NC-282** | **The rival, on the identical sweep.** `max abs(lcms2 − C¹)` — the separation carried on NC-281's record | **`1.230354×10⁻³`** `L*` = **12.3 printed quanta**; **ratio `23.2×`** | none — this is the **distance from the rejected hypothesis**, reported | as NC-281. **`[REPORTED]`** | **NOT GRADED — and it is the number that makes NC-281 mean anything.** A residual of `5.3×10⁻⁵` against *nothing* is not a verdict |
+| **NC-283** | **★★ The vote, which is the row that actually decides it.** Of the probes whose two candidate predictions are **≥ 2 printed quanta apart**, how many sit closer to **C¹**? — `passl/A/lab/probes-closer-to-the-c1-reading` | **`0` of `204`** | **`0` exactly**, `Metric::IndicatorCount`. ★ Justified in the tree (`:868–874`): *"there is no instrument error in a count… one dissenting probe would mean the two readings are not cleanly separable and the verdict would have to be **withdrawn rather than averaged**"* | as NC-281. **`[REPORTED]`** | **GRADED, passes** |
+| **NC-284** | **★ Instrument POWER, not lcms2's answer** — `(2 × quantum) / residual_against_C¹` | **`0.1626`** (`2×10⁻⁴ / 1.230354×10⁻³`) ★ **the arithmetic is this librarian's, from NC-282**; the tree computes it at `:850` | **≤ `1.0`**, `TOL_REJECTION`: *"the rival must be rejected by at least TWO printed quanta; one quantum can be produced by round-to-nearest alone"* | **derived-expectation** (it is a ratio of an instrument constant to a measurement) | **GRADED, passes at `6.2×` margin.** ★★ It goes red **when the measurement loses the power to tell the two readings apart** — an earlier and different failure from lcms2 changing its answer |
+| **NC-285** | **★★★ The probe trap, and it is STRUCTURAL.** The separation between the two readings **at the C¹ breakpoint** — the obvious place to probe | ★ **exactly `0` by construction.** H.273 clause 8.2 **defines** `β` by value continuity with the **same linear segment the C⁰ reading uses**, so the two curves meet there **by derivation, not by coincidence** | **`1×10⁻¹²`** — *"about `10⁴` ulps at `L* ≈ 2.7`, and refuses anything structural"* | **derived-expectation.** *"derived from Rec. ITU-T H.273 (V4) clause 8.2 via ICC_Spec A57; **no implementation's output appears in this row**"* — quoted from `:773` | **GRADED, passes.** ★ **Discrepancy, filed rather than smoothed:** `ac921e2`'s message reports the measured value as **`1.4×10⁻¹⁴`** (`f64` round-off in evaluating the two branches); the module doc and the README both say **"exactly zero"**. **Both are right about different things** — the mathematics is exact, the evaluation is not — and this ledger files the bound, the structural reason, and the reported numeral separately |
+
+#### 3.37.2 NC-286 — **the maximum is INTERIOR, it is in a DIFFERENT PLACE for each instrument, and the feature's own doc comment printed the wrong probe**
+
+This is `NC-285`'s finding generalised, and it is the design content of the
+Pass. **Both obvious probe placements are wrong.**
+
+| probe | encoded code | separation | what it costs |
+|---|---|---|---|
+| the **C¹ breakpoint** | `10.019 81` | **`0`** | everything — see NC-285 |
+| the **C⁰ breakpoint** | `10.314 75` | `6.93×10⁻⁴` `L*` (6.9 quanta) | usable, **42 % below the best available** |
+| ★ the **`L*` interior maximum** | **`23.513 60`** | **`1.202 916×10⁻³`** `L*` (**12.0 quanta**) | this is the right probe for the `Lab` instrument |
+| the **linear-light interior maximum** | `142.905 68` | `4.777 283×10⁻⁶` in `Y`, but only **`4.38×10⁻⁴`** in `L*` | ★★ **64 % of the `L*` signal thrown away** |
+
+**NC-286** is the graded form: `passl/A/design/l-signal-at-the-linear-light-max`
+grades `L*_sep(at the Y maximum) / L*_sep(at the L* maximum)` = **`0.364`**
+against **`≤ 0.5`**, class **derived-expectation**, *"derived from the two
+curves; no implementation's output appears in this row"* (`:905`).
+
+★★★ **The row's job is not to check a number — it is to keep the probe
+set's own justification TRUE.** Its tolerance text says so (`:896–902`):
+if the fraction ever rose toward `1` the two instruments would share a
+probe, *"the maximum is interior AND instrument-specific"* would be false,
+**and the probe set would need rewriting rather than re-blessing.**
+
+★ **The two instruments' maxima are 119 codes apart**, and the
+linear-light maximum is **the number `builtin.rs`'s own doc comment
+prints**, which makes it the probe a careful reader would have chosen.
+**This is the third time in this project that the obvious breakpoint probe
+has been measured to have no power** — the first is
+`builtin.rs`'s `breakpoint_is_the_c0_solution_not_the_1996_value`, the
+second is `NC-228` (§3.32.4), and it is now a pattern rather than an
+anecdote.
+
+★ **A numeral discrepancy, filed:** `ac921e2`'s message gives the
+linear-light `L*` separation as **`4.376×10⁻⁴`** and says the probe
+*"keeps only 36 % of signal"*; the tree says **`4.38×10⁻⁴`** and *"64 % of
+the `L*` signal thrown away"*. **These agree** (`36 % kept = 64 %
+discarded`, and `4.376` rounds to `4.38`); recorded so a future reader who
+finds both does not treat them as two measurements.
+
+#### 3.37.3 NC-287 — **the second instrument, which is independent and which agrees**
+
+`passl/A/xyz/residual-against-c0-at-the-linear-light-maximum`:
+`transicc -i*sRGB -o*XYZ -t1 -c0 -n`, probed at code `142.905 68` — **a
+different output space, a different probe, a different unit.**
+
+| | |
+|---|---|
+| separation available there | **`4.777×10⁻⁴`** in `transicc`'s `Y × 100` units = **4.8 printed quanta** |
+| resolving power (`quantum / separation`) | **`0.209`** against **`≤ 0.5`**, `TOL_RESOLVING` |
+| verdict | **resolvable**, and it puts lcms2 with C⁰ independently |
+
+★ **What this row is NOT.** It is *not* a second oracle — it is the same
+lcms2 build answering a different question, so it removes a **modelling**
+error (the `Lab` instrument's `L*` transform) and **not** an
+implementation-shared misreading. ★★ **The residual values themselves
+(`|lcms2 − C⁰|` and `|lcms2 − C¹|` in `Y × 100`) are computed at `:943–945`
+and are NOT carried in any evidence this role holds** — the commit message
+does not print them and the module doc gives only the separation. **They
+are therefore not filed**, and NC-287 is the resolving-power claim only.
+*A row must state what it measured; a row that names a quantity it cannot
+supply is worse than an absent row.*
+
+★★ **The whitebox corroboration is a row and not a remark.**
+`passl/A/source/pinned-lcms2-builds-srgb-with-the-c0-constants`
+(`Kind::OracleReproducibility`, tolerance `0` on a count of **absent**
+constants) greps the pinned `vendor/lcms2/src/cmsvirt.c` for
+`1. / 1.055`, `0.055 / 1.055`, `1. / 12.92` and `0.04045` — the four
+literals `Build_sRGBGamma()` L640–647 writes into a **type-4 parametric
+curve**. ★ **Its purpose is to notice a pin move that would invalidate
+every §A number without changing any of them**, which is the
+`oracle-behaviour-at-pin` hazard made into a gate. **It is not filed as an
+NC** because it measures the presence of text in a vendored file, not a
+colour; it is recorded here so that its absence is not read as an
+oversight.
+
+#### 3.37.4 ★★★ NC-288 — **the oracle CANNOT be the ruler for the destination half, and that was MEASURED rather than assumed**
+
+The natural design for §C would have been *"convert through a real
+destination with `transicc` and difference the two variants."* It is
+unavailable, for a reason in lcms2's architecture:
+
+> lcms2 evaluates a `lut16Type` (`mft2`) CLUT stage inside a **float**
+> pipeline through `EvaluateCLUTfloatIn16` (`src/cmslut.c` L445–456),
+> whose **first act** is `FromFloatTo16(In, In16, …)` — **it quantises its
+> float input to 16 bits before the lookup.**
+
+**NC-288**, `passl/B/dest/oracle-a2b-input-is-quantised-to-16-bits`,
+`Kind::CrossCheck`:
+
+| quantity | value |
+|---|---|
+| control sweep of one ink | `2.95×10⁻²` % of full scale, in `5×10⁻⁴` % steps |
+| distinct `L*` values returned | ★ **`7` of `60` samples** — a **staircase**, not a curve |
+| tread width | **≈ `4.9×10⁻³` %** ink |
+| the largest device separation the reading choice produces at a real destination | **`6.36×10⁻³` %** |
+| ⇒ | **≈ 1.3 treads at its maximum, and a small fraction of one typically** |
+
+★★★ **This is the row that forces §C to be self-comparison.** It is not a
+convenience decision and it is not a scope refusal — **the only available
+oracle is measurably blind to the quantity**, by roughly the size of the
+quantity. ★ **A section that had simply declared "we measured this in
+process" without this row would look like an unexplained weakening.** It
+is the opposite: the weaker class is the *consequence* of a measurement.
+
+★ Note the direction of the finding: **it is about `mft2` and says
+nothing about `mAB `**, whose float pipeline is a different code path.
+Recorded so the claim is not widened by a later reader.
+
+#### 3.37.5 The §C rows — NC-289 … NC-294. **What the choice COSTS, entirely in `f64`, with no oracle anywhere**
+
+**Probe sets, both VERIFIED structurally from the tree rather than taken
+from the commit message:**
+
+- `cost_probe_set()` (`:477–495`) — a **33³ encoded grid** plus a
+  **20 001-point neutral ramp** = `35 937 + 20 001` = **`55 938`** probes,
+  then **coordinate descent off the grid**, because the maximum is **not**
+  at a grid node and a grid-only number understates it by ≈28 %.
+- `dest_probe_set()` (`:499–516`) — a **17³ encoded grid** plus a
+  **256-step neutral ramp** = `4 913 + 256` = **`5 169`** probes. ★★ **The
+  denominator in `14 of 5169` is therefore derivable from the source, not
+  merely reported.**
+
+★ **§C is in process, and it has to be** — the shipped `iccce` binary has
+**no flag that selects `SrgbTrc`**; the variant is reachable **only
+through the library API**. That is a scope statement about the *feature*,
+not about the harness: **no CLI user can select the C¹ reading today.**
+(Pass 5b set the precedent, driving `iccce_cmm::bpc` in process for the
+same reason.)
+
+| id | what was compared | measured | tolerance | class | grading |
+|---|---|---|---|---|---|
+| **NC-289** | **★★ The cost of the choice, in the PCS** — `sRGB(C⁰) → PCS Lab D50` against `sRGB(C¹) → PCS Lab D50`, max over 55 938 probes + descent | **`1.857 907×10⁻³` ΔE2000**, at `rgb(0.039 299 306, 0.093 208 075, 0.039 299 242)` = codes **`(10.0213, 23.7681, 10.0213)`** | **≤ `1.0`**, `TOL_PERCEPTIBLE` — the perceptibility anchor, used to assert **the claim the feature ships under**: that choosing between the readings is *a curiosity and not a fork in colour*. ★ If it ever failed, *"the option would need a migration story rather than a doc comment"* (`:275–281`) | **self-comparison.** **`[REPORTED]`** | **GRADED, passes by `538×`** |
+| **NC-290** | The same quantity as a **mean** | **`3.630 359×10⁻⁴` ΔE2000** over 55 938 | as NC-289 | as NC-289 | **GRADED.** ★ Filed **alongside** the max and never instead of it — *"a mean over a grid hides exactly the outlier a colour engine gets wrong"* (`:1239`) |
+| **NC-291** | **★★★ The gray ramp UNDERSTATES the cost** — max on the neutral axis alone, against the true max | neutral max **`7.396×10⁻⁴`** at code `23.5135`; ⇒ the ramp sees **`39.8 %`** of the cost, i.e. **understates by `2.51×`** | **≤ `0.75`** on the ratio. ★★ The bound **refuses the reading that a 1-D probe would have been sufficient**, and *"goes red if the two ever converge, which would mean the 3-D grid has stopped buying anything"* | as NC-289 | **GRADED** |
+| **NC-292** | **The device separation at a real destination** — `PCS → device` through the profile's own `B2A`/matrix, both variants, `f64` | **≤ `6.36×10⁻⁵` of full scale** = **`1/62` of an 8-bit code** | **`1/255`** — one 8-bit device code. ★ The bound defends *"the choice does not MOVE a colorant by a whole code"* and **explicitly disclaims** the adjacent question: *"It says nothing about whether a value already sitting on a rounding boundary can be flipped across it — that is a separate measurement, and it is reported in this record's own detail rather than hidden by the bound"* (`:1293–1300`) | as NC-289 | **GRADED** |
+| **NC-293** | **★★★ THE FALSIFICATION.** 8-bit output codes that CHANGE between the two readings, end to end, of **5 169** probes | **`14`** (`USWebCoatedSWOP.icc`), **`11`** (`AdobeRGB1998.icc`), **`2`** (the committed synthetic pair) — ★ and **`17`** and **`6`** respectively **on a half-step-offset grid**, so the effect is **real and not a grid artefact** | reported in the record's detail, **not bounded** — see NC-292's tolerance text | as NC-289 | **NOT GRADED, and deliberately so.** ★★ This is the number that falsifies *"no image changes, ever"*; a **tolerance** on it would be this project inventing a permitted rate of code movement |
+| **NC-294** | **★★ The destination AMPLIFIES the difference; it does not wash it out.** Round trip `sRGB(variant) → destination → sRGB → Lab`, all `f64`, against the PCS difference over the same probes | `USWebCoatedSWOP`: **`2.207 972×10⁻³`** against **`1.452 896×10⁻³`** = **`1.52×` amplification**. The committed synthetic pair: **`7.347 420×10⁻⁴`** = **`0.51×`, an attenuation** | **≤ `1.0`**, `TOL_PERCEPTIBLE` | as NC-289 | **GRADED.** ★ **Two destinations, opposite directions** — which is why *"the destination washes it out"* is not available as a general statement |
+
+★★★ **The mechanism behind NC-293, because it is counter-intuitive and
+will otherwise be re-derived wrongly.** It is **not amplification.** The
+device separation is at most `1/62` of an 8-bit code (NC-292). It is that
+**a difference that small still flips a code whenever the value happens to
+straddle a rounding boundary**, which ≈`0.3 %` of points do.
+**Zero-in-sRGB's-own-encoding does not survive a second transform**, and
+that sentence is the durable finding.
+
+#### 3.37.6 ★★★ NC-295 and NC-296 — **the two claims in `SrgbTrc`'s doc comment that Pass L FALSIFIED, and both were ours**
+
+**This is the most valuable content of the Pass**, and it is not the
+lcms2 verdict. The `SrgbTrc` doc comment shipped in `4db44a1` carried two
+statements. Both were **correct and narrowly scoped**, and both were
+**written as though they were general**.
+
+| id | the claim as first written | what Pass L measured | class |
+|---|---|---|---|
+| **NC-295** | *"no image changes, ever"* | ★ **FALSE end-to-end** — NC-293. **True** of sRGB's own encoding: **`0` of 256 8-bit codes change**, and the curves are **`9.76×10⁻⁶`** apart at most in the encoded domain over a 200 001-point sweep, **`4.78×10⁻⁶`** in linear light | **self-comparison**; the surviving true form is an **arithmetic-identity** over the 256 codes |
+| **NC-296** | *"below one 16-bit PCS quantum"* | ★ **FALSE as ΔE.** **True in the encoded domain.** As ΔE2000 in the PCS the maximum is **`1.857 907×10⁻³`** (NC-289), which is **`2.01×`** one 16-bit `L*` quantum **evaluated at that same point** (**`9.262×10⁻⁴`** ΔE00) | **self-comparison** |
+
+★★★ **The correction was made in place, with the scope stated, and the
+original wording preserved beside it** — `builtin.rs:256–264` opens *"The
+two rows above are correct and NARROWLY SCOPED, and the first version of
+this doc comment stated them as though they were general. Both overclaims
+are corrected here rather than quietly amended, **because I made them and
+then repeated them to the operator**."* ★ **VERIFIED — read at the tree.**
+
+★★ **The 16-bit quantum is evaluated AT THE ARGMAX, and that is not a
+detail.** `:1187–1196` bumps `L*` by `100/65 535` **at the maximum's own
+point** and takes the ΔE2000 of that bump, with the comment: *"Evaluating
+it anywhere else would be dishonest: ΔE2000's `SL` term varies by a factor
+of 1.6 between `L* 6` and `L* 50`."* **A quantum quoted at the wrong
+lightness would have made the ratio look like whatever the author wanted.**
+
+★★★ **And the general form, which is why these are ledger rows and not a
+doc-comment tidy-up:** *"below one quantum"* and *"no code changes"* are
+**claims in a UNIT**, and a claim in a unit is silently scoped to the
+domain that unit lives in. **Neither statement was ever wrong where it was
+measured.** Both became wrong by being **read one transform later** — and
+nothing in either sentence carried the domain it was true in. This is
+**DL-063's shape** (careful words, uncareful channel) applied to a **unit**
+rather than to a count.
+
+★ **The honest summary, which the tree states and this ledger endorses:**
+**a curiosity, but NOT an invisibility.** `1.86×10⁻³` ΔE2000 is **538×
+below** the perceptibility anchor, *and it still moves 8-bit ink codes* —
+which is the kind of thing that appears as a one-code diff in somebody
+else's regression suite.
+
+#### 3.37.7 ★★ NC-297 — **the option is SELECTABLE, and the guard is a WINDOW; plus the universal quantifier that is not true**
+
+`4db44a1` added the two readings; **Pass L found the C¹ reading was
+unreachable from any public entry point**, which made *"both readings
+ship"* half true. `ac921e2` added
+`Destination::BuiltinSrgb(SrgbTrc)` — **additive, not a break** — with
+`Destination::None` **exactly** `BuiltinSrgb(ValueContinuous)`
+(`transform.rs:710–713`, VERIFIED).
+
+**NC-297** — `crates/iccce-cmm/tests/srgb_trc_variant_is_selectable.rs`:
+
+| assertion | bound | catches |
+|---|---|---|
+| `BuiltinSrgb(ValueContinuous)` is **bit-identical** to `None` | `to_bits()` equality | the documented equivalence drifting |
+| separation from `None` under `SlopeContinuous` | ★ **`> 1×10⁻⁹`** | **the argument being dropped — the hollow option** |
+| the same separation | **`< 1×10⁻²`** | the option becoming perceptible |
+| provenance still reports `BuiltInSrgb` | equality | the disclosure surviving a new selection route |
+
+★★★ **A lower bound is unusual in this project and it is the point.**
+The module says why (`:55–60`): *"without it, a regression that collapsed
+the two variants into one would produce a separation of exactly zero and
+**pass a ceiling-only assertion**. The upper bound catches the option
+becoming perceptible; the lower bound catches it becoming decorative.
+Both failures are silent, and the second is the more likely."*
+★ **Proven by mutation** — dropping the argument in
+`new_builtin_srgb_dest` yields separation **`0.000000e0`** and fires the
+guard with the right message; reverted. **`[REPORTED]` on `ac921e2`'s
+message; this role has no shell and did not run it.** ★ This is **DL-064
+answered in advance**: the guard **names its rival with a magnitude**
+(`10⁻⁹`) *and* the injection was run at a magnitude that guard can see.
+
+★★★ **THE UNIVERSAL QUANTIFIER THAT IS NOT TRUE — found by this
+librarian, in the tree, against both the commit and the README.**
+
+- `ac921e2`'s message: *"**Every** passl record carries that sentence in
+  its own source column."*
+- `tools/difftest/README.md` §27.1 (`:5711`): *"★ **Every `passl/A/*`
+  record** carries 'A FACT ABOUT lcms2, NOT a claim about what sRGB is:
+  ICC_Spec A57 stays OPEN' **in its `source` column**."*
+
+**Counted from the emitters in `passl.rs`: of the nine §A records, six
+carry the scoping sentence and three do not.**
+
+| §A record | its `source` string | carries it? |
+|---|---|---|
+| `apparatus/model-exact-in-shared-region` | `src.clone()` | **yes** |
+| `trap/breakpoint-probe-has-zero-discriminating-power` | *"derived from Rec. ITU-T H.273 (V4) clause 8.2 via ICC_Spec A57; no implementation's output appears in this row"* (`:773`) | **no** |
+| `lab/residual-against-c0-at-the-interior-maximum` | `src.clone()` | **yes** |
+| `lab/residual-against-c0-over-the-sweep` | `src.clone()` | **yes** |
+| `lab/rival-reading-is-rejected-by-two-printed-quanta` | `src.clone()` | **yes** |
+| `lab/probes-closer-to-the-c1-reading` | `src.clone()` | **yes** |
+| `design/l-signal-at-the-linear-light-max` | *"derived from the two curves; no implementation's output appears in this row"* (`:905`) | **no** |
+| `xyz/residual-against-c0-at-the-linear-light-maximum` | *"…A FACT ABOUT lcms2; A57 stays OPEN"* (`:959`) | **yes — a VARIANT wording, not the same string** |
+| `source/pinned-lcms2-builds-srgb-with-the-c0-constants` | the `cmsvirt.c` path and its four parameters (`:1010–1013`) | **no** |
+
+★★ **The substance is sound and the sentence is not.** The three that lack
+it are precisely the three with **no lcms2 output in them**, and each says
+so in its own way — *"no implementation's output appears in this row"* is
+an **equally strong** anti-misquotation guard for a row that has no
+oracle. **Nothing is mis-scoped in the harness.** What is wrong is a
+**countable claim about the harness**, made in two documents, in the
+project whose own rule is that **coverage is part of the claim**.
+
+★★★ **Why it is filed rather than waved through.** *"Every record carries
+the disclaimer"* is the assurance a future reader will lean on when they
+decide **not** to check whether a quoted Pass L number is scoped. It is
+`six of nine`, plus one paraphrase. **Owed to `icc-conformance` /
+`icc-engineer`** — see §7.26 newly-owed item 1. **Not edited here**;
+`tools/difftest/README.md` is not this role's file, and `passl.rs` is not
+either.
+
+#### 3.37.8 NC-298 and NC-299 — **the `profileID` fabrication, measured; and the range that was UNDER-checked at the same time**
+
+*(Commit `0a88ad6`. The decision-log entry is `ARCHITECTURE.md`
+**DL-067**; these are the two rows that carry its numbers.)*
+
+| id | what was measured | value | class | grading |
+|---|---|---|---|---|
+| **NC-298** | **★★★ The under-check, which is a structural count and needs no run.** ICC.1:2001-04 Table 9 makes header bytes **`84..127` ONE 44-byte reserved block** (*"44 bytes reserved for future expansion"*, the **only** mention of it in that document). iccce checked **`100..128` — 28 bytes — on every profile of every edition** | ★ **16 bytes of a v2 profile's reserved block were checked by nothing**, while **those same 16 bytes were being reported as a `profileID`** | **normative-rule-conformance**, as the corpus transcribes ICC.1:2001-04 Table 9 | **VERIFIED structurally at the tree** — `header.rs:195–206` now selects `first_byte = 100` for `major() >= 4` and `84` otherwise, and the `HeaderReservedNonZero` report **names the range it actually checked** |
+| **NC-299** | **The revert proof** — the range logic reverted, then the new tests run | **`2` of the `3`** new tests in `crates/iccce-cli/tests/v2_has_no_profile_id_field.rs` **turn red with the predicted message** | **injection/mutation evidence** (§3.31.7's apparatus class) | ★ **`[REPORTED]` on `0a88ad6`'s message.** This role has no shell |
+
+★★ **NC-299's own limitation, stated because a `2 of 3` must not be
+rounded to a discharge.** **One of the three tests was not shown to be
+discriminating.** Which one, and whether it *could* have gone red, is not
+carried in any evidence this role holds. **DL-051's rule is that
+documentation is not testing and only injection settles it** — two thirds
+of this file is proven and one third is not, and that is the honest
+statement.
+
+★ **What NC-298 replaces.** Before the fix, a v2 profile carrying
+`0xDEADBEEF…` in its reserved space printed
+`header.id: deadbeefdeadbeefdeadbeefdeadbeef` and **`malformations: 0`**
+— *(the printed strings are `[REPORTED]` on `0a88ad6`'s message; what is
+**VERIFIED** is the tree's present behaviour at `iccce-cli/src/main.rs:189–199`,
+which prints `header.id: n/a (no profileID field before v4; bytes 84..128
+are reserved)` for `major() < 4`)*. **The bytes are still disclosed**, via
+the edition-correct report. **What stopped is the MISLABELLING.**
+
+#### 3.37.9 NC-300 — the apparatus census, and it is a ONE-RUNNER observation
+
+| quantity | value | evidence |
+|---|---|---|
+| `passl` records emitted | **`20`, all pass** | ★ **VERIFIED structurally** by counting the emitters: 7 §A `Lab` + 1 §A `XYZ` + 1 whitebox + 2 §B quantum + 1 §B staircase + 3 §C PCS + 5 §C destination (three arms, one of which has no return path and so emits no end-to-end row) = **20**. The *"all pass"* half is `[REPORTED]` |
+| `cargo test --workspace` | **`195`** at `ac921e2`, **`198`** at `0a88ad6` | **`[REPORTED]`** on the two commit messages. ★ **Supersedes the `190` this ledger filed at §7.25**, which was correct at `3c93b62` |
+| `tools/difftest` | **`pass=373 fail=0 skip=9 error=0`** at `ac921e2` | **`[REPORTED]`.** ★ **`353 + 20 = 373`** — the arithmetic closes against NC-280's census and the 20 new records, which is corroboration and **not** a second run |
+| `clippy` | clean | **`[REPORTED]`** |
+
+★★ **ONE runner, and this is weaker than §3.36's census.** NC-280 was a
+**two-runner** observation (`icc-conformance` measuring, `icc-engineer`
+re-running independently). **These figures come from the commit messages
+of a single session and nobody re-ran them.** ★ **This librarian ran
+nothing and has no shell.**
+
+#### 3.37.10 Coverage of §3.37, stated because a number without it is not a claim
+
+- **§A is ONE lcms2 build** — `2.19.1` at pin `21c582a`, **MSVC, Windows 11** — **one profile** (lcms2's own built-in sRGB, **not** a system sRGB file, whose curve is a **1 024-entry table** and would answer a different question), **one intent** (media-relative), **one direction**, **neutral probes only**, `-c0`, float I/O. ★ **The pin moving invalidates every §A row**; the whitebox row is what would notice.
+- ★★ **§A does not exercise iccce's transform code at all** (§3.37.1). No row here is evidence that `MatrixTrc` or `Chain` evaluates sRGB correctly.
+- **§B's destination-ruler finding is `mft2`-specific** and says **nothing** about `mAB `.
+- **§C is iccce against iccce.** It is **not** evidence that either variant is *right*; it is **the price of the choice**. ★ Three destinations, two of them **category (c) system profiles** that skip off this machine, one committed synthetic.
+- ★★★ **No `published-ground-truth` row, and none is possible from this direction.** The only ground-truth-class statement in the neighbourhood is **H.273 clause 8.2 itself**, which is `ICC_Spec`'s to hold — and the document that would settle `A57`, **IEC 61966-2-1**, is **paywalled and unobtained**, as it has been at every filing since §7.11.
+- **`SrgbTrc` is not reachable from the CLI.** Every §C number was produced through the **library API**; **no shipped binary can select the C¹ reading**, so no CLI user can reproduce §C.
+- **One machine, one day, one run per condition, no repetition and no variance.** **`[REPORTED]` throughout except where marked VERIFIED.**
+- ★ **What this librarian verified by reading, and it is not the same list as what is filed:** the two probe-set cardinalities (`55 938`, `5 169`) derived from the loops; the `275`-probe count derived from `probe_codes`; the `20`-record count derived from the emitters; the `Kind` on every record; the edition gate in `header.rs`; the `header.id` branch in the CLI; the three-valued `ViolationStatus` and that **exactly 3 of its 9 variants split by edition**; the guard window `(10⁻⁹, 10⁻²)`; and the **six-of-nine** disclaimer count in §3.37.7. **Everything with a ΔE or a `pass=` in it is `[REPORTED]`.**
+- **Licensing:** nothing was fetched, published, pushed or tagged by this filing, and **nothing here authorises any of those** (rule 9).
+
+---
+
 ## 4. Named approximations and deviations
 
 `ARCHITECTURE.md` invariant 3 and project rule 4: *every approximation is
@@ -10952,6 +11368,166 @@ strongest class this subject admits.** `IEC 61966-2-1` remains
   the strong sense.** They are **two runs on one machine at one tree**,
   which corroborates transcription and a green census; **it is not a
   second implementation, a second machine, or a second day.**
+
+### 7.26 Status of §7 … §7.25, re-checked 2026-08-20 at the **Pass L + `profileID`** filing. **The first filing in this project's history made against work that was COMMITTED AND NEVER FILED — four commits, none of them in any document this role owns**
+
+**★★ TWENTY ROWS ARE ADDED: `NC-281` … `NC-300`, in the new §3.37.** The
+next free identifiers are now **`NC-301`** and **`NA-013`**.
+
+★★★ **Read the shape of this filing before its contents.** Every previous
+§7 block re-checked a status *shortly after* the work it covered. This one
+covers **four commits that landed and were never written down** —
+`4db44a1`, `ac921e2`, `609ba67`, `0a88ad6`. **Before this filing,
+`grep -rn "Pass L" docs/*.md` returned nothing, and so did `A57`,
+`SrgbTrc` and `SlopeContinuous`** *(VERIFIED by this librarian — grepped
+`docs/` at the tree, all four patterns, zero matches)*. **A Pass that runs
+and is not filed is, to every later reader, a Pass that did not happen** —
+and its numbers were meanwhile being quoted in three doc comments and a
+README, which is the worst arrangement available: **the claims propagated
+and the ledger that exists to date and scope them did not.**
+
+#### 1. ★★★ `NA-013` is DECLINED, for a third distinct reason — and the reason matters more than the verdict
+
+§7.24 declined it because the finding was an **apparatus** fact. §7.25
+declined it because **nothing new was approximated** — a registered
+departure's cost was measured. **This filing declines it because what
+Pass L added is a SELECTION BETWEEN TWO DOCUMENTED READINGS, and a
+selection is not an approximation of colorimetry.**
+
+★★ **The dispatch offered this judgement and this role agrees with the
+verdict but not with the argument as stated.** *"A reading selected
+between two documented readings is not an approximation"* would also
+excuse a genuine deviation, so the ruling is made on a narrower ground:
+
+| the question | the answer, and what it rests on |
+|---|---|
+| Does iccce's **default** depart from a standard that governs its artifact? | **No.** The default is **C⁰**, which is **exactly** what ICC's own sRGB document, W3C CSS Color 4 and Khronos KDF print. An ICC CMM building an ICC profile's TRC from ICC's own published constants has departed from nothing. |
+| Then what about **H.273 clause 8.2**, which *requires* C¹? | ★★ **H.273 governs a different artifact.** It defines **CICP code points** — what `TransferCharacteristics = 13` means in an AVIF/HEIF/AV1/ISOBMFF `nclx` box. **iccce makes no CICP claim anywhere.** A requirement in a standard that does not govern the artifact is a **disagreement between documents**, which is `A57` and is `icc-spec-librarian`'s to hold — **not a departure by this library**. |
+| Is the cost unrecorded, then? | **No, and this is why declining costs nothing.** It is **`NC-289`** — `1.857 907×10⁻³` ΔE2000 with its argmax printed — plus NC-293's code counts. ★ **A ledger row with an argmax is more findable and more checkable than a register line**, and §4's value is that **its row count equals the number of departures.** |
+
+★★★ **THE TRIGGER, recorded so the decline is revisitable rather than
+merely made.** `NA-013` becomes **owed** on any one of:
+
+1. **iccce claiming CICP / `nclx` / H.273 conformance anywhere** — at that
+   moment H.273 *does* govern, and the default becomes a deviation from
+   normative text with a measured cost already in hand (NC-289).
+2. **`SlopeContinuous` becoming the default, or becoming reachable from
+   the CLI with a default.** ★ Today it is reachable **only** through the
+   library API, which is itself a scope fact (§3.37.5).
+3. **IEC 61966-2-1's clause 5 being obtained** and turning out to require
+   the C¹ construction — which would make the *default* the departure and
+   would re-open `A57` as a resolved question rather than an open one.
+
+★ **And the smaller sibling, also declined:** the `profileID` edition gate
+(`0a88ad6`) is a **conformance repair**, not an approximation. **No colour
+value moves**; it is a parser reporting the edition's actual field layout.
+Filing it in §4 would put a parsing fact in the colorimetry register.
+
+#### 2. ★★★ NEWLY OWED — a UNIVERSAL CLAIM about the harness is false, in two documents
+
+*"**Every** `passl/A/*` record carries [the A57 disclaimer] in its `source`
+column"* — `tools/difftest/README.md` §27.1 at `:5711`, and the same
+assertion in `ac921e2`'s commit message in the wider form *"every passl
+record"*. **Counted from the emitters: six of the nine §A records carry
+it, one of the six in a variant wording, and three do not.** Inventory and
+the exact `source` string of each is **§3.37.7**.
+
+★★ **The harness is not mis-scoped and no row is wrong.** The three that
+lack the sentence are the three with **no lcms2 output in them**, and each
+carries *"no implementation's output appears in this row"* instead, which
+is an equally strong guard. **What is false is a countable claim about the
+harness**, in the exact register this project's own rule forbids: *a count
+is not an inventory, and coverage is part of the claim.*
+
+**Owed to `icc-conformance` / `icc-engineer`; not edited here** — neither
+`tools/difftest/README.md` nor `passl.rs` is this role's file. *Done when:
+either §27.1 states the count and names the three exceptions, or the three
+exceptions are given the sentence and the claim becomes true.* ★ **The
+second remedy is cheaper and better**, because it makes the assurance hold
+by construction rather than by a reader trusting a corrected count.
+
+#### 3. ★★ NEWLY OWED — one of the three `profileID` tests was not shown to be discriminating
+
+`0a88ad6` reports that reverting the range logic turns **2 of the 3** new
+tests in `crates/iccce-cli/tests/v2_has_no_profile_id_field.rs` red with
+the predicted message (**NC-299**). **Which test stayed green, and whether
+it could have gone red under any injection, is carried nowhere.**
+
+**Owed to `icc-engineer`.** *Done when: the third test is either shown red
+under an injection that targets what it claims to guard, or its doc
+records what it is for and states that it is not a detector.* ★ **DL-051's
+rule, applied to the smaller two-thirds case**: a `2 of 3` must not be
+rounded up to *"proven by mutation"*, which is how the commit's summary
+line reads at a glance.
+
+#### 4. ★★★ NEWLY OWED — **`docs/NEXT_SESSION.md` is stale in at least four measurable places, and one of them is `DL-062`'s FIFTH instance**
+
+★ **Not fixed here, and this time that phrase is used advisedly.**
+`NEXT_SESSION.md` is the lead session's file; **this role recorded the
+staleness so the lead can write it correctly, and edited nothing.** The
+durable statement is this item plus `ARCHITECTURE.md` **DL-068**.
+
+| the 2026-08-19 handoff block says | status at this filing | how established |
+|---|---|---|
+| tip is **`3c93b62`** (`:84`) | **STALE.** `.git/refs/heads/master` reads **`0a88ad61c69334237998b589503c5dd2c1b85cd4`** | ★ **VERIFIED** — loose ref files are plain text and readable without a shell |
+| ★★ **"ahead of `origin/master` — 4 commits"** (`:86`) | ★★★ **STALE, and it is `0`.** `.git/refs/remotes/origin/master` reads **the same hash as `refs/heads/master`** | ★ **VERIFIED by this role**, and independently **`[REPORTED]`** by the dispatching agent as `git rev-list --count origin/master..HEAD` = `0`. **Two methods, one conclusion.** See the caveat below |
+| `cargo test --workspace` **190** (`:88`) | **STALE** — `195` at `ac921e2`, `198` at `0a88ad6` | **`[REPORTED]`** on the commit messages |
+| difftest **`pass=353`** (`:89`) | **STALE** — `pass=373 fail=0 skip=9 error=0` at `ac921e2` | **`[REPORTED]`**; `353 + 20` closes |
+| **`DL-066` is the last; next `NC-281` / `NA-013`** (`:92`) | ★ **TRUE when this filing began and FALSE when it ended.** `DL-067` and `DL-068` are filed here; `NC-281 … NC-300` are consumed | **VERIFIED** both before and after |
+| **47** synthetic fixtures (`:91`) | ★ **STILL TRUE** — 47 `.icc` files under `fixtures/synthetic/` | **VERIFIED** by listing |
+| `docs/FEATURES.md:241`'s **"190 workspace tests"** | **STALE** by the same commits. ★ It was corrected *in this filing's predecessor* and has gone stale again in one day | **`[REPORTED]`** |
+
+★★ **The caveat on the push finding, stated because the rule against
+unmeasured environment claims is this role's own.** `refs/remotes/origin/master`
+records **what the last fetch or push observed**. Its equality with
+`refs/heads/master` establishes that **the local repository believes the
+remote holds `0a88ad6`**, and therefore that `rev-list --count` returns
+`0`. It is **not** evidence about the remote server's present contents,
+and **nothing here asserts that anything is or is not published** (rule 9).
+
+★★★ **This is `DL-062`'s mechanism, FIFTH instance — and the second
+consecutive handoff to carry a wrong push count forward.** The 2026-08-19
+block **records the fourth instance in its own body** (`:87`, *"the
+previous handoff's '14 commits. NOTHING IS PUSHED' — STALE, the operator
+pushed"*), **states the remedy in the same row** (*"Do not carry a
+push-state claim forward without re-running the count — it is two seconds
+and it was wrong here"*), and **then carries a push count that went wrong
+the same way.** ★ **DL-062's own "Revisit if" named a third instance as
+the threshold for a mechanical guard. Two further instances have appeared
+and no guard was built.** The decision that follows is **DL-068**, and its
+substance is: **stop carrying the derived integer; carry the two hashes.**
+
+#### 5. ★★ Owed items from §7.23 / §7.24 / §7.25 — status
+
+- **§7.24 item 1 (a probe set below `5.0×10⁻²` chromatic ink) — UNMOVED.** §3.37 could not touch it; Pass L has no ink in it at all.
+- **§7.24 item 2 (`TOLERANCES.md` §3.10.12.2's falsified clause) — UNMOVED**, and **not checked at this filing**. ★ Recorded as *not checked* rather than as *unmoved on evidence*, which is the distinction `DL-062` exists to preserve.
+- **§7.25 item 2 (the `nine graded rows` count in `tools/difftest/README.md` §26.7) — UNMOVED**, and §3.37.7 adds a **second** count defect in the **same file**. ★★ **Two false counts in one document, filed one day apart, is a claim about how that file is maintained** — it is written by the role that also writes the rows, so a count and its subject are never edited by different hands, and nothing re-derives either.
+- **§7.23 items 4, 5, 6, 7 — UNMOVED.** No difftest row for the compiled path; eight of ten CMYK destinations graded by nothing; `NC-266`'s `blind = 0` still needs an enumeration (**seventh-plus filing**); the two lint gates remain `[REPORTED]`, now on `ac921e2`'s and `0a88ad6`'s messages rather than on a run this role observed.
+
+#### 6. ★★ The standing debt is UNMOVED, at its twelfth-plus consecutive filing — and §3.37 is the closest any Pass has come to it while still not touching it
+
+**No `published-ground-truth` row exists for any transform.** ★★★ **Pass L
+is the sharpest illustration this ledger has of why.** It measured the
+sRGB transfer function to `10⁻⁵` `L*`, against **two** published readings,
+with an instrument whose quantum was derived rather than chosen — **and it
+still produced no ground-truth row**, because the two candidate curves come
+from documents that **disagree**, and the document that would adjudicate
+(**IEC 61966-2-1**) is **paywalled and unobtained**, exactly as at §7.11
+(*"ninth filing"*), §7.12, §7.14, §7.23, §7.24 and §7.25.
+
+> ★ **The debt is no longer only about money.** Even with the document in
+> hand, `A57` says two in-force standards disagree; a purchase settles
+> **which one ICC's ecosystem means by "sRGB"**, and settles nothing about
+> what an AVIF file means by it. **`NA-013`'s trigger 3 is the shape of
+> that purchase's real value.**
+
+#### 7. ★★★ What this filing does NOT claim about the repository
+
+- **That the working tree is clean, or that these four commits are the only ones.** ★ A `git status` and a `git log` are shell operations and **this role has none.** The four commits are **`[REPORTED]`** by the dispatching agent; what is **VERIFIED** is that the *source described* reads as described **right now**, and that `refs/heads/master` is `0a88ad6`.
+- **That `ac921e2` or `0a88ad6` contains the changes attributed to it.** ★★ Commit *messages* were supplied as evidence; **a commit message is the author's claim.** Every numeral filed above was re-read from the **working tree**, and the three places where the message and the tree diverge are stated at **§3.37.1** (the class of the §C rows), **§3.37.5**/**§3.37.7** (the *"every record"* quantifier) and **§3.37.2** (`4.376×10⁻⁴` versus `4.38×10⁻⁴`, which agree).
+- **That any test count or `pass=` line is current.** ★ `195`, `198`, `373` and `clippy clean` are **`[REPORTED]` on commit messages by ONE runner**, which is **weaker than `NC-280`'s two-runner census**, and this ledger says so in the row (§3.37.9).
+- **That anything was pushed, tagged, published or reserved.** ★★ The refs finding is a reading of a local file; **this filing fetched nothing, published nothing and authorises nothing** (rule 9).
+- **That `A57` is closed, that lcms2 is right, or that sRGB is C⁰.** ★★★ **lcms2 implements C⁰** is the whole of §A's verdict; **rule 7 cuts both ways** and an implementation is not the standard.
 
 ---
 

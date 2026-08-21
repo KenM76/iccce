@@ -6663,3 +6663,291 @@ the next session does not work from it uncorrected.
   from *not filed* to *reported*, **not to closed.**
 - **That anything was committed, pushed or published.** This filing edited
   five documents in the working tree and **authorised nothing** (rule 9).
+
+---
+
+## 2026-08-20 — the **Pass L + `profileID`** filing (thirty-third `SESSION_LOG` entry). **The first filing this project has made against work that was COMMITTED AND NEVER FILED — four commits, none of them in any document the librarian keeps. A whole Pass had run, its numbers were being quoted in three doc comments and a README, and the ledger that exists to date and scope them had no idea it existed**
+
+**Filed by `icc-librarian`** from two commit messages carried by
+`icc-engineer` as evidence, **with every numeral re-read from the working
+tree**. **Twenty rows added — `NC-281 … NC-300`, in the new
+`NUMERIC_CLAIMS.md` §3.37 — plus §7.26; `ARCHITECTURE.md` gains
+**DL-067** and **DL-068**; `ROADMAP.md` gains the Pass L entry it never
+had.** Next free are now **`NC-301`** and **`NA-013`**. **No code was
+edited**, **no colour value moves**, and **no file belonging to another
+role was touched.**
+
+### ★★★ What makes this filing different from the thirty-two before it
+
+Every previous entry was written **shortly after** the work it records.
+This one was written against **four commits that landed and were never
+written down** — `4db44a1`, `ac921e2`, `609ba67`, `0a88ad6`.
+
+> **VERIFIED at the start of this filing: `grep -rn "Pass L" docs/*.md`
+> returned nothing. So did `A57`, `SrgbTrc` and `SlopeContinuous`. Four
+> patterns, zero matches, across every document in `docs/`.**
+
+★★ **And the failure is not that the work was invisible — it is that it
+was visible in the WRONG PLACES.** The Pass's numbers were live in
+`builtin.rs`'s doc comment, in `transform.rs`'s, in `passl.rs`'s module
+header and in `tools/difftest/README.md` §27 — **being read, being
+quoted, and being unscoped by any dated record.** That is strictly worse
+than work nobody knows about: **the claims propagated and the instrument
+that would date and scope them did not exist.** ★ A doc comment cannot
+carry an evidence class, a corpus, a coverage statement or a
+supersession — which is the entire argument for the ledger, demonstrated
+by its absence.
+
+### The verdict, and the sentence that must travel with it
+
+> **lcms2 implements the C⁰ reading of sRGB** — `α = 1.055` exactly,
+> breakpoint `0.04045`. `max |lcms2 − C⁰|` = **`5.300706×10⁻⁵`** `L*`;
+> `max |lcms2 − C¹|` = **`1.230354×10⁻³`**; ratio **`23.2×`**; **`0` of
+> `204`** resolvable probes favour C¹.
+
+**★★★ `A57` STAYS OPEN.** Two currently-in-force standards define sRGB's
+transfer function differently — the **C⁰** reading printed by ICC's own
+sRGB document, W3C CSS Color 4 and Khronos KDF, against the **C¹**
+reading **required** by `Rec. ITU-T H.273 (V4)` clause 8.2 for
+`TransferCharacteristics = 13`, which AVIF, HEIF, AV1 and ISOBMFF `nclx`
+all point at. **A measurement of an implementation cannot adjudicate
+between two standards documents.** The disclaimer is carried in the §A
+records' own `source` column so a quoter trips over it — which is the
+right design, and it is **not** on every record; see *Newly owed* below.
+
+### ★★★ The finding of the filing is not the verdict — it is the two claims of ours that the Pass falsified
+
+`SrgbTrc`'s doc comment shipped in `4db44a1` with two statements. **Both
+were correct and narrowly scoped, and both were written as though they
+were general.**
+
+- *"no image changes, ever"* — ★ **FALSE end-to-end.** Through a real
+  destination, **14 of 5169** probe points move an 8-bit ink code in
+  `USWebCoatedSWOP`, **11 of 5169** in `AdobeRGB1998`, **2 of 5169** in
+  the committed synthetic pair (**17** and **6** on a half-step-offset
+  grid, so it is not a grid artefact). ★★ **The mechanism is not
+  amplification** — the device separation is **`1/62` of a code** — it is
+  that a difference that small **still flips a code whenever the value
+  straddles a rounding boundary**, which ≈`0.3 %` of points do.
+- *"below one 16-bit PCS quantum"* — ★ **FALSE as ΔE.** True in the
+  **encoded** domain. As ΔE2000 in the PCS the max is
+  **`1.857907×10⁻³`** — **`2.01×`** one 16-bit `L*` quantum, evaluated
+  **at that same point** because ΔE2000's `SL` term varies by `1.6×`
+  between `L* 6` and `L* 50` and a quantum quoted at the wrong lightness
+  would give whatever ratio the author wanted.
+
+★★ **Corrected in place, with the scope stated and the original wording
+preserved beside it** — *"because I made them and then repeated them to
+the operator."*
+
+> **★★★ THE GENERAL FORM.** *"Below one quantum"* and *"no code changes"*
+> are **claims in a UNIT**, and a claim in a unit is **silently scoped to
+> the domain that unit lives in.** Neither statement was ever wrong where
+> it was measured. Both became wrong by being **read one transform
+> later** — and nothing in either sentence carried the domain it was true
+> in. This is **DL-063's shape** (careful words, uncareful channel)
+> applied to a **unit** instead of to a count.
+
+★ **The honest summary, which the tree states and the ledger endorses: a
+curiosity, but NOT an invisibility.** `538×` below the perceptibility
+anchor — *and it still moves 8-bit ink codes.*
+
+★★ **And a gray ramp understates the cost by `2.51×`**, because the PCS
+maximum is **off-axis**, at codes `(10.0213, 23.7681, 10.0213)`. **The
+natural probe for a transfer-function question is the wrong one.**
+
+### ★★★ The correction this filing made to its own dispatch
+
+The dispatch stated: *"Every Pass L row's oracle is `cross-check against
+another implementation` (lcms2)."* **True of §A; false of §B and §C** —
+verified by reading the `Kind` on every emitter in `passl.rs`.
+
+**Every §C record is `Kind::SelfConsistency`.** ★★★ **So `14 of 5169`,
+`11 of 5169` and `2 of 5169` — the numbers the dispatch named as
+headlines — are iccce against iccce, one class WEAKER than a
+cross-check.** Writing them as cross-checked would attribute to the
+oracle a measurement the oracle **provably cannot make**: §B measured
+that lcms2 quantises a float input to 16 bits before an `mft2` CLUT
+lookup — **7 distinct `L*` values from 60 samples**, a staircase whose
+tread is ≈`4.9×10⁻³` % ink against a maximum effect of `6.36×10⁻³` %.
+★ **The harness says so on every §C destination record**, emitting *"The
+ORACLE CANNOT MEASURE THIS"* with the §B row id that proves it.
+
+★★ **That row is the reason §C is self-comparison**, and it is worth
+stating in the strongest form: **the weaker evidence class is the
+CONSEQUENCE of a measurement, not a scope refusal.** A section that had
+merely announced *"measured in process"* would have looked like an
+unexplained weakening.
+
+### The two decision-log entries
+
+**DL-067 — *a fabricated value is a forged credential*.** `profileID` was
+added in **v4**; ICC.1:2001-04 Table 9 makes bytes `84..127` **one
+44-byte reserved block**. iccce read `84..100` as a `profileID`
+**regardless of edition**, so a v2 profile printed a plausible
+32-hex-digit identifier **and `malformations: 0` beside it**.
+
+> ★★★ **Worse than a false accusation.** The rendering-intent defect
+> fixed 2026-08-18 **accused a conforming file** — **loud, and
+> arguable**, and a dispute would have surfaced it. This one **invented a
+> CHECKABLE IDENTITY CLAIM** out of bytes that mean something else, and
+> **reported nothing at all**. ★★ **A checkable claim invites
+> VERIFICATION, not scepticism** — a consumer would reasonably hash the
+> profile and compare.
+
+★★ **It under-reported in the same instant**: checking only `100..128` on
+a v2 profile **misses 16 bytes** of that edition's reserved block — the
+same 16 being presented as an identifier. **One defect, two directions,
+one line of code**, and a fix aimed at the visible half would have left
+the other. ★ **The bytes are still disclosed** through the
+edition-correct report: **rule 6 is intact; what stopped is the
+MISLABELLING.**
+
+**The second instance is in the same commit and was refused before it
+shipped.** `pdfce` asked for `is_violation()`; ★★★ **a bool turned out to
+be unimplementable honestly** — `TagTooSmall` has **no requirement behind
+it in either edition** (`A61`), `TagOverrun` none in v2 (`A62`) — *"and
+the invention would have looked exactly as authoritative as the seven
+that are sourced."* Shipped as
+`Violation / NotAViolation / Unsourced { register_id }`, with the edition
+supplied because **3 of the 9 variants split by edition**. **DL-067 files
+both halves as one class in two directions: one shipped, one caught at
+design time. The discriminator is that a well-formed value LOOKS like
+evidence.**
+
+★ **Two entries that were wrong in this project until `0a88ad6`:**
+`DuplicateTagSignature` was labelled *"Legality NOT SOURCED"* when
+**both editions prohibit duplicates** — the decision survives, its
+**rationale** was false, and **DL-003's *"revisit if"* has fired**; and
+`TagTooSmall`'s cited table was written as *"checks iccce should perform
+and REPORT"*, **never as a quotation of a requirement**. ★★ **A right
+decision resting on a wrong reason is the hardest defect class to find**,
+because the thing that would prompt a review — a bad outcome — never
+happens.
+
+**DL-068 — DL-062's *"revisit if"* has fired twice and no guard was
+built.** `docs/NEXT_SESSION.md` asserts *"ahead of `origin/master` — **4
+commits**… **Measured**"*. **It is `0`** *(VERIFIED by this role:
+`.git/refs/heads/master` and `.git/refs/remotes/origin/master` are the
+same hash, `0a88ad6…`; loose ref files are plain text and readable
+without a shell. Independently `[REPORTED]` by the dispatching agent as
+`git rev-list --count` = `0` — two methods, one conclusion)*.
+
+★★★ **That is the FIFTH instance, and the second consecutive handoff to
+carry a wrong push count.** The 2026-08-19 block **records the fourth
+instance in its own body**, **states the remedy in the same row**
+(*"Do not carry a push-state claim forward without re-running the
+count"*), and **then carries a count that went wrong the same way.**
+
+> **A field that goes wrong twice in a row under full awareness is not
+> being filled carelessly. It is the wrong field.**
+
+**The decision: a handoff records the two REF HASHES, not a derived
+count.** A hash is a **dated reading** — it becomes *historical* rather
+than *false*, and it says so by not matching what the reader finds.
+**`4` and `0` look identical in authority.** ★ And the decisive argument
+is that **nothing in any handoff depends on the number**: pushing is
+unauthorised regardless, so the field **carries no decision and carries
+the project's highest staleness risk.** ★★ This is DL-062's own
+constructive half applied to DL-062's own recurring carrier: *write it so
+it is correct regardless of the other tree's state.*
+
+### `docs/NEXT_SESSION.md` — what is stale, recorded and NOT edited
+
+★★★ **It is the lead's file and this role edited nothing in it.** Four
+measurable staleness items, plus one that this filing itself created:
+
+| the handoff says | status | how established |
+|---|---|---|
+| tip `3c93b62` | **STALE** — `0a88ad6` | ★ VERIFIED, loose ref file |
+| ahead of `origin/master` **4 commits** | ★★★ **STALE — it is `0`** | ★ VERIFIED, two ref files; corroborated `[REPORTED]` |
+| `cargo test --workspace` **190** | **STALE** — `195`, then `198` | `[REPORTED]` on the two commit messages |
+| difftest `pass=353` | **STALE** — `pass=373 fail=0 skip=9 error=0` | `[REPORTED]`; ★ `353 + 20` closes against the 20 new records |
+| **`DL-066` is the last; next `NC-281`/`NA-013`** | ★ **true when this filing began, false when it ended** | VERIFIED both times |
+| **47** synthetic fixtures | ★ **STILL TRUE** | VERIFIED by listing |
+
+★ `docs/FEATURES.md:241`'s *"190 workspace tests"* — **corrected in the
+previous filing and stale again within one day.** Recorded, not edited:
+this role holds no count it ran itself.
+
+### What was assigned
+
+| id | what |
+|---|---|
+| **`NC-281`/`NC-282`** | the sweep: `5.300706e-5` `L*` against C⁰ (tol `1e-4`, **derived from `transicc`'s `%.4f`**), `1.230354e-3` against C¹, **`23.2×`** |
+| **`NC-283`** | ★ the vote — **`0` of `204`** resolvable probes favour C¹, tolerance `0`, *"withdrawn rather than averaged"* if one dissented |
+| **`NC-284`** | instrument POWER, `0.1626` against `≤ 1.0` — ★ goes red when the measurement stops being able to tell the readings apart, **which is an earlier failure than lcms2 changing its answer** |
+| **`NC-285`** | ★★★ the C¹-breakpoint probe: **exactly `0` by construction** — H.273 defines `β` by continuity with the segment **both** readings share |
+| **`NC-286`** | the interior maxima, **119 codes apart**; the linear-light probe — *the one this crate's own doc comment prints* — throws away **64 %** of the `L*` signal |
+| **`NC-287`** | the independent `-o*XYZ` instrument: resolving power `0.209` (≤ `0.5`). ★ **The residuals themselves are NOT filed** — no evidence this role holds carries them |
+| **`NC-288`** | ★★★ the oracle cannot be the ruler: **7 distinct `L*` of 60 samples**, tread ≈`4.9e-3` % ink |
+| **`NC-289`–`NC-291`** | the cost: PCS max **`1.857907e-3`** ΔE2000 off-axis, mean `3.630359e-4` over **55 938** probes, **gray ramp understates by `2.51×`** |
+| **`NC-292`–`NC-294`** | device separation `1/62` of a code; **the falsification, `14`/`11`/`2` of `5169`**; the destination **AMPLIFIES by `1.52×`** on SWOP and **attenuates to `0.51×`** on the synthetic |
+| **`NC-295`/`NC-296`** | ★★★ the two doc-comment claims, with the **narrow forms that survive**: `0` of 256 8-bit codes, `9.76e-6` encoded, `4.78e-6` linear light |
+| **`NC-297`** | the selectability window `(1e-9, 1e-2)`, mutation → `0.000000e0` — ★ **DL-064 answered in advance: the guard names its rival WITH a magnitude and was injected at one** |
+| **`NC-298`/`NC-299`** | **16 bytes of v2's reserved block checked by nothing**; the revert proof, **`2` of `3`** tests red |
+| **`NC-300`** | census: **20 `passl` records** *(VERIFIED structurally by counting emitters)*, `195`→`198` tests, `pass=373` — ★★ **ONE runner, weaker than `NC-280`'s two** |
+| **DL-067** | *a fabricated value is a forged credential — worse than a false accusation, because it arrives in the shape a consumer verifies against* |
+| **DL-068** | *DL-062's revisit-if has fired twice; carry the two ref hashes, not the derived count* |
+| **`NA-013`** | ★★ **NOT consumed, for a THIRD distinct reason.** §7.24 declined it as an apparatus fact; §7.25 because nothing new was approximated. **This filing declines it because a SELECTION between two documented readings is not an approximation** — and on a narrower ground than the dispatch offered: **H.273 governs CICP code points, not ICC profiles**, so its requirement is a **disagreement between documents** (`A57`), not a departure by this library. ★ **Three triggers recorded** that would make it owed |
+| **`TOLERANCES.md`** | ★ **no row and no edit.** Every Pass L tolerance is derived in `passl.rs`'s own `why` strings from the instrument's printed quantum |
+
+### Newly owed
+
+1. **★★★ A universal claim about the harness is false, in two documents.**
+   *"Every `passl/A/*` record carries the A57 disclaimer in its `source`
+   column"* — **six of nine do, one of the six in a variant wording, three
+   do not.** ★ The three are precisely the three **with no lcms2 output in
+   them**, each carrying *"no implementation's output appears in this
+   row"* instead, which is an equally strong guard: **nothing is
+   mis-scoped, and a countable claim about the harness is wrong.** *Done
+   when: §27.1 states the count and names the exceptions, or the
+   exceptions are given the sentence.* ★★ **The second remedy is better**
+   — it makes the assurance true by construction rather than by a reader
+   trusting a corrected count. **Owed to `icc-conformance` /
+   `icc-engineer`.**
+2. **★★ One of the three `profileID` tests was not shown to be
+   discriminating.** `2 of 3` turn red on reverting; **which one stayed
+   green is carried nowhere.** **DL-051 applied to the two-thirds case:
+   `2 of 3` must not be rounded up to *"proven by mutation"*, which is how
+   the commit's summary reads at a glance.** **Owed to `icc-engineer`.**
+3. **★★ `docs/NEXT_SESSION.md`'s staleness**, above — **recorded, not
+   edited.** ★ Editing another role's file to fix a staleness entry would
+   be **instance 6 in advance**.
+4. **★ A second false count in `tools/difftest/README.md`**, one day after
+   §7.25 filed the first (*"nine graded rows"* where there are ten).
+   ★★ **Two false counts in one document, filed a day apart, is a claim
+   about how that file is maintained** — the count and its subject are
+   written by the same hand and **nothing re-derives either.**
+
+### What is explicitly NOT claimed
+
+- **That `ac921e2` or `0a88ad6` contains the changes attributed to it.**
+  ★★ Commit **messages** were supplied as evidence, and **a commit
+  message is the author's claim like any other.** Every numeral filed was
+  re-read from the **working tree**; the three places where message and
+  tree diverge are stated in the ledger.
+- **That any test count or `pass=` line is current.** `195`, `198`, `373`
+  and *clippy clean* are **`[REPORTED]` by ONE runner** on commit
+  messages. **This role has no shell and ran nothing.**
+- **That the tree is clean or that these are the only four commits.**
+  Both are `git status` / `git log` facts. ★ What is **VERIFIED** is that
+  `refs/heads/master` is `0a88ad6` and that the source reads as described
+  **right now**.
+- **★★ That anything is or is not published.** `refs/remotes/origin/master`
+  records **what the last fetch or push observed** — not the remote
+  server's present contents. **This filing fetched nothing, published
+  nothing and authorises nothing** (rule 9).
+- **That `A57` is closed, that lcms2 is right, or that sRGB is C⁰.**
+  ★★★ **lcms2 implements C⁰** is the whole of the verdict. **Rule 7 cuts
+  both ways**, and an implementation is not the standard.
+- **That the standing debt moved.** No `published-ground-truth` row for
+  any transform, **twelfth-plus consecutive filing**. ★★ Pass L is the
+  sharpest illustration of why: it measured to `10⁻⁵` `L*` against **two
+  published readings** and still produced none, because the two
+  candidates come from documents that **disagree** and the adjudicating
+  document is **paywalled and unobtained**.
+- **That the request channel was checked.** ★ **This role was instructed
+  not to touch it** (a persistent monitor is already armed by the lead
+  session and a duplicate cannot be stopped mid-session). **No statement
+  about the channel's contents is made here.**
