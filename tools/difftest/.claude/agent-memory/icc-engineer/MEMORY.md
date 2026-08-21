@@ -1,0 +1,3 @@
+- [Publishing workflow](feedback_publishing_workflow.md) — ask once with measured state, then commit AND push in one go; `master` directly, no PR.
+- [Handoff carries ref hashes, not a push count](project_handoff_carries_ref_hashes_not_a_push_count.md) — retired 2026-08-21 after going stale five times; do not reintroduce it.
+- [A green census is evidence only about its own tree](project_a_green_census_is_evidence_only_about_its_own_tree.md) — difftest was red at HEAD for two days while every doc said green.
