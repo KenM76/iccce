@@ -2871,7 +2871,7 @@ behind it (the A27/A42 posture §3.7 takes for BPC); or a distance to **PDF
 | **E4** | cross-check | device-abs-max | **`2.00×10⁻⁴`, computed at run time** | §3.10.2; repointed at the **preserving** surface 2026-08-18 (§3.10.12.2) | `5.4×10⁻⁵` |
 | **E5** | cross-check | device-abs-max | **∞ — REPORTED** | the **control** that earns E4's tightness | `1.750×10⁻³` |
 | **E6** | cross-check | device-abs-max | **∞ — REPORTED** | §3.10.7 | `0` |
-| **E7** | **self-consistency** | device-abs-max | **`0` exactly** | §3.10.12.2 — a branch is taken or it is not | `0` |
+| **E7** | **self-consistency** | device-abs-max | **`0` exactly** | §3.10.12.2 — a branch is taken or it is not. ★ **Detection floor `1.000000e-12`** over 262 probes since 2026-08-21 (was `1.106777e-1`, a seed accident) — §3.10.12.8 | `0` |
 | **E8** | **derived-expectation** | device-abs-max | **`1×10⁻⁶`** (one printed unit) | §3.10.12.4 — the expectation is ALGEBRA; **lcms2 is `6.1×10⁻⁵` wrong here and iccce is right** | `0` |
 | **E9** | cross-check | device-abs-max | **`1.09×10⁻⁴`, computed at run time** | §3.10.12.5 — the only row that can say WHICH definition iccce implements | `3.1×10⁻⁵` (rival `4.890×10⁻²`, `1577×`) |
 | **F1** | **derived-expectation** | device-abs-max | **`0` exactly** | §3.10.11 — nine node values are one number or they are not | `0` |
@@ -2881,7 +2881,7 @@ behind it (the A27/A42 posture §3.7 takes for BPC); or a distance to **PDF
 | **F5** | **derived-expectation** | device-abs-max | **`0` exactly** | §3.10.5. Red by design **in CI** until 2026-08-18; **the bound never moved** | `4.207 050×10⁻¹` → **`0`** |
 | **F6** | **derived-expectation** | device-abs-max | **∞ — REPORTED** | as E3 (§3.10.12.3) | `0` (and the `C = 0` endpoint is now K-only) |
 | **F7** | cross-check | device-abs-max | **`2 × 2⁻¹⁶ = 3.051 804×10⁻⁵`** | §3.10.11 — the **third reading**, with lcms2's `cmsPipelineEval16` in the counting; repointed at the preserving surface 2026-08-18 | `1.400 000×10⁻⁵` |
-| **F8** | **self-consistency** | device-abs-max | **`0` exactly** | §3.10.12.2 — the leak guard that runs **in CI**, and the only §F row that includes the K channel | `0` |
+| **F8** | **self-consistency** | device-abs-max | **`0` exactly** | §3.10.12.2 — the leak guard that runs **in CI**, and the only §F row that includes the K channel. ★ **Detection floor `1.000000e-12`** over 120 probes since 2026-08-21 (was `5.000000e-2`) — §3.10.12.8 | `0` |
 
 **Separation coverage: 44 of 44 rows state one; `unstated = 0`, `blind = 0`.**
 
@@ -3610,7 +3610,32 @@ alone, and that claim needs no answer to the K question.
 ★ The named rival for both is the change a future contributor is most likely to
 make: **widening the qualifying test from exact zero to a tolerance**, on the
 grounds that `10⁻⁹` of cyan "is really K-only". `crates/iccce-cmm`'s module doc
-names and rejects it; these rows are what would catch it.
+names and rejects it.
+
+> ★★★ **CORRECTED 2026-08-21 — the clause that used to close this paragraph
+> was FALSE.** It read *"these rows are what would catch it"*, with no
+> magnitude attached, immediately after naming the rival **at** a magnitude.
+> **A leak guard can only see a widening that reaches one of its own probes**,
+> and on 2026-08-19 the two probe sets' floors were measured at
+> **`1.106777e-1`** (`E7`) and **`5.000000e-2`** (`F8`) — *seven-plus orders
+> of magnitude above the `10⁻⁹` the same paragraph named*. At an injected
+> widening of `t = 0.04` the **entire difftest suite was green with the defect
+> compiled in** (`NC-267`, `NC-268`, `DL-064`).
+>
+> **The clause is now true, and it is true because the probe sets changed, not
+> because the sentence was softened.** `E7` and `F8` both carry
+> `passk::low_ink_decade_probes` since 2026-08-21 — 70 chromatic grays walking
+> 14 decades of ink — and **both floors are `1.000000e-12`**, three decades
+> below the named rival. Each row now **prints its own floor** in its emitted
+> detail, so the claim travels with the number instead of being re-asserted
+> from this page. The full measurement, its method and its coverage are
+> **§3.10.12.8**.
+>
+> ★ **Nothing else in this section is retracted.** The derivation of the
+> tolerance `0` — *"a branch is taken or it is not"* — is untouched and
+> remains correct, and the repointing of `E4`, `E5`, `F4` and `F7` onto the
+> preserving surface is **vindicated**. **One clause, not a section**
+> (`DL-057`).
 
 ##### 3.10.12.3 ★★★ `E3`/`F6`: the transition width is now a REAL divergence from lcms2
 
@@ -3878,10 +3903,12 @@ document governs.
   gains one, `E9`'s shape is what it needs — a cross-press pair at the oracle's
   nodes — and the oracle for it is **not lcms2**, which computes the other
   definition.
-- **No injection proof for the leak rows.** `E7`/`F8` were verified to *pass*;
-  neither has been shown to *fail* under an injected widening of the qualifying
-  test, which would need a `crates/` edit in a detached worktree. §3.10.9's
-  standing item, now with two more rows against it.
+- ~~**No injection proof for the leak rows.**~~ ★ **DISCHARGED 2026-08-19 and
+  BOUNDED 2026-08-21.** The injection was run (`NC-267`): both rows fail at
+  `t = 0.12`, `F8` alone at `t = 0.10`, and **neither at `t = 0.04`**, which
+  is where the finding was — a defect compiled into the shipped predicate with
+  every gate in the project green (`DL-064`). The remedy is a probe set, not a
+  tolerance, and it landed 2026-08-21: **§3.10.12.8**.
 - **The perceptual cost of preservation is unmeasured.** Every row here is in
   device units by §3.10.0's finding; nobody has asked what `ΔE2000` the
   preserved answer sits from the colorimetric one on a cross-press pair, which
@@ -3901,6 +3928,239 @@ document governs.
   narrower than this bullet claimed and it is not closed** — what a row would
   now buy is a regression guard rather than a disclosure. Full correction in
   §3.10.12.7; change row in §4.
+
+
+##### 3.10.12.8 ★★★ How little chromatic ink a leak guard can SEE — the floor, measured by injection at every decade
+
+**Date:** 2026-08-21 · **Role:** `icc-conformance` · **Tree:** `0a88ad6`, and
+the injection arm in a detached worktree at the same commit ·
+**Discharges** `docs/NEXT_SESSION.md` items 1 and 3 and the second half of
+`DL-064` · **Instrument:** `tools/difftest/src/bin/passk_leak_floor.rs`,
+committed, which prints every number below.
+
+###### The question, and why the previous answer was an interval and not a number
+
+`NC-268` recorded that `E7` and `F8` detect a widening of the qualifying test
+*if and only if it exceeds* `1.106777e-1` and `5.000000e-2`, and that at
+`t = 0.04` nothing anywhere went red. That is a **bound on the instrument**,
+obtained from three injected magnitudes. What it did not say is whether the
+floor could be *pushed down* — whether some quantisation, encoding or numerical
+effect makes small chromatic ink undetectable in principle, or whether the
+floor is simply wherever the probes happen to stop.
+
+**It is the second, and the difference matters:** a floor imposed by numerics
+is a permanent property to be documented; a floor set by probe placement is a
+**free parameter** that was left at an accident.
+
+###### Method
+
+Two arms, and the second exists to license the first.
+
+1. **The no-injection measurement (what the committed binary does).** A widened
+   test `max(C, M, Y) ≤ t` changes exactly one thing for a probe at ink
+   `c ≤ t`: `KPreserve::apply` returns `Some` rather than `None`, and its
+   `Some` branch is `[0, 0, 0, map_k(K)]` — **it discards the chromatic input
+   entirely**. So the leak a widening would produce at ink `c` is
+
+   > `response(c) = max | preserve(0, 0, 0, K) − plain(c, (6/7)c, 0.984127c, K) |`
+
+   over all four output channels, and both terms come from the **shipped,
+   uninjected** binary.
+
+2. **The injection arm (verification of the model).** In a detached worktree at
+   the same commit the predicate in `crates/iccce-cmm/src/black_preserve.rs`
+   was replaced by `device[i] > INJECT_T`, the engine rebuilt at each of ten
+   magnitudes `c ∈ {5e-2, 1e-2, 1e-3, 1e-4, 1e-6, 1e-9, 1e-12, 1e-20, 1e-100,
+   4.940656e-324}`, and the guard's real `max |on − off|` compared with the
+   model. ★★ **The two agreed exactly — `==` on `f64`, not within a tolerance
+   — at all ten magnitudes on both committed fixtures.** The injection is
+   **not committed**; that identity is what makes the number re-derivable
+   without it.
+
+★ Both arms drive `iccce transform` as a subprocess, the same surface `E7` and
+`F8` drive. The evidence class is **self-consistency** throughout — both sides
+are iccce, and nothing outside this project is in the loop. **lcms2 is not an
+oracle for this question and could not be**: the quantity is the difference
+between two iccce invocations.
+
+###### The measurement — `response(c)` in normalised device units, by decade
+
+Every entry is a maximum over 4 channels and 5 `K` values, on a
+profile-into-itself pair at media-relative.
+
+| chromatic ink `c` | `v2-cmyk-chromatic-neutral` | `v2-cmyk-warm-black` | `ISO Coated v2 300% (ECI)` |
+|---|---|---|---|
+| `5.000000e-2` | `3.458210e-1` | `3.466900e-1` | `3.837440e-1` |
+| `1.000000e-2` | `3.563570e-1` | `3.229980e-1` | `3.701880e-1` |
+| `5.000000e-3` | `3.576730e-1` | `3.200360e-1` | `3.685450e-1` |
+| `1.000000e-3` | `3.587270e-1` | `3.176670e-1` | `3.672240e-1` |
+| `5.000000e-4` | `3.588580e-1` | `3.173710e-1` | `3.670590e-1` |
+| `1.000000e-4` | `3.589640e-1` | `3.171340e-1` | `3.669260e-1` |
+| `1.000000e-5` | `3.589870e-1` | `3.170800e-1` | `3.668970e-1` |
+| `1.000000e-6` | `3.589900e-1` | `3.170750e-1` | `3.668940e-1` |
+| `1.000000e-7` … `1.000000e-12` | `3.589900e-1` | `3.170750e-1` | `3.668930e-1` |
+
+★★★ **Read it column-wise. The response does not decay with ink — it RISES to
+a constant as `c → 0`**, because `plain(c) → plain(0)`, which is the four-ink
+separation of a K-only input: the very quantity black preservation replaces.
+The signal a leak guard is looking for is therefore **largest** exactly where
+the old probe sets had nothing.
+
+> **The answer, stated as a number with a method: there is NO sensitivity floor
+> in the engine, the harness or the encoding above `4.940656e-324`. A
+> black-preservation leak guard sees a widening at ANY chromatic-ink level it
+> has a probe at, with a signal of `3.17e-1` to `3.84e-1` device units — five
+> orders of magnitude above the `1e-6` printing resolution of
+> `iccce transform`. The floor was never a property of the machine; it was a
+> free parameter of the probe set, left at an accident.**
+
+###### The one floor that is NOT free, demonstrated
+
+The harness writes each coordinate with `format!("{v}")` and the CLI parses it
+with `str::parse::<f64>`. A decimal that **underflows to `0.0`** therefore
+reaches the qualifying test as a **genuine** K-only input; preservation fires
+**correctly**, `on ≠ off`, and the guard goes **RED against an engine that did
+nothing wrong**. Measured, on the shipped predicate with no injection at all:
+
+| probe ink | baseline max on/off difference |
+|---|---|
+| `4.940656e-324` (smallest positive subnormal, `f64::from_bits(1)`) | `0.000000e0` on all three pairs |
+| the next step down — a literal that parses to `0.0` | `3.589900e-1` / `3.170750e-1` / `3.668930e-1` |
+
+★ **A leak guard's probe floor must stay strictly above the underflow
+boundary**, and that is the *only* constraint on it from below.
+
+###### The remedy, and the two floors after it
+
+`passk::low_ink_decade_probes` — **70 probes, 14 decades**, ink levels
+`LOW_INK_DECADES = [5e-2 … 1e-12]`, each level emitting five rows
+`[c, (6/7)c, 0.984127c, j/8]`. Both ratios are **strictly below 1**, so
+`max(C, M, Y) = c` on every probe and **the set's floor is its last decade by
+construction**. It is folded into the `leak` number of `E7` and `F8` — the
+*same* number, not a new row, so one half cannot go green while the other goes
+red and still read as "the leak guard passed". `E4`, `E5`, `F4` and `F7` keep
+their own probe sets untouched, because their expectations (lcms2, and the
+derived table) are stated for **those** points.
+
+| | probes | floor before | floor after |
+|---|---|---|---|
+| **`E7`** | 96 node-aligned + 96 arbitrary + **70 low-ink** = **262** | `1.106777e-1` | **`1.000000e-12`** |
+| **`F8`** (runs in CI) | 50 chromatic grays + **70 low-ink** = **120** | `5.000000e-2` | **`1.000000e-12`** |
+
+**No tolerance moved.** Both rows are still graded at **exactly `0`**, on the
+derivation §3.10.12.2 gives, and both observe `0.000000e0` over the enlarged
+sets. What changed is what the rows can *see*.
+
+###### ★★★ PROVEN BY INJECTION — the new arm is load-bearing, and the floor is BRACKETED
+
+A probe set that changes no observation is decoration. The four runs below were
+made in a detached worktree at the same commit, with
+`crates/iccce-cmm/src/black_preserve.rs`'s predicate replaced by
+`device[i] > INJECT_T` and the engine rebuilt each time. The **first pair is
+the whole point**: the same defect, the same magnitude, differing only in which
+probe sets the harness carries.
+
+| injected `t` | harness | `E7` | `F8` | suite |
+|---|---|---|---|---|
+| **`1e-9`** — *the rival's own named magnitude* | probe sets **as at `0a88ad6`** | PASS `0.000000e0` | PASS `0.000000e0` | ★★★ **`pass=371 fail=1`** — green, and the one failure is `passh/B`, which was already red at `HEAD` |
+| **`1e-9`** | **with `low_ink_decade_probes`** | **FAIL `3.668930e-1`** | **FAIL `3.589900e-1`** | **`pass=369 fail=3`** |
+| **`1e-12`** — the set's last decade | with `low_ink_decade_probes` | **FAIL `3.668930e-1`** | **FAIL `3.589900e-1`** | **`pass=369 fail=3`** |
+| **`9e-13`** — one step below it | with `low_ink_decade_probes` | PASS `0.000000e0` | PASS `0.000000e0` | `pass=371 fail=1` |
+
+Four things this establishes that the sweep alone could not:
+
+1. ★★★ **The first row is `DL-064` reproduced at the magnitude that matters.**
+   `NC-268` showed the suite green at `t = 0.04`, a number nobody had written
+   down anywhere. This shows it green at **`1e-9` — the number
+   §3.10.12.2 itself named as the rival** — which is the sharper statement and
+   the one the retracted clause was actually about.
+2. **The new arm is what turns it red.** Rows one and two differ in nothing but
+   the harness's probe set. **No tolerance, no fixture and no engine code
+   differs between them.**
+3. ★★ **The observed values are the ones the model predicted.** `3.668930e-1`
+   is the `RESPONSE` table's `ISO Coated v2 300% (ECI)` column at `≤ 1e-6`, and
+   `3.589900e-1` is its `v2-cmyk-chromatic-neutral` column. The derived
+   expectation was not merely consistent with the injection; it named the two
+   numbers in advance.
+4. ★★ **The floor is bracketed, not asserted** — red at `1e-12`, green at
+   `9e-13`. Per `DL-064`'s own corollary, *the smallest injection that still
+   passes is the most informative run in the sweep*, and here it is the last
+   row.
+
+★ **No other row moved under any of these injections** — `E1`/`F5`
+(`k-only-in-implies-k-only-out`) stay green, correctly: a *widened* qualifying
+test still admits every genuinely K-only input, so the predicate rows have
+nothing to say about it. That is the collateral pattern a leak injection should
+produce, and its absence would have meant the injection was hitting something
+else.
+
+###### ★★ Why the list stops at `1e-12`, which is a decision and is therefore stated
+
+- **Three decades below the named rival.** The rival has always been written
+  with a magnitude — `10⁻⁹` of cyan — in §3.10.12.2, in both rows' separation
+  text, and in `crates/iccce-cmm`'s module doc. A floor of `1e-12` covers it
+  and its two neighbouring decades.
+- **Below `1e-6` the answer stops changing** (table above), so a fifteenth
+  decade would add a probe that measures what `1e-12` already measures.
+- **312 decades clear of the underflow boundary.**
+- ★ **For scale, and NOT as a floor:** one 16-bit device quantum is
+  `1/65535 = 1.525902e-5`, so the last nine decades are **unreachable from a
+  document**. They are reachable from a **source edit**, which is the only
+  thing these rows exist to catch: the rival is a change to a predicate written
+  in floating point, and it is graded in the units the predicate is written in.
+
+###### ★★ `E7`'s floor is now re-derivable, which was the separate debt
+
+`arbitrary_off_neutral` draws from a hand-written fixed-seed LCG on `[0, 0.8)`;
+**construction bounds its floor only at `0.8/2²¹ ≈ 3.814697e-7`, i.e. at
+nothing**, so the floor it happens to have is an accident of the seed and
+**re-seeding would have moved `E7`'s sensitivity with no line of intent,
+comment or tolerance changing**. Three things now hold it down:
+
+1. `passk::probe_floor` **computes** it, and `E7`'s emitted detail **prints
+   all three component floors every run** — a re-seed shows up as a changed
+   number instead of as silent drift.
+2. `bin/passk_leak_floor` prints it again at full `f64` precision
+   (`0.11067771911621094`) beside the structural ones, with the kind of each
+   labelled `STRUCTURAL` or `SEED-DEPENDENT` on the line.
+3. The row's *effective* floor no longer depends on it at all — the low-ink
+   set is nine orders below it.
+
+★ **A transcription correction, made while doing this.** This document and
+`NUMERIC_CLAIMS.md` record that floor as **`1.106780e-1`**. The measured value
+is **`0.11067771911621094`**, i.e. `1.1067772e-1`: the recorded figure is the
+*six-decimal* rounding `0.110678` re-expressed in scientific notation, which
+silently promotes a rounded sixth decimal into a sixth **significant figure**
+that is wrong. It changes no conclusion. It is §3.5.8.6's rule about typed
+numerals arriving in a third form — not stale, not mistyped, but **re-based**
+— and the fix is the same one: print it, never type it.
+
+###### Coverage of this measurement, stated
+
+- **Three profile pairs**, each used as both source and destination: two
+  committed synthetic CMYK fixtures and one licensed press profile. **One
+  intent** (media-relative). **One policy** (`k-only-equal-lightness`).
+  **One direction** (CMYK → same CMYK).
+- **The injection arm covers ten magnitudes on the two committed fixtures
+  only**; the licensed pair was measured in the no-injection arm alone. Nothing
+  in the model is fixture-specific, but that is an argument, not a measurement.
+- **`v2-cmyk-chromatic-neutral`'s black is spectrally neutral** (`DL-065`,
+  `NC-278`). The metamer trap does **not** bite here — every number in this
+  section is in **device units**, and a leak is a device-unit fact — but it
+  **would** bite any ΔE restatement of these numbers, so `v2-cmyk-warm-black`
+  is measured beside it throughout and the two columns are printed side by
+  side. **No ΔE figure for this subject exists and none should be inferred
+  from these.**
+- **`--bpc` is off everywhere**, as in the rest of §3.10.
+- ★ **What this does NOT establish: that a leak of the kind `E7`/`F8` grade is
+  the only way preservation can go wrong.** These rows detect *the branch being
+  taken when it should not be*. They say nothing about the branch **not** being
+  taken when it should be, which is `E1`/`F5`'s job, nor about the value
+  `map_k` returns, which is `E2`'s open fork.
+- ★ **And it does not establish anything about the compiled path**, which
+  still has no difftest row (§3.10.12.7). `E7` and `F8` drive
+  `iccce transform`; the grid-compiled surface is reached only by
+  `iccce bench`, which cannot take `--preserve-black`.
 
 ---
 
@@ -4074,6 +4334,7 @@ drifting one justification at a time.
 | 2026-08-18 (Pass K, grading the LANDED feature) | **§3.10.12 (new); §3.10's opening; §3.10.1's table (four new rows, E7–E9 and F8, and revised observations); §3.10.5; §3.10.6; §3.10.11's tail; CI floor 22 → 23** | `E1` `7.053 20×10⁻¹` (FAIL), `F5` `4.207 050×10⁻¹` (FAIL) | `E1` `0`, `F5` `0` — **at the same tolerances, both still exactly `0`** | `icc-conformance` | **★★★ NO TOLERANCE WAS WIDENED, SOFTENED OR RE-DERIVED; FOUR ROWS WERE ADDED.** `crates/iccce-cmm/src/black_preserve.rs` landed `KMapping::EqualLightness` behind `iccce transform --preserve-black <policy>` (the policy name mandatory, no default, because two published definitions disagree by up to `4.9×10⁻²`). §E and §F were repointed at that surface. Suite `pass=331 fail=2` → **`pass=337 fail=0 skip=9 error=0`**, 44 Pass K rows; corpus-free (CI-shaped) run `pass=184 fail=0 skip=94`, of which §F contributes eight. **Five things about how this was arrived at.** **(1) ★★★ THE REPOINTING INSTRUCTION WAS RIGHT AND INCOMPLETE, AND THE GAP WAS IN THE GUARD.** Pass K's own pre-feature text named `E1` and `E3` — the rows about the *predicate* — and `E4`, the row about the *regression*, claimed of itself that a leaking preservation path *“shows up here and nowhere else”*. **That was false of `E4` as written**: black preservation is opt-in and applied never by default, so a row driving the plain surface has no preservation code in its chain to leak, and `E4` would have stayed green through any leak whatever while its own sentence vouched for the silence. `E4`, `E5`, `F4` and `F7` are now driven WITH the flag, and **`E7`/`F8` grade `max |on − off|` at exactly zero** over probes that cannot qualify. Generalisation, one level above §3.5.8's: *ask which layer is in the loop of the FIX.* **(2) ★★ `E2` STAYS REPORTED AND THE REASON IS NOW MEASURED RATHER THAN ARGUED.** On the same-press pair §E uses, the observation (`6.1×10⁻⁵`) EQUALS the named rival's distance (`6.1×10⁻⁵`) — ratio `1.0`, **`BLIND`**. A bound iccce passed, “copy K through” would pass too. Grading it would have produced a green row discriminating nothing. `E9` was added on a cross-press pair (`GWG_GenericCMYK`), where the rival sits `4.890×10⁻²` away and the observation is `3.1×10⁻⁵` — **`1577×`**. It is the only row anywhere that can say WHICH of the two definitions iccce implements, which is exactly what the mandatory policy argument promises a caller. **(3) ★★ LCMS2 IS AN INTERPOLATION OF ITS OWN CONSTRUCTION, AND THAT CHANGED WHAT AN AGREEMENT NUMBER MEANS.** Split by whether the `K` value lands on a node of lcms2's 17-node black-preserving CLUT, the residual is `1.4–3.1×10⁻⁵` at the nodes and up to `1.089 5×10⁻²` off them — `120×` to `351×`. A whole-ramp figure measures lcms2's grid density, not either party's mapping, so `E9` grades **only at the nodes**. Same shape as `E5`'s `32×` control, in a different channel. **(4) ★★★ `E8` IS A ROW WHERE THE ORACLE IS WRONG AND THE ENGINE IS RIGHT (rule 7).** On a same-profile pair the equal-lightness construction is provably the identity — algebra, with no implementation in the expectation, so the kind is `derived-expectation`. iccce observes `0.000000` against a bound of one printed unit; **lcms2 intent 11 is `6.1×10⁻⁵` away from the algebraic answer** because its `K` returns through a 17-node CLUT. Its rival is named as the oracle's own answer, because “copy K through” IS correct on this pair and would have given `ZERO-SEPARATION`. **(5) ★★ `E3`/`F6`'s GAP TO LCMS2 IS NOW A REAL BEHAVIOURAL DIFFERENCE AND IS STATED, NOT TUNED TOWARD.** iccce's K-only region is zero wide by construction (exact-zero qualifying test); lcms2's is one CLUT cell, `1/16`. **ICC.1 contains no black-preservation construct at all** (register entry A51, a closed negative), so there is no text to settle it from and rule 7's remedy does not apply. Both rows stay REPORTED permanently — tuning toward `1/16` would be adopting a vendor's CLUT resolution as a colour requirement. ★ The rows also gained a **second number**, the chromatic ink at the `C = 0` endpoint, because `0.000000` meant “there is no K-only output at all” before the feature and means “the region exists and is one point wide” after it — an observation that does not move across the change it was written to detect is a blinded row. **★ Separation coverage `44 of 44`, `unstated = 0`, `blind = 0`** — and the tally is insufficient rather than wrong: `E2`'s separation distance EQUALS its observation (ratio `1.0`), which is what a blind row is, but the classifier only reaches `BLIND` for a row with a finite tolerance and `E2`'s is infinite, so it prints `UNGRADED`. **This paragraph first claimed `blind = 1`; the emitted report falsified it the same hour** — §3.5.8.6's rule about typed numerals, arriving as a typed NOUN. |
 | 2026-08-18 (later the same day, Pass K currency check) | **§3.10.12.7 (rewritten in place, heading and status); §3.10.12.6's last bullet** | §3.10.12.7 as filed: *"**Not fixed here, deliberately** … ★ **What this role owes when it is fixed:** a row"*, with `0.617121` / `0.617148` tabled as a current measurement. §3.10.12.6: *"the COMPILED path is unmeasured by any row **and is measurably wrong**"* | the same section, restated as **a FIXED defect** — fixing commit **`a05476c`** named, `0.617121` / `0.617148` retained as **dated pre-fix history**, current values `6.234231×10⁻⁷ → 3.330669×10⁻¹⁶` (near axis) and `3.710322×10⁻⁴ → 6.289234×10⁻⁸` (control) tabled separately, and the outstanding difftest row restated as **still owed** | `icc-conformance` | **★★★ NO TOLERANCE MOVED; NO NUMBER WAS DELETED. THIS IS A FALSE STATUS CLAIM RETRACTED, AND IT IS FALSE IN THE UNUSUAL DIRECTION — THE DOCUMENT UNDERSTATED THE CODE.** §3.10.12.7 was written while the compiled-path defect was live, and committed in `a1bd818` at 02:40:33 -0400 — **twenty-eight seconds after `a05476c` (02:40:05) fixed it**. For the whole of the interval since, this document has asserted a defect that does not exist, in a section explicitly headed as the grading's most consequential finding, and has done so in a form built to be quoted onward. **Re-verified before correcting, per §0**: `git show a05476c -- crates/iccce-cmm/src/compiled.rs` carries `k_preserve: Option<KPreserve>` outside the grid with a per-pixel branch in `convert` — the **second** of the two remedies §3.10.12.7 itself named — and `cargo test -p iccce-cmm --test compiled_black_preservation_convergence -- --nocapture` emits `grid 17: near-axis 6.234231e-7 control 3.710322e-4` / `grid 33: near-axis 3.330669e-16 control 6.289234e-8`, converging in both arms. **Three things about how the correction was bounded.** **(1) THE OLD NUMBERS STAY.** `0.617121` / `0.617148` are the measured signature of a real defect and are the evidence for why the *structural* remedy was the right one of two candidates; deleting them would erase the reason the decision went that way. They are re-presented as dated history with the fixing commit attached, never as a current measurement — the same posture §4's earlier rows take toward superseded envelopes, which are preserved so a reader who suspects tuning can audit the change. **(2) THE TWO ORDERS ARE SPLIT.** The retracted reading was *"`O(1)` beside `O(h^1.32)`"*. The `O(1)` half is the **defect's** signature and is gone; **`O(h^1.32)` is Pass 6's still-live measured order (`DL-025`, `NC-149`, §3.6) and is untouched**. Quoting the pair without the split would read as though both were retracted or both still live, and neither is true. **(3) ★★★ THE DEBT IS NOT DISCHARGED AND THE CORRECTION MUST NOT READ AS "CLOSED".** There is **still no difftest row for the compiled path**; every current number above comes from a `crates/` test, which is not in this budget, is not separation-graded, and does not appear in the suite summary this document gates on. What changed is the row's **purpose**: before `a05476c` it would have been a **disclosure**, now it would be a **regression guard** — a weaker reason to build it and a permanent one. **★ The generalisable mechanism, which is NOT §3.5.8.6's.** A stale numeral decays when someone re-measures. **A document that records *"X is broken and someone else owns the fix"* goes stale the moment that someone else commits — and nothing in the fixing commit's own review touches the document that made the claim.** It decays faster than a numeral and it decays silently, because the fixing commit is, from the document's point of view, an unrelated change in another directory. Drafted for the decision log and handed to `icc-librarian` rather than filed here. |
 | 2026-08-18 (later still) | **§3.11, rows I1–I4 (new section; first filling, not a change)** | did not exist | as recorded in §3.11 | `icc-conformance` | **★ A DISCLOSURE ROW — it records a BEHAVIOUR and deliberately establishes no conformance claim.** iccce parses and validates the header `renderingIntent` field and the CMM never consumes it; whether ICC.1 requires, permits or forbids consuming it when no intent is otherwise specified is **UNSOURCED as of 2026-08-18** and an `icc-spec-librarian` dispatch is outstanding. **Three of the four rows carry no tolerance at all** — I1 is bit-identity, because the claim is that one byte reached nothing and any difference at all falsifies it. **The only number is I4’s 0,02 device-unit floor, and it is a fixture-power bound, not an agreement tolerance**: it exists because I1 is vacuous on a pair whose `A2B0` and `A2B1` coincide. Set an order of magnitude below the **observed** 0,203 330, and **proved capable of failing by two injections** — with a zero-separation fixture I1 still passed while I4 failed at 0,000 000, which is §1.1’s lesson reproduced. No tolerance was widened; there was nothing to widen. |
+| 2026-08-21 (Pass K, the leak guards' detection floor) | **§3.10.12.8 (new); §3.10.12.2's closing clause (one clause RETRACTED); §3.10.1's table, rows E7 and F8 (floor added to the "derived where" cell); §3.10.12.6's "no injection proof" bullet (stale, corrected)** | §3.10.12.2 as filed: *"★ The named rival for both is … `10⁻⁹` of cyan … **these rows are what would catch it.**"* — a rival named WITH a magnitude and a guard claimed WITHOUT one. Probe floors `1.106777e-1` (E7) and `5.000000e-2` (F8) | the same clause, restated with the magnitude the rows actually reach, and **both floors moved to `1.000000e-12`** by adding `passk::low_ink_decade_probes` (70 probes, 14 decades) to E7's and F8's `leak` numbers | `icc-conformance` | **★★★ NO TOLERANCE MOVED, IN EITHER DIRECTION. BOTH ROWS ARE STILL GRADED AT EXACTLY `0` ON THE UNCHANGED DERIVATION OF §3.10.12.2, AND BOTH STILL OBSERVE `0.000000e0` — OVER 262 AND 120 PROBES INSTEAD OF 192 AND 50.** What changed is what the rows can SEE. **Six things about how this was arrived at.** **(1) ★★★ THE FLOOR IS NOT A PROPERTY OF THE MACHINE, AND THAT IS THE MEASUREMENT.** `NC-268` left an interval — caught at `≥ 1.106777e-1`, blind at `0.04` — and the open question was whether some quantisation, encoding or numerical effect made small chromatic ink undetectable *in principle*. It does not. The guard's response `max \|preserve(0,0,0,K) − plain(c,…,K)\|` **rises to a constant as `c → 0`** and is flat from about `1e-6` down: `3.589900e-1` on `v2-cmyk-chromatic-neutral`, `3.170750e-1` on `v2-cmyk-warm-black`, `3.668930e-1` on `ISO Coated v2 300% (ECI)` — five orders above `iccce transform`'s `1e-6` print resolution. The floor was a **free parameter of the probe set**, left at an accident. **(2) ★★ THE MEASUREMENT IS DERIVED, SO IT WAS CHECKED AGAINST A REAL INJECTION.** `KPreserve::apply`'s `Some` branch discards the chromatic input, so the leak under a widening `t ≥ c` equals the difference between the *shipped* binary's preserved answer at the exact-zero input and its plain answer at ink `c` — no recompile needed. That identity was verified by injecting `device[i] > INJECT_T` in a detached worktree and rebuilding at **ten magnitudes** from `5e-2` to `4.940656e-324`: **the model and the injected guard agreed `==` on `f64`, not within a tolerance, at all ten, on both committed fixtures.** The injection is not committed; the identity is what makes the number re-derivable. **(3) ★★ THERE IS EXACTLY ONE HARD FLOOR AND IT IS THE OPPOSITE OF THE ONE EXPECTED.** A probe whose ink **underflows to `0.0`** arrives at the qualifying test as a *genuine* K-only input; preservation fires **correctly** and the guard goes **RED against an engine that did nothing wrong**. Measured on the shipped predicate: baseline leak `0.000000e0` at `c = 4.940656e-324` and `3.589900e-1` at the next step down. `LOW_INK_DECADES` stops at `1e-12` — three decades below the named rival, below the level at which the response stops changing, and 312 decades clear of that boundary. **(4) ★★ E7's FLOOR IS NOW RE-DERIVABLE, WHICH WAS A SEPARATE DEBT.** `arbitrary_off_neutral`'s floor was an accident of an LCG seed, bounded by construction only at `0.8/2²¹ ≈ 3.8e-7`; `passk::probe_floor` now computes it and **E7's emitted detail prints all three component floors every run**, each labelled `STRUCTURAL` or `SEED-DEPENDENT`, so a re-seed shows as a changed number rather than as silent drift. ★ **A transcription error surfaced doing it**: the floor recorded here and in `NUMERIC_CLAIMS.md` as `1.106780e-1` is `0.11067771911621094` — the six-DECIMAL rounding re-expressed in scientific notation, which promotes a rounded decimal into a wrong sixth significant figure. §3.5.8.6's rule in a third form: **re-based**, not stale and not mistyped. **(5) ★★★ THE NEW ARM IS PROVEN LOAD-BEARING, AND THE FLOOR IS BRACKETED RATHER THAN ASSERTED.** Four injections in a detached worktree, of which the first pair is the finding: at `t = 1e-9` — **the rival's own named magnitude** — the harness with the probe sets **as at `0a88ad6`** reports `pass=371 fail=1`, the single failure being `passh/B`, which was already red at `HEAD`; the harness **with `low_ink_decade_probes`** reports `pass=369 fail=3`, `E7` at `3.668930e-1` and `F8` at `3.589900e-1`. **The two runs differ in nothing but the probe set** — no tolerance, no fixture, no engine code. Both rows are red at `1e-12` and green at `9e-13`, so the claimed floor is measured from both sides. ★★ The two observed values are the ones the derived model named in advance. ★ No other row moved: `E1`/`F5` stay green under every injection, correctly, since a widened test still admits every genuinely K-only input. **(6) ★ THE SCOPE, BECAUSE "VERIFIED" WITHOUT IT IS THE CLAIM THIS ROLE EXISTS TO PREVENT.** Three profile pairs, one intent, one policy, one direction, `--bpc` off; the injection arm covers the two **committed** fixtures only. Every number is in **device units** — the metamer trap (`DL-065`) does not bite a device-unit leak, and `v2-cmyk-warm-black` is measured beside `v2-cmyk-chromatic-neutral` throughout so a reader can see it does not. **No ΔE figure for this subject exists and none may be inferred from these.** The compiled path is still unmeasured by any difftest row (§3.10.12.7). |
 
 ---
 

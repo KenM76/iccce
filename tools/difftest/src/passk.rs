@@ -451,6 +451,30 @@
 //! Generalisation, and it is Pass H's lesson turned on its own remedy: *ask
 //! which layer is in the loop of the FIX, not only of the row.*
 //!
+//! ### ★★★ 2026-08-21 — the leak guards had a FLOOR, and it was an accident
+//!
+//! `E7`/`F8` were then proved to fire by injection (`NC-267`) — and the sweep
+//! that did it found something the single red run could not: **at an injected
+//! widening of the qualifying test to `t = 0.04` the ENTIRE difftest suite was
+//! green with the defect compiled in** (`DL-064`). A leak guard can only see a
+//! widening that reaches one of its own probes, and the smallest chromatic ink
+//! these two sets carried was `1.106777e-1` and `5.000000e-2` — while the
+//! rival named in their own justification, and in `crates/iccce-cmm`'s module
+//! doc, was **`1e-9` of cyan**. Seven-plus orders, both numbers on the page.
+//!
+//! The floor turned out to be **a free parameter and not a property of the
+//! machine**: the guard's response *rises* to a constant as ink falls
+//! (`3.17e-1` to `3.84e-1` device units, flat from about `1e-6` down), because
+//! the unpreserved answer tends to the four-ink separation of a K-only input.
+//! [`low_ink_decade_probes`] therefore walks 14 decades to `1e-12` and is
+//! folded into **the same `leak` number** on both rows, taking both floors to
+//! `1.000000e-12`. **No tolerance moved**; both rows are still exactly `0` and
+//! still observe `0.000000e0`. Each now prints its own floor, and
+//! [`probe_floor`] computes it, so `arbitrary_off_neutral`'s seed accident can
+//! no longer move `E7`'s sensitivity silently. Instrument:
+//! `bin/passk_leak_floor`. Derivation and coverage: `TOLERANCES.md`
+//! §3.10.12.8.
+//!
 //! ## What this pass cannot measure, stated here and not only in the report
 //!
 //! - **Whether lcms2's equal-`L*` rule or Cholewo's `K_MIN`/`K_MAX` ratio is
@@ -821,6 +845,116 @@ pub fn arbitrary_off_neutral() -> Vec<[f64; 4]> {
         }
     }
     out
+}
+
+// ---------------------------------------------------------------------------
+// The LOW-INK decade probe set — shared by E7 (§E) and F8 (§F)
+// ---------------------------------------------------------------------------
+
+/// The chromatic-ink levels the low-ink probe set walks, largest first.
+///
+/// ★★★ **Why the list ends at `1e-12` and not lower, measured rather than
+/// chosen.** The named rival of `E7`/`F8` — the change a future contributor is
+/// most likely to make — is *widening the qualifying test from exact zero to a
+/// tolerance*, and the magnitude that rival has always been written with in
+/// this project is **`1e-9` of cyan**. A probe set whose smallest ink is
+/// `1e-12` sits **three decades below** it, so a widening anywhere at or above
+/// the rival's own magnitude puts probes on the qualifying side of the test.
+///
+/// Extending the list further buys nothing, and that is a **measurement**, not
+/// an argument: the guard's response (`bin/passk_leak_floor`, and the
+/// `RESPONSE` block it prints) is *constant* from about `1e-6` downwards —
+/// `3.589900e-1` on `v2-cmyk-chromatic-neutral`, `3.170750e-1` on
+/// `v2-cmyk-warm-black` — all the way to the smallest positive subnormal
+/// `4.940656e-324`. Below `1e-6` the answer no longer changes, so a decade
+/// below `1e-12` would add a probe that measures exactly what `1e-12` already
+/// measures.
+///
+/// ★★ **And there is a hard floor below which a probe stops being a probe.**
+/// The harness writes each coordinate with `format!("{v}")` and the CLI parses
+/// it with `str::parse::<f64>`, so any decimal that **underflows to `0.0`**
+/// arrives at the shipped qualifying test as a *genuine* K-only input.
+/// The preservation branch then fires **correctly**,
+/// `on != off`, and the guard goes **RED against a correct engine**. Measured:
+/// at `c = 4.940656e-324` (the smallest positive subnormal) the baseline leak
+/// is `0.000000e0`; at `c = 1e-324`, which parses to `0.0`, it is
+/// `3.589900e-1`. **A leak guard's probe floor must stay above the underflow
+/// boundary, and `1e-12` is 312 decades clear of it.**
+///
+/// ★ **What the sub-`1.5e-5` decades are, and are not, for.** No device value
+/// encoded in a 16-bit ICC table can be smaller than one quantum
+/// (`1/65535 = 1.525902e-5`) and non-zero, so the last nine entries of this
+/// list are **not** reachable from a document. They are reachable from a
+/// *source edit*, which is the only thing this row exists to catch: the rival
+/// is a change to a predicate written in floating point, and it is graded in
+/// the units the predicate is written in.
+pub const LOW_INK_DECADES: [f64; 14] = [
+    5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12,
+];
+
+/// **★★★ The low-ink probe set: 70 chromatic grays walking 14 decades of ink.**
+///
+/// `E7` and `F8` are the two rows that detect a widened qualifying test, and
+/// **a leak guard can only see a widening that reaches one of its own probes**.
+/// Before this set existed their floors were `1.106777e-1` and `5.000000e-2`
+/// — seven-plus orders of magnitude *above* the rival their own justification
+/// named — and at an injected widening of `t = 0.04` the entire difftest suite
+/// was green with the defect compiled in.
+///
+/// ## The construction, and why the floor is STRUCTURAL
+///
+/// Each level `c` emits five probes `[c, (6/7)·c, r·c, j/8]` for `j = 0..5`,
+/// with `r = (50 + 45·(6/7))/90 ≈ 9.841270e-1`. Both ratios are **strictly
+/// below 1**, and a positive `f64` multiplied by a ratio below 1 and rounded
+/// to nearest can never exceed it — so `max(C, M, Y) = c` on **every** probe
+/// and the set's floor is `LOW_INK_DECADES`' last entry **by construction**.
+/// It moves only if someone edits that array, and [`probe_floor`] prints it on
+/// the row every run so an edit shows up as a changed number.
+///
+/// ★ The ratios are `chromatic_gray_probes`' own, deliberately: the two sets
+/// then differ in exactly one variable — the ink level — so the low-ink half
+/// of a leak measurement is comparable with the `5e-2`-and-up half rather than
+/// being a second, differently-shaped experiment.
+///
+/// ★★ **The `K` values are `j/8`, not a ramp to 1.0.** The preserved answer is
+/// `[0, 0, 0, map_k(K)]` whatever the chromatic input, so the *response* a
+/// widening produces is `|map_k(K) − plain(c, K)|` and it is largest where the
+/// two answers are furthest apart. Five values spanning `0 … 0.5` is what
+/// `chromatic_gray_probes` uses and it is enough: the row's tolerance is
+/// **exactly zero**, so one non-zero channel on one probe fails it.
+#[must_use]
+pub fn low_ink_decade_probes() -> Vec<[f64; 4]> {
+    const M_OVER_C: f64 = 6.0 / 7.0;
+    let y_over_c = (50.0 + 45.0 * M_OVER_C) / 90.0;
+    let mut out = Vec::with_capacity(LOW_INK_DECADES.len() * 5);
+    for &c in &LOW_INK_DECADES {
+        for j in 0..5 {
+            out.push([c, M_OVER_C * c, y_over_c * c, f64::from(j) * 0.125]);
+        }
+    }
+    out
+}
+
+/// **A probe set's DETECTION FLOOR: `min over probes of max(C, M, Y)`.**
+///
+/// ★★★ This is the smallest widening of the qualifying test that the set can
+/// see, and **the reason it is a function rather than a constant** is `E7`.
+/// `arbitrary_off_neutral` draws from a fixed-seed LCG on `[0, 0.8)`;
+/// construction bounds its floor only at `0.8/2²¹ ≈ 3.8e-7`, i.e. at nothing,
+/// so the floor it actually has (`1.106777e-1`) is **an accident of the seed**
+/// and **re-seeding would move `E7`'s sensitivity without changing one line of
+/// intent, one comment or one tolerance**. Computing it here and printing it
+/// on the row means a re-seed shows up as a changed number instead of as
+/// silent drift.
+///
+/// Returns `f64::INFINITY` for an empty set — a set with no probes has no
+/// floor, and reporting `0` would read as "sees everything".
+#[must_use]
+pub fn probe_floor(probes: &[[f64; 4]]) -> f64 {
+    probes
+        .iter()
+        .map(|p| p[0].max(p[1]).max(p[2]))
+        .fold(f64::INFINITY, f64::min)
 }
 
 // ===========================================================================
@@ -1686,10 +1820,35 @@ pub struct FeatureGate {
     pub arbitrary: f64,
     /// **`E4`'s** run-time bound input.
     pub sensitivity: f64,
-    /// ★★ **`E7`.** max `|Δ|` between the **same** 192 off-neutral probes run
+    /// ★★ **`E7`.** max `|Δ|` between the **same** off-neutral probes run
     /// with `--preserve-black` and without it. Zero means the preservation
     /// path did not touch an input that does not qualify for it.
+    ///
+    /// ★★★ **Since 2026-08-21 the probe set is 192 + 70**: the 96 node-aligned
+    /// and 96 arbitrary points this section has always used, **plus
+    /// [`low_ink_decade_probes`]**. See [`FeatureGate::leak_floor`].
     pub leak: f64,
+    /// ★★★ **`E7`'s DETECTION FLOOR, computed and printed every run.**
+    ///
+    /// `min over probes of max(C, M, Y)` over the whole set (`probe_floor`).
+    /// **This is the smallest widening of the qualifying test the row can
+    /// see**, and printing it is the entire remedy for a guard whose
+    /// sensitivity used to be a property of an LCG seed nobody could audit.
+    pub leak_floor: f64,
+    /// ★ **The node-aligned set's floor alone** — a grid fact bounded below by
+    /// `1/15`, with which grid point the seed reached an *observation*.
+    pub leak_node_floor: f64,
+    /// ★★ **The arbitrary set's floor alone — SEED-DEPENDENT and printed for
+    /// exactly that reason.** Construction bounds it only at `0.8/2²¹`; the
+    /// value it has is an accident. If this number moves, someone re-seeded
+    /// `arbitrary_off_neutral` and `E7`'s pre-2026-08-21 sensitivity moved
+    /// with it.
+    pub leak_arb_floor: f64,
+    /// ★ **The low-ink set's floor alone** — structural, `LOW_INK_DECADES`'
+    /// last entry, and what actually carries `E7`'s reach today.
+    pub leak_low_floor: f64,
+    /// How many probes the leak comparison ran over.
+    pub leak_points: usize,
     /// **`E8`.** max `|K_out − K_in|` on the same-profile pair, where the
     /// construction is provably the identity.
     pub identity_k: f64,
@@ -1816,7 +1975,28 @@ fn analyse_feature_gate(oracle: &Oracle, iccce: &Iccce) -> Result<FeatureGate, U
     let arb_plain = plain(&dst, &dst, &arb_rows)?;
     let arb_theirs = oracle_cmyk(&dst, &dst, &arb)?;
 
-    let leak = max_dev(&node_mine, &node_plain).max(max_dev(&arb_mine, &arb_plain));
+    // ★★★ THE LOW-INK ARM, 2026-08-21. `E7`'s reach used to stop at
+    // `1.106777e-1` — the smallest chromatic coordinate a fixed LCG seed
+    // happened to draw — while the rival its own justification named was
+    // `1e-9`. These 70 probes walk 14 decades down to `1e-12` and are folded
+    // into the SAME number, deliberately: a second row would let one of the two
+    // go green while the other went red and still read as "the leak guard
+    // passed". They enter the leak comparison ONLY. `E4`/`E5` keep their own
+    // probe sets untouched, because those rows are cross-checks against lcms2
+    // whose bound is an interpolation envelope derived for THOSE points.
+    let low = low_ink_decade_probes();
+    let low_rows: Vec<Vec<f64>> = low.iter().map(|r| r.to_vec()).collect();
+    let low_mine = preserved(&dst, &dst, &low_rows)?;
+    let low_plain = plain(&dst, &dst, &low_rows)?;
+
+    let leak = max_dev(&node_mine, &node_plain)
+        .max(max_dev(&arb_mine, &arb_plain))
+        .max(max_dev(&low_mine, &low_plain));
+    let leak_node_floor = probe_floor(&node);
+    let leak_arb_floor = probe_floor(&arb);
+    let leak_low_floor = probe_floor(&low);
+    let leak_floor = leak_node_floor.min(leak_arb_floor).min(leak_low_floor);
+    let leak_points = node.len() + arb.len() + low.len();
 
     let node_labs = to_lab(oracle, &dst, &node)?;
     let sensitivity = pcs_quantum_sensitivity(oracle, &dst, &node_labs)?;
@@ -1880,6 +2060,11 @@ fn analyse_feature_gate(oracle: &Oracle, iccce: &Iccce) -> Result<FeatureGate, U
         arbitrary: max_dev(&arb_mine, &arb_theirs),
         sensitivity,
         leak,
+        leak_floor,
+        leak_node_floor,
+        leak_arb_floor,
+        leak_low_floor,
+        leak_points,
         identity_k: mine
             .iter()
             .zip(&ramp)
@@ -3276,37 +3461,64 @@ fn gate_records(x: &FeatureGate) -> Vec<Record> {
             SRC_GATE,
             format!(
                 "★★★ THE LEAK GUARD, NEW 2026-08-18, AND THE SHARPEST INSTRUMENT IN THIS \
-                 SECTION. The SAME {} off-neutral probes (96 node-aligned + 96 arbitrary) run \
-                 twice through the same function, differing in nothing but --preserve-black {}: \
-                 max |on - off| = {:.6}, required exactly 0. ★★ WHY EXACTLY ZERO IS THE RIGHT \
-                 TOLERANCE AND NOT A TIGHT ONE. Every probe has at least one of C, M, Y strictly \
-                 positive, so under the exact-zero qualifying rule crates/iccce-cmm documents \
-                 (matching lcms2's In[0]==0 && In[1]==0 && In[2]==0) NONE of them qualifies, the \
-                 preservation branch returns None for every one, and the two invocations execute \
-                 the identical arithmetic. This is not an agreement claim with an instrument \
-                 error; it is the claim that a branch was not taken, and a branch is taken or it \
-                 is not. ★ EVIDENCE CLASS IS SELF-CONSISTENCY, THE WEAKEST THIS SUITE EMITS - \
-                 both sides are iccce and nothing outside this project is in the loop. It is \
-                 used anyway because the predicate is EXACT where every available cross-check \
-                 for the same question carries an interpolation envelope two orders wider, and a \
-                 widening of the qualifying test to a tolerance - the single most plausible \
-                 future change to this module - would move this row and might not move the \
-                 cross-check at all",
-                2 * x.node_points,
+                 SECTION. The SAME {} probes ({} node-aligned + {} arbitrary + {} low-ink) \
+                 run twice through the same function, differing in nothing but \
+                 --preserve-black {}: max |on - off| = {:.6}, required exactly 0. \
+                 ★★★ DETECTION FLOOR {:.6e} - the smallest widening of the qualifying test \
+                 these probes can SEE, computed as min over probes of max(C, M, Y) and \
+                 PRINTED rather than asserted. Its three parts: node-aligned {:.6e} (a j/15 \
+                 grid fact, bounded below by 1/15 - which grid point a fixed seed reached \
+                 is an OBSERVATION); arbitrary {:.6e} - ★★ SEED-DEPENDENT, construction \
+                 bounds it only at 0.8/2^21 = 3.8e-7, so if this number moves someone \
+                 re-seeded arbitrary_off_neutral; low-ink {:.6e} - STRUCTURAL, \
+                 LOW_INK_DECADES' last entry, and what carries this row's reach today. \
+                 ★★ WHY THE LOW-INK ARM EXISTS: until 2026-08-21 this row floor WAS the \
+                 arbitrary set seed accident, seven-plus orders ABOVE the 1e-9 rival its \
+                 own justification named, and an injected widening of t = 0.04 left the \
+                 ENTIRE difftest suite green with the defect compiled in (DL-064). \
+                 ★★ WHY EXACTLY ZERO IS THE RIGHT TOLERANCE AND NOT A TIGHT ONE. Every \
+                 probe has at least one of C, M, Y strictly positive, so under the \
+                 exact-zero qualifying rule crates/iccce-cmm documents (matching lcms2 In[0] \
+                 == 0 && In[1] == 0 && In[2] == 0) NONE of them qualifies, the preservation \
+                 branch returns None for every one, and the two invocations execute the \
+                 identical arithmetic. This is not an agreement claim with an instrument \
+                 error; it is the claim that a branch was not taken, and a branch is taken \
+                 or it is not. ★ EVIDENCE CLASS IS SELF-CONSISTENCY, THE WEAKEST THIS SUITE \
+                 EMITS - both sides are iccce and nothing outside this project is in the \
+                 loop. It is used anyway because the predicate is EXACT where every \
+                 available cross-check for the same question carries an interpolation \
+                 envelope two orders wider, and a widening of the qualifying test to a \
+                 tolerance - the single most plausible future change to this module - would \
+                 move this row and might not move the cross-check at all",
+                x.leak_points,
+                x.node_points,
+                x.node_points,
+                x.leak_points - 2 * x.node_points,
                 PRESERVE_POLICY,
-                x.leak
+                x.leak,
+                x.leak_floor,
+                x.leak_node_floor,
+                x.leak_arb_floor,
+                x.leak_low_floor
             ),
         )
         .with_separation(Separation::against_distance(
-            "the qualifying test is widened from exact zero to a tolerance - the alternative \
-             crates/iccce-cmm's own module doc names and rejects, and the change a future \
-             contributor is most likely to make on the grounds that 1e-9 of cyan 'is really \
-             K-only'. Under it the arbitrary probe set's smallest chromatic coordinate would \
-             begin to qualify and this difference would become the whole distance between the \
-             preserved and colorimetric answers, which this section's own baseline measures at \
-             0.705320 on the K ramp. ★ The distance is bounded below by the off-node envelope \
-             the control row reports, which is what a leak would at minimum have to exceed to \
-             be visible to the cross-check instead",
+            "the qualifying test is widened from exact zero to a tolerance - the \
+             alternative crates/iccce-cmm's own module doc names and rejects, and the \
+             change a future contributor is most likely to make on the grounds that 1e-9 \
+             of cyan 'is really K-only'. ★★★ THIS ROW NOW CATCHES THAT RIVAL AT ITS OWN \
+             NAMED MAGNITUDE AND THREE DECADES BELOW IT: the low-ink probes reach 1e-12, \
+             so any widening at or above 1e-12 puts probes on the qualifying side of the \
+             test. ★ CORRECTED 2026-08-21 - this text previously read `under it the \
+             arbitrary probe set smallest chromatic coordinate would begin to qualify`, \
+             which was FALSE at the magnitude named in the same sentence: that \
+             coordinate is 1.106777e-1, seven-plus orders ABOVE 1e-9, and a widening to \
+             1e-9 would have moved nothing here (DL-064). When the branch does fire, the \
+             difference becomes the whole distance between the preserved and \
+             colorimetric answers, which this section's own baseline measures at \
+             0.705320 on the K ramp. ★ The distance is bounded below by the off-node \
+             envelope the control row reports, which is what a leak would at minimum \
+             have to exceed to be visible to the cross-check instead",
             0.0,
             x.arbitrary,
             SepUnits::SameAsMetric,
@@ -4010,10 +4222,26 @@ pub struct SeparatingRun {
     /// **`F7`.** max `|iccce − lcms2|` over the same three channels and the
     /// same 50 points.
     pub gray_vs_oracle: f64,
-    /// ★★ **`F8`.** max `|Δ|` over all four channels of the 50 chromatic grays
+    /// ★★ **`F8`.** max `|Δ|` over all four channels of the chromatic grays
     /// between the run with `--preserve-black` and the run without it. The
     /// committed-fixture twin of `E7`, and the only leak guard that runs in CI.
+    ///
+    /// ★★★ **Since 2026-08-21 the probe set is 50 + 70**: the 50 chromatic
+    /// grays (floor `5.000000e-2`) **plus [`low_ink_decade_probes`]** (floor
+    /// `1.000000e-12`). Before that addition an injected widening of `t = 0.04`
+    /// left this row — and every other row of the suite — green with the
+    /// defect compiled in.
     pub leak: f64,
+    /// ★★★ **`F8`'s DETECTION FLOOR, computed and printed every run.** See
+    /// [`FeatureGate::leak_floor`]; this is the CI-resident twin.
+    pub leak_floor: f64,
+    /// ★ **The chromatic-gray set's floor alone**, `5.000000e-2`, structural in
+    /// `chromatic_gray_probes`' own loop.
+    pub leak_gray_floor: f64,
+    /// ★ **The low-ink set's floor alone**, structural.
+    pub leak_low_floor: f64,
+    /// How many probes the leak comparison ran over.
+    pub leak_points: usize,
     pub gray_points: usize,
 }
 
@@ -4047,7 +4275,26 @@ fn analyse_separating_run(
             .transform_rows_shaped(&path, &path, Intent::RelativeColorimetric, &gray_rows, 4)
             .map_err(err)?,
     )?;
-    let leak = max_dev(&mine, &mine_plain);
+
+    // ★★★ THE LOW-INK ARM, 2026-08-21 — the CI-resident half of the fix.
+    // `F8`'s floor was `5.0e-2`, and an injected widening of `t = 0.04` left
+    // the WHOLE difftest suite green with the defect compiled in. These 70
+    // probes take the floor to `1e-12`. They feed the leak comparison ONLY:
+    // `F4` and `F7` keep the 50 chromatic grays, because their expectations
+    // (the derived table, and lcms2) are stated for those points.
+    let low = low_ink_decade_probes();
+    let low_rows: Vec<Vec<f64>> = low.iter().map(|r| r.to_vec()).collect();
+    let low_mine = preserved(&low_rows)?;
+    let low_plain = as_cmyk(
+        iccce
+            .transform_rows_shaped(&path, &path, Intent::RelativeColorimetric, &low_rows, 4)
+            .map_err(err)?,
+    )?;
+    let leak = max_dev(&mine, &mine_plain).max(max_dev(&low_mine, &low_plain));
+    let leak_gray_floor = probe_floor(&gray);
+    let leak_low_floor = probe_floor(&low);
+    let leak_floor = leak_gray_floor.min(leak_low_floor);
+    let leak_points = gray.len() + low.len();
     let chromatic_max = |a: &[[f64; 4]], b: &[[f64; 4]]| -> f64 {
         a.iter()
             .zip(b)
@@ -4096,6 +4343,10 @@ fn analyse_separating_run(
         cell_zero_chromatic,
         gray_vs_oracle,
         leak,
+        leak_floor,
+        leak_gray_floor,
+        leak_low_floor,
+        leak_points,
         gray_points: gray.len(),
     })
 }
@@ -4484,30 +4735,55 @@ fn separating_run_records(f: &Separating, x: &SeparatingRun) -> Vec<Record> {
             x.leak,
             SRC_SEP_RUN,
             format!(
-                "★★★ THE LEAK GUARD THAT RUNS IN CI, NEW 2026-08-18. The same {} chromatic \
-                 grays run twice through the same harness function, differing in nothing but \
-                 --preserve-black {}: max |on - off| over ALL FOUR channels = {:.6}, required \
-                 exactly 0. ★★ Note the channel count: this is the ONE §F row that includes K. \
-                 Every other row here excludes it because the K value a preserving path should \
-                 emit is E2's open fork — but the claim here is not about what K should be, it \
-                 is that the preservation branch was NOT TAKEN, and a branch that was not taken \
-                 leaves every channel alone. ★★ WHY EXACTLY ZERO. Each probe has C, M and Y all \
-                 strictly positive, so under the exact-zero qualifying rule none of them \
-                 qualifies and the two invocations execute identical arithmetic. This is not an \
-                 agreement claim with an instrument error; it is the claim that a branch was not \
-                 taken. ★ EVIDENCE CLASS IS SELF-CONSISTENCY, the weakest this suite emits: both \
-                 sides are iccce. It earns its place because the predicate is EXACT where the \
-                 cross-check on the same probes (the preceding row) carries a two-quantum bound \
-                 — a leak smaller than 3.05e-5 would be invisible there and is visible here",
-                x.gray_points, PRESERVE_POLICY, x.leak
+                "★★★ THE LEAK GUARD THAT RUNS IN CI, NEW 2026-08-18. The same {} probes \
+                 ({} chromatic grays + {} low-ink) run twice through the same harness \
+                 function, differing in nothing but --preserve-black {}: max |on - off| over \
+                 ALL FOUR channels = {:.6}, required exactly 0. ★★★ DETECTION FLOOR {:.6e} \
+                 - the smallest widening of the qualifying test these probes can SEE, \
+                 computed as min over probes of max(C, M, Y) and PRINTED rather than \
+                 asserted. Its two parts: chromatic grays {:.6e} and low-ink {:.6e}, BOTH \
+                 STRUCTURAL - every probe of both sets has max(C, M, Y) equal to its own ink \
+                 level exactly, because the two ratios applied to C are strictly below 1. \
+                 ★★ WHY THE LOW-INK ARM EXISTS: until 2026-08-21 this floor was 5.0e-2, and \
+                 an injected widening of t = 0.04 left the ENTIRE difftest suite green with \
+                 the defect compiled in, while the rival named in this row and in \
+                 TOLERANCES.md was 1e-9 - seven-plus orders BELOW what the probes could see \
+                 (DL-064). ★★ Note the channel count: this is the ONE §F row that \
+                 includes K. Every other row here excludes it because the K value a \
+                 preserving path should emit is E2 open fork - but the claim here is not \
+                 about what K should be, it is that the preservation branch was NOT TAKEN, \
+                 and a branch that was not taken leaves every channel alone. ★★ WHY \
+                 EXACTLY ZERO. Each probe has C, M and Y all strictly positive, so under the \
+                 exact-zero qualifying rule none of them qualifies and the two invocations \
+                 execute identical arithmetic. This is not an agreement claim with an \
+                 instrument error; it is the claim that a branch was not taken. ★ EVIDENCE \
+                 CLASS IS SELF-CONSISTENCY, the weakest this suite emits: both sides are \
+                 iccce. It earns its place because the predicate is EXACT where the \
+                 cross-check on the same probes (the preceding row) carries a two-quantum \
+                 bound - a leak smaller than 3.05e-5 would be invisible there and is visible \
+                 here",
+                x.leak_points,
+                x.gray_points,
+                x.leak_points - x.gray_points,
+                PRESERVE_POLICY,
+                x.leak,
+                x.leak_floor,
+                x.leak_gray_floor,
+                x.leak_low_floor,
             ),
         )
         .with_separation(Separation::against_distance(
-            "the qualifying test is widened from exact zero to a tolerance — the alternative \
-             crates/iccce-cmm's module doc names and rejects, and the change a future \
-             contributor is most likely to make. Under it these probes would begin to qualify \
-             and the difference would become the full distance between this fixture's two \
-             candidate answers, which §F measures from the committed bytes",
+            "the qualifying test is widened from exact zero to a tolerance — the \
+             alternative crates/iccce-cmm's module doc names and rejects, and the change \
+             a future contributor is most likely to make. ★★★ AND THE PROBES NOW REACH \
+             IT: the low-ink arm walks 14 decades to 1e-12, three below the 1e-9 this \
+             rival has always been written with, so a widening anywhere at or above \
+             1e-12 puts probes on the qualifying side and the difference becomes the \
+             full distance between this fixture's two candidate answers, which §F \
+             measures from the committed bytes. ★ CORRECTED 2026-08-21 - the sentence \
+             `under it these probes would begin to qualify` was true only of a widening \
+             above 5.0e-2, which the 50 chromatic grays alone could see; at the rival \
+             own named 1e-9 nothing here moved (DL-064)",
             0.0,
             f.separation,
             SepUnits::SameAsMetric,

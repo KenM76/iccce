@@ -5890,3 +5890,175 @@ been dishonest — ΔE2000's `SL` term varies by 1.6× between `L*` 6 and `L*` 5
 - Nothing in Pass L is ground truth. The only ground-truth-class statement in
   the neighbourhood is H.273 clause 8.2 itself, and that is `ICC_Spec`'s to
   hold.
+
+---
+
+## 28. ★★★ How little chromatic ink can a leak guard SEE? — the detection floor, measured (2026-08-21)
+
+`tools/difftest/src/bin/passk_leak_floor.rs`. **An instrument, not a grader**:
+no tolerances, decides nothing, exit `0` when it managed to measure. Run it
+with
+
+```bash
+cd tools/difftest && cargo run --release --bin passk_leak_floor
+```
+
+It needs only the shipped `iccce` binary and the two **committed** CMYK
+fixtures. `$ICCCE_PRIVATE_FIXTURES` adds a third pair (`ISO Coated v2 300%
+(ECI)`, which is `E7`'s own destination); absent it, the binary says so and
+the rest still runs.
+
+Graded statements and their derivations: `docs/TOLERANCES.md` **§3.10.12.8**.
+
+### 28.1 What went wrong, and why a green suite could not say so
+
+Pass K's black-preservation **leak guards** — `E7` (§25) and `F8`, the one that
+runs in CI — take a probe set through `iccce transform` twice, differing in
+nothing but `--preserve-black`, and require `max |on − off| = 0` **exactly**.
+Both were **proven to fire** by injection (`NC-267`). But an injection turns a
+test red **at the magnitude injected and at no other** (`DL-064`), and the
+sweep that followed found this:
+
+> **At an injected widening of the qualifying test to `t = 0.04`, the ENTIRE
+> difftest suite was green with the defect compiled into the shipped
+> predicate.**
+
+The cause was neither the tolerance nor the transform. **A leak guard can only
+see a widening that reaches one of its own probes**, and the smallest chromatic
+ink the two sets carried was `1.106777e-1` and `5.000000e-2` — while the rival
+their own justification named, in `docs/TOLERANCES.md` §3.10.12.2 and in
+`crates/iccce-cmm`'s module doc, was **`10⁻⁹` of cyan**. Seven-plus orders of
+magnitude, **with both numbers on the page and nobody subtracting them**.
+
+### 28.2 The four blocks it prints
+
+| block | what it is |
+|---|---|
+| **`FLOORS`** | each committed probe generator's floor, `min over probes of max(C, M, Y)`, **computed and printed rather than asserted**, each line labelled `STRUCTURAL` or `SEED-DEPENDENT` |
+| **`RESPONSE`** | the leak magnitude a widening `t ≥ c` would produce, at 14 decades of chromatic ink, on every available pair — **the sensitivity floor as a function of ink** |
+| **`BASELINE`** | the same probes' *actual* on/off difference on the shipped predicate. Every entry must be `0.000000e0`; a non-zero is a live leak, not a floor |
+| **`UNDERFLOW`** | the one place a floor genuinely cannot be pushed lower, demonstrated rather than argued |
+
+### 28.3 ★★★ How `RESPONSE` is measured without recompiling the engine
+
+A widened test `max(C, M, Y) ≤ t` changes exactly one thing for a probe at ink
+`c ≤ t`: `KPreserve::apply` returns `Some` rather than `None`, and its `Some`
+branch is `[0, 0, 0, map_k(K)]` — **it discards the chromatic input
+entirely**. So
+
+```text
+response(c) = max | preserve(0, 0, 0, K) − plain(c, (6/7)c, 0.984127c, K) |
+```
+
+and both terms come from the **shipped, uninjected** binary.
+
+★★ **That is a derived expectation, so it was checked against the thing it
+models.** In a detached worktree at the same commit the predicate was replaced
+by `device[i] > INJECT_T`, the engine rebuilt at **ten** magnitudes from `5e-2`
+down to `4.940656e-324`, and the guard's real `max |on − off|` compared with
+the model. **The two agreed `==` on `f64` — not within a tolerance — at all
+ten, on both committed fixtures.** The injection is **not committed**; that
+identity is what makes the number re-derivable without it.
+
+### 28.4 The finding
+
+★★★ **The response does not decay with ink. It RISES to a constant as
+`c → 0`** — because `plain(c) → plain(0)`, which is the four-ink separation of
+a K-only input, the very quantity black preservation replaces:
+
+| ink `c` | `v2-cmyk-chromatic-neutral` | `v2-cmyk-warm-black` | `ISO Coated v2 300% (ECI)` |
+|---|---|---|---|
+| `5.000000e-2` | `3.458210e-1` | `3.466900e-1` | `3.837440e-1` |
+| `1.000000e-3` | `3.587270e-1` | `3.176670e-1` | `3.672240e-1` |
+| `1.000000e-6` … `1.000000e-12` | `3.589900e-1` | `3.170750e-1` | `3.668930e-1` |
+
+> **There is NO sensitivity floor in the engine, the harness or the encoding
+> above `4.940656e-324`.** A black-preservation leak guard sees a widening at
+> **any** chromatic-ink level it has a probe at, with a signal five orders of
+> magnitude above `iccce transform`'s `1e-6` print resolution. The floor was
+> never a property of the machine — it was a **free parameter of the probe
+> set**, left at an accident.
+
+### 28.5 The one hard floor, and it is the opposite of the expected one
+
+The harness writes each coordinate with `format!("{v}")` and the CLI parses it
+with `str::parse::<f64>`. A decimal that **underflows to `0.0`** therefore
+arrives at the qualifying test as a **genuine** K-only input; preservation
+fires **correctly**, `on ≠ off`, and the guard goes **RED against an engine
+that did nothing wrong**. Measured on the shipped predicate, no injection:
+
+| probe ink | baseline on/off difference |
+|---|---|
+| `4.940656e-324` (`f64::from_bits(1)`) | `0.000000e0` on all three pairs |
+| the next step down — a literal that parses to `0.0` | `3.589900e-1` / `3.170750e-1` / `3.668930e-1` |
+
+### 28.6 The remedy, in `passk.rs` and not in a tolerance
+
+`passk::low_ink_decade_probes` — **70 probes over 14 decades**,
+`LOW_INK_DECADES = [5e-2 … 1e-12]`, five rows per level. Both chromatic ratios
+are strictly below 1, so `max(C, M, Y) = c` on every probe and the floor is the
+last decade **by construction**. It is folded into the *same* `leak` number as
+the existing probes, never a second row — one half cannot then go green while
+the other goes red and still read as "the leak guard passed".
+
+| | probes | floor before | floor after |
+|---|---|---|---|
+| **`E7`** | 96 node-aligned + 96 arbitrary + **70 low-ink** = **262** | `1.106777e-1` | **`1.000000e-12`** |
+| **`F8`** (CI) | 50 chromatic grays + **70 low-ink** = **120** | `5.000000e-2` | **`1.000000e-12`** |
+
+**No tolerance moved.** Both rows are still graded at exactly `0` and both
+still observe `0.000000e0`. `E4`, `E5`, `F4` and `F7` keep their own probe sets
+untouched — their expectations (lcms2, and the derived table) are stated for
+**those** points.
+
+★★ Each row now **prints its own floor**, and its parts, in its emitted detail
+— so `arbitrary_off_neutral`'s **seed-dependent** `1.106777e-1` shows up as a
+changed number if anyone re-seeds it, instead of moving `E7`'s sensitivity
+silently.
+
+### 28.7 ★★★ Proven by injection — the new arm is load-bearing, and the floor is bracketed
+
+Four runs in a detached worktree at the same commit, predicate replaced by
+`device[i] > INJECT_T`. **The first pair differs in nothing but which probe
+sets the harness carries** — same defect, same magnitude, same tolerances, same
+fixtures, same engine.
+
+| injected `t` | harness | `E7` | `F8` | suite |
+|---|---|---|---|---|
+| **`1e-9`** — *the rival's own named magnitude* | probe sets as at `0a88ad6` | PASS `0.000000e0` | PASS `0.000000e0` | ★★★ **`pass=371 fail=1`** — green; the one failure is `passh/B`, already red at `HEAD` |
+| **`1e-9`** | with `low_ink_decade_probes` | **FAIL `3.668930e-1`** | **FAIL `3.589900e-1`** | **`pass=369 fail=3`** |
+| **`1e-12`** — the set's last decade | with `low_ink_decade_probes` | **FAIL `3.668930e-1`** | **FAIL `3.589900e-1`** | **`pass=369 fail=3`** |
+| **`9e-13`** — one step below it | with `low_ink_decade_probes` | PASS `0.000000e0` | PASS `0.000000e0` | `pass=371 fail=1` |
+
+★★ **The two observed values are the ones §28.4's table predicted** —
+`3.668930e-1` is its `ISO Coated v2 300% (ECI)` column and `3.589900e-1` its
+`v2-cmyk-chromatic-neutral` column. The derived expectation named them before
+the injection produced them.
+
+★ **The floor is bracketed, not asserted**: red at `1e-12`, green at `9e-13`.
+Per `DL-064`'s corollary, the smallest injection that still *passes* is the
+most informative run, and here it is the last row.
+
+★ **No other row moved.** `E1`/`F5` (`k-only-in-implies-k-only-out`) stay green
+under every one of these injections, correctly — a *widened* test still admits
+every genuinely K-only input, so the predicate rows have nothing to say about
+it.
+
+### 28.8 Coverage, stated so "verified" cannot be read without its scope
+
+- **Three profile pairs**, each used as both source and destination; **one
+  intent** (media-relative), **one policy** (`k-only-equal-lightness`), **one
+  direction**, `--bpc` off.
+- **The injection arm covers the two committed fixtures only.** Nothing in the
+  model is fixture-specific, but that is an argument, not a measurement.
+- ★ **Every number here is in DEVICE units.** `v2-cmyk-chromatic-neutral`'s
+  black is spectrally neutral (§25, `DL-065`), so a ΔE restatement of these
+  numbers would hit the metamer trap; `v2-cmyk-warm-black` is measured beside
+  it throughout for exactly that reason. **No ΔE figure for this subject exists
+  and none may be inferred from these.**
+- ★ **It says nothing about the branch NOT being taken when it should be** —
+  that is `E1`/`F5` — nor about the value `map_k` returns, which is `E2`'s open
+  fork; **nor about the compiled path**, which still has no difftest row
+  (§3.10.12.7): `E7` and `F8` drive `iccce transform`, and the grid-compiled
+  surface is reachable only through `iccce bench`, which cannot take
+  `--preserve-black`.
